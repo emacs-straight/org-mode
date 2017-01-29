@@ -9766,8 +9766,8 @@ sub-tree if optional argument INHERIT is non-nil."
 	    ;; TPROP is a text property symbol.
 	    (put-text-property start end tprop p)
 	  ;; TPROP is an alist with (property . function) elements.
-	  (pcase-dolist (`(,p . ,f) tprop)
-	    (put-text-property start end p (funcall f p))))))))
+	  (pcase-dolist (`(,prop . ,f) tprop)
+	    (put-text-property start end prop (funcall f p))))))))
 
 (defun org-refresh-category-properties ()
   "Refresh category text properties in the buffer."
@@ -13459,7 +13459,7 @@ TYPE is either `deadline' or `scheduled'.  See `org-deadline' or
 			    (string-match org-repeat-re time)
 			    (match-string 1 time))
 		       (and (org-string-nw-p old-date)
-			    (string-match "\\([.+-]+[0-9]+ [hdwmy]\
+			    (string-match "\\([.+-]+[0-9]+[hdwmy]\
 \\(?:[/ ][-+]?[0-9]+[hdwmy]\\)?\\)"
 					  old-date)
 			    (match-string 1 old-date)))))
@@ -21117,11 +21117,6 @@ This command does many different things, depending on context:
     (funcall org-finish-function))
    ((org-babel-hash-at-point))
    ((run-hook-with-args-until-success 'org-ctrl-c-ctrl-c-hook))
-   ((save-excursion (beginning-of-line) (looking-at-p "[ \t]*$"))
-    (or (run-hook-with-args-until-success 'org-ctrl-c-ctrl-c-final-hook)
-	(user-error
-	 (substitute-command-keys
-	  "`\\[org-ctrl-c-ctrl-c]' can do nothing useful here"))))
    (t
     (let* ((context
 	    (org-element-lineage
@@ -21145,7 +21140,21 @@ This command does many different things, depending on context:
 	    (setq context parent)
 	    (setq type 'item))))
       ;; Act according to type of element or object at point.
+      ;;
+      ;; Do nothing on a blank line, except if it is contained in
+      ;; a src block.  Hence, we first check if point is in such
+      ;; a block and then if it is at a blank line.
       (pcase type
+	((or `inline-src-block `src-block)
+	 (unless org-babel-no-eval-on-ctrl-c-ctrl-c
+	   (org-babel-eval-wipe-error-buffer)
+	   (org-babel-execute-src-block
+	    current-prefix-arg (org-babel-get-src-block-info nil context))))
+	((guard (org-match-line "[ \t]*$"))
+	 (or (run-hook-with-args-until-success 'org-ctrl-c-ctrl-c-final-hook)
+	     (user-error
+	      (substitute-command-keys
+	       "`\\[org-ctrl-c-ctrl-c]' can do nothing useful here"))))
 	((or `babel-call `inline-babel-call)
 	 (let ((info (org-babel-lob-get-info context)))
 	   (when info (org-babel-execute-src-block nil info))))
@@ -21161,11 +21170,6 @@ This command does many different things, depending on context:
 	((or `headline `inlinetask)
 	 (save-excursion (goto-char (org-element-property :begin context))
 			 (call-interactively #'org-set-tags)))
-	((or `inline-src-block `src-block)
-	 (unless org-babel-no-eval-on-ctrl-c-ctrl-c
-	   (org-babel-eval-wipe-error-buffer)
-	   (org-babel-execute-src-block
-	    current-prefix-arg (org-babel-get-src-block-info nil context))))
 	(`item
 	 ;; At an item: `C-u C-u' sets checkbox to "[-]"
 	 ;; unconditionally, whereas `C-u' will toggle its presence.
