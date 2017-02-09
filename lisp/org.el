@@ -13317,9 +13317,11 @@ This function is run automatically after each state change to a DONE state."
       (when (eq org-log-repeat t) (setq org-log-repeat 'state))
       (let ((to-state (or (org-entry-get nil "REPEAT_TO_STATE" 'selective)
 			  org-todo-repeat-to-state)))
-	(unless (and to-state (member to-state org-todo-keywords-1))
-	  (setq to-state (if (eq interpret 'type) org-last-state head)))
-	(org-todo to-state))
+	(org-todo (cond ((and to-state (member to-state org-todo-keywords-1))
+			 to-state)
+			((eq interpret 'type) org-last-state)
+			(head)
+			(t 'none))))
       (when (or org-log-repeat (org-entry-get nil "CLOCK"))
 	(org-entry-put nil "LAST_REPEAT" (format-time-string
 					  (org-time-stamp-format t t))))
@@ -13892,7 +13894,10 @@ EXTRA is additional text that will be inserted into the notes buffer."
 	 ;; Find location for the new note.
 	 (goto-char org-log-note-marker)
 	 (set-marker org-log-note-marker nil)
-	 (goto-char (org-log-beginning t))
+	 ;; Note associated to a clock is to be located right after
+	 ;; the clock.  Do not move point.
+	 (unless (eq org-log-note-purpose 'clock-out)
+	   (goto-char (org-log-beginning t)))
 	 ;; Make sure point is at the beginning of an empty line.
 	 (cond ((not (bolp)) (let ((inhibit-read-only t)) (insert "\n")))
 	       ((looking-at "[ \t]*\\S-") (save-excursion (insert "\n"))))
@@ -22797,7 +22802,7 @@ ELEMENT."
 	  (goto-char start)
 	  (org-get-indentation))))
       ((memq type '(headline inlinetask nil))
-       (if (save-excursion (beginning-of-line) (looking-at "[ \t]*$"))
+       (if (org-match-line "[ \t]*$")
 	   (org--get-expected-indentation element t)
 	 0))
       ((memq type '(diary-sexp footnote-definition)) 0)
@@ -22949,6 +22954,13 @@ Also align node properties according to `org-property-format'."
 		  (= (line-beginning-position)
 		     (org-element-property :post-affiliated element)))
 	     'noindent)
+	    ((and (eq type 'latex-environment)
+		  (>= (point) (org-element-property :post-affiliated element))
+		  (< (point) (org-with-wide-buffer
+			      (goto-char (org-element-property :end element))
+			      (skip-chars-backward " \r\t\n")
+			      (line-beginning-position 2))))
+	     'noindent)
 	    ((and (eq type 'src-block)
 		  org-src-tab-acts-natively
 		  (> (line-beginning-position)
@@ -23000,22 +23012,38 @@ assumed to be significant there."
 		 (element-end (copy-marker (org-element-property :end element)))
 		 (ind (org--get-expected-indentation element nil)))
 	    (cond
+	     ;; Element indented as a single block.  Example blocks
+	     ;; preserving indentation are a special case since the
+	     ;; "contents" must not be indented whereas the block
+	     ;; boundaries can.
+	     ((or (memq type '(export-block latex-environment))
+		  (and (eq type 'example-block)
+		       (not
+			(or org-src-preserve-indentation
+			    (org-element-property :preserve-indent element)))))
+	      (let ((offset (- ind (org-get-indentation))))
+		(unless (zerop offset)
+		  (indent-rigidly (org-element-property :begin element)
+				  (org-element-property :end element)
+				  offset)))
+	      (goto-char element-end))
+	     ;; Elements indented line wise.  Be sure to exclude
+	     ;; example blocks (preserving indentation) and source
+	     ;; blocks from this category as they are treated
+	     ;; specially later.
 	     ((or (memq type '(paragraph table table-row))
 		  (not (or (org-element-property :contents-begin element)
-			   (memq type
-				 '(example-block export-block src-block)))))
-	      ;; Elements here are indented as a single block.  Also
-	      ;; align node properties.
+			   (memq type '(example-block src-block)))))
 	      (when (eq type 'node-property)
 		(org--align-node-property)
 		(beginning-of-line))
 	      (funcall indent-to ind (min element-end end)))
+	     ;; Elements consisting of three parts: before the
+	     ;; contents, the contents, and after the contents.  The
+	     ;; contents are treated specially, according to the
+	     ;; element type, or not indented at all.  Other parts are
+	     ;; indented as a single block.
 	     (t
-	      ;; Elements in this category consist of three parts:
-	      ;; before the contents, the contents, and after the
-	      ;; contents.  The contents are treated specially,
-	      ;; according to the element type, or not indented at
-	      ;; all.  Other parts are indented as a single block.
 	      (let* ((post (copy-marker
 			    (org-element-property :post-affiliated element)))
 		     (cbeg
@@ -23025,8 +23053,7 @@ assumed to be significant there."
 			 ;; Fake contents for source blocks.
 			 (org-with-wide-buffer
 			  (goto-char post)
-			  (forward-line)
-			  (point)))
+			  (line-beginning-position 2)))
 			((memq type '(footnote-definition item plain-list))
 			 ;; Contents in these elements could start on
 			 ;; the same line as the beginning of the
@@ -23060,7 +23087,7 @@ assumed to be significant there."
 		      (t (funcall indent-to ind (min cbeg end))))
 		(when (< (point) end)
 		  (cl-case type
-		    ((example-block export-block verse-block))
+		    ((example-block verse-block))
 		    (src-block
 		     ;; In a source block, indent source code
 		     ;; according to language major mode, but only if
