@@ -1614,11 +1614,14 @@ INFO is a plist used as a communication channel."
 ;;; Template
 
 ;;;###autoload
-(defun org-latex-make-preamble (info &optional template)
+(defun org-latex-make-preamble (info &optional template snippet?)
   "Return a formatted LaTeX preamble.
 INFO is a plist used as a communication channel.  Optional
 argument TEMPLATE, when non-nil, is the header template string,
-as expected by `org-splice-latex-header'."
+as expected by `org-splice-latex-header'.  When SNIPPET? is
+non-nil, only includes packages relevant to image generation, as
+specified in `org-latex-default-packages-alist' or
+`org-latex-packages-alist'."
   (let* ((class (plist-get info :latex-class))
 	 (class-options (plist-get info :latex-class-options))
 	 (header (nth 1 (assoc class (plist-get info :latex-classes))))
@@ -1638,7 +1641,7 @@ as expected by `org-splice-latex-header'."
 	 class-template
 	 (org-latex--remove-packages org-latex-default-packages-alist info)
 	 (org-latex--remove-packages org-latex-packages-alist info)
-	 nil
+	 snippet?
 	 (mapconcat #'org-element-normalize-string
 		    (list (plist-get info :latex-header)
 			  (plist-get info :latex-header-extra)) ""))))
@@ -2049,8 +2052,8 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
        "\n")
      (org-latex--wrap-label
       horizontal-rule
-      (format "\\rule{%s}{%s}"
-	      (or (plist-get attr :width) "\\linewidth")
+      (format "\\noindent\\rule{%s}{%s}"
+	      (or (plist-get attr :width) "\\textwidth")
 	      (or (plist-get attr :thickness) "0.5pt"))
       info))))
 
@@ -3100,10 +3103,12 @@ contextual information."
 		  ;; table, insert their definition just after it.
 		  (org-latex--delayed-footnotes-definitions table info)))))))
 
-(defun org-latex--align-string (table info)
+(defun org-latex--align-string (table info &optional math?)
   "Return an appropriate LaTeX alignment string.
 TABLE is the considered table.  INFO is a plist used as
-a communication channel."
+a communication channel.  When optional argument MATH? is
+non-nil, TABLE is meant to be a matrix, where all cells are
+centered."
   (or (org-export-read-attribute :attr_latex table :align)
       (let (align)
 	;; Extract column groups and alignment from first (non-rule)
@@ -3119,10 +3124,11 @@ a communication channel."
 	      ;; Check left border for the first cell only.
 	      (when (and (memq 'left borders) (not align))
 		(push "|" align))
-	      (push (cl-case (org-export-table-cell-alignment cell info)
-		      (left "l")
-		      (right "r")
-		      (center "c"))
+	      (push (if math? "c"	;center cells in matrices
+		      (cl-case (org-export-table-cell-alignment cell info)
+			(left "l")
+			(right "r")
+			(center "c")))
 		    align)
 	      (when (memq 'right borders) (push "|" align))))
 	  info)
@@ -3308,11 +3314,8 @@ This function assumes TABLE has `org' as its `:type' property and
      (plist-get attr :math-prefix)
      ;; Environment.  Also treat special cases.
      (cond ((member env '("array" "tabular"))
-	    ;; Make sure cells are always centered while preserving
-	    ;; vertical separators.
-	    (let ((align (replace-regexp-in-string
-			  "[lr]" "c" (org-latex--align-string table info))))
-	      (format "\\begin{%s}{%s}\n%s\\end{%s}" env align contents env)))
+	    (format "\\begin{%s}{%s}\n%s\\end{%s}"
+		    env (org-latex--align-string table info t) contents env))
 	   ((assoc env org-latex-table-matrix-macros)
 	    (format "\\%s%s{\n%s}"
 		    env
@@ -3689,9 +3692,13 @@ Return output file name."
   ;; in working directory and then moved to publishing directory.
   (org-publish-attachment
    plist
-   (org-latex-compile
-    (org-publish-org-to
-     'latex filename ".tex" plist (file-name-directory filename)))
+   ;; Default directory could be anywhere when this function is
+   ;; called.  We ensure it is set to source file directory during
+   ;; compilation so as to not break links to external documents.
+   (let ((default-directory (file-name-directory filename)))
+     (org-latex-compile
+      (org-publish-org-to
+       'latex filename ".tex" plist (file-name-directory filename))))
    pub-dir))
 
 

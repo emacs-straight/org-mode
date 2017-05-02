@@ -785,27 +785,31 @@
       (org-test-with-temp-text "- A\n  B\n\n<point>"
 	(let ((org-adapt-indentation nil)) (org-indent-line))
 	(org-get-indentation))))
+  (should
+   (= 2
+      (org-test-with-temp-text
+	  "- A\n  \begin{cases}    1 + 1\n  \end{cases}\n\n<point>"
+	(let ((org-adapt-indentation nil)) (org-indent-line))
+	(org-get-indentation))))
   ;; Likewise, on a blank line at the end of a footnote definition,
   ;; indent at column 0 if line belongs to the definition.  Otherwise,
   ;; indent like the definition itself.
   (should
    (zerop
-    (org-test-with-temp-text "* H\n[fn:1] Definition\n"
-      (goto-char (point-max))
+    (org-test-with-temp-text "* H\n[fn:1] Definition\n<point>"
       (let ((org-adapt-indentation t)) (org-indent-line))
       (org-get-indentation))))
   (should
    (zerop
-    (org-test-with-temp-text "* H\n[fn:1] Definition\n\n\n\n"
-      (goto-char (point-max))
+    (org-test-with-temp-text "* H\n[fn:1] Definition\n\n\n\n<point>"
       (let ((org-adapt-indentation t)) (org-indent-line))
       (org-get-indentation))))
   ;; After the end of the contents of a greater element, indent like
   ;; the beginning of the element.
   (should
    (= 1
-      (org-test-with-temp-text " #+BEGIN_CENTER\n  Contents\n#+END_CENTER"
-	(forward-line 2)
+      (org-test-with-temp-text
+	  " #+BEGIN_CENTER\n  Contents\n<point>#+END_CENTER"
 	(org-indent-line)
 	(org-get-indentation))))
   ;; On blank lines after a paragraph, indent like its last non-empty
@@ -820,20 +824,18 @@
   ;; according to parent.
   (should
    (= 2
-      (org-test-with-temp-text "A\n\n  B\n\nC"
-	(goto-char (point-max))
+      (org-test-with-temp-text "A\n\n  B\n\nC<point>"
 	(org-indent-line)
 	(org-get-indentation))))
   (should
    (= 1
-      (org-test-with-temp-text " A\n\n[fn:1] B\n\n\nC"
-	(goto-char (point-max))
+      (org-test-with-temp-text " A\n\n[fn:1] B\n\n\nC<point>"
 	(org-indent-line)
 	(org-get-indentation))))
   (should
    (= 1
-      (org-test-with-temp-text " #+BEGIN_CENTER\n  Contents\n#+END_CENTER"
-	(forward-line 1)
+      (org-test-with-temp-text
+	  " #+BEGIN_CENTER\n<point>  Contents\n#+END_CENTER"
 	(org-indent-line)
 	(org-get-indentation))))
   ;; Within code part of a source block, use language major mode if
@@ -841,16 +843,16 @@
   ;; according to line above.
   (should
    (= 6
-      (org-test-with-temp-text "#+BEGIN_SRC emacs-lisp\n (and A\nB)\n#+END_SRC"
-	(forward-line 2)
+      (org-test-with-temp-text
+	  "#+BEGIN_SRC emacs-lisp\n (and A\n<point>B)\n#+END_SRC"
 	(let ((org-src-tab-acts-natively t)
 	      (org-edit-src-content-indentation 0))
 	  (org-indent-line))
 	(org-get-indentation))))
   (should
    (= 1
-      (org-test-with-temp-text "#+BEGIN_SRC emacs-lisp\n (and A\nB)\n#+END_SRC"
-	(forward-line 2)
+      (org-test-with-temp-text
+	  "#+BEGIN_SRC emacs-lisp\n (and A\n<point>B)\n#+END_SRC"
 	(let ((org-src-tab-acts-natively nil)
 	      (org-edit-src-content-indentation 0))
 	  (org-indent-line))
@@ -858,15 +860,16 @@
   ;; Otherwise, indent like the first non-blank line above.
   (should
    (zerop
-    (org-test-with-temp-text "#+BEGIN_CENTER\nline1\n\n  line2\n#+END_CENTER"
-      (forward-line 3)
+    (org-test-with-temp-text
+	"#+BEGIN_CENTER\nline1\n\n<point>  line2\n#+END_CENTER"
       (org-indent-line)
       (org-get-indentation))))
   ;; Align node properties according to `org-property-format'.  Handle
   ;; nicely empty values.
   (should
    (equal "* H\n:PROPERTIES:\n:key:      value\n:END:"
-	  (org-test-with-temp-text "* H\n:PROPERTIES:\n<point>:key: value\n:END:"
+	  (org-test-with-temp-text
+	      "* H\n:PROPERTIES:\n<point>:key: value\n:END:"
 	    (let ((org-property-format "%-10s %s")) (org-indent-line))
 	    (buffer-string))))
   (should
@@ -2217,7 +2220,27 @@ Foo Bar
   (should
    (org-test-with-temp-text "* [1]\n[[*%5B1%5D<point>]]"
      (org-open-at-point)
-     (bobp))))
+     (bobp)))
+  ;; Match search strings containing newline characters, including
+  ;; blank lines.
+  (should
+   (org-test-with-temp-text-in-file "Paragraph\n\nline1\nline2\n\n"
+     (let ((file (buffer-file-name)))
+       (goto-char (point-max))
+       (insert (format "[[file:%s::line1 line2]]" file))
+       (beginning-of-line)
+       (let ((org-link-search-must-match-exact-headline nil))
+	 (org-open-at-point 0))
+       (looking-at-p "line1"))))
+  (should
+   (org-test-with-temp-text-in-file "Paragraph\n\nline1\n\nline2\n\n"
+     (let ((file (buffer-file-name)))
+       (goto-char (point-max))
+       (insert (format "[[file:%s::line1 line2]]" file))
+       (beginning-of-line)
+       (let ((org-link-search-must-match-exact-headline nil))
+	 (org-open-at-point 0))
+       (looking-at-p "line1")))))
 
 ;;;; Link Escaping
 
@@ -2512,6 +2535,64 @@ http://article.gmane.org/gmane.emacs.orgmode/21459/"
 
 
 ;;; Navigation
+
+(ert-deftest test-org/forward-heading-same-level ()
+  "Test `org-forward-heading-same-level' specifications."
+  ;; Test navigation at top level, forward and backward.
+  (should
+   (equal "* H2"
+	  (org-test-with-temp-text "* H1\n* H2"
+	    (org-forward-heading-same-level 1)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  (should
+   (equal "* H1"
+	  (org-test-with-temp-text "* H1\n<point>* H2"
+	    (org-forward-heading-same-level -1)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  ;; Test navigation in a sub-tree, forward and backward.
+  (should
+   (equal "* H2"
+	  (org-test-with-temp-text "* H1\n** H11\n** H12\n* H2"
+	    (org-forward-heading-same-level 1)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  (should
+   (equal "* H1"
+	  (org-test-with-temp-text "* H1\n** H11\n** H12\n<point>* H2"
+	    (org-forward-heading-same-level -1)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  ;; Stop at first or last sub-heading.
+  (should-not
+   (equal "* H2"
+	  (org-test-with-temp-text "* H1\n** H11\n<point>** H12\n* H2"
+	    (org-forward-heading-same-level 1)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  (should-not
+   (equal "* H2"
+	  (org-test-with-temp-text "* H1\n<point>** H11\n** H12\n* H2"
+	    (org-forward-heading-same-level -1)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  ;; Allow multiple moves.
+  (should
+   (equal "* H3"
+	  (org-test-with-temp-text "* H1\n* H2\n* H3"
+	    (org-forward-heading-same-level 2)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  (should
+   (equal "* H1"
+	  (org-test-with-temp-text "* H1\n* H2\n<point>* H3"
+	    (org-forward-heading-same-level -2)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  ;; Ignore spurious moves when first (or last) sibling is reached.
+  (should
+   (equal "** H3"
+	  (org-test-with-temp-text "* First\n<point>** H1\n** H2\n** H3\n* Last"
+	    (org-forward-heading-same-level 100)
+	    (buffer-substring-no-properties (point) (line-end-position)))))
+  (should
+   (equal "** H1"
+	  (org-test-with-temp-text "* First\n** H1\n** H2\n<point>** H3\n* Last"
+	    (org-forward-heading-same-level -100)
+	    (buffer-substring-no-properties (point) (line-end-position))))))
 
 (ert-deftest test-org/end-of-meta-data ()
   "Test `org-end-of-meta-data' specifications."

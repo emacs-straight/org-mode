@@ -820,20 +820,28 @@ Refiling is done from the base buffer, because the indirect buffer is then
 already gone.  Any prefix argument will be passed to the refile command."
   (interactive)
   (unless (eq (org-capture-get :type 'local) 'entry)
-    (error
-     "Refiling from a capture buffer makes only sense for `entry'-type templates"))
-  (let ((pos (point))
-	(base (buffer-base-buffer (current-buffer)))
-	(org-capture-is-refiling t)
-	(kill-buffer (org-capture-get :kill-buffer 'local)))
+    (user-error "Refiling from a capture buffer makes only sense \
+for `entry'-type templates"))
+  (let* ((base (or (buffer-base-buffer) (current-buffer)))
+	 (pos (make-marker))
+	 (org-capture-is-refiling t)
+	 (kill-buffer (org-capture-get :kill-buffer 'local)))
+    ;; Since `org-capture-finalize' may alter buffer contents (e.g.,
+    ;; empty lines) around entry, use a marker to refer to the
+    ;; headline to be refiled.  Place the marker in the base buffer,
+    ;; as the current indirect one is going to be killed.
+    (set-marker pos (save-excursion (org-back-to-heading t) (point)) base)
     (org-capture-put :kill-buffer nil)
-    (org-capture-finalize)
-    (save-window-excursion
-      (with-current-buffer (or base (current-buffer))
-	(org-with-wide-buffer
-	 (goto-char pos)
-	 (call-interactively 'org-refile))))
-    (when kill-buffer (kill-buffer base))))
+    (unwind-protect
+	(progn
+	  (org-capture-finalize)
+	  (save-window-excursion
+	    (with-current-buffer base
+	      (org-with-wide-buffer
+	       (goto-char pos)
+	       (call-interactively 'org-refile))))
+	  (when kill-buffer (kill-buffer base)))
+      (set-marker pos nil))))
 
 (defun org-capture-kill ()
   "Abort the current capture process."
@@ -1541,6 +1549,9 @@ Lisp programs can force the template by setting KEYS to a string."
 	       '(("C" "Customize org-capture-templates")
 		 ("q" "Abort"))))))
 
+(defvar org-capture--clipboards nil
+  "List various clipboards values.")
+
 (defun org-capture-fill-template (&optional template initial annotation)
   "Fill a template and return the filled template as a string.
 The template may still contain \"%?\" for cursor positioning."
@@ -1589,12 +1600,13 @@ The template may still contain \"%?\" for cursor positioning."
 		   org-clock-heading)))
 	 (v-f (or (org-capture-get :original-file-nondirectory) ""))
 	 (v-F (or (org-capture-get :original-file) ""))
-	 (clipboards (delq nil
-			   (list v-i
-				 (org-get-x-clipboard 'PRIMARY)
-				 (org-get-x-clipboard 'CLIPBOARD)
-				 (org-get-x-clipboard 'SECONDARY)
-				 v-c))))
+	 (org-capture--clipboards
+	  (delq nil
+		(list v-i
+		      (org-get-x-clipboard 'PRIMARY)
+		      (org-get-x-clipboard 'CLIPBOARD)
+		      (org-get-x-clipboard 'SECONDARY)
+		      v-c))))
 
     (setq org-store-link-plist (plist-put org-store-link-plist :annotation v-a))
     (setq org-store-link-plist (plist-put org-store-link-plist :initial v-i))
@@ -1646,34 +1658,41 @@ The template may still contain \"%?\" for cursor positioning."
 		(delete-region pos end)
 		(set-marker pos nil)
 		(set-marker end nil)
-		(let ((replacement
-		       (pcase (string-to-char value)
-			 (?< (format-time-string time-string))
-			 (?:
-			  (or (plist-get org-store-link-plist (intern value))
-			      ""))
-			 (?i (let ((lead (buffer-substring-no-properties
+		(let* ((inside-sexp? (org-capture-inside-embedded-elisp-p))
+		       (replacement
+			(pcase (string-to-char value)
+			  (?< (format-time-string time-string))
+			  (?:
+			   (or (plist-get org-store-link-plist (intern value))
+			       ""))
+			  (?i
+			   (if inside-sexp? v-i
+			     ;; Outside embedded Lisp, repeat leading
+			     ;; characters before initial place holder
+			     ;; every line.
+			     (let ((lead (buffer-substring-no-properties
 					  (line-beginning-position) (point))))
-			       (mapconcat #'identity
-					  (split-string v-i "\n")
-					  (concat "\n" lead))))
-			 (?a v-a)
-			 (?A v-A)
-			 (?c v-c)
-			 (?f v-f)
-			 (?F v-F)
-			 (?k v-k)
-			 (?K v-K)
-			 (?l v-l)
-			 (?n v-n)
-			 (?t v-t)
-			 (?T v-T)
-			 (?u v-u)
-			 (?U v-U)
-			 (?x v-x))))
+			       (replace-regexp-in-string "\n\\(.\\)"
+							 (concat lead "\\1")
+							 v-i nil nil 1))))
+			  (?a v-a)
+			  (?A v-A)
+			  (?c v-c)
+			  (?f v-f)
+			  (?F v-F)
+			  (?k v-k)
+			  (?K v-K)
+			  (?l v-l)
+			  (?n v-n)
+			  (?t v-t)
+			  (?T v-T)
+			  (?u v-u)
+			  (?U v-U)
+			  (?x v-x))))
 		  (insert
-		   (if (org-capture-inside-embedded-elisp-p)
-		       (replace-regexp-in-string "\"" "\\\\\"" replacement)
+		   (if inside-sexp?
+		       ;; Escape sensitive characters.
+		       (replace-regexp-in-string "[\\\"]" "\\\\\\&" replacement)
 		     replacement))))))))
 
       ;; Expand %() embedded Elisp.  Limit to Sexp originally marked.
@@ -1727,24 +1746,20 @@ The template may still contain \"%?\" for cursor positioning."
 			 (and (org-at-heading-p)
 			      (let ((org-ignore-region t))
 				(org-set-tags nil 'align))))))
-		    ("C"
-		     (cond
-		      ((= (length clipboards) 1) (insert (car clipboards)))
-		      ((> (length clipboards) 1)
-		       (insert (read-string "Clipboard/kill value: "
-					    (car clipboards)
-					    '(clipboards . 1)
-					    (car clipboards))))))
-		    ("L"
-		     (cond ((= (length clipboards) 1)
-			    (org-insert-link 0 (car clipboards)))
-			   ((> (length clipboards) 1)
-			    (org-insert-link
-			     0
-			     (read-string "Clipboard/kill value: "
-					  (car clipboards)
-					  '(clipboards . 1)
-					  (car clipboards))))))
+		    ((or "C" "L")
+		     (let ((insert-fun (if (equal key "C") #'insert
+					 (lambda (s) (org-insert-link 0 s)))))
+		       (pcase org-capture--clipboards
+			 (`nil nil)
+			 (`(,value) (funcall insert-fun value))
+			 (`(,first-value . ,_)
+			  (funcall insert-fun
+				   (read-string "Clipboard/kill value: "
+						first-value
+						'org-capture--clipboards
+						first-value)))
+			 (_ (error "Invalid `org-capture--clipboards' value: %S"
+				   org-capture--clipboards)))))
 		    ("p" (org-set-property prompt nil))
 		    ((guard key)
 		     ;; These are the date/time related ones.

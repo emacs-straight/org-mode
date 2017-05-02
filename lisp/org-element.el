@@ -450,7 +450,7 @@ past the brackets."
 ;; There is `org-element-put-property', `org-element-set-contents'.
 ;; These low-level functions are useful to build a parse tree.
 ;;
-;; `org-element-adopt-element', `org-element-set-element',
+;; `org-element-adopt-elements', `org-element-set-element',
 ;; `org-element-extract-element' and `org-element-insert-before' are
 ;; high-level functions useful to modify a parse tree.
 ;;
@@ -593,16 +593,15 @@ Parse tree is modified by side effect."
 	 (specialp (and (not property)
 			(eq siblings parent)
 			(eq (car parent) location))))
-    ;; Install ELEMENT at the appropriate POSITION within SIBLINGS.
+    ;; Install ELEMENT at the appropriate LOCATION within SIBLINGS.
     (cond (specialp)
 	  ((or (null siblings) (eq (car siblings) location))
 	   (push element siblings))
 	  ((null location) (nconc siblings (list element)))
-	  (t (let ((previous (cadr (memq location (reverse siblings)))))
-	       (if (not previous)
-		   (error "No location found to insert element")
-		 (let ((next (memq previous siblings)))
-		   (setcdr next (cons element (cdr next))))))))
+	  (t
+	   (let ((index (cl-position location siblings)))
+	     (unless index (error "No location found to insert element"))
+	     (push element (cdr (nthcdr (1- index) siblings))))))
     ;; Store SIBLINGS at appropriate place in parse tree.
     (cond
      (specialp (setcdr parent (copy-sequence parent)) (setcar parent element))
@@ -3196,7 +3195,7 @@ Assume point is at the beginning of the link."
 	(when (string-match "::\\(.*\\)\\'" path)
 	  (setq search-option (match-string 1 path))
 	  (setq path (replace-match "" nil nil path)))
-	(setq path (replace-regexp-in-string "\\`///+" "/" path)))
+	(setq path (replace-regexp-in-string "\\`///*\\(.:\\)?/" "\\1/" path)))
       ;; Translate link, if `org-link-translation-function' is set.
       (let ((trans (and (functionp org-link-translation-function)
 			(funcall org-link-translation-function type path))))
@@ -4031,7 +4030,7 @@ Optional argument GRANULARITY determines the depth of the
 recursion.  It can be set to the following symbols:
 
 `headline'          Only parse headlines.
-`greater-element'   Don't recurse into greater elements excepted
+`greater-element'   Don't recurse into greater elements except
 		    headlines and sections.  Thus, elements
 		    parsed are the top-level ones.
 `element'           Parse everything but objects and plain text.
@@ -4040,7 +4039,7 @@ recursion.  It can be set to the following symbols:
 When VISIBLE-ONLY is non-nil, don't parse contents of hidden
 elements.
 
-An element or an objects is represented as a list with the
+An element or object is represented as a list with the
 pattern (TYPE PROPERTIES CONTENTS), where :
 
   TYPE is a symbol describing the element or object.  See
@@ -4367,6 +4366,10 @@ to an appropriate container (e.g., a paragraph)."
   (if (memq 'table-cell restriction) (org-element-table-cell-parser)
     (let* ((start (point))
 	   (limit
+	    ;; Object regexp sometimes needs to have a peek at
+	    ;; a character ahead.  Therefore, when there is a hard
+	    ;; limit, make it one more than the true beginning of the
+	    ;; radio target.
 	    (save-excursion
 	      (cond ((not org-target-link-regexp) nil)
 		    ((not (memq 'link restriction)) nil)
@@ -4382,8 +4385,8 @@ to an appropriate container (e.g., a paragraph)."
 		    ((and (= start (1+ (line-beginning-position)))
 			  (= start (match-end 1)))
 		     (and (re-search-forward org-target-link-regexp nil t)
-			  (match-beginning 1)))
-		    (t (match-beginning 1)))))
+			  (1+ (match-beginning 1))))
+		    (t (1+ (match-beginning 1))))))
 	   found)
       (save-excursion
 	(while (and (not found)
@@ -4457,7 +4460,8 @@ to an appropriate container (e.g., a paragraph)."
 			      (org-element-link-parser)))))))
 	    (or (eobp) (forward-char))))
 	(cond (found)
-	      (limit (org-element-link-parser))	;radio link
+	      (limit (forward-char -1)
+		     (org-element-link-parser)) ;radio link
 	      (t nil))))))
 
 (defun org-element--parse-objects (beg end acc restriction &optional parent)

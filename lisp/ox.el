@@ -1069,7 +1069,9 @@ BACKEND is an export back-end, as return by, e.g,,
 for the shape of the return value.
 
 Unlike to `org-export-backend-options', this function also
-returns options inherited from parent back-ends, if any."
+returns options inherited from parent back-ends, if any.
+
+Return nil if BACKEND is unknown."
   (when (symbolp backend) (setq backend (org-export-get-backend backend)))
   (when backend
     (let ((options (org-export-backend-options backend))
@@ -1373,7 +1375,7 @@ specific items to read, if any."
 		   alist))
 	   alist))
 	;; Priority is given to back-end specific options.
-	(all (append (and backend (org-export-get-all-options backend))
+	(all (append (org-export-get-all-options backend)
 		     org-export-options-alist))
 	(plist))
     (when line
@@ -1410,7 +1412,7 @@ for export.  Return options as a plist."
 			     (match-string-no-properties 4))))))
 	 ;; Look for both general keywords and back-end specific
 	 ;; options, with priority given to the latter.
-	 (options (append (and backend (org-export-get-all-options backend))
+	 (options (append (org-export-get-all-options backend)
 			  org-export-options-alist)))
      ;; Handle other keywords.  Then return PLIST.
      (dolist (option options plist)
@@ -1446,7 +1448,7 @@ Assume buffer is in Org mode.  Narrowing, if any, is ignored."
   (let* ((case-fold-search t)
 	 (options (append
 		   ;; Priority is given to back-end specific options.
-		   (and backend (org-export-get-all-options backend))
+		   (org-export-get-all-options backend)
 		   org-export-options-alist))
 	 (regexp (format "^[ \t]*#\\+%s:"
 			 (regexp-opt (nconc (delq nil (mapcar #'cadr options))
@@ -1583,7 +1585,7 @@ which back-end specific export options should also be read in the
 process."
   (let (plist
 	;; Priority is given to back-end specific options.
-	(all (append (and backend (org-export-get-all-options backend))
+	(all (append (org-export-get-all-options backend)
 		     org-export-options-alist)))
     (dolist (cell all plist)
       (let ((prop (car cell)))
@@ -2878,83 +2880,67 @@ containing their first reference."
 
 (defun org-export--remove-uninterpreted-data (data info)
   "Change uninterpreted elements back into Org syntax.
-DATA is the parse tree.  INFO is a plist containing export
-options.  Each uninterpreted element or object is changed back
-into a string.  Contents, if any, are not modified.  The parse
-tree is modified by side effect."
-  (org-export--remove-uninterpreted-data-1 data info)
-  (dolist (entry org-export-options-alist)
-    (when (eq (nth 4 entry) 'parse)
-      (let ((p (car entry)))
-	(plist-put info
-		   p
-		   (org-export--remove-uninterpreted-data-1
-		    (plist-get info p)
-		    info))))))
-
-(defun org-export--remove-uninterpreted-data-1 (data info)
-  "Change uninterpreted elements back into Org syntax.
 DATA is a parse tree or a secondary string.  INFO is a plist
 containing export options.  It is modified by side effect and
 returned by the function."
   (org-element-map data
       '(entity bold italic latex-environment latex-fragment strike-through
 	       subscript superscript underline)
-    (lambda (blob)
+    (lambda (datum)
       (let ((new
-	     (cl-case (org-element-type blob)
+	     (cl-case (org-element-type datum)
 	       ;; ... entities...
 	       (entity
 		(and (not (plist-get info :with-entities))
 		     (list (concat
-			    (org-export-expand blob nil)
+			    (org-export-expand datum nil)
 			    (make-string
-			     (or (org-element-property :post-blank blob) 0)
+			     (or (org-element-property :post-blank datum) 0)
 			     ?\s)))))
 	       ;; ... emphasis...
 	       ((bold italic strike-through underline)
 		(and (not (plist-get info :with-emphasize))
-		     (let ((marker (cl-case (org-element-type blob)
+		     (let ((marker (cl-case (org-element-type datum)
 				     (bold "*")
 				     (italic "/")
 				     (strike-through "+")
 				     (underline "_"))))
 		       (append
 			(list marker)
-			(org-element-contents blob)
+			(org-element-contents datum)
 			(list (concat
 			       marker
 			       (make-string
-				(or (org-element-property :post-blank blob)
+				(or (org-element-property :post-blank datum)
 				    0)
 				?\s)))))))
 	       ;; ... LaTeX environments and fragments...
 	       ((latex-environment latex-fragment)
 		(and (eq (plist-get info :with-latex) 'verbatim)
-		     (list (org-export-expand blob nil))))
+		     (list (org-export-expand datum nil))))
 	       ;; ... sub/superscripts...
 	       ((subscript superscript)
 		(let ((sub/super-p (plist-get info :with-sub-superscript))
-		      (bracketp (org-element-property :use-brackets-p blob)))
+		      (bracketp (org-element-property :use-brackets-p datum)))
 		  (and (or (not sub/super-p)
 			   (and (eq sub/super-p '{}) (not bracketp)))
 		       (append
 			(list (concat
-			       (if (eq (org-element-type blob) 'subscript)
+			       (if (eq (org-element-type datum) 'subscript)
 				   "_"
 				 "^")
 			       (and bracketp "{")))
-			(org-element-contents blob)
+			(org-element-contents datum)
 			(list (concat
 			       (and bracketp "}")
-			       (and (org-element-property :post-blank blob)
+			       (and (org-element-property :post-blank datum)
 				    (make-string
-				     (org-element-property :post-blank blob)
+				     (org-element-property :post-blank datum)
 				     ?\s)))))))))))
 	(when new
-	  ;; Splice NEW at BLOB location in parse tree.
-	  (dolist (e new (org-element-extract-element blob))
-	    (unless (equal e "") (org-element-insert-before e blob))))))
+	  ;; Splice NEW at DATUM location in parse tree.
+	  (dolist (e new (org-element-extract-element datum))
+	    (unless (equal e "") (org-element-insert-before e datum))))))
     info nil nil t)
   ;; Return modified parse tree.
   data)
@@ -3045,12 +3031,22 @@ Return code as a string."
 			       (org-export-backend-name backend)))
 	 (org-set-regexps-and-options)
 	 (org-update-radio-target-regexp)
-	 ;; Update communication channel with environment.  Also
-	 ;; install user's and developer's filters.
+	 ;; Update communication channel with environment.
 	 (setq info
-	       (org-export-install-filters
-		(org-combine-plists
-		 info (org-export-get-environment backend subtreep ext-plist))))
+	       (org-combine-plists
+		info (org-export-get-environment backend subtreep ext-plist)))
+	 ;; De-activate uninterpreted data from parsed keywords.
+	 (dolist (entry (append (org-export-get-all-options backend)
+				org-export-options-alist))
+	   (pcase entry
+	     (`(,p ,_ ,_ ,_ parse)
+	      (let ((value (plist-get info p)))
+		(plist-put info
+			   p
+			   (org-export--remove-uninterpreted-data value info))))
+	     (_ nil)))
+	 ;; Install user's and developer's filters.
+	 (setq info (org-export-install-filters info))
 	 ;; Call options filters and update export options.  We do not
 	 ;; use `org-export-filter-apply-functions' here since the
 	 ;; arity of such filters is different.
@@ -4323,11 +4319,13 @@ has type \"radio\"."
 
 (defun org-export-file-uri (filename)
   "Return file URI associated to FILENAME."
-  (cond ((string-match-p "\\`//" filename) (concat "file:" filename))
+  (cond ((string-prefix-p "//" filename) (concat "file:" filename))
 	((not (file-name-absolute-p filename)) filename)
 	((org-file-remote-p filename) (concat "file:/" filename))
-	(t (concat "file://" (expand-file-name filename)))))
-
+	(t
+	 (let ((fullname (expand-file-name filename)))
+	   (concat (if (string-prefix-p "/" fullname) "file://" "file:///")
+		   fullname)))))
 
 ;;;; For References
 ;;
@@ -4505,7 +4503,7 @@ ELEMENT doesn't allow line numbering."
 	     (let ((linum (org-element-property :number-lines el)))
 	       (when linum
 		 (let ((lines (org-count-lines
-			       (org-trim (org-element-property :value el)))))
+			       (org-element-property :value el))))
 		   ;; Accumulate locs or reset them.
 		   (pcase linum
 		     (`(new . ,n) (setq loc (+ n lines)))
@@ -4524,30 +4522,28 @@ an alist between relative line number (integer) and name of code
 reference on that line (string)."
   (let* ((line 0) refs
 	 (value (org-element-property :value element))
-	 ;; Get code and clean it.  Remove blank lines at its
-	 ;; beginning and end.
+	 ;; Remove global indentation from code, if necessary.  Also
+	 ;; remove final newline character, since it doesn't belongs
+	 ;; to the code proper.
 	 (code (replace-regexp-in-string
-		"\\`\\([ \t]*\n\\)+" ""
-		(replace-regexp-in-string
-		 "\\([ \t]*\n\\)*[ \t]*\\'" "\n"
-		 (if (or org-src-preserve-indentation
-			 (org-element-property :preserve-indent element))
-		     value
-		   (org-remove-indentation value)))))
+		"\n\\'" ""
+		(if (or org-src-preserve-indentation
+			(org-element-property :preserve-indent element))
+		    value
+		  (org-remove-indentation value))))
 	 ;; Build a regexp matching a loc with a reference.
 	 (ref-re (org-src-coderef-regexp (org-src-coderef-format element))))
     ;; Return value.
     (cons
      ;; Code with references removed.
-     (org-element-normalize-string
-      (mapconcat
-       (lambda (loc)
-	 (cl-incf line)
-	 (if (not (string-match ref-re loc)) loc
-	   ;; Ref line: remove ref, and signal its position in REFS.
-	   (push (cons line (match-string 3 loc)) refs)
-	   (replace-match "" nil nil loc 1)))
-       (org-split-string code "\n") "\n"))
+     (mapconcat
+      (lambda (loc)
+	(cl-incf line)
+	(if (not (string-match ref-re loc)) loc
+	  ;; Ref line: remove ref, and add its position in REFS.
+	  (push (cons line (match-string 3 loc)) refs)
+	  (replace-match "" nil nil loc 1)))
+      (split-string code "\n") "\n")
      ;; Reference alist.
      refs)))
 
@@ -4570,15 +4566,16 @@ number (i.e. ignoring NUM-LINES) and the name of the code
 reference on it.  If it is nil, FUN's third argument will always
 be nil.  It can be obtained through the use of
 `org-export-unravel-code' function."
-  (let ((--locs (org-split-string code "\n"))
+  (let ((--locs (split-string code "\n"))
 	(--line 0))
-    (org-element-normalize-string
+    (concat
      (mapconcat
       (lambda (--loc)
 	(cl-incf --line)
 	(let ((--ref (cdr (assq --line ref-alist))))
 	  (funcall fun --loc (and num-lines (+ num-lines --line)) --ref)))
-      --locs "\n"))))
+      --locs "\n")
+     "\n")))
 
 (defun org-export-format-code-default (element info)
   "Return source code from ELEMENT, formatted in a standard way.
@@ -4595,7 +4592,7 @@ code."
   ;; Extract code and references.
   (let* ((code-info (org-export-unravel-code element))
          (code (car code-info))
-	 (code-lines (org-split-string code "\n")))
+	 (code-lines (split-string code "\n")))
     (if (null code-lines) ""
       (let* ((refs (and (org-element-property :retain-labels element)
 			(cdr code-info)))
@@ -4620,9 +4617,9 @@ code."
 	      number-str
 	      loc
 	      (and ref
-		   (concat (make-string
-			    (- (+ 6 max-width)
-			       (+ (length loc) (length number-str))) ? )
+		   (concat (make-string (- (+ 6 max-width)
+					   (+ (length loc) (length number-str)))
+					?\s)
 			   (format "(%s)" ref))))))
 	 num-start refs)))))
 

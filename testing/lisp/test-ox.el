@@ -747,6 +747,15 @@ Paragraph <2012-03-29 Thu>[2012-03-29 Thu]"
 			     (paragraph . (lambda (p c i) c))
 			     (section . (lambda (s c i) c))))
 	     nil nil nil '(:with-emphasize nil)))))
+  (should
+   (equal "/simple/ /example/\n"
+	  (org-test-with-temp-text "/simple/ /example/"
+	    (org-export-as
+	     (org-export-create-backend
+	      :transcoders '((bold . (lambda (b c i) "dummy"))
+			     (paragraph . (lambda (p c i) c))
+			     (section . (lambda (s c i) c))))
+	     nil nil nil '(:with-emphasize nil)))))
   ;; LaTeX environment.
   (should
    (equal "dummy\n"
@@ -830,7 +839,7 @@ Paragraph <2012-03-29 Thu>[2012-03-29 Thu]"
 			     (paragraph . (lambda (p c i) c))
 			     (section . (lambda (s c i) c))))
 	     nil nil nil '(:with-sub-superscript nil)))))
-  ;; Also handle uninterpreted objects in title.
+  ;; Handle uninterpreted objects in parsed keywords.
   (should
    (equal "a_b"
 	  (org-test-with-temp-text "#+TITLE: a_b"
@@ -838,10 +847,35 @@ Paragraph <2012-03-29 Thu>[2012-03-29 Thu]"
 	     (org-export-create-backend
 	      :transcoders
 	      '((subscript . (lambda (s c i) "dummy"))
-		(template . (lambda (c i) (org-export-data
-				      (plist-get i :title) i)))
+		(template . (lambda (c i)
+			      (org-export-data (plist-get i :title) i)))
 		(section . (lambda (s c i) c))))
 	     nil nil nil '(:with-sub-superscript nil)))))
+  (should
+   (equal "a_b"
+	  (org-test-with-temp-text "#+FOO: a_b"
+	    (org-export-as
+	     (org-export-create-backend
+	      :options
+	      '((:foo "FOO" nil nil parse))
+	      :transcoders
+	      '((subscript . (lambda (s c i) "dummy"))
+		(template . (lambda (c i)
+			      (org-export-data (plist-get i :foo) i)))
+		(section . (lambda (s c i) c))))
+	     nil nil nil '(:with-sub-superscript nil)))))
+  ;; Objects in parsed keywords are "uninterpreted" before filters are
+  ;; applied.
+  (should
+   (org-test-with-temp-text "#+TITLE: a_b"
+     (org-export-as
+      (org-export-create-backend
+       :filters
+       '((:filter-options
+	  (lambda (i _)
+	    (org-element-map (plist-get i :title) 'subscript
+	      (lambda (_) (error "There should be no subscript here")))))))
+      nil nil nil '(:with-sub-superscript nil))))
   ;; Handle uninterpreted objects in captions.
   (should
    (equal "adummy\n"
@@ -3223,8 +3257,9 @@ Another text. (ref:text)
   "Test `org-export-file-uri' specifications."
   ;; Preserve relative filenames.
   (should (equal "relative.org" (org-export-file-uri "relative.org")))
-  ;; Local files start with "file:///"
-  (should (equal "file:///local.org" (org-export-file-uri "/local.org")))
+  ;; Local files start with "file://"
+  (should (equal (concat (if (memq system-type '(windows-nt cygwin)) "file:///" "file://") (expand-file-name "/local.org"))
+		 (org-export-file-uri "/local.org")))
   ;; Remote files start with "file://"
   (should (equal "file://myself@some.where:papers/last.pdf"
 		 (org-export-file-uri "/myself@some.where:papers/last.pdf")))
@@ -3232,7 +3267,7 @@ Another text. (ref:text)
 		 (org-export-file-uri "//localhost/etc/fstab")))
   ;; Expand filename starting with "~".
   (should (equal (org-export-file-uri "~/file.org")
-		 (concat "file://" (expand-file-name "~/file.org")))))
+		 (concat (if (memq system-type '(windows-nt cygwin)) "file:///" "file://") (expand-file-name "~/file.org")))))
 
 (ert-deftest test-org-export/get-reference ()
   "Test `org-export-get-reference' specifications."
@@ -3328,12 +3363,12 @@ Another text. (ref:text)
   "Test `org-export-unravel-code' function."
   ;; Code without reference.
   (should
-   (equal '("(+ 1 1)\n")
+   (equal '("(+ 1 1)")
 	  (org-test-with-temp-text "#+BEGIN_EXAMPLE\n(+ 1 1)\n#+END_EXAMPLE"
 	    (org-export-unravel-code (org-element-at-point)))))
   ;; Code with reference.
   (should
-   (equal '("(+ 1 1)\n" (1 . "test"))
+   (equal '("(+ 1 1)" (1 . "test"))
 	  (org-test-with-temp-text
 	      "#+BEGIN_EXAMPLE\n(+ 1 1) (ref:test)\n#+END_EXAMPLE"
 	    (let  ((org-coderef-label-format "(ref:%s)"))
@@ -3341,14 +3376,14 @@ Another text. (ref:text)
   ;; Code with user-defined reference.
   (should
    (equal
-    '("(+ 1 1)\n" (1 . "test"))
+    '("(+ 1 1)" (1 . "test"))
     (org-test-with-temp-text
 	"#+BEGIN_EXAMPLE -l \"[ref:%s]\"\n(+ 1 1) [ref:test]\n#+END_EXAMPLE"
       (let ((org-coderef-label-format "(ref:%s)"))
 	(org-export-unravel-code (org-element-at-point))))))
   ;; Code references keys are relative to the current block.
   (should
-   (equal '("(+ 2 2)\n(+ 3 3)\n" (2 . "one"))
+   (equal '("(+ 2 2)\n(+ 3 3)" (2 . "one"))
 	  (org-test-with-temp-text "
 #+BEGIN_EXAMPLE -n
 \(+ 1 1)
@@ -3359,23 +3394,43 @@ Another text. (ref:text)
 #+END_EXAMPLE"
 	    (goto-line 5)
 	    (let ((org-coderef-label-format "(ref:%s)"))
-	      (org-export-unravel-code (org-element-at-point)))))))
+	      (org-export-unravel-code (org-element-at-point)))))))
 
 (ert-deftest test-org-export/format-code-default ()
   "Test `org-export-format-code-default' specifications."
-  ;; Return the empty string when code is empty.
+  ;; Preserve blank lines, even when code is empty.
   (should
-   (equal ""
+   (equal "\n\n"
 	  (org-test-with-parsed-data "#+BEGIN_SRC emacs-lisp\n\n\n#+END_SRC"
 	    (org-export-format-code-default
-	     (org-element-map tree 'src-block 'identity info t) info))))
+	     (org-element-map tree 'src-block #'identity info t) info))))
+  ;; Likewise, preserve leading and trailing blank lines in the code.
+  (should
+   (equal "\n(+ 1 1)\n"
+	  (org-test-with-parsed-data
+	      "#+BEGIN_SRC emacs-lisp\n\n(+ 1 1)\n#+END_SRC"
+	    (org-export-format-code-default
+	     (org-element-map tree 'src-block #'identity info t) info))))
+  (should
+   (equal "(+ 1 1)\n\n"
+	  (org-test-with-parsed-data
+	      "#+BEGIN_SRC emacs-lisp\n(+ 1 1)\n\n#+END_SRC"
+	    (org-export-format-code-default
+	     (org-element-map tree 'src-block #'identity info t) info))))
   ;; Number lines, two whitespace characters before the actual loc.
   (should
    (equal "1  a\n2  b\n"
 	  (org-test-with-parsed-data
 	      "#+BEGIN_SRC emacs-lisp +n\na\nb\n#+END_SRC"
 	    (org-export-format-code-default
-	     (org-element-map tree 'src-block 'identity info t) info))))
+	     (org-element-map tree 'src-block #'identity info t) info))))
+  ;; Numbering includes blank lines.
+  (should
+   (equal "1  \n2  a\n3  \n4  b\n5  \n"
+	  (org-test-with-parsed-data
+	      "#+BEGIN_SRC emacs-lisp +n\n\na\n\nb\n\n#+END_SRC"
+	    (org-export-format-code-default
+	     (org-element-map tree 'src-block #'identity info t) info))))
   ;; Put references 6 whitespace characters after the widest line,
   ;; wrapped within parenthesis.
   (should
@@ -3384,7 +3439,7 @@ Another text. (ref:text)
 	    (org-test-with-parsed-data
 		"#+BEGIN_SRC emacs-lisp\n123 (ref:a)\n1 (ref:b)\n#+END_SRC"
 	      (org-export-format-code-default
-	       (org-element-map tree 'src-block 'identity info t) info))))))
+	       (org-element-map tree 'src-block #'identity info t) info))))))
 
 
 

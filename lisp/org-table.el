@@ -1155,7 +1155,7 @@ to a number.  In the case of a timestamp, increment by days."
 			      (- (org-time-string-to-absolute txt)
 				 (org-time-string-to-absolute txt-up)))
 			     ((string-match org-ts-regexp3 txt) 1)
-			     ((string-match "^[0-9]+\\(\.[0-9]+\\)?" txt-up)
+			     ((string-match "\\([-+]\\)?[0-9]+\\(?:\.[0-9]+\\)?" txt-up)
 			      (- (string-to-number txt)
 				 (string-to-number (match-string 0 txt-up))))
 			     (t 1)))
@@ -1494,7 +1494,9 @@ non-nil, the one above is used."
        (unless (org-at-table-hline-p)
 	 (org-table-goto-column col1 t)
 	 (when (looking-at "|\\([^|\n]+\\)|\\([^|\n]+\\)|")
-	   (replace-match "|\\2|\\1|")))
+           (transpose-regions
+            (match-beginning 1) (match-end 1)
+            (match-beginning 2) (match-end 2))))
        (forward-line)))
     (set-marker end nil)
     (org-table-goto-column colpos)
@@ -4472,7 +4474,7 @@ to execute outside of tables."
 	"--"
 	("Radio tables"
 	 ["Insert table template" orgtbl-insert-radio-table
-	  (assq major-mode orgtbl-radio-table-templates)]
+	  (cl-assoc-if #'derived-mode-p orgtbl-radio-table-templates)]
 	 ["Comment/uncomment table" orgtbl-toggle-comment t])
 	"--"
 	["Set Column Formula" org-table-eval-formula :active (org-at-table-p) :keys "C-c ="]
@@ -4721,7 +4723,7 @@ First element has index 0, or I0 if given."
 (defun orgtbl-insert-radio-table ()
   "Insert a radio table template appropriate for this major mode."
   (interactive)
-  (let* ((e (assq major-mode orgtbl-radio-table-templates))
+  (let* ((e (cl-assoc-if #'derived-mode-p orgtbl-radio-table-templates))
 	 (txt (nth 1 e))
 	 name pos)
     (unless e (user-error "No radio table setup defined for %s" major-mode))

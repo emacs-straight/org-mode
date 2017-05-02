@@ -1784,7 +1784,7 @@ When non-nil, this must be the number of minutes, e.g. 60 for one hour."
 (defcustom org-agenda-show-inherited-tags t
   "Non-nil means show inherited tags in each agenda line.
 
-When this option is set to `always', it take precedences over
+When this option is set to `always', it takes precedence over
 `org-agenda-use-tag-inheritance' and inherited tags are shown
 in every agenda.
 
@@ -2358,7 +2358,7 @@ The following commands are available:
      ["Fortnight View" org-agenda-fortnight-view
       :active (org-agenda-check-type nil 'agenda)
       :style radio :selected (eq org-agenda-current-span 'fortnight)
-      :keys "v f"]
+      :keys "v t"]
      ["Month View" org-agenda-month-view
       :active (org-agenda-check-type nil 'agenda)
       :style radio :selected (eq org-agenda-current-span 'month)
@@ -4201,13 +4201,14 @@ items if they have an hour specification like [h]h:mm."
   (catch 'exit
     (setq org-agenda-buffer-name
 	  (or org-agenda-buffer-tmp-name
+	      (and org-agenda-doing-sticky-redo org-agenda-buffer-name)
 	      (if org-agenda-sticky
 		  (cond ((and org-keys (stringp org-match))
 			 (format "*Org Agenda(%s:%s)*" org-keys org-match))
 			(org-keys
 			 (format "*Org Agenda(%s)*" org-keys))
 			(t "*Org Agenda(a)*")))
-	      org-agenda-buffer-name))
+	      "*Org Agenda*"))
     (org-agenda-prepare "Day/Week")
     (setq start-day (or start-day org-agenda-start-day))
     (if (stringp start-day)
@@ -5131,7 +5132,11 @@ of what a project is and how to check if it stuck, customize the variable
     (setq org-agenda-buffer-name (buffer-name))
     (with-current-buffer org-agenda-buffer-name
       (setq org-agenda-redo-command
-	    `(org-agenda-list-stuck-projects ,current-prefix-arg)))))
+	    `(org-agenda-list-stuck-projects ,current-prefix-arg))
+      (let ((inhibit-read-only t))
+        (add-text-properties
+         (point-min) (point-max)
+         `(org-redo-cmd ,org-agenda-redo-command))))))
 
 ;;; Diary integration
 
@@ -6372,7 +6377,7 @@ scheduled items with an hour specification like [h]h:mm."
 			((= schedule current) first)
 			;; Subsequent reminders.  Count from base
 			;; schedule.
-			(t (format next (1+ diff)))))
+			(t (format next diff))))
 		     head level category tags time nil habitp))
 		   (face (cond ((and (not habitp) pastschedp)
 				'org-scheduled-previously)
@@ -7445,14 +7450,15 @@ With a prefix argument, exclude the lines of that category.
        (t (error "No category at point"))))))
 
 (defun org-find-top-headline (&optional pos)
-  "Find the topmost parent headline and return it."
+  "Find the topmost parent headline and return it.
+POS when non-nil is the marker or buffer position to start the
+search from."
   (save-excursion
-    (with-current-buffer (if pos (marker-buffer pos) (current-buffer))
-      (if pos (goto-char pos))
-      ;; Skip up to the topmost parent
-      (while (ignore-errors (outline-up-heading 1) t))
-      (ignore-errors
-	(nth 4 (org-heading-components))))))
+    (with-current-buffer (if (markerp pos) (marker-buffer pos) (current-buffer))
+      (when pos (goto-char pos))
+      ;; Skip up to the topmost parent.
+      (while (org-up-heading-safe))
+      (ignore-errors (nth 4 (org-heading-components))))))
 
 (defvar org-agenda-filtered-by-top-headline nil)
 (defun org-agenda-filter-by-top-headline (strip)
