@@ -723,16 +723,6 @@ captured item after finalizing."
 		(kill-region m1 m2))
 	    (setq abort-note 'dirty)))
 
-      ;; Make sure that the empty lines after are correct
-      (when (and (> (point-max) end) ; indeed, the buffer was still narrowed
-		 (member (org-capture-get :type 'local)
-			 '(entry item checkitem plain)))
-	(save-excursion
-	  (goto-char end)
-	  (or (bolp) (newline))
-	  (org-capture-empty-lines-after
-	   (or (org-capture-get :empty-lines-after 'local)
-	       (org-capture-get :empty-lines 'local) 0))))
       ;; Postprocessing:  Update Statistics cookies, do the sorting
       (when (derived-mode-p 'org-mode)
 	(save-excursion
@@ -1068,48 +1058,38 @@ may have been stored before."
 
 (defun org-capture-place-entry ()
   "Place the template as a new Org entry."
-  (let* ((txt (org-capture-get :template))
-	 (reversed (org-capture-get :prepend))
-	 (target-entry-p (org-capture-get :target-entry-p))
-	 level beg end)
-
-    (and (org-capture-get :exact-position)
-	 (goto-char (org-capture-get :exact-position)))
+  (let ((reversed? (org-capture-get :prepend))
+	level)
+    (when (org-capture-get :exact-position)
+      (goto-char (org-capture-get :exact-position)))
     (cond
-     ((not target-entry-p)
-      ;; Insert as top-level entry, either at beginning or at end of
-      ;; file.
-      (setq level 1)
-      (if reversed
-	  (progn (goto-char (point-min))
-		 (or (org-at-heading-p)
-		     (outline-next-heading)))
-	(goto-char (point-max))
-	(or (bolp) (insert "\n"))))
-     (t
-      ;; Insert as a child of the current entry
-      (and (looking-at "\\*+")
-	   (setq level (- (match-end 0) (match-beginning 0))))
-      (setq level (org-get-valid-level (or level 1) 1))
-      (if reversed
-	  (progn
-	    (outline-next-heading)
-	    (or (bolp) (insert "\n")))
-	(org-end-of-subtree t nil)
-	(or (bolp) (insert "\n")))))
+     ;; Insert as a child of the current entry.
+     ((org-capture-get :target-entry-p)
+      (setq level (org-get-valid-level
+		   (if (org-at-heading-p) (org-outline-level) 1)
+		   1))
+      (if reversed? (outline-next-heading) (org-end-of-subtree t)))
+     ;; Insert as a top-level entry at the beginning of the file.
+     (reversed?
+      (goto-char (point-min))
+      (unless (org-at-heading-p) (outline-next-heading)))
+     ;; Otherwise, insert as a top-level entry at the end of the file.
+     (t (goto-char (point-max))))
+    (unless (bolp) (insert "\n"))
     (org-capture-empty-lines-before)
-    (setq beg (point))
-    (org-capture-verify-tree txt)
-    (org-paste-subtree level txt 'for-yank)
-    (org-capture-empty-lines-after 1)
-    (org-capture-position-for-last-stored beg)
-    (outline-next-heading)
-    (setq end (point))
-    (org-capture-mark-kill-region beg (1- end))
-    (org-capture-narrow beg (1- end))
-    (if (or (re-search-backward "%\\?" beg t)
-	    (re-search-forward "%\\?" end t))
-	(replace-match ""))))
+    (let ((beg (point))
+	  (template (org-capture-get :template)))
+      (org-capture-verify-tree template)
+      (org-paste-subtree level template 'for-yank)
+      (org-capture-empty-lines-after)
+      (org-capture-position-for-last-stored beg)
+      (unless (org-at-heading-p) (outline-next-heading))
+      (let ((end (point)))
+	(org-capture-mark-kill-region beg end)
+	(org-capture-narrow beg end)
+	(when (or (re-search-backward "%\\?" beg t)
+		  (re-search-forward "%\\?" end t))
+	  (replace-match ""))))))
 
 (defun org-capture-place-item ()
   "Place the template as a new plain list item."
@@ -1161,7 +1141,7 @@ may have been stored before."
 		      "\n"))
     ;; Insert item.
     (insert txt)
-    (org-capture-empty-lines-after 1)
+    (org-capture-empty-lines-after)
     (org-capture-position-for-last-stored beg)
     (forward-char 1)
     (setq end (point))
@@ -1282,7 +1262,7 @@ Of course, if exact position has been required, just put it there."
     (org-capture-empty-lines-before)
     (setq beg (point))
     (insert txt)
-    (org-capture-empty-lines-after 1)
+    (org-capture-empty-lines-after)
     (org-capture-position-for-last-stored beg)
     (setq end (point))
     (org-capture-mark-kill-region beg (1- end))
@@ -1366,7 +1346,7 @@ Point will remain at the first line after the inserted text."
   (let* ((template (org-capture-get :template))
 	 (type  (org-capture-get :type))
 	 beg end pp)
-    (or (bolp) (newline))
+    (unless (bolp) (insert "\n"))
     (setq beg (point))
     (cond
      ((and (eq type 'entry) (derived-mode-p 'org-mode))
@@ -1388,13 +1368,16 @@ Point will remain at the first line after the inserted text."
       (org-capture-empty-lines-after)
       (goto-char beg)
       (org-list-repair)
-      (org-end-of-item)
-      (setq end (point)))
-     (t (insert template)))
+      (org-end-of-item))
+     (t
+      (insert template)
+      (org-capture-empty-lines-after)
+      (skip-chars-forward " \t\n")
+      (unless (eobp) (beginning-of-line))))
     (setq end (point))
     (goto-char beg)
-    (if (re-search-forward "%\\?" end t)
-	(replace-match ""))))
+    (when (re-search-forward "%\\?" end t)
+      (replace-match ""))))
 
 (defun org-capture-set-plist (entry)
   "Initialize the property list from the template definition."

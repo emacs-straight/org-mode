@@ -137,6 +137,7 @@ Stars are put in group 1 and the trimmed body in group 2.")
 (declare-function org-element-copy "org-element" (datum))
 (declare-function org-element-interpret-data "org-element" (data))
 (declare-function org-element-lineage "org-element" (blob &optional types with-self))
+(declare-function org-element-link-parser "org-element" ())
 (declare-function org-element-nested-p "org-element" (elem-a elem-b))
 (declare-function org-element-parse-buffer "org-element" (&optional granularity visible-only))
 (declare-function org-element-property "org-element" (property element))
@@ -5847,7 +5848,7 @@ This should be called after the variable `org-link-parameters' has changed."
 	  org-plain-link-re
 	  (concat
 	   "\\<" types-re ":"
-	   "\\([^ \t\n()<>]+\\(?:([[:word:]0-9_]+)\\|\\([^[:punct:] \t\n]\\|/\\)\\)\\)")
+	   "\\([^][ \t\n()<>]+\\(?:([[:word:]0-9_]+)\\|\\([^[:punct:] \t\n]\\|/\\)\\)\\)")
 	  ;;	 "\\([^]\t\n\r<>() ]+[^]\t\n\r<>,.;() ]\\)")
 	  org-bracket-link-regexp
 	  "\\[\\[\\([^][]+\\)\\]\\(\\[\\([^][]+\\)\\]\\)?\\]"
@@ -5956,62 +5957,71 @@ prompted for."
 (defsubst org-rear-nonsticky-at (pos)
   (add-text-properties (1- pos) pos (list 'rear-nonsticky org-nonsticky-props)))
 
-(defun org-activate-plain-links (limit)
-  "Add link properties for plain links."
-  (when (and (re-search-forward org-plain-link-re limit t)
-	     (not (org-in-src-block-p)))
-
-    (let* ((face (get-text-property (max (1- (match-beginning 0)) (point-min))
-				    'face))
-	   (link (match-string-no-properties 0))
-	   (type (match-string-no-properties 1))
-	   (path (match-string-no-properties 2))
-	   (link-start (match-beginning 0))
-	   (link-end (match-end 0))
-	   (link-face (org-link-get-parameter type :face))
-	   (help-echo (org-link-get-parameter type :help-echo))
-	   (htmlize-link (org-link-get-parameter type :htmlize-link))
-	   (activate-func (org-link-get-parameter type :activate-func)))
-      (unless (if (consp face) (memq 'org-tag face) (eq 'org-tag face))
-	(org-remove-flyspell-overlays-in (match-beginning 0) (match-end 0))
-	(add-text-properties (match-beginning 0) (match-end 0)
-			     (list
-			      'mouse-face (or (org-link-get-parameter type :mouse-face)
-					      'highlight)
-			      'face (cond
-				     ;; A function that returns a face
-				     ((functionp link-face)
-				      (funcall link-face path))
-				     ;; a face
-				     ((facep link-face)
-				      link-face)
-				     ;; An anonymous face
-				     ((consp link-face)
-				      link-face)
-				     ;; default
-				     (t
-				      'org-link))
-			      'help-echo (cond
-					  ((stringp help-echo)
-					   help-echo)
-					  ((functionp help-echo)
-					   help-echo)
-					  (t
-					   (concat "LINK: "
-						   (save-match-data
-						     (org-link-unescape link)))))
-			      'htmlize-link (cond
-					     ((functionp htmlize-link)
-					      (funcall htmlize-link path))
-					     (t
-					      `(:uri ,link)))
-			      'keymap (or (org-link-get-parameter type :keymap)
-					  org-mouse-map)
-			      'org-link-start (match-beginning 0)))
-	(org-rear-nonsticky-at (match-end 0))
-	(when activate-func
-	  (funcall activate-func link-start link-end path nil))
-	t))))
+(defun org-activate-links (limit)
+  "Add link properties to links.
+This includes angle, plain, and bracket links."
+  (catch :exit
+    (while (re-search-forward org-any-link-re limit t)
+      (let* ((start (match-beginning 0))
+	     (end (match-end 0))
+	     (type (cond ((eq ?< (char-after start)) 'angle)
+			 ((eq ?\[ (char-after (1+ start))) 'bracket)
+			 (t 'plain))))
+	(when (and (memq type org-highlight-links)
+		   ;; Do not confuse plain links with tags.
+		   (not (and (eq type 'plain)
+			     (let ((face (get-text-property
+					  (max (1- start) (point-min)) 'face)))
+			       (if (consp face) (memq 'org-tag face)
+				 (eq 'org-tag face))))))
+	  (let* ((link-object (save-excursion
+				(goto-char start)
+				(save-match-data (org-element-link-parser))))
+		 (link (org-element-property :raw-link link-object))
+		 (path (org-element-property :path link-object))
+		 (properties		;for link's visible part
+		  (list
+		   'face (pcase (org-link-get-parameter type :face)
+			   ((and (pred functionp) face) (funcall face path))
+			   ((and (pred facep) face) face)
+			   ((and (pred consp) face) face) ;anonymous
+			   (_ 'org-link))
+		   'mouse-face (or (org-link-get-parameter type :mouse-face)
+				   'highlight)
+		   'keymap (or (org-link-get-parameter type :keymap)
+			       org-mouse-map)
+		   'help-echo (pcase (org-link-get-parameter type :help-echo)
+				((and (pred stringp) echo) echo)
+				((and (pred functionp) echo) echo)
+				(_ (concat "LINK: " link)))
+		   'htmlize-link (pcase (org-link-get-parameter type
+								:htmlize-link)
+				   ((and (pred functionp) f) (funcall f))
+				   (_ `(:uri ,link)))
+		   'font-lock-multiline t)))
+	    (org-remove-flyspell-overlays-in start end)
+	    (org-rear-nonsticky-at end)
+	    (if (not (eq 'bracket type))
+		(add-text-properties start end properties)
+	      ;; Handle invisible parts in bracket links.
+	      (remove-text-properties start end '(invisible nil))
+	      (let ((hidden
+		     (append `(invisible
+			       ,(or (org-link-get-parameter type :display)
+				    'org-link))
+			     properties))
+		    (visible-start (or (match-beginning 4) (match-beginning 2)))
+		    (visible-end (or (match-end 4) (match-end 2))))
+		(add-text-properties start visible-start hidden)
+		(add-text-properties visible-start visible-end properties)
+		(add-text-properties visible-end end hidden)
+		(org-rear-nonsticky-at visible-start)
+		(org-rear-nonsticky-at visible-end)))
+	    (let ((f (org-link-get-parameter type :activate-func)))
+	      (when (functionp f)
+		(funcall f start end path (eq type 'bracket))))
+	    (throw :exit t)))))		;signal success
+    nil))
 
 (defun org-activate-code (limit)
   (when (re-search-forward "^[ \t]*\\(:\\(?: .*\\|$\\)\n?\\)" limit t)
@@ -6166,18 +6176,6 @@ by a #."
     (org-remove-flyspell-overlays-in (match-beginning 0) (match-end 0))
     t))
 
-(defun org-activate-angle-links (limit)
-  "Add text properties for angle links."
-  (when (and (re-search-forward org-angle-link-re limit t)
-	     (not (org-in-src-block-p)))
-    (org-remove-flyspell-overlays-in (match-beginning 0) (match-end 0))
-    (add-text-properties (match-beginning 0) (match-end 0)
-			 (list 'mouse-face 'highlight
-			       'keymap org-mouse-map
-			       'font-lock-multiline t))
-    (org-rear-nonsticky-at (match-end 0))
-    t))
-
 (defun org-activate-footnote-links (limit)
   "Add text properties for footnotes."
   (let ((fn (org-footnote-next-reference-or-definition limit)))
@@ -6200,96 +6198,6 @@ by a #."
 				   'font-lock-fontified t
 				   'font-lock-multiline t
 				   'face 'org-footnote))))))
-
-(defun org-activate-bracket-links (limit)
-  "Add text properties for bracketed links."
-  (when (and (re-search-forward org-bracket-link-regexp limit t)
-	     (not (org-in-src-block-p)))
-    (let* ((hl (save-match-data
-		 (org-link-expand-abbrev (match-string-no-properties 1))))
-	   (type (save-match-data
-		   (and (string-match org-plain-link-re hl)
-			(match-string-no-properties 1 hl))))
-	   (path (save-match-data
-		   (and (string-match org-plain-link-re hl)
-			(match-string-no-properties 2 hl))))
-	   (link-start (match-beginning 0))
-	   (link-end (match-end 0))
-	   (bracketp t)
-	   (help-echo (org-link-get-parameter type :help-echo))
-	   (help (cond
-		  ((stringp help-echo)
-		   help-echo)
-		  ((functionp help-echo)
-		   help-echo)
-		  (t
-		   (concat "LINK: "
-			   (save-match-data
-			     (org-link-unescape hl))))))
-	   (link-face (org-link-get-parameter type :face))
-	   (face (cond
-		  ;; A function that returns a face
-		  ((functionp link-face)
-		   (funcall link-face path))
-		  ;; a face
-		  ((facep link-face)
-		   link-face)
-		  ;; An anonymous face
-		  ((consp link-face)
-		   link-face)
-		  ;; default
-		  (t
-		   'org-link)))
-	   (keymap (or (org-link-get-parameter type :keymap)
-		       org-mouse-map))
-	   (mouse-face (or (org-link-get-parameter type :mouse-face)
-			   'highlight))
-	   (htmlize (org-link-get-parameter type :htmlize-link))
-	   (htmlize-link (cond
-			  ((functionp htmlize)
-			   (funcall htmlize))
-			  (t
-			   `(:uri ,(format "%s:%s" type path)))))
-	   (activate-func (org-link-get-parameter type :activate-func))
-	   ;; invisible part
-	   (ip (list 'invisible (or
-				 (org-link-get-parameter type :display)
-				 'org-link)
-		     'face face
-		     'keymap keymap
-		     'mouse-face mouse-face
-		     'font-lock-multiline t
-		     'help-echo help
-		     'htmlize-link htmlize-link))
-	   ;; visible part
-	   (vp (list 'keymap keymap
-		     'face face
-		     'mouse-face mouse-face
-		     'font-lock-multiline t
-		     'help-echo help
-		     'htmlize-link htmlize-link)))
-      ;; We need to remove the invisible property here.  Table narrowing
-      ;; may have made some of this invisible.
-      (org-remove-flyspell-overlays-in (match-beginning 0) (match-end 0))
-      (remove-text-properties (match-beginning 0) (match-end 0)
-			      '(invisible nil))
-      (if (match-end 3)
-	  (progn
-	    (add-text-properties (match-beginning 0) (match-beginning 3) ip)
-	    (org-rear-nonsticky-at (match-beginning 3))
-	    (add-text-properties (match-beginning 3) (match-end 3) vp)
-	    (org-rear-nonsticky-at (match-end 3))
-	    (add-text-properties (match-end 3) (match-end 0) ip)
-	    (org-rear-nonsticky-at (match-end 0)))
-	(add-text-properties (match-beginning 0) (match-beginning 1) ip)
-	(org-rear-nonsticky-at (match-beginning 1))
-	(add-text-properties (match-beginning 1) (match-end 1) vp)
-	(org-rear-nonsticky-at (match-end 1))
-	(add-text-properties (match-end 1) (match-end 0) ip)
-	(org-rear-nonsticky-at (match-end 0)))
-      (when activate-func
-	(funcall activate-func link-start link-end path bracketp))
-      t)))
 
 (defun org-activate-dates (limit)
   "Add text properties for dates."
@@ -6557,11 +6465,9 @@ needs to be inserted at a specific position in the font-lock sequence.")
 	   (list org-property-re
 		 '(1 'org-special-keyword t)
 		 '(3 'org-property-value t))
-	   ;; Links
+	   ;; Link related fontification.
+	   '(org-activate-links)
 	   (when (memq 'tag lk) '(org-activate-tags (1 'org-tag prepend)))
-	   (when (memq 'angle lk) '(org-activate-angle-links (0 'org-link t)))
-	   (when (memq 'plain lk) '(org-activate-plain-links (0 'org-link)))
-	   (when (memq 'bracket lk) '(org-activate-bracket-links (0 'org-link)))
 	   (when (memq 'radio lk) '(org-activate-target-links (1 'org-link t)))
 	   (when (memq 'date lk) '(org-activate-dates (0 'org-date t)))
 	   (when (memq 'footnote lk) '(org-activate-footnote-links))
@@ -9090,7 +8996,8 @@ hook gets called.  When a region or a plain list is sorted, the cursor
 will be in the first entry of the sorted region/list.")
 
 (defun org-sort-entries
-    (&optional with-case sorting-type getkey-func compare-func property)
+    (&optional with-case sorting-type getkey-func compare-func property
+	       interactive?)
   "Sort entries on a certain level of an outline tree.
 If there is an active region, the entries in the region are sorted.
 Else, if the cursor is before the first entry, sort the top-level items.
@@ -9120,8 +9027,9 @@ t   By date/time, either the first active time stamp in the entry, or, if
 Capital letters will reverse the sort order.
 
 If the SORTING-TYPE is ?f or ?F, then GETKEY-FUNC specifies a function to be
-called with point at the beginning of the record.  It must return either
-a string or a number that should serve as the sorting key for that record.
+called with point at the beginning of the record.  It must return a
+value that is compatible with COMPARE-FUNC, the function used to
+compare entries.
 
 Comparing entries ignores case by default.  However, with an optional argument
 WITH-CASE, the sorting considers case as well.
@@ -9129,8 +9037,11 @@ WITH-CASE, the sorting considers case as well.
 Sorting is done against the visible part of the headlines, it ignores hidden
 links.
 
-When sorting is done, call `org-after-sorting-entries-or-items-hook'."
-  (interactive "P")
+When sorting is done, call `org-after-sorting-entries-or-items-hook'.
+
+A non-nil value for INTERACTIVE? is used to signal that this
+function is being called interactively."
+  (interactive (list current-prefix-arg nil nil nil nil t))
   (let ((case-func (if with-case 'identity 'downcase))
 	(cmstr
 	 ;; The clock marker is lost when using `sort-subr', let's
@@ -9199,21 +9110,22 @@ When sorting is done, call `org-after-sorting-entries-or-items-hook'."
                [t]ime [s]cheduled  [d]eadline  [c]reated  cloc[k]ing
                A/N/P/R/O/F/T/S/D/C/K means reversed:"
        what)
-      (setq sorting-type (read-char-exclusive))
+      (setq sorting-type (read-char-exclusive)))
 
-      (unless getkey-func
-	(and (= (downcase sorting-type) ?f)
-	     (setq getkey-func
-		   (completing-read "Sort using function: "
-				    obarray 'fboundp t nil nil))
-	     (setq getkey-func (intern getkey-func))))
+    (unless getkey-func
+      (and (= (downcase sorting-type) ?f)
+	   (setq getkey-func
+		 (or (and interactive?
+			  (org-read-function
+			   "Function for extracting keys: "))
+		     (error "Missing key extractor")))))
 
-      (and (= (downcase sorting-type) ?r)
-	   (not property)
-           (setq property
-                 (completing-read "Property: "
-				  (mapcar #'list (org-buffer-property-keys t))
-				  nil t))))
+    (and (= (downcase sorting-type) ?r)
+	 (not property)
+	 (setq property
+	       (completing-read "Property: "
+				(mapcar #'list (org-buffer-property-keys t))
+				nil t)))
 
     (when (member sorting-type '(?k ?K)) (org-clock-sum))
     (message "Sorting entries...")
@@ -9297,7 +9209,13 @@ When sorting is done, call `org-after-sorting-entries-or-items-hook'."
          nil
          (cond
           ((= dcst ?a) 'string<)
-          ((= dcst ?f) compare-func)
+          ((= dcst ?f)
+	   (or compare-func
+	       (and interactive?
+		    (org-read-function
+		     (concat "Function for comparing keys "
+			     "(empty for default `sort-subr' predicate): ")
+		     'allow-empty))))
           ((member dcst '(?p ?t ?s ?d ?c ?k)) '<)))))
     (run-hooks 'org-after-sorting-entries-or-items-hook)
     ;; Reset the clock marker if needed
@@ -9696,11 +9614,11 @@ auto-fill\\|normal-auto-fill\\|fill-paragraph\\|indent-\\)"
   "Clone local variables from FROM-BUFFER.
 Optional argument REGEXP selects variables to clone."
   (dolist (pair (buffer-local-variables from-buffer))
-    (let ((name (car pair)))
-      (when (and (symbolp name)
-		 (not (memq name org-unique-local-variables))
-		 (or (null regexp) (string-match regexp (symbol-name name))))
-	(set (make-local-variable name) (cdr pair))))))
+    (pcase pair
+      (`(,name . ,value)		;ignore unbound variables
+       (when (and (not (memq name org-unique-local-variables))
+		  (or (null regexp) (string-match-p regexp (symbol-name name))))
+	 (set (make-local-variable name) value))))))
 
 ;;;###autoload
 (defun org-run-like-in-org-mode (cmd)
@@ -9813,22 +9731,19 @@ sub-tree if optional argument INHERIT is non-nil."
 
 (defun org-refresh-stats-properties ()
   "Refresh stats text properties in the buffer."
-  (let (stats)
-    (org-with-silent-modifications
-     (org-with-wide-buffer
-      (goto-char (point-min))
-      (while (re-search-forward
-	      (concat org-outline-regexp-bol ".*"
-		      "\\(?:\\[\\([0-9]+\\)%\\|\\([0-9]+\\)/\\([0-9]+\\)\\]\\)")
-	      nil t)
-	(setq stats (cond ((equal (match-string 3) "0") 0)
-			  ((match-string 2)
-			   (/ (* (string-to-number (match-string 2)) 100)
-			      (string-to-number (match-string 3))))
-			  (t (string-to-number (match-string 1)))))
-	(org-back-to-heading t)
-	(put-text-property (point) (progn (org-end-of-subtree t t) (point))
-			   'org-stats stats))))))
+  (org-with-silent-modifications
+   (org-with-point-at 1
+     (let ((regexp (concat org-outline-regexp-bol
+			   ".*\\[\\([0-9]*\\)\\(?:%\\|/\\([0-9]*\\)\\)\\]")))
+       (while (re-search-forward regexp nil t)
+	 (let* ((numerator (string-to-number (match-string 1)))
+		(denominator (and (match-end 2)
+				  (string-to-number (match-string 2))))
+		(stats (cond ((not denominator) numerator) ;percent
+			     ((= denominator 0) 0)
+			     (t (/ (* numerator 100) denominator)))))
+	   (put-text-property (point) (progn (org-end-of-subtree t t) (point))
+			      'org-stats stats)))))))
 
 (defun org-refresh-effort-properties ()
   "Refresh effort properties"
@@ -9912,9 +9827,10 @@ and then used in capture templates."
 This link is added to `org-stored-links' and can later be inserted
 into an Org buffer with `org-insert-link' (`\\[org-insert-link]').
 
-For some link types, a `\\[universal-argument]' prefix ARG is interpreted.
-For links to Usenet articles, ARG negates `org-gnus-prefer-web-links'.
-For file links, ARG negates `org-context-in-file-links'.
+For some link types, a `\\[universal-argument]' prefix ARG is interpreted.  \
+A single
+`\\[universal-argument]' negates `org-context-in-file-links' for file links or
+`org-gnus-prefer-web-links' for links to Usenet articles.
 
 A `\\[universal-argument] \\[universal-argument]' prefix ARG forces \
 skipping storing functions that are not
@@ -10076,7 +9992,8 @@ active region."
 				(abbreviate-file-name
 				 (buffer-file-name (buffer-base-buffer)))))
 	   ;; Add a context search string
-	   (when (org-xor org-context-in-file-links arg)
+	   (when (org-xor org-context-in-file-links
+			  (equal arg '(4)))
 	     (let* ((element (org-element-at-point))
 		    (name (org-element-property :name element)))
 	       (setq txt (cond
@@ -10103,7 +10020,8 @@ active region."
 			     (abbreviate-file-name
 			      (buffer-file-name (buffer-base-buffer)))))
 	;; Add a context string.
-	(when (org-xor org-context-in-file-links arg)
+	(when (org-xor org-context-in-file-links
+		       (equal arg '(4)))
 	  (setq txt (if (org-region-active-p)
 			(buffer-substring (region-beginning) (region-end))
 		      (buffer-substring (point-at-bol) (point-at-eol))))
@@ -11813,7 +11731,7 @@ order.")
 	      (org-refile-cache-put tgs (buffer-file-name) descre))
 	    (setq targets (append tgs targets))))))
     (message "Getting targets...done")
-    (nreverse targets)))
+    (delete-dups (nreverse targets))))
 
 (defun org-protect-slash (s)
   (replace-regexp-in-string "/" "\\/" s nil t))
@@ -22790,6 +22708,7 @@ it for output."
 
 ;;; Indentation
 
+(defvar org-element-greater-elements)
 (defun org--get-expected-indentation (element contentsp)
   "Expected indentation column for current line, according to ELEMENT.
 ELEMENT is an element containing point.  CONTENTSP is non-nil
@@ -24676,7 +24595,6 @@ Move to the previous element at the same level, when possible."
 	    (user-error "No surrounding element")
 	  (org-with-limited-levels (org-back-to-heading)))))))
 
-(defvar org-element-greater-elements)
 (defun org-down-element ()
   "Move to inner element."
   (interactive)

@@ -223,21 +223,24 @@ See `org-columns-summary-types' for details.")
 
 (defun org-columns--displayed-value (spec value)
   "Return displayed value for specification SPEC in current entry.
-
 SPEC is a column format specification as stored in
 `org-columns-current-fmt-compiled'.  VALUE is the real value to
 display, as a string."
-  (cond
-   ((and (functionp org-columns-modify-value-for-display-function)
-	 (funcall org-columns-modify-value-for-display-function
-		  (nth 1 spec)
-		  value)))
-   ((equal (car spec) "ITEM")
-    (concat (make-string (1- (org-current-level))
-			 (if org-hide-leading-stars ?\s ?*))
-	    "* "
-	    (org-columns-compact-links value)))
-   (value)))
+  (or (and (functionp org-columns-modify-value-for-display-function)
+	   (funcall org-columns-modify-value-for-display-function
+		    (nth 1 spec)	;column name
+		    value))
+      (pcase spec
+	(`("ITEM" . ,_)
+	 (concat (make-string (1- (org-current-level))
+			      (if org-hide-leading-stars ?\s ?*))
+		 "* "
+		 (org-columns-compact-links value)))
+	(`(,_ ,_ ,_ ,_ nil) value)
+	;; If PRINTF is set, assume we are displaying a number and
+	;; obey to the format string.
+	(`(,_ ,_ ,_ ,_ ,printf) (format printf (string-to-number value)))
+	(_ (error "Invalid column specification format: %S" spec)))))
 
 (defun org-columns--collect-values (&optional compiled-fmt)
   "Collect values for columns on the current line.
@@ -778,6 +781,7 @@ view for the whole buffer unconditionally.
 When COLUMNS-FMT-STRING is non-nil, use it as the column format."
   (interactive "P")
   (org-columns-remove-overlays)
+  (when global (goto-char (point-min)))
   (move-marker org-columns-begin-marker (point))
   (org-columns-goto-top-level)
   ;; Initialize `org-columns-current-fmt' and
@@ -1165,8 +1169,13 @@ properties drawers."
 	       ;; When PROPERTY exists in current node, even if empty,
 	       ;; but its value doesn't match the one computed, use
 	       ;; the latter instead.
-	       (when (and update value (not (equal value summary)))
-		 (org-entry-put (point) property summary)))
+	       ;;
+	       ;; Ignore leading or trailing white spaces that might
+	       ;; have been introduced in summary, since those are not
+	       ;; significant in properties value.
+	       (let ((new-value (org-trim summary)))
+		 (when (and update value (not (equal value new-value)))
+		   (org-entry-put (point) property new-value))))
 	     ;; Add current to current level accumulator.
 	     (when (or summary value-set)
 	       (push (or summary value) (aref lvals level)))
@@ -1223,14 +1232,17 @@ When PRINTF is non-nil, use it to format the result."
 (defun org-columns--summary-checkbox-count (check-boxes _)
   "Summarize CHECK-BOXES with a check-box cookie."
   (format "[%d/%d]"
-	  (cl-count "[X]" check-boxes :test #'equal)
+	  (cl-count-if (lambda (b) (or (equal b "[X]")
+				  (string-match-p "\\[\\([1-9]\\)/\\1\\]" b)))
+		       check-boxes)
 	  (length check-boxes)))
 
 (defun org-columns--summary-checkbox-percent (check-boxes _)
   "Summarize CHECK-BOXES with a check-box percent."
   (format "[%d%%]"
-	  (round (* 100.0 (cl-count "[X]" check-boxes :test #'equal))
-		 (float (length check-boxes)))))
+	  (round (* 100.0 (cl-count-if (lambda (b) (member b '("[X]" "[100%]")))
+				       check-boxes))
+		 (length check-boxes))))
 
 (defun org-columns--summary-min (values printf)
   "Compute the minimum of VALUES.
@@ -1288,7 +1300,7 @@ When PRINTF is non-nil, use it to format the result."
    (/ (apply #'+ (mapcar #'org-columns--age-to-seconds ages))
       (float (length ages)))))
 
-(defun org-columns--summary-estimate (estimates printf)
+(defun org-columns--summary-estimate (estimates _)
   "Combine a list of estimates, using mean and variance.
 The mean and variance of the result will be the sum of the means
 and variances (respectively) of the individual estimates."
@@ -1303,8 +1315,8 @@ and variances (respectively) of the individual estimates."
 	(`(,value) (cl-incf mean value))))
     (let ((sd (sqrt var)))
       (format "%s-%s"
-	      (format (or printf "%.0f") (- mean sd))
-	      (format (or printf "%.0f") (+ mean sd))))))
+	      (format "%.0f" (- mean sd))
+	      (format "%.0f" (+ mean sd))))))
 
 
 

@@ -2131,13 +2131,12 @@ The following commands are available:
 	 ;; while letting `kill-all-local-variables' kill the rest
 	 (let ((save (buffer-local-variables)))
 	   (kill-all-local-variables)
-	   (mapc 'make-local-variable org-agenda-local-vars)
+	   (mapc #'make-local-variable org-agenda-local-vars)
 	   (dolist (elem save)
-	     (let ((var (car elem))
-		   (val (cdr elem)))
-	       (when (and val
-			  (member var org-agenda-local-vars))
-		 (set var val)))))
+	     (pcase elem
+	       (`(,var . ,val)		;ignore unbound variables
+		(when (and val (memq var org-agenda-local-vars))
+		  (set var val))))))
 	 (setq-local org-agenda-this-buffer-is-sticky t))
 	(org-agenda-sticky
 	 ;; Creating a sticky Agenda buffer for the first time
@@ -2164,9 +2163,9 @@ The following commands are available:
   (add-hook 'pre-command-hook 'org-unhighlight nil 'local)
   ;; Make sure properties are removed when copying text
   (add-hook 'filter-buffer-substring-functions
-		(lambda (fun start end delete)
-		  (substring-no-properties (funcall fun start end delete)))
-		nil t)
+	    (lambda (fun start end delete)
+	      (substring-no-properties (funcall fun start end delete)))
+	    nil t)
   (unless org-agenda-keep-modes
     (setq org-agenda-follow-mode org-agenda-start-with-follow-mode
 	  org-agenda-entry-text-mode org-agenda-start-with-entry-text-mode))
@@ -3471,7 +3470,7 @@ removed from the entry content.  Currently only `planning' is allowed here."
 	     (insert txt)
 	     (when org-agenda-add-entry-text-descriptive-links
 	       (goto-char (point-min))
-	       (while (org-activate-bracket-links (point-max))
+	       (while (org-activate-links (point-max))
 		 (add-text-properties (match-beginning 0) (match-end 0)
 				      '(face org-link))))
 	     (goto-char (point-min))
@@ -3713,11 +3712,7 @@ FILTER-ALIST is an alist of filters we need to apply when
       (let ((inhibit-read-only t))
 	(goto-char (point-min))
 	(save-excursion
-	  (while (org-activate-bracket-links (point-max))
-	    (add-text-properties (match-beginning 0) (match-end 0)
-				 '(face org-link))))
-	(save-excursion
-	  (while (org-activate-plain-links (point-max))
+	  (while (org-activate-links (point-max))
 	    (add-text-properties (match-beginning 0) (match-end 0)
 				 '(face org-link))))
 	(unless (eq org-agenda-remove-tags t)
@@ -4823,6 +4818,7 @@ The prefix arg TODO-ONLY limits the search to TODO entries."
   (let* ((org-tags-match-list-sublevels
 	  org-tags-match-list-sublevels)
 	 (completion-ignore-case t)
+	 (org--matcher-tags-todo-only todo-only)
 	 rtn rtnall files file pos matcher
 	 buffer)
     (when (and (stringp match) (not (string-match "\\S-" match)))
@@ -4837,8 +4833,7 @@ The prefix arg TODO-ONLY limits the search to TODO entries."
       ;; Prepare agendas (and `org-tag-alist-for-agenda') before
       ;; expanding tags within `org-make-tags-matcher'
       (org-agenda-prepare (concat "TAGS " match))
-      (setq org--matcher-tags-todo-only todo-only
-	    matcher (org-make-tags-matcher match)
+      (setq matcher (org-make-tags-matcher match)
 	    match (car matcher)
 	    matcher (cdr matcher))
       (org-compile-prefix-format 'tags)

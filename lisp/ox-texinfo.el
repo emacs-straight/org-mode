@@ -448,21 +448,25 @@ INFO is a plist used as a communication channel.  See
     ;; Else use format string.
     (fmt (format fmt text))))
 
-(defun org-texinfo--get-node (blob info)
-  "Return node or anchor associated to BLOB.
-BLOB is an element or object.  INFO is a plist used as
+(defun org-texinfo--get-node (datum info)
+  "Return node or anchor associated to DATUM.
+DATUM is an element or object.  INFO is a plist used as
 a communication channel.  The function guarantees the node or
 anchor name is unique."
   (let ((cache (plist-get info :texinfo-node-cache)))
-    (or (cdr (assq blob cache))
-	(let ((name
-	       (org-texinfo--sanitize-node
-		(if (eq (org-element-type blob) 'headline)
-		    (org-export-data (org-export-get-alt-title blob info) info)
-		  (org-export-get-reference blob info)))))
-	  ;; Ensure NAME is unique.
-	  (while (rassoc name cache) (setq name (concat name "x")))
-	  (plist-put info :texinfo-node-cache (cons (cons blob name) cache))
+    (or (cdr (assq datum cache))
+	(let* ((salt 0)
+	       (basename
+		(org-texinfo--sanitize-node
+		 (if (eq (org-element-type datum) 'headline)
+		     (org-export-data (org-export-get-alt-title datum info)
+				      info)
+		   (org-export-get-reference datum info))))
+	       (name basename))
+	  ;; Ensure NAME is unique and not reserved node name "Top".
+	  (while (or (equal name "Top") (rassoc name cache))
+	    (setq name (concat basename (number-to-string (cl-incf salt)))))
+	  (plist-put info :texinfo-node-cache (cons (cons datum name) cache))
 	  name))))
 
 (defun org-texinfo--sanitize-node (title)
@@ -935,9 +939,17 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 
 ;;;; Link
 
+(defun org-texinfo--@ref (datum description info)
+  "Return @ref command for element or object DATUM.
+DESCRIPTION is the name of the section to print, as a string."
+  (let ((node-name (org-texinfo--get-node datum info))
+	(title (org-texinfo--sanitize-node description)))
+    (if (equal title node-name)
+	(format "@ref{%s}" node-name)
+      (format "@ref{%s, , %s}" node-name title))))
+
 (defun org-texinfo-link (link desc info)
   "Transcode a LINK object from Org to Texinfo.
-
 DESC is the description part of the link, or the empty string.
 INFO is a plist holding contextual information.  See
 `org-export-data'."
@@ -957,9 +969,7 @@ INFO is a plist holding contextual information.  See
      ((equal type "radio")
       (let ((destination (org-export-resolve-radio-link link info)))
 	(if (not destination) desc
-	  (format "@ref{%s,,%s}"
-		  (org-texinfo--get-node destination info)
-		  desc))))
+	  (org-texinfo--@ref destination desc info))))
      ((member type '("custom-id" "id" "fuzzy"))
       (let ((destination
 	     (if (equal type "fuzzy")
@@ -974,36 +984,21 @@ INFO is a plist holding contextual information.  See
 	   (if desc (format "@uref{file://%s,%s}" destination desc)
 	     (format "@uref{file://%s}" destination)))
 	  (`headline
-	   (format "@ref{%s,%s}"
-		   (org-texinfo--get-node destination info)
-		   (cond
-		    (desc)
-		    ((org-export-numbered-headline-p destination info)
-		     (mapconcat
-		      #'number-to-string
-		      (org-export-get-headline-number destination info) "."))
-		    (t (org-export-data
-			(org-element-property :title destination) info)))))
+	   (org-texinfo--@ref
+	    destination
+	    (or desc
+		(org-export-data
+		 (org-element-property :title destination) info))
+	    info))
 	  (_
-	   (format "@ref{%s,,%s}"
-		   (org-texinfo--get-node destination info)
-		   (cond
-		    (desc)
-		    ;; No description is provided: first try to
-		    ;; associate destination to a number.
-		    ((let ((n (org-export-get-ordinal destination info)))
-		       (cond ((not n) nil)
-			     ((integerp n) n)
-			     (t (mapconcat #'number-to-string n ".")))))
-		    ;; Then grab title of headline containing
-		    ;; DESTINATION.
-		    ((let ((h (org-element-lineage destination '(headline) t)))
-		       (and h
-			    (org-export-data
-			     (org-element-property :title destination) info))))
-		    ;; Eventually, just return "Top" to refer to the
-		    ;; beginning of the info file.
-		    (t "Top")))))))
+	   (org-texinfo--@ref
+	    destination
+	    (or desc
+		(pcase (org-export-get-ordinal destination info)
+		  ((and (pred integerp) n) (number-to-string n))
+		  ((and (pred consp) n) (mapconcat #'number-to-string n "."))
+		  (_ "???")))
+	    info)))))			;cannot guess the description
      ((equal type "info")
       (let* ((info-path (split-string path "[:#]"))
 	     (info-manual (car info-path))
@@ -1013,9 +1008,9 @@ INFO is a plist holding contextual information.  See
      ((string= type "mailto")
       (format "@email{%s}"
 	      (concat (org-texinfo--sanitize-content path)
-		      (and desc (concat "," desc)))))
+		      (and desc (concat ", " desc)))))
      ;; External link with a description part.
-     ((and path desc) (format "@uref{%s,%s}" path desc))
+     ((and path desc) (format "@uref{%s, %s}" path desc))
      ;; External link without a description part.
      (path (format "@uref{%s}" path))
      ;; No path, only description.  Try to do something useful.
@@ -1275,7 +1270,7 @@ holding contextual information."
 TEXT is the text of the target.  INFO is a plist holding
 contextual information."
   (format "@anchor{%s}%s"
-	  (org-export-get-reference radio-target info)
+	  (org-texinfo--get-node radio-target info)
 	  text))
 
 ;;;; Section
@@ -1323,7 +1318,7 @@ contextual information."
       (org-texinfo--wrap-float value
 			       info
 			       (org-export-translate "Listing" :utf-8 info)
-			       (org-export-get-reference src-block info)
+			       (org-texinfo--get-node src-block info)
 			       caption
 			       shortcaption))))
 
@@ -1382,7 +1377,7 @@ contextual information."
 	(org-texinfo--wrap-float table-str
 				 info
 				 (org-export-translate "Table" :utf-8 info)
-				 (org-export-get-reference table info)
+				 (org-texinfo--get-node table info)
 				 caption
 				 shortcaption)))))
 
@@ -1450,7 +1445,7 @@ a communication channel."
   "Transcode a TARGET object from Org to Texinfo.
 CONTENTS is nil.  INFO is a plist holding contextual
 information."
-  (format "@anchor{%s}" (org-export-get-reference target info)))
+  (format "@anchor{%s}" (org-texinfo--get-node target info)))
 
 ;;;; Timestamp
 
