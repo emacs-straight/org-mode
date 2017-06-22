@@ -22,79 +22,21 @@
 
 ;;; Commentary:
 ;;
-;; Org syntax can be divided into three categories: "Greater
-;; elements", "Elements" and "Objects".
+;; See <http://orgmode.org/worg/dev/org-syntax.html> for details about
+;; Org syntax.
 ;;
-;; Elements are related to the structure of the document.  Indeed, all
-;; elements are a cover for the document: each position within belongs
-;; to at least one element.
-;;
-;; An element always starts and ends at the beginning of a line.  With
-;; a few exceptions (`clock', `headline', `inlinetask', `item',
-;; `planning', `property-drawer', `node-property', `section' and
-;; `table-row' types), it can also accept a fixed set of keywords as
-;; attributes.  Those are called "affiliated keywords" to distinguish
-;; them from other keywords, which are full-fledged elements.  Almost
-;; all affiliated keywords are referenced in
-;; `org-element-affiliated-keywords'; the others are export attributes
-;; and start with "ATTR_" prefix.
-;;
-;; Element containing other elements (and only elements) are called
-;; greater elements.  Concerned types are: `center-block', `drawer',
-;; `dynamic-block', `footnote-definition', `headline', `inlinetask',
-;; `item', `plain-list', `property-drawer', `quote-block', `section'
-;; and `special-block'.
-;;
-;; Other element types are: `babel-call', `clock', `comment',
-;; `comment-block', `diary-sexp', `example-block', `export-block',
-;; `fixed-width', `horizontal-rule', `keyword', `latex-environment',
-;; `node-property', `paragraph', `planning', `src-block', `table',
-;; `table-row' and `verse-block'.  Among them, `paragraph' and
-;; `verse-block' types can contain Org objects and plain text.
-;;
-;; Objects are related to document's contents.  Some of them are
-;; recursive.  Associated types are of the following: `bold', `code',
-;; `entity', `export-snippet', `footnote-reference',
-;; `inline-babel-call', `inline-src-block', `italic',
-;; `latex-fragment', `line-break', `link', `macro', `radio-target',
-;; `statistics-cookie', `strike-through', `subscript', `superscript',
-;; `table-cell', `target', `timestamp', `underline' and `verbatim'.
-;;
-;; Some elements also have special properties whose value can hold
-;; objects themselves (e.g. an item tag or a headline name).  Such
-;; values are called "secondary strings".  Any object belongs to
-;; either an element or a secondary string.
-;;
-;; Notwithstanding affiliated keywords, each greater element, element
-;; and object has a fixed set of properties attached to it.  Among
-;; them, four are shared by all types: `:begin' and `:end', which
-;; refer to the beginning and ending buffer positions of the
-;; considered element or object, `:post-blank', which holds the number
-;; of blank lines, or white spaces, at its end and `:parent' which
-;; refers to the element or object containing it.  Greater elements,
-;; elements and objects containing objects will also have
-;; `:contents-begin' and `:contents-end' properties to delimit
-;; contents.  Eventually, All elements have a `:post-affiliated'
-;; property referring to the buffer position after all affiliated
-;; keywords, if any, or to their beginning position otherwise.
-;;
-;; At the lowest level, a `:parent' property is also attached to any
-;; string, as a text property.
-;;
-;; Lisp-wise, an element or an object can be represented as a list.
+;; Lisp-wise, a syntax object can be represented as a list.
 ;; It follows the pattern (TYPE PROPERTIES CONTENTS), where:
-;;   TYPE is a symbol describing the Org element or object.
+;;   TYPE is a symbol describing the object.
 ;;   PROPERTIES is the property list attached to it.  See docstring of
-;;              appropriate parsing function to get an exhaustive
-;;              list.
-;;   CONTENTS is a list of elements, objects or raw strings contained
-;;            in the current element or object, when applicable.
+;;              appropriate parsing function to get an exhaustive list.
+;;   CONTENTS is a list of syntax objects or raw strings contained
+;;            in the current object, when applicable.
 ;;
-;; An Org buffer is a nested list of such elements and objects, whose
-;; type is `org-data' and properties is nil.
+;; For the whole document, TYPE is `org-data' and PROPERTIES is nil.
 ;;
-;; The first part of this file defines Org syntax, while the second
-;; one provide accessors and setters functions.
+;; The first part of this file defines constants for the Org syntax,
+;; while the second one provide accessors and setters functions.
 ;;
 ;; The next part implements a parser and an interpreter for each
 ;; element and object type in Org syntax.
@@ -879,14 +821,14 @@ Assume point is at the beginning of the footnote definition."
 			 (match-string-no-properties 1)))
 	   (begin (car affiliated))
 	   (post-affiliated (point))
-	   (ending
+	   (end
 	    (save-excursion
 	      (end-of-line)
 	      (cond
 	       ((not
 		 (re-search-forward org-element--footnote-separator limit t))
 		limit)
-	       ((eq (char-after (match-beginning 0)) ?\[)
+	       ((eq ?\[ (char-after (match-beginning 0)))
 		;; At a new footnote definition, make sure we end
 		;; before any affiliated keyword above.
 		(forward-line -1)
@@ -894,26 +836,27 @@ Assume point is at the beginning of the footnote definition."
 			    (looking-at-p org-element--affiliated-re))
 		  (forward-line -1))
 		(line-beginning-position 2))
-	       (t (match-beginning 0)))))
+	       ((eq ?* (char-after (match-beginning 0))) (match-beginning 0))
+	       (t (skip-chars-forward " \r\t\n" limit)
+		  (if (= limit (point)) limit (line-beginning-position))))))
 	   (contents-begin
-	    (progn
-	      (search-forward "]")
-	      (skip-chars-forward " \r\t\n" ending)
-	      (cond ((= (point) ending) nil)
-		    ((= (line-beginning-position) post-affiliated) (point))
-		    (t (line-beginning-position)))))
-	   (contents-end (and contents-begin ending))
-	   (end (progn (goto-char ending)
-		       (skip-chars-forward " \r\t\n" limit)
-		       (if (eobp) (point) (line-beginning-position)))))
+	    (progn (search-forward "]")
+		   (skip-chars-forward " \r\t\n" end)
+		   (cond ((= (point) end) nil)
+			 ((= (line-beginning-position) post-affiliated) (point))
+			 (t (line-beginning-position)))))
+	   (contents-end
+	    (progn (goto-char end)
+		   (skip-chars-backward " \r\t\n")
+		   (line-beginning-position 2))))
       (list 'footnote-definition
 	    (nconc
 	     (list :label label
 		   :begin begin
 		   :end end
 		   :contents-begin contents-begin
-		   :contents-end contents-end
-		   :post-blank (count-lines ending end)
+		   :contents-end (and contents-begin contents-end)
+		   :post-blank (count-lines contents-end end)
 		   :post-affiliated post-affiliated)
 	     (cdr affiliated))))))
 
@@ -1695,30 +1638,37 @@ containing `:call', `:inside-header', `:arguments',
   (save-excursion
     (let* ((begin (car affiliated))
 	   (post-affiliated (point))
-	   (value (progn (search-forward ":" nil t)
+	   (before-blank (line-beginning-position 2))
+	   (value (progn (search-forward ":" before-blank t)
+			 (skip-chars-forward " \t")
 			 (org-trim
 			  (buffer-substring-no-properties
 			   (point) (line-end-position)))))
-	   (pos-before-blank (progn (forward-line) (point)))
-	   (end (progn (skip-chars-forward " \r\t\n" limit)
-		       (if (eobp) (point) (line-beginning-position))))
-	   (valid-value
-	    (string-match
-	     "\\([^()\n]+?\\)\\(?:\\[\\(.*?\\)\\]\\)?(\\(.*\\))[ \t]*\\(.*\\)"
-	     value)))
+	   (call
+	    (or (org-string-nw-p
+		 (buffer-substring-no-properties
+		  (point) (progn (skip-chars-forward "^[]()" before-blank)
+				 (point))))))
+	   (inside-header (org-element--parse-paired-brackets ?\[))
+	   (arguments (org-string-nw-p
+		       (org-element--parse-paired-brackets ?\()))
+	   (end-header
+	    (org-string-nw-p
+	     (org-trim
+	      (buffer-substring-no-properties (point) (line-end-position)))))
+	   (end (progn (forward-line)
+		       (skip-chars-forward " \r\t\n" limit)
+		       (if (eobp) (point) (line-beginning-position)))))
       (list 'babel-call
 	    (nconc
-	     (list :call (and valid-value (match-string 1 value))
-		   :inside-header (and valid-value
-				       (org-string-nw-p (match-string 2 value)))
-		   :arguments (and valid-value
-				   (org-string-nw-p (match-string 3 value)))
-		   :end-header (and valid-value
-				    (org-string-nw-p (match-string 4 value)))
+	     (list :call call
+		   :inside-header inside-header
+		   :arguments arguments
+		   :end-header end-header
 		   :begin begin
 		   :end end
 		   :value value
-		   :post-blank (count-lines pos-before-blank end)
+		   :post-blank (count-lines before-blank end)
 		   :post-affiliated post-affiliated)
 	     (cdr affiliated))))))
 

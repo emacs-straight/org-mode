@@ -429,12 +429,18 @@ Some other text
    (equal "test"
 	  (org-test-with-temp-text "#+CALL: test()"
 	    (org-element-property :call (org-element-at-point)))))
-  ;; Parse inside header.
+  ;; Parse inside header.  It may contain paired square brackets.
   (should
    (equal ":results output"
 	  (org-test-with-temp-text "#+CALL: test[:results output]()"
 	    (org-element-property :inside-header (org-element-at-point)))))
-  ;; Parse arguments, which can be nested.
+  (should
+   (equal ":results output, a=table[1:2], b=2"
+	  (org-test-with-temp-text
+	      "#+CALL: test[:results output, a=table[1:2], b=2]()"
+	    (org-element-property :inside-header (org-element-at-point)))))
+  ;; Parse arguments, which can be nested.  However, stop at paired
+  ;; parenthesis, even when, e.g.,end header contains some.
   (should
    (equal "n=4"
 	  (org-test-with-temp-text "#+CALL: test(n=4)"
@@ -442,6 +448,10 @@ Some other text
   (should
    (equal "test()"
 	  (org-test-with-temp-text "#+CALL: test(test())"
+	    (org-element-property :arguments (org-element-at-point)))))
+  (should
+   (equal "a=1"
+	  (org-test-with-temp-text "#+CALL: test(a=1) :post another-call()"
 	    (org-element-property :arguments (org-element-at-point)))))
   ;; Parse end header.
   (should
@@ -920,20 +930,21 @@ Some other text
   "Test `footnote-definition' parser."
   (should
    (org-test-with-temp-text "[fn:1] Definition"
-     (org-element-map (org-element-parse-buffer) 'footnote-definition
-       'identity nil t)))
-  ;; Footnote with more contents
+     (eq (org-element-type (org-element-at-point)) 'footnote-definition)))
+  ;; Footnote with more contents.
   (should
-   (= 29
-      (org-element-property
-       :end
-       (org-test-with-temp-text "[fn:1] Definition\n\n| a | b |"
-	 (org-element-map (org-element-parse-buffer) 'footnote-definition
-	   'identity nil t)))))
+   (= 29 (org-test-with-temp-text "[fn:1] Definition\n\n| a | b |"
+	   (org-element-property :end (org-element-at-point)))))
+  ;; Test difference between :contents-end and :end property
+  (should
+   (< (org-test-with-temp-text "[fn:1] Definition\n\n\n"
+	(org-element-property :contents-end (org-element-at-point)))
+      (org-test-with-temp-text "[fn:1] Definition\n\n\n"
+	(org-element-property :end (org-element-at-point)))))
   ;; Footnote starting with special syntax.
   (should-not
-   (org-test-with-temp-text "[fn:1] - no item"
-     (org-element-map (org-element-parse-buffer) 'item 'identity)))
+   (org-test-with-temp-text "[fn:1] <point>- no item"
+     (eq (org-element-type (org-element-at-point)) 'item)))
   ;; Correctly handle footnote starting with an empty line.
   (should
    (= 9
@@ -953,7 +964,13 @@ Some other text
   (should
    (org-test-with-temp-text "[fn:1] 1\n\n#+attr_latex: :offset 0in\n[fn:2] 2"
      (goto-char (org-element-property :end (org-element-at-point)))
-     (looking-at "#"))))
+     (looking-at "#")))
+  ;; An empty footnote has no contents.
+  (should-not
+   (org-test-with-temp-text "[fn:1]\n\n"
+     (let ((footnote (org-element-at-point)))
+       (or (org-element-property :contents-begin footnote)
+	   (org-element-property :contents-end footnote))))))
 
 
 ;;;; Footnotes Reference.

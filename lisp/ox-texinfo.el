@@ -269,6 +269,7 @@ be placed after the end of the title."
 
 (defcustom org-texinfo-table-scientific-notation "%s\\,(%s)"
   "Format string to display numbers in scientific notation.
+
 The format should have \"%s\" twice, for mantissa and exponent
 \(i.e. \"%s\\\\times10^{%s}\").
 
@@ -279,7 +280,12 @@ When nil, no transformation is made."
 	  (const :tag "No formatting" nil)))
 
 (defcustom org-texinfo-def-table-markup "@samp"
-  "Default setting for @table environments."
+  "Default markup for first column in two-column tables.
+
+This should an indicating command, e.g., \"@code\", \"@kbd\" or
+\"@asis\".
+
+It can be overridden locally using the \":indic\" attribute."
   :group 'org-export-texinfo
   :type 'string)
 
@@ -459,26 +465,42 @@ anchor name is unique."
 	       (basename
 		(org-texinfo--sanitize-node
 		 (if (eq (org-element-type datum) 'headline)
-		     (org-export-data (org-export-get-alt-title datum info)
-				      info)
+		     (org-texinfo--sanitize-title
+		      (org-export-get-alt-title datum info) info)
 		   (org-export-get-reference datum info))))
 	       (name basename))
 	  ;; Ensure NAME is unique and not reserved node name "Top".
 	  (while (or (equal name "Top") (rassoc name cache))
-	    (setq name (concat basename (number-to-string (cl-incf salt)))))
+	    (setq name (concat basename (format " %d" (cl-incf salt)))))
 	  (plist-put info :texinfo-node-cache (cons (cons datum name) cache))
 	  name))))
 
 (defun org-texinfo--sanitize-node (title)
   "Bend string TITLE to node line requirements.
 Trim string and collapse multiple whitespace characters as they
-are not significant.  Also remove the following characters: @
-{ } ( ) : . ,"
-  (replace-regexp-in-string
-   "[:,.]" ""
+are not significant.  Replace leading left parenthesis, when
+followed by a right parenthesis, with a square bracket.  Remove
+periods, commas and colons."
+  (org-trim
    (replace-regexp-in-string
-    "\\`(\\(.*)\\)" "[\\1"
-    (org-trim (replace-regexp-in-string "[ \t]\\{2,\\}" " " title)))))
+    "[ \t]+" " "
+    (replace-regexp-in-string
+     "[:,.]" ""
+     (replace-regexp-in-string "\\`(\\(.*?)\\)" "[\\1" title)))))
+
+(defun org-texinfo--sanitize-title (title info)
+  "Make TITLE suitable as a section name.
+TITLE is a string or a secondary string.  INFO is the current
+export state, as a plist."
+  (org-export-data-with-backend
+   title
+   (org-export-create-backend
+    :parent 'texinfo
+    :transcoders '((footnote-reference . ignore)
+		   (link . (lambda (object c i) c))
+		   (radio-target . (lambda (object c i) c))
+		   (target . ignore)))
+   info))
 
 (defun org-texinfo--sanitize-content (text)
   "Escape special characters in string TEXT.
@@ -602,7 +624,8 @@ holding export options."
      "@titlepage\n"
      (when (plist-get info :with-title)
        (concat
-	(format "@title %s\n" (or (plist-get info :texinfo-printed-title) title ""))
+	(format "@title %s\n"
+		(or (plist-get info :texinfo-printed-title) title ""))
 	(let ((subtitle (plist-get info :subtitle)))
 	  (when subtitle
 	    (format "@subtitle %s\n"
@@ -628,11 +651,17 @@ holding export options."
      "@end titlepage\n\n"
      ;; Table of contents.
      (and (plist-get info :with-toc) "@contents\n\n")
-     ;; Configure Top Node when not for Tex
+     ;; Configure Top Node when not for TeX.  Also include contents
+     ;; from the first section of the document.
      "@ifnottex\n"
      "@node Top\n"
      (format "@top %s\n" title)
-     (and copying "@insertcopying\n")
+     (let* ((first-section
+	     (org-element-map (plist-get info :parse-tree) 'section
+	       #'identity info t '(headline)))
+	    (top-contents
+	     (org-export-data (org-element-contents first-section) info)))
+       (and (org-string-nw-p top-contents) (concat "\n" top-contents)))
      "@end ifnottex\n\n"
      ;; Menu.
      (org-texinfo-make-menu (plist-get info :parse-tree) info 'master)
@@ -710,11 +739,46 @@ holding contextual information."
 ;;;; Entity
 
 (defun org-texinfo-entity (entity _contents _info)
-  "Transcode an ENTITY object from Org to Texinfo.
-CONTENTS are the definition itself.  INFO is a plist holding
-contextual information."
-  (let ((ent (org-element-property :latex entity)))
-    (if (org-element-property :latex-math-p entity) (format "@math{%s}" ent) ent)))
+  "Transcode an ENTITY object from Org to Texinfo."
+  ;; Since there is not specific Texinfo entry in entities, use
+  ;; Texinfo-specific commands whenever possible, and fallback to
+  ;; UTF-8 otherwise.
+  (pcase (org-element-property :name entity)
+    ("AElig"                       "@AE{}")
+    ("aelig"                       "@ae{}")
+    ((or "bull" "bullet")          "@bullet{}")
+    ("copy"                        "@copyright{}")
+    ("deg"                         "@textdegree{}")
+    ((or "dots" "hellip")          "@dots{}")
+    ("equiv"                       "@equiv{}")
+    ((or "euro" "EUR")             "@euro{}")
+    ((or "ge" "geq")               "@geq{}")
+    ("laquo"                       "@guillemetleft{}")
+    ("iexcl"                       "@exclamdown{}")
+    ("imath"                       "@dotless{i}")
+    ("iquest"                      "@questiondown{}")
+    ("jmath"                       "@dotless{j}")
+    ((or "le" "leq")               "@leq{}")
+    ("lsaquo"                      "@guilsinglleft{}")
+    ("mdash"                       "---")
+    ("minus"                       "@minus{}")
+    ("nbsp"                        "@tie{}")
+    ("ndash"                       "--")
+    ("OElig"                       "@OE{}")
+    ("oelig"                       "@oe{}")
+    ("ordf"                        "@ordf{}")
+    ("ordm"                        "@ordm{}")
+    ("pound"                       "@pound{}")
+    ("raquo"                       "@guillemetright{}")
+    ((or "rArr" "Rightarrow")      "@result{}")
+    ("reg"                         "@registeredsymbol{}")
+    ((or "rightarrow" "to" "rarr") "@arrow{}")
+    ("rsaquo"                      "@guilsinglright{}")
+    ("thorn"                       "@th{}")
+    ("THORN"                       "@TH{}")
+    ((and (pred (string-prefix-p "_")) name) ;spacing entities
+     (format "@w{%s}" (substring name 1)))
+    (_ (org-element-property :utf-8 entity))))
 
 ;;;; Example Block
 
@@ -746,7 +810,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 (defun org-texinfo-fixed-width (fixed-width _contents _info)
   "Transcode a FIXED-WIDTH element from Org to Texinfo.
 CONTENTS is nil.  INFO is a plist holding contextual information."
-  (format "@example\n%s\n@end example"
+  (format "@example\n%s@end example"
 	  (org-remove-indentation
 	   (org-texinfo--sanitize-content
 	    (org-element-property :value fixed-width)))))
@@ -804,7 +868,8 @@ holding contextual information."
 		    (org-export-get-tags headline info)))
 	 (priority (and (plist-get info :with-priority)
 			(org-element-property :priority headline)))
-	 (text (org-export-data (org-element-property :title headline) info))
+	 (text (org-texinfo--sanitize-title
+		(org-element-property :title headline) info))
 	 (full-text (funcall (plist-get info :texinfo-format-headline-function)
 			     todo todo-type priority text tags))
 	 (contents (if (org-string-nw-p contents) (concat "\n" contents) "")))
@@ -912,23 +977,22 @@ contextual information."
 (defun org-texinfo-keyword (keyword _contents info)
   "Transcode a KEYWORD element from Org to Texinfo.
 CONTENTS is nil.  INFO is a plist holding contextual information."
-  (let ((key (org-element-property :key keyword))
-	(value (org-element-property :value keyword)))
-    (cond
-     ((string= key "TEXINFO") value)
-     ((string= key "CINDEX") (format "@cindex %s" value))
-     ((string= key "FINDEX") (format "@findex %s" value))
-     ((string= key "KINDEX") (format "@kindex %s" value))
-     ((string= key "PINDEX") (format "@pindex %s" value))
-     ((string= key "TINDEX") (format "@tindex %s" value))
-     ((string= key "VINDEX") (format "@vindex %s" value))
-     ((string= key "TOC")
-      (cond ((string-match-p "\\<tables\\>" value)
-	     (concat "@listoffloats "
-		     (org-export-translate "Table" :utf-8 info)))
-	    ((string-match-p "\\<listings\\>" value)
-	     (concat "@listoffloats "
-		     (org-export-translate "Listing" :utf-8 info))))))))
+  (let ((value (org-element-property :value keyword)))
+    (pcase (org-element-property :key keyword)
+      ("TEXINFO" value)
+      ("CINDEX" (format "@cindex %s" value))
+      ("FINDEX" (format "@findex %s" value))
+      ("KINDEX" (format "@kindex %s" value))
+      ("PINDEX" (format "@pindex %s" value))
+      ("TINDEX" (format "@tindex %s" value))
+      ("VINDEX" (format "@vindex %s" value))
+      ("TOC"
+       (cond ((string-match-p "\\<tables\\>" value)
+	      (concat "@listoffloats "
+		      (org-export-translate "Table" :utf-8 info)))
+	     ((string-match-p "\\<listings\\>" value)
+	      (concat "@listoffloats "
+		      (org-export-translate "Listing" :utf-8 info))))))))
 
 ;;;; Line Break
 
@@ -943,7 +1007,12 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
   "Return @ref command for element or object DATUM.
 DESCRIPTION is the name of the section to print, as a string."
   (let ((node-name (org-texinfo--get-node datum info))
-	(title (org-texinfo--sanitize-node description)))
+	;; Sanitize DESCRIPTION for cross-reference use.  In
+	;; particular, remove colons as they seem to cause (even
+	;; within @asis{...} to the Texinfo reader.
+	(title (replace-regexp-in-string
+		"[ \t]*:+" ""
+		(replace-regexp-in-string "," "@comma{}" description))))
     (if (equal title node-name)
 	(format "@ref{%s}" node-name)
       (format "@ref{%s, , %s}" node-name title))))
@@ -983,13 +1052,20 @@ INFO is a plist holding contextual information.  See
 	  (`plain-text
 	   (if desc (format "@uref{file://%s,%s}" destination desc)
 	     (format "@uref{file://%s}" destination)))
-	  (`headline
-	   (org-texinfo--@ref
-	    destination
-	    (or desc
-		(org-export-data
-		 (org-element-property :title destination) info))
-	    info))
+	  ((or `headline
+	       ;; Targets within headlines cannot be turned into
+	       ;; @anchor{}, so we refer to the headline parent
+	       ;; directly.
+	       (and `target
+		    (guard (eq 'headline
+			       (org-element-type
+				(org-element-property :parent destination))))))
+	   (let ((headline (org-element-lineage destination '(headline) t)))
+	     (org-texinfo--@ref
+	      headline
+	      (or desc (org-texinfo--sanitize-title
+			(org-element-property :title headline) info))
+	      info)))
 	  (_
 	   (org-texinfo--@ref
 	    destination
@@ -1106,8 +1182,13 @@ a plist containing contextual information."
   (org-element-normalize-string
    (mapconcat
     (lambda (h)
-      (let* ((title (org-export-data
-		     (org-export-get-alt-title h info) info))
+      (let* ((title
+	      ;; Colons are used as a separator between title and node
+	      ;; name.  Remove them.
+	      (replace-regexp-in-string
+	       "[ \t]+:+" ""
+	       (org-texinfo--sanitize-title
+		(org-export-get-alt-title h info) info)))
 	     (node (org-texinfo--get-node h info))
 	     (entry (concat "* " title ":"
 			    (if (string= title node) ":"
@@ -1164,8 +1245,10 @@ the plist used as a communication channel."
 CONTENTS is the contents of the list.  INFO is a plist holding
 contextual information."
   (let* ((attr (org-export-read-attribute :attr_texinfo plain-list))
-	 (indic (or (plist-get attr :indic)
-		    (plist-get info :texinfo-def-table-markup)))
+	 (indic (let ((i (or (plist-get attr :indic)
+			     (plist-get info :texinfo-def-table-markup))))
+		  ;; Allow indicating commands with missing @ sign.
+		  (if (string-prefix-p "@" i) i (concat "@" i))))
 	 (table-type (plist-get attr :table-type))
 	 (type (org-element-property :type plain-list))
 	 (list-type (cond
@@ -1192,16 +1275,14 @@ contextual information."
       (setq output
 	    (org-export-activate-smart-quotes output :texinfo info text)))
     ;; LaTeX into @LaTeX{} and TeX into @TeX{}
-    (let ((case-fold-search nil)
-	  (start 0))
-      (while (string-match "\\(\\(?:La\\)?TeX\\)" output start)
-	(setq output (replace-match
-		      (format "@%s{}" (match-string 1 output)) nil t output)
-	      start (match-end 0))))
+    (let ((case-fold-search nil))
+      (setq output (replace-regexp-in-string "\\(?:La\\)?TeX" "@\\&{}" output)))
     ;; Convert special strings.
     (when (plist-get info :with-special-strings)
-      (while (string-match (regexp-quote "...") output)
-	(setq output (replace-match "@dots{}" nil t output))))
+      (setq output
+	    (replace-regexp-in-string
+	     "\\.\\.\\." "@dots{}"
+	     (replace-regexp-in-string "\\\\-" "@-" output))))
     ;; Handle break preservation if required.
     (when (plist-get info :preserve-breaks)
       (setq output (replace-regexp-in-string
@@ -1279,11 +1360,10 @@ contextual information."
   "Transcode a SECTION element from Org to Texinfo.
 CONTENTS holds the contents of the section.  INFO is a plist
 holding contextual information."
-  (org-trim
-   (concat contents
-	   "\n"
-	   (let ((parent (org-export-get-parent-headline section)))
-	     (and parent (org-texinfo-make-menu parent info))))))
+  (let ((parent (org-export-get-parent-headline section)))
+    (when parent			;ignore very first section
+      (org-trim
+       (concat contents "\n" (org-texinfo-make-menu parent info))))))
 
 ;;;; Special Block
 
@@ -1295,7 +1375,7 @@ as a communication channel."
 	(type (org-element-property :type special-block)))
     (format "@%s%s\n%s@end %s"
 	    type
-	    (if opt (concat " " opt) opt)
+	    (if opt (concat " " opt) "")
 	    (or contents "")
 	    type)))
 

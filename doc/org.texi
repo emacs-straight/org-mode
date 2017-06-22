@@ -647,7 +647,7 @@ Texinfo export
 * Texinfo specific export settings::  Setting the environment.
 * Texinfo file header::         Generating the header.
 * Texinfo title and copyright page::  Creating preamble pages.
-* Texinfo @samp{Top} node::     Installing a manual in Info Top node.
+* Info directory file::     Installing a manual in Info file hierarchy.
 * Headings and sectioning structure::  Building document structure.
 * Indices::                     Creating indices.
 * Quoting Texinfo code::        Incorporating literal Texinfo code.
@@ -3531,44 +3531,44 @@ string followed by a colon.  There can be no space after the colon.  The
 following list shows examples for each link type.
 
 @example
-http://www.astro.uva.nl/~dominik          @r{on the web}
-doi:10.1000/182                           @r{DOI for an electronic resource}
-file:/home/dominik/images/jupiter.jpg     @r{file, absolute path}
-/home/dominik/images/jupiter.jpg          @r{same as above}
-file:papers/last.pdf                      @r{file, relative path}
-./papers/last.pdf                         @r{same as above}
-file:/myself@@some.where:papers/last.pdf   @r{file, path on remote machine}
-/myself@@some.where:papers/last.pdf        @r{same as above}
-file:sometextfile::NNN                    @r{file, jump to line number}
-file:projects.org                         @r{another Org file}
-file:projects.org::some words             @r{text search in Org file}@footnote{
+http://www.astro.uva.nl/~dominik             @r{on the web}
+doi:10.1000/182                              @r{DOI for an electronic resource}
+file:/home/dominik/images/jupiter.jpg        @r{file, absolute path}
+/home/dominik/images/jupiter.jpg             @r{same as above}
+file:papers/last.pdf                         @r{file, relative path}
+./papers/last.pdf                            @r{same as above}
+file:/ssh:myself@@some.where:papers/last.pdf  @r{file, path on remote machine}
+/ssh:myself@@some.where:papers/last.pdf       @r{same as above}
+file:sometextfile::NNN                       @r{file, jump to line number}
+file:projects.org                            @r{another Org file}
+file:projects.org::some words                @r{text search in Org file}@footnote{
 The actual behavior of the search will depend on the value of
 the option @code{org-link-search-must-match-exact-headline}.  If its value
-is @code{nil}, then a fuzzy text search will be done.  If it is t, then only the
-exact headline will be matched, ignoring spaces and cookies.  If the value is
-@code{query-to-create}, then an exact headline will be searched; if it is not
-found, then the user will be queried to create it.}
-file:projects.org::*task title @r{heading search in Org
-file}@footnote{Headline searches always match the exact headline, ignoring
+is @code{nil}, then a fuzzy text search will be done.  If it is @code{t}, then only
+the exact headline will be matched, ignoring spaces and cookies.  If the
+value is @code{query-to-create}, then an exact headline will be searched; if
+it is not found, then the user will be queried to create it.}
+file:projects.org::*task title               @r{heading search in Org file}@footnote{
+Headline searches always match the exact headline, ignoring
 spaces and cookies.  If the headline is not found and the value of the option
 @code{org-link-search-must-match-exact-headline} is @code{query-to-create},
 then the user will be queried to create it.}
-docview:papers/last.pdf::NNN              @r{open in doc-view mode at page}
-id:B7423F4D-2E8A-471B-8810-C40F074717E9   @r{Link to heading by ID}
-news:comp.emacs                           @r{Usenet link}
-mailto:adent@@galaxy.net                   @r{Mail link}
-mhe:folder                                @r{MH-E folder link}
-mhe:folder#id                             @r{MH-E message link}
-rmail:folder                              @r{RMAIL folder link}
-rmail:folder#id                           @r{RMAIL message link}
-gnus:group                                @r{Gnus group link}
-gnus:group#id                             @r{Gnus article link}
-bbdb:R.*Stallman                          @r{BBDB link (with regexp)}
-irc:/irc.com/#emacs/bob                   @r{IRC link}
-info:org#External links                   @r{Info node or index link}
-shell:ls *.org                            @r{A shell command}
-elisp:org-agenda                          @r{Interactive Elisp command}
-elisp:(find-file-other-frame "Elisp.org") @r{Elisp form to evaluate}
+docview:papers/last.pdf::NNN                 @r{open in doc-view mode at page}
+id:B7423F4D-2E8A-471B-8810-C40F074717E9      @r{Link to heading by ID}
+news:comp.emacs                              @r{Usenet link}
+mailto:adent@@galaxy.net                      @r{Mail link}
+mhe:folder                                   @r{MH-E folder link}
+mhe:folder#id                                @r{MH-E message link}
+rmail:folder                                 @r{RMAIL folder link}
+rmail:folder#id                              @r{RMAIL message link}
+gnus:group                                   @r{Gnus group link}
+gnus:group#id                                @r{Gnus article link}
+bbdb:R.*Stallman                             @r{BBDB link (with regexp)}
+irc:/irc.com/#emacs/bob                      @r{IRC link}
+info:org#External links                      @r{Info node or index link}
+shell:ls *.org                               @r{A shell command}
+elisp:org-agenda                             @r{Interactive Elisp command}
+elisp:(find-file-other-frame "Elisp.org")    @r{Elisp form to evaluate}
 @end example
 
 @cindex VM links
@@ -3579,13 +3579,13 @@ to VM or Wanderlust messages are available when you load the corresponding
 libraries from the @code{contrib/} directory:
 
 @example
-vm:folder                                 @r{VM folder link}
-vm:folder#id                              @r{VM message link}
-vm://myself@@some.where.org/folder#id      @r{VM on remote machine}
-vm-imap:account:folder                    @r{VM IMAP folder link}
-vm-imap:account:folder#id                 @r{VM IMAP message link}
-wl:folder                                 @r{WANDERLUST folder link}
-wl:folder#id                              @r{WANDERLUST message link}
+vm:folder                                    @r{VM folder link}
+vm:folder#id                                 @r{VM message link}
+vm://myself@@some.where.org/folder#id         @r{VM on remote machine}
+vm-imap:account:folder                       @r{VM IMAP folder link}
+vm-imap:account:folder#id                    @r{VM IMAP message link}
+wl:folder                                    @r{WANDERLUST folder link}
+wl:folder#id                                 @r{WANDERLUST message link}
 @end example
 
 For customizing Org to add new link types @ref{Adding hyperlink types}.
@@ -10752,7 +10752,7 @@ file, you could use:
 @noindent
 The first parameter is the file name to include.  The optional second
 parameter specifies the block type: @samp{example}, @samp{export} or
-p@samp{src}).  The option third parameter specifies the source code language
+@samp{src}.  The optional third parameter specifies the source code language
 to use for formatting the contents.  This is relevant to both @samp{export}
 and @samp{src} block types.
 
@@ -13462,7 +13462,7 @@ can compile to Info format.
 * Texinfo specific export settings::  Setting the environment.
 * Texinfo file header::         Generating the header.
 * Texinfo title and copyright page::  Creating preamble pages.
-* Texinfo @samp{Top} node::     Installing a manual in Info Top node.
+* Info directory file::     Installing a manual in Info file hierarchy.
 * Headings and sectioning structure::  Building document structure.
 * Indices::                     Creating indices.
 * Quoting Texinfo code::        Incorporating literal Texinfo code.
@@ -13600,8 +13600,14 @@ Copyright information is printed on the back of the title page.
   Copyright \copy 2016 Free Software Foundation, Inc.
 @end example
 
-@node Texinfo @samp{Top} node
-@subsection Texinfo @samp{Top} node
+@node Info directory file
+@subsection Info directory file
+@cindex @samp{dir} file, in Texinfo export
+@cindex Texinfo export, @samp{dir} file
+@cindex Info directory file, in Texinfo export
+@cindex Texinfo export, Info directory file
+@cindex @code{install-info} parameters, in Texinfo export
+@cindex Texinfo export, @code{install-info} parameters
 
 @cindex #+TEXINFO_DIR_CATEGORY
 @cindex #+TEXINFO_DIR_TITLE
@@ -13612,7 +13618,7 @@ This Info file's metadata has variables for category, title, and description:
 @code{#+TEXINFO_DIR_DESC} that establish where in the Info hierarchy the file
 fits.
 
-Here's an example that writes to the @samp{Top} node:
+Here is an example that writes to the Info directory file:
 
 @example
 #+TEXINFO_DIR_CATEGORY: Emacs
@@ -13661,20 +13667,39 @@ entry:
   :END:
 @end example
 
+@cindex The Top node, in Texinfo export
+@cindex Texinfo export, Top node
+The text before the first headline belongs to the @samp{Top} node, i.e., the
+node in which a reader enters an Info manual.  As such, it is expected not to
+appear in printed output generated from the @file{.texi} file.  @inforef{The
+Top Node,,texinfo}, for more information.
+
 @node Indices
 @subsection Indices
 
 @cindex #+CINDEX
+@cindex concept index, in Texinfo export
+@cindex Texinfo export, index, concept
 @cindex #+FINDEX
+@cindex function index, in Texinfo export
+@cindex Texinfo export, index, function
 @cindex #+KINDEX
+@cindex keystroke index, in Texinfo export
+@cindex Texinfo export, keystroke index
 @cindex #+PINDEX
+@cindex program index, in Texinfo export
+@cindex Texinfo export, program index
 @cindex #+TINDEX
+@cindex data type index, in Texinfo export
+@cindex Texinfo export, data type index
 @cindex #+VINDEX
+@cindex variable index, in Texinfo export
+@cindex Texinfo export, variable index
 The Texinfo export back-end recognizes these indexing keywords if used in the
 Org file: @code{#+CINDEX}, @code{#+FINDEX}, @code{#+KINDEX}, @code{#+PINDEX},
-@code{#+TINDEX}, and @code{#+VINDEX}.  The back-end also recognizes custom
-index definitions that use raw Texinfo code in the Org file (@pxref{Quoting
-Texinfo code}).
+@code{#+TINDEX}, and @code{#+VINDEX}.  Write their value as verbatim Texinfo
+code; in particular, @samp{@{}, @samp{@}} and @samp{@@} characters need to be
+escaped with @samp{@@} if they not belong to a Texinfo command.
 
 @example
 #+CINDEX: Defining indexing entries
@@ -13771,7 +13796,7 @@ name.  It also adds any @code{:options} attributes to the end of the command,
 as shown in this example:
 
 @example
-#+attr_texinfo: :options org-org-export-to-org ...
+#+ATTR_TEXINFO: :options org-org-export-to-org ...
 #+begin_defun
 A somewhat obsessive function.
 #+end_defun
@@ -13793,14 +13818,16 @@ Here is a more detailed example Org file.  @inforef{GNU Sample
 Texts,,texinfo} for an equivalent example using Texinfo code.
 
 @example
-#+MACRO: version 2.0
-#+MACRO: updated last updated 4 March 2014
-
-#+OPTIONS: ':t toc:t author:t email:t
 #+TITLE: GNU Sample @{@{@{version@}@}@}
+#+SUBTITLE: for version @{@{@{version@}@}@}, @{@{@{updated@}@}@}
 #+AUTHOR: A.U. Thor
 #+EMAIL: bug-sample@@gnu.org
+
+#+OPTIONS: ':t toc:t author:t email:t
 #+LANGUAGE: en
+
+#+MACRO: version 2.0
+#+MACRO: updated last updated 4 March 2014
 
 #+TEXINFO_FILENAME: sample.info
 #+TEXINFO_HEADER: @@syncodeindex pg cp
@@ -13810,7 +13837,9 @@ Texts,,texinfo} for an equivalent example using Texinfo code.
 #+TEXINFO_DIR_DESC: Invoking sample
 
 #+TEXINFO_PRINTED_TITLE: GNU Sample
-#+SUBTITLE: for version @{@{@{version@}@}@}, @{@{@{updated@}@}@}
+
+This manual is for GNU Sample (version @{@{@{version@}@}@},
+@{@{@{updated@}@}@}).
 
 * Copying
   :PROPERTIES:
@@ -13820,8 +13849,7 @@ Texts,,texinfo} for an equivalent example using Texinfo code.
   This manual is for GNU Sample (version @{@{@{version@}@}@},
   @{@{@{updated@}@}@}), which is an example in the Texinfo documentation.
 
-  Copyright @@@@texinfo:@@copyright@{@}@@@@ 2013 Free Software Foundation,
-  Inc.
+  Copyright \copy 2016 Free Software Foundation, Inc.
 
   #+BEGIN_QUOTE
   Permission is granted to copy, distribute and/or modify this
@@ -17018,8 +17046,6 @@ More templates can added by customizing the variable
 @node Speed keys
 @section Speed keys
 @cindex speed keys
-@vindex org-use-speed-commands
-@vindex org-speed-commands-user
 
 Single keystrokes can execute custom commands in an Org file when the cursor
 is on a headline.  Without the extra burden of a meta or modifier key, Speed
@@ -17028,14 +17054,19 @@ navigation, Speed Keys may come in handy on small mobile devices that do not
 have full keyboards.  Speed Keys may also work on TTY devices known for their
 problems when entering Emacs keychords.
 
-By default, Org has Speed Keys disabled.  To activate Speed Keys, configure
-the variable @code{org-use-speed-commands}.  To trigger a Speed Key, the
-cursor must be at the beginning of an Org headline, before any of the stars.
+@vindex org-use-speed-commands
+By default, Org has Speed Keys disabled.  To activate Speed Keys, set the
+variable @code{org-use-speed-commands} to a non-@code{nil} value.  To trigger
+a Speed Key, the cursor must be at the beginning of an Org headline, before
+any of the stars.
 
-Org comes with a pre-defined list of Speed Keys; @kbd{?} shows currently
-active Speed Keys.  To add or modify Speed Keys, customize the variable,
-@code{org-speed-commands-user}.  For more details, see the variable's
-docstring.
+@vindex org-speed-commands-user
+@findex org-speed-command-help
+Org comes with a pre-defined list of Speed Keys.  To add or modify Speed
+Keys, customize the variable, @code{org-speed-commands-user}.  For more
+details, see the variable's docstring.  With Speed Keys activated, @kbd{M-x
+org-speed-command-help}, or @kbd{?} when cursor is at the beginning of an Org
+headline, shows currently active Speed Keys, including the user-defined ones.
 
 
 @node Code evaluation security
@@ -18225,7 +18256,7 @@ no special formatting is applied.
 @cindex translator function
 
 Orgtbl mode has built-in translator functions: @code{orgtbl-to-csv}
-(comma-separated values), @code{orgtbl-to-tsv} (TAB-separated values)
+(comma-separated values), @code{orgtbl-to-tsv} (TAB-separated values),
 @code{orgtbl-to-latex}, @code{orgtbl-to-html}, @code{orgtbl-to-texinfo},
 @code{orgtbl-to-unicode} and @code{orgtbl-to-orgtbl}.  They use the generic
 translator, @code{orgtbl-to-generic}, which delegates translations to various
