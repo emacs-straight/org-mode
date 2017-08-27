@@ -377,7 +377,9 @@
   "Test `org-deadline-close-p' specifications."
   ;; Pretend that the current time is 2016-06-03 Fri 01:43
   (cl-letf (((symbol-function 'current-time)
-	     (lambda () '(22353 6425 905205 644000))))
+	     (lambda ()
+	       (apply #'encode-time
+		      (org-parse-time-string "2016-06-03 Fri 01:43")))))
     ;; Timestamps are close if they are within `ndays' of lead time.
     (org-test-with-temp-text "* Heading"
       (should (org-deadline-close-p "2016-06-03 Fri" 0))
@@ -2319,14 +2321,18 @@ http://article.gmane.org/gmane.emacs.orgmode/21459/"
 
 ;;;; Open at point
 
-(ert-deftest test-org/open-at-point-in-keyword ()
+(ert-deftest test-org/open-at-point/keyword ()
   "Does `org-open-at-point' open link in a keyword line?"
   (should
    (org-test-with-temp-text
        "<<top>>\n#+KEYWORD: <point>[[top]]"
+     (org-open-at-point) t))
+  (should
+   (org-test-with-temp-text
+       "* H\n<<top>>\n#+KEYWORD: <point>[[top]]"
      (org-open-at-point) t)))
 
-(ert-deftest test-org/open-at-point-in-property ()
+(ert-deftest test-org/open-at-point/property ()
   "Does `org-open-at-point' open link in property drawer?"
   (should
    (org-test-with-temp-text
@@ -2336,11 +2342,15 @@ http://article.gmane.org/gmane.emacs.orgmode/21459/"
 :END:"
      (org-open-at-point) t)))
 
-(ert-deftest test-org/open-at-point-in-comment ()
+(ert-deftest test-org/open-at-point/comment ()
   "Does `org-open-at-point' open link in a commented line?"
   (should
    (org-test-with-temp-text
     "<<top>>\n# <point>[[top]]"
+    (org-open-at-point) t))
+  (should
+   (org-test-with-temp-text
+    "* H\n<<top>>\n# <point>[[top]]"
     (org-open-at-point) t)))
 
 (ert-deftest test-org/open-at-point/inline-image ()
@@ -2357,6 +2367,23 @@ http://article.gmane.org/gmane.emacs.orgmode/21459/"
      (org-update-radio-target-regexp)
      (org-open-at-point)
      (eq (org-element-type (org-element-context)) 'radio-target))))
+
+(ert-deftest test-org/open-at-point/tag ()
+  "Test `org-open-at-point' on tags."
+  (should
+   (org-test-with-temp-text "* H :<point>tag:"
+     (catch :result
+       (cl-letf (((symbol-function 'org-tags-view)
+		  (lambda (&rest args) (throw :result t))))
+	 (org-open-at-point)
+	 nil))))
+  (should-not
+   (org-test-with-temp-text-in-file "* H<point> :tag:"
+     (catch :result
+       (cl-letf (((symbol-function 'org-tags-view)
+		  (lambda (&rest args) (throw :result t))))
+	 (org-open-at-point)
+	 nil)))))
 
 ;;;; Stored links
 
@@ -3251,11 +3278,12 @@ SCHEDULED: <2017-05-06 Sat>
 
 (ert-deftest test-org/forward-paragraph ()
   "Test `org-forward-paragraph' specifications."
-  ;; At end of buffer, return an error.
-  (should-error
+  ;; At end of buffer, do not return an error.
+  (should
    (org-test-with-temp-text "Paragraph"
      (goto-char (point-max))
-     (org-forward-paragraph)))
+     (org-forward-paragraph)
+     t))
   ;; Standard test.
   (should
    (org-test-with-temp-text "P1\n\nP2\n\nP3"
@@ -3320,10 +3348,11 @@ SCHEDULED: <2017-05-06 Sat>
 
 (ert-deftest test-org/backward-paragraph ()
   "Test `org-backward-paragraph' specifications."
-  ;; Error at beginning of buffer.
-  (should-error
+  ;; Do not error at beginning of buffer.
+  (should
    (org-test-with-temp-text "Paragraph"
-     (org-backward-paragraph)))
+     (org-backward-paragraph)
+     t))
   ;; Regular test.
   (should
    (org-test-with-temp-text "P1\n\nP2\n\nP3"
@@ -5967,6 +5996,53 @@ Paragraph<point>"
      (search-forward "Text")
      (org-show-set-visibility 'minimal)
      (org-invisible-p2))))
+
+(defun test-org/copy-visible ()
+  "Test `org-copy-visible' specifications."
+  (should
+   (equal "Foo"
+	  (org-test-with-temp-text "Foo"
+	    (let ((kill-ring nil))
+	      (org-copy-visible (point-min) (point-max))
+	      (current-kill 0 t)))))
+  ;; Skip invisible characters by text property.
+  (should
+   (equal "Foo"
+	  (org-test-with-temp-text #("F<hidden>oo" 1 7 (invisible t))
+	    (let ((kill-ring nil))
+	      (org-copy-visible (point-min) (point-max))
+	      (current-kill 0 t)))))
+  ;; Skip invisible characters by overlay.
+  (should
+   (equal "Foo"
+	  (org-test-with-temp-text "F<hidden>oo"
+	    (let ((o (make-overlay 2 10)))
+	      (overlay-put o 'invisible t))
+	    (let ((kill-ring nil))
+	      (org-copy-visible (point-min) (point-max))
+	      (current-kill 0 t)))))
+  ;; Handle invisible characters at the beginning and the end of the
+  ;; buffer.
+  (should
+   (equal "Foo"
+	  (org-test-with-temp-text #("<hidden>Foo" 0 8 (invisible t))
+	    (let ((kill-ring nil))
+	      (org-copy-visible (point-min) (point-max))
+	      (current-kill 0 t)))))
+  (should
+   (equal "Foo"
+	  (org-test-with-temp-text #("Foo<hidden>" 3 11 (invisible t))
+	    (let ((kill-ring nil))
+	      (org-copy-visible (point-min) (point-max))
+	      (current-kill 0 t)))))
+  ;; Handle multiple visible parts.
+  (should
+   (equal "abc"
+	  (org-test-with-temp-text
+	      #("aXbXc" 1 2 (invisible t) 3 4 (invisible t))
+	    (let ((kill-ring nil))
+	      (org-copy-visible (point-min) (point-max))
+	      (current-kill 0 t))))))
 
 
 (provide 'test-org)
