@@ -5,6 +5,7 @@
 @include docstyle.texi
 
 @set VERSION 9.0.10
+@set DATE 2017-08-27
 
 @c Version and Contact Info
 @set MAINTAINERSITE @uref{http://orgmode.org,maintainers web page}
