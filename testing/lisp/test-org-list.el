@@ -756,7 +756,19 @@
 	  (org-test-with-temp-text "- it<point>em"
 	    (let ((org-M-RET-may-split-line  '((default . nil))))
 	      (org-insert-item))
-	    (buffer-string)))))
+	    (buffer-string))))
+  ;; Preserve list visibility when inserting an item.
+  (should
+   (equal
+    '(outline outline)
+    (org-test-with-temp-text "- A\n  - B\n- C\n  - D"
+      (let ((org-cycle-include-plain-lists t))
+	(org-cycle)
+	(forward-line 2)
+	(org-cycle)
+	(org-insert-item)
+	(list (get-char-property (line-beginning-position 0) 'invisible)
+	      (get-char-property (line-end-position 2) 'invisible)))))))
 
 (ert-deftest test-org-list/repair ()
   "Test `org-list-repair' specifications."
@@ -1234,13 +1246,13 @@
     "level1 a\nlevel2 b"
     (org-test-with-temp-text "- a\n  - b"
       (org-list-to-generic (org-list-to-lisp)
-			   '(:istart (lambda (l) (format "level%d "l)))))))
+			   '(:istart (lambda (type l) (format "level%d "l)))))))
   (should
    (equal
     "a\nblevel2level1"
     (org-test-with-temp-text "- a\n  - b"
       (org-list-to-generic (org-list-to-lisp)
-			   '(:iend (lambda (l) (format "level%d" l)))))))
+			   '(:iend (lambda (type l) (format "level%d" l)))))))
   ;; Test `:icount' parameter.
   (should
    (equal
@@ -1264,7 +1276,7 @@
     (org-test-with-temp-text "1. [@3] a"
       (org-list-to-generic
        (org-list-to-lisp)
-       '(:icount (lambda (l c) (format "level:%d, counter:%d " l c)))))))
+       '(:icount (lambda (type l c) (format "level:%d, counter:%d " l c)))))))
   ;; Test `:isep' parameter.
   (should
    (equal
@@ -1280,8 +1292,17 @@
    (equal
     "a\n- 1 -\nb"
     (org-test-with-temp-text "- a\n- b"
-      (org-list-to-generic (org-list-to-lisp)
-			   '(:isep (lambda (l) (format "- %d -" l)))))))
+      (org-list-to-generic
+       (org-list-to-lisp)
+       '(:isep (lambda (type depth) (format "- %d -" depth)))))))
+  ;; Test `:ifmt' parameter.
+  (should
+   (equal
+    ">> a <<"
+    (org-test-with-temp-text "1. [@3] a"
+      (org-list-to-generic
+       (org-list-to-lisp)
+       '(:ifmt (lambda (type c) (format ">> %s <<" c)))))))
   ;; Test `:cbon', `:cboff', `:cbtrans'
   (should
    (equal
@@ -1393,6 +1414,39 @@
 		    (beginning-of-line)
 		    (skip-chars-backward " \r\t\n")
 		    (point)))))))
+
+(ert-deftest test-org-list/to-org ()
+  "Test `org-list-to-org' specifications."
+  ;; Un-ordered list.
+  (should
+   (equal "- a"
+	  (org-test-with-temp-text "- a"
+	    (org-list-to-org (org-list-to-lisp) nil))))
+  ;; Ordered list.
+  (should
+   (equal "1. a"
+	  (org-test-with-temp-text "1. a"
+	    (org-list-to-org (org-list-to-lisp) nil))))
+  ;; Descriptive list.
+  (should
+   (equal "- a :: b"
+	  (org-test-with-temp-text "- a :: b"
+	    (org-list-to-org (org-list-to-lisp) nil))))
+  ;; Nested list.
+  (should
+   (equal "- a\n  - b"
+	  (org-test-with-temp-text "- a\n  - b"
+	    (org-list-to-org (org-list-to-lisp) nil))))
+  ;; Item spanning over multiple lines.
+  (should
+   (equal "- a\n  b"
+	  (org-test-with-temp-text "- a\n  b"
+	    (org-list-to-org (org-list-to-lisp) nil))))
+  ;; Item with continuation text after a sub-list.
+  (should
+   (equal "- a\n  - b\n  c"
+	  (org-test-with-temp-text "- a\n  - b\n  c"
+	    (org-list-to-org (org-list-to-lisp) nil)))))
 
 
 (provide 'test-org-list)

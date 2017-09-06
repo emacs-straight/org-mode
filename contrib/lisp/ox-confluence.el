@@ -39,16 +39,18 @@
 ;; Define the backend itself
 (org-export-define-derived-backend 'confluence 'ascii
   :translate-alist '((bold . org-confluence-bold)
+		     (code . org-confluence-code)
 		     (example-block . org-confluence-example-block)
 		     (fixed-width . org-confluence-fixed-width)
 		     (footnote-definition . org-confluence-empty)
 		     (footnote-reference . org-confluence-empty)
 		     (headline . org-confluence-headline)
 		     (italic . org-confluence-italic)
-                     (item . org-confluence-item)
+		     (item . org-confluence-item)
 		     (link . org-confluence-link)
 		     (paragraph . org-confluence-paragraph)
 		     (property-drawer . org-confluence-property-drawer)
+		     (quote-block . org-confluence-quote-block)
 		     (section . org-confluence-section)
 		     (src-block . org-confluence-src-block)
 		     (strike-through . org-confluence-strike-through)
@@ -57,7 +59,8 @@
 		     (table-row . org-confluence-table-row)
 		     (template . org-confluence-template)
 		     (timestamp . org-confluence-timestamp)
-		     (underline . org-confluence-underline)))
+		     (underline . org-confluence-underline)
+		     (verbatim . org-confluence-verbatim)))
 
 (defcustom org-confluence-lang-alist
   '(("sh" . "bash"))
@@ -80,12 +83,32 @@
   (format "_%s_" contents))
 
 (defun org-confluence-item (item contents info)
-  (concat (make-string (1+ (org-confluence--li-depth item)) ?\-)
-          " "
-          (org-trim contents)))
+  (let ((list-type (org-element-property :type (org-export-get-parent item))))
+    (concat
+     (make-string (1+ (org-confluence--li-depth item))
+                  (if (eq list-type 'ordered) ?\# ?\-))
+     " "
+     (pcase (org-element-property :checkbox item)
+       (`on "*{{(X)}}* ")
+       (`off "*{{( )}}* ")
+       (`trans "*{{(\\-)}}* "))
+     (when (eq list-type 'descriptive)
+       (concat "*"
+	       (org-export-data (org-element-property :tag item) info)
+	       "* - "))
+     (org-trim contents))))
 
 (defun org-confluence-fixed-width (fixed-width contents info)
-  (format "\{\{%s\}\}" contents))
+  (org-confluence--block
+   "none"
+   "Confluence"
+   (org-trim (org-element-property :value fixed-width))))
+
+(defun org-confluence-verbatim (verbatim contents info)
+  (format "\{\{%s\}\}" (org-element-property :value verbatim)))
+
+(defun org-confluence-code (code contents info)
+  (format "\{\{%s\}\}" (org-element-property :value code)))
 
 (defun org-confluence-headline (headline contents info)
   (let* ((low-level-rank (org-export-low-level-p headline info))
@@ -98,7 +121,6 @@
 			    (string= todo ""))
 			""
 		      (format "*{{%s}}* " todo))))
-    ;; Else: Standard headline.
     (format "h%s. %s%s\n%s" level todo-text text
             (if (org-string-nw-p contents) contents ""))))
 
@@ -122,6 +144,9 @@ a communication channel."
 (defun org-confluence-property-drawer (property-drawer contents info)
   (and (org-string-nw-p contents)
        (format "\{\{%s\}\}" contents)))
+
+(defun org-confluence-quote-block (quote-block contents info)
+  (format "{quote}\n%s{quote}" contents))
 
 (defun org-confluence-section (section contents info)
   contents)
@@ -159,7 +184,7 @@ a communication channel."
 (defun org-confluence-timestamp (timestamp _contents _info)
   "Transcode a TIMESTAMP object from Org to Confluence.
 CONTENTS and INFO are ignored."
-  (let ((translated (org-timestamp-translate timestamp)))
+  (let ((translated (org-trim (org-timestamp-translate timestamp))))
     (if (string-prefix-p "[" translated)
         (concat "(" (substring translated 1 -1) ")")
       translated)))
@@ -186,7 +211,7 @@ CONTENTS and INFO are ignored."
                 (or (eq tag 'item) ; list items interleave with plain-list
                     (eq tag 'plain-list)))
       (when (eq tag 'item)
-        (incf depth))
+        (cl-incf depth))
       (setq item (org-export-get-parent item)))
     depth))
 

@@ -509,7 +509,7 @@
   ;; {@min}, {@max} and {@mean} apply to ages.
   (should
    (equal
-    "0d 00h 0m 0s"
+    "0min"
     (cl-letf (((symbol-function 'current-time)
 	       (lambda ()
 		 (apply #'encode-time
@@ -528,7 +528,7 @@
 	(get-char-property (point) 'org-columns-value-modified)))))
   (should
    (equal
-    "705d 00h 0m 0s"
+    "705d"
     (cl-letf (((symbol-function 'current-time)
 	       (lambda ()
 		 (apply #'encode-time
@@ -547,7 +547,7 @@
 	(get-char-property (point) 'org-columns-value-modified)))))
   (should
    (equal
-    "352d 12h 0m 0s"
+    "352d 12h"
     (cl-letf (((symbol-function 'current-time)
 	       (lambda ()
 		 (apply #'encode-time
@@ -569,7 +569,7 @@
   ;; combinations of duration and H:MM:SS patterns.
   (should
    (equal
-    "1d 4:20"
+    "3d 4:20"
     (org-test-with-temp-text
 	"* H
 ** S1
@@ -581,9 +581,8 @@
 :A: 1:20
 :END:"
       (let ((org-columns-default-format "%A{:}")
-	    (org-time-clocksum-use-fractional nil)
-	    (org-time-clocksum-format
-	     '(:days "%dd " :hours "%d" :minutes ":%02d")))
+	    (org-duration-units '(("d" . 1440) ("h" . 60)))
+	    (org-duration-format '(("d" . nil) (special . h:mm))))
 	(org-columns))
       (get-char-property (point) 'org-columns-value-modified))))
   (should
@@ -603,7 +602,7 @@
       (get-char-property (point) 'org-columns-value-modified))))
   (should
    (equal
-    "1d 4:20"
+    "3d 4:20"
     (org-test-with-temp-text
 	"* H
 ** S1
@@ -615,25 +614,23 @@
 :A: 0d 1:20
 :END:"
       (let ((org-columns-default-format "%A{:}")
-	    (org-time-clocksum-use-fractional nil)
-	    (org-time-clocksum-format
-	     '(:days "%dd " :hours "%d" :minutes ":%02d")))
+	    (org-duration-units '(("d" . 1440) ("h" . 60)))
+	    (org-duration-format '(("d" . nil) (special . h:mm))))
 	(org-columns))
       (get-char-property (point) 'org-columns-value-modified))))
-  ;; @min, @max and @mean also accept regular duration in
-  ;; a "?d ?h ?m ?s" format.
+  ;; @min, @max and @mean also accept regular duration.
   (should
    (equal
-    "1d 10h 0m 0s"
+    "1d 10h"
     (org-test-with-temp-text
 	"* H
 ** S1
 :PROPERTIES:
-:A: 1d 10h 0m 0s
+:A: 1d 10h 0min
 :END:
 ** S1
 :PROPERTIES:
-:A: 5d 3h 0m 0s
+:A: 5d 3h
 :END:"
       (let ((org-columns-default-format "%A{@min}")) (org-columns))
       (get-char-property (point) 'org-columns-value-modified))))

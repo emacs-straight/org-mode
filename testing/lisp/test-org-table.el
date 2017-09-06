@@ -642,7 +642,7 @@ See also `test-org-table/remote-reference-access'."
 | c   d            | c   d            |
 |                  |                  |
 | 2012-12          | 2012-12          |
-| [2012-12-31 Mon] | <2012-12-31 Mon> |
+| [2012-12-31 Mon] | [2012-12-31 Mon] |
 "
      1 (concat "#+TBLFM: $2 = if(\"$1\" == \"nan\", "
 	       "string(\"\"), string(subvec(\"$1\", 2, vlen(\"$1\")))); E"))
@@ -656,7 +656,7 @@ See also `test-org-table/remote-reference-access'."
 | c   d            | c d              |
 |                  |                  |
 | 2012-12          | 2000             |
-| [2012-12-31 Mon] | <2012-12-31 Mon> |
+| [2012-12-31 Mon] | [2012-12-31 Mon] |
 "
      1 "#+TBLFM: $2 = if(\"$1\" == \"nan\", string(\"\"), $1); E")))
 
@@ -1668,14 +1668,20 @@ See also `test-org-table/copy-field'."
       (buffer-string))))
   ;; Sort by time (HH:MM values)
   (should
-   (equal "| 1:00 |\n| 14:00 |\n| 17:00 |\n"
-	  (org-test-with-temp-text "| 14:00 |\n| 17:00 |\n| 1:00 |\n"
+   (equal "| 1:00 |\n| 17:00 |\n| 114:00 |\n"
+	  (org-test-with-temp-text "| 114:00 |\n| 17:00 |\n| 1:00 |\n"
 	    (org-table-sort-lines nil ?t)
 	    (buffer-string))))
   (should
-   (equal "| 17:00 |\n| 14:00 |\n| 1:00 |\n"
-	  (org-test-with-temp-text "| 14:00 |\n| 17:00 |\n| 1:00 |\n"
+   (equal "| 114:00 |\n| 17:00 |\n| 1:00 |\n"
+	  (org-test-with-temp-text "| 114:00 |\n| 17:00 |\n| 1:00 |\n"
 	    (org-table-sort-lines nil ?T)
+	    (buffer-string))))
+  ;; Sort by time (durations)
+  (should
+   (equal "| 1d 3:00 |\n| 28:00 |\n"
+	  (org-test-with-temp-text "| 28:00 |\n| 1d 3:00 |\n"
+	    (org-table-sort-lines nil ?t)
 	    (buffer-string))))
   ;; Sort with custom functions.
   (should
@@ -1807,6 +1813,13 @@ is t, then new columns should be added as needed"
 		 (org-test-with-temp-text "
        | 2:12 | 1:47 | |
        <point>#+TBLFM: @1$3=$1+$2;T"
+		   (org-table-calc-current-TBLFM)
+		   (buffer-string))))
+  (should
+   (string-match "| 2:12 | 1:47 | 03:59 |"
+		 (org-test-with-temp-text "
+       | 2:12 | 1:47 | |
+       <point>#+TBLFM: @1$3=$1+$2;U"
 		   (org-table-calc-current-TBLFM)
 		   (buffer-string))))
   (should
@@ -2092,6 +2105,45 @@ is t, then new columns should be added as needed"
     (org-test-with-temp-text "| a<point> |\n|---|\n| b |"
       (let ((org-table-tab-jumps-over-hlines nil)) (org-table-next-field))
       (buffer-string)))))
+
+(ert-deftest test-org-table/previous-field ()
+  "Test `org-table-previous-field' specifications."
+  ;; Regular tests.
+  (should
+   (eq ?a
+       (org-test-with-temp-text "| a | <point>b |"
+	 (org-table-previous-field)
+	 (char-after))))
+  (should
+   (eq ?a
+       (org-test-with-temp-text "| a |\n| <point>b |"
+	 (org-table-previous-field)
+	 (char-after))))
+  ;; Find previous field across horizontal rules.
+  (should
+   (eq ?a
+       (org-test-with-temp-text "| a |\n|---|\n| <point>b |"
+	 (org-table-previous-field)
+	 (char-after))))
+  ;; When called on a horizontal rule, find previous data field.
+  (should
+   (eq ?b
+       (org-test-with-temp-text "| a | b |\n|---+-<point>--|"
+	 (org-table-previous-field)
+	 (char-after))))
+  ;; Error when at first field.  Make sure to preserve original
+  ;; position.
+  (should-error
+   (org-test-with-temp-text "| <point> a|"
+     (org-table-previous-field)))
+  (should-error
+   (org-test-with-temp-text "|---|\n| <point>a |"
+     (org-table-previous-field)))
+  (should
+   (eq ?a
+       (org-test-with-temp-text "|---|\n| <point>a |"
+	 (ignore-errors (org-table-previous-field))
+	 (char-after)))))
 
 
 

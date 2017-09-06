@@ -232,6 +232,38 @@ num:2 <:active")))
 		org-test-dir)
       (org-export--get-inbuffer-options))
     '(:language "fr" :select-tags ("a" "b" "c") :title ("a b c"))))
+  ;; Options set through SETUPFILE specified using a URL.
+  (let ((buffer (generate-new-buffer "url-retrieve-output")))
+    (unwind-protect
+	;; Simulate successful retrieval of a setupfile from URL.
+	(cl-letf (((symbol-function 'url-retrieve-synchronously)
+		   (lambda (&rest_)
+		     (with-current-buffer buffer
+		       (insert "HTTP/1.1 200 OK
+
+# Contents of http://link-to-my-setupfile.org
+#+BIND: variable value
+#+DESCRIPTION: l2
+#+LANGUAGE: en
+#+SELECT_TAGS: b
+#+TITLE: b
+#+PROPERTY: a 1
+"))
+		     buffer)))
+	  (should
+	   (equal
+	    (org-test-with-temp-text
+		"#+DESCRIPTION: l1
+#+LANGUAGE: es
+#+SELECT_TAGS: a
+#+TITLE: a
+#+SETUPFILE: \"http://link-to-my-setupfile.org\"
+#+LANGUAGE: fr
+#+SELECT_TAGS: c
+#+TITLE: c"
+	      (org-export--get-inbuffer-options))
+	    '(:language "fr" :select-tags ("a" "b" "c") :title ("a b c")))))
+      (kill-buffer buffer)))
   ;; More than one property can refer to the same buffer keyword.
   (should
    (equal '(:k2 "value" :k1 "value")
@@ -934,7 +966,7 @@ Paragraph <2012-03-29 Thu>[2012-03-29 Thu]"
 #+BEGIN_SRC emacs-lisp
 \(+ 1 2)
 #+END_SRC"
-	    (let ((org-export-babel-evaluate t))
+	    (let ((org-export-use-babel t))
 	      (org-export-as (org-test-default-backend) 'subtree)))))
   ;; Subtree export should ignore leading planning line and property
   ;; drawer.
@@ -995,20 +1027,34 @@ Text"
   ;; Export from a file: name is built from original file name.
   (should
    (org-test-with-temp-text-in-file "Test"
-     (equal (concat (file-name-as-directory ".")
-		    (file-name-nondirectory
-		     (file-name-sans-extension (buffer-file-name))))
-	    (file-name-sans-extension (org-export-output-file-name ".ext")))))
+     (equal (file-name-base (buffer-file-name))
+	    (file-name-base (org-export-output-file-name ".ext")))))
+  ;; When #+EXPORT_FILE_NAME is defined, use it.
+  (should
+   (equal "test.ext"
+	  (org-test-with-temp-text-in-file "#+EXPORT_FILE_NAME: test"
+	    (org-export-output-file-name ".ext" t))))
   ;; When exporting to subtree, check EXPORT_FILE_NAME property first.
   (should
-   (org-test-with-temp-text-in-file
-       "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: test\n  :END:"
-     (equal (org-export-output-file-name ".ext" t) "./test.ext")))
+   (equal "test.ext"
+	  (org-test-with-temp-text-in-file
+	      "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: test\n  :END:"
+	    (org-export-output-file-name ".ext" t))))
+  (should
+   (equal "property.ext"
+	  (org-test-with-temp-text
+	      "#+EXPORT_FILE_NAME: keyword
+* Test<point>
+:PROPERTIES:
+:EXPORT_FILE_NAME: property
+:END:"
+	    (org-export-output-file-name ".ext" t))))
   ;; From a buffer not associated to a file, too.
   (should
-   (org-test-with-temp-text
-       "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: test\n  :END:"
-     (equal (org-export-output-file-name ".ext" t) "./test.ext")))
+   (equal "test.ext"
+	  (org-test-with-temp-text
+	      "* Test\n  :PROPERTIES:\n  :EXPORT_FILE_NAME: test\n  :END:"
+	    (org-export-output-file-name ".ext" t))))
   ;; When provided name is absolute, preserve it.
   (should
    (org-test-with-temp-text
@@ -1017,15 +1063,23 @@ Text"
      (file-name-absolute-p (org-export-output-file-name ".ext" t))))
   ;; When PUB-DIR argument is provided, use it.
   (should
-   (org-test-with-temp-text-in-file "Test"
-     (equal (file-name-directory
-	     (org-export-output-file-name ".ext" nil "dir/"))
-	    "dir/")))
+   (equal "dir/"
+	  (org-test-with-temp-text-in-file "Test"
+	    (file-name-directory
+	     (org-export-output-file-name ".ext" nil "dir/")))))
+  ;; PUB-DIR has precedence over EXPORT_FILE_NAME keyword or property.
+  (should
+   (equal "pub-dir/"
+	  (org-test-with-temp-text-in-file
+	      "#+EXPORT_FILE_NAME: /dir/keyword\nTest"
+	    (file-name-directory
+	     (org-export-output-file-name ".ext" nil "pub-dir/")))))
   ;; When returned name would overwrite original file, add EXTENSION
   ;; another time.
   (should
-   (org-test-at-id "75282ba2-f77a-4309-a970-e87c149fe125"
-     (equal (org-export-output-file-name ".org") "./normal.org.org"))))
+   (equal "normal.org.org"
+	  (org-test-at-id "75282ba2-f77a-4309-a970-e87c149fe125"
+	    (org-export-output-file-name ".org")))))
 
 (ert-deftest test-org-export/expand-include ()
   "Test file inclusion in an Org buffer."
@@ -1033,6 +1087,11 @@ Text"
   (should-error
    (org-test-with-temp-text "#+INCLUDE: dummy.org"
      (org-export-expand-include-keyword)))
+  ;; Refuse to expand keywords in commented headings.
+  (should
+   (org-test-with-temp-text "* COMMENT H1\n#+INCLUDE: dummy.org"
+     (org-export-expand-include-keyword)
+     t))
   ;; Full insertion with recursive inclusion.
   (should
    (equal
@@ -1240,15 +1299,15 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
   ;; Adjacent INCLUDE-keywords should have the same :minlevel if unspecified.
   (should
    (cl-every (lambda (level) (zerop (1- level)))
-	      (org-test-with-temp-text
-		  (concat
-		   (format "#+INCLUDE: \"%s/examples/include.org::#ah\"\n"
-			   org-test-dir)
-		   (format "#+INCLUDE: \"%s/examples/include.org::*Heading\""
-			   org-test-dir))
-		(org-export-expand-include-keyword)
-		(org-element-map (org-element-parse-buffer) 'headline
-		  (lambda (head) (org-element-property :level head))))))
+	     (org-test-with-temp-text
+		 (concat
+		  (format "#+INCLUDE: \"%s/examples/include.org::#ah\"\n"
+			  org-test-dir)
+		  (format "#+INCLUDE: \"%s/examples/include.org::*Heading\""
+			  org-test-dir))
+	       (org-export-expand-include-keyword)
+	       (org-element-map (org-element-parse-buffer) 'headline
+		 (lambda (head) (org-element-property :level head))))))
   ;; INCLUDE does not insert induced :minlevel for src-blocks.
   (should-not
    (equal
@@ -1289,6 +1348,27 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
    (equal "#+MACRO: macro1 value\nvalue\n"
 	  (org-test-with-temp-text "#+MACRO: macro1 value\n{{{macro1}}}"
 	    (org-export-as (org-test-default-backend)))))
+  ;; Include global macros.  However, local macros override them.
+  (should
+   (equal "global\n"
+	  (org-test-with-temp-text "{{{M}}}"
+	    (let ((org-export-global-macros '(("M" . "global"))))
+	      (org-export-as (org-test-default-backend))))))
+  (should
+   (equal "global arg\n"
+	  (org-test-with-temp-text "{{{M(arg)}}}"
+	    (let ((org-export-global-macros '(("M" . "global $1"))))
+	      (org-export-as (org-test-default-backend))))))
+  (should
+   (equal "2\n"
+	  (org-test-with-temp-text "{{{M}}}"
+	    (let ((org-export-global-macros '(("M" . "(eval (+ 1 1))"))))
+	      (org-export-as (org-test-default-backend))))))
+  (should
+   (equal "#+MACRO: M local\nlocal\n"
+	  (org-test-with-temp-text "#+macro: M local\n{{{M}}}"
+	    (let ((org-export-global-macros '(("M" . "global"))))
+	      (org-export-as (org-test-default-backend))))))
   ;; Allow macro in parsed keywords and associated properties.
   ;; Standard macro expansion.
   (should
@@ -2736,6 +2816,41 @@ Para2"
       (org-element-map (org-element-parse-buffer) 'link 'identity nil t))
     '(("custom-id" . "id")))))
 
+(ert-deftest test-org-export/insert-image-links ()
+  "Test `org-export-insert-image-links' specifications."
+  (should-not
+   (member "file"
+	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.png]]"
+	     (org-element-map tree 'link
+	       (lambda (l) (org-element-property :type l))))))
+  (should
+   (member "file"
+	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.png]]"
+	     (org-element-map (org-export-insert-image-links tree info) 'link
+	       (lambda (l) (org-element-property :type l))))))
+  ;; Properly set `:parent' property when replace contents with image
+  ;; link.
+  (should
+   (memq 'link
+	 (org-test-with-parsed-data "[[http://orgmode.org][file:image.png]]"
+	   (org-element-map (org-export-insert-image-links tree info) 'link
+	     (lambda (l)
+	       (org-element-type (org-element-property :parent l)))))))
+  ;; With optional argument RULES, recognize different links as
+  ;; images.
+  (should-not
+   (member "file"
+	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.xxx]]"
+	     (org-element-map (org-export-insert-image-links tree info) 'link
+	       (lambda (l) (org-element-property :type l))))))
+  (should
+   (member "file"
+	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.xxx]]"
+	     (org-element-map
+		 (org-export-insert-image-links tree info '(("file" . "xxx")))
+		 'link
+	       (lambda (l) (org-element-property :type l)))))))
+
 (ert-deftest test-org-export/fuzzy-link ()
   "Test fuzzy links specifications."
   ;; Link to an headline should return headline's number.
@@ -3661,37 +3776,37 @@ Another text. (ref:text)
 
 (ert-deftest test-org-export/has-header-p ()
   "Test `org-export-table-has-header-p' specifications."
-  ;; 1. With an header.
-  (org-test-with-parsed-data "
+  ;; With an header.
+  (should
+   (org-test-with-parsed-data "
 | a | b |
 |---+---|
 | c | d |"
-    (should
      (org-export-table-has-header-p
       (org-element-map tree 'table 'identity info 'first-match)
       info)))
-  ;; 2. Without an header.
-  (org-test-with-parsed-data "
+  ;; Without an header.
+  (should-not
+   (org-test-with-parsed-data "
 | a | b |
 | c | d |"
-    (should-not
      (org-export-table-has-header-p
       (org-element-map tree 'table 'identity info 'first-match)
       info)))
-  ;; 3. Don't get fooled with starting and ending rules.
-  (org-test-with-parsed-data "
+  ;; Don't get fooled with starting and ending rules.
+  (should-not
+   (org-test-with-parsed-data "
 |---+---|
 | a | b |
 | c | d |
 |---+---|"
-    (should-not
      (org-export-table-has-header-p
       (org-element-map tree 'table 'identity info 'first-match)
       info))))
 
 (ert-deftest test-org-export/table-row-group ()
   "Test `org-export-table-row-group' specifications."
-  ;; 1. A rule creates a new group.
+  ;; A rule creates a new group.
   (should
    (equal '(1 rule 2)
 	  (org-test-with-parsed-data "
@@ -3702,7 +3817,7 @@ Another text. (ref:text)
 	      (lambda (row)
 		(if (eq (org-element-property :type row) 'rule) 'rule
 		  (org-export-table-row-group row info)))))))
-  ;; 2. Special rows are ignored in count.
+  ;; Special rows are ignored in count.
   (should
    (equal
     '(rule 1)
@@ -3715,7 +3830,7 @@ Another text. (ref:text)
 	  (if (eq (org-element-property :type row) 'rule) 'rule
 	    (org-export-table-row-group row info)))
 	info))))
-  ;; 3. Double rules also are ignored in count.
+  ;; Double rules also are ignored in count.
   (should
    (equal '(1 rule rule 2)
 	  (org-test-with-parsed-data "
