@@ -241,11 +241,9 @@ should be asked whether to allow evaluation."
 	 (query (or (equal eval "query")
 		    (and export (equal eval "query-export"))
 		    (if (functionp org-confirm-babel-evaluate)
-			(save-excursion
-			  (goto-char (nth 5 info))
-			  (funcall org-confirm-babel-evaluate
-				   ;; language, code block body
-				   (nth 0 info) (nth 1 info)))
+			(funcall org-confirm-babel-evaluate
+				 ;; Language, code block body.
+				 (nth 0 info) (nth 1 info))
 		      org-confirm-babel-evaluate))))
     (cond
      (noeval nil)
@@ -2355,7 +2353,7 @@ INFO may provide the values of these header arguments (in the
 		   ((assq :wrap (nth 2 info))
 		    (let ((name (or (cdr (assq :wrap (nth 2 info))) "RESULTS")))
 		      (funcall wrap (concat "#+BEGIN_" name)
-			       (concat "#+END_" (car (org-split-string name)))
+			       (concat "#+END_" (car (split-string name)))
 			       nil nil (concat "{{{results(@@" name ":") "@@)}}}")))
 		   ((member "html" result-params)
 		    (funcall wrap "#+BEGIN_EXPORT html" "#+END_EXPORT" nil nil

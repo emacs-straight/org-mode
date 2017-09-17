@@ -1445,7 +1445,7 @@ E.g. when this is set to 1, the search view will only
 show headlines of level 1.  When set to 0, the default
 value, don't limit agenda view by outline level."
   :group 'org-agenda-search-view
-  :version "24.4"
+  :version "26.1"
   :package-version '(Org . "8.3")
   :type 'integer)
 
@@ -4368,8 +4368,9 @@ as a whole, to include whitespace.
   with a colon, this will mean that the (non-regexp) snippets of the
   Boolean search must match as full words.
 
-This command searches the agenda files, and in addition the files listed
-in `org-agenda-text-search-extra-files'."
+This command searches the agenda files, and in addition the files
+listed in `org-agenda-text-search-extra-files' unless a restriction lock
+is active."
   (interactive "P")
   (if org-agenda-overriding-arguments
       (setq todo-only (car org-agenda-overriding-arguments)
@@ -4425,7 +4426,7 @@ in `org-agenda-text-search-extra-files'."
       (if (or org-agenda-search-view-always-boolean
 	      (member (string-to-char words) '(?- ?+ ?\{)))
 	  (setq boolean t))
-      (setq words (org-split-string words))
+      (setq words (split-string words))
       (let (www w)
 	(while (setq w (pop words))
 	  (while (and (string-match "\\\\\\'" w) words)
@@ -4479,10 +4480,20 @@ in `org-agenda-text-search-extra-files'."
 	(if hdl-only (setq regexp (concat org-outline-regexp-bol ".*?"
 					  regexp))))
       (setq files (org-agenda-files nil 'ifmode))
-      (when (eq (car org-agenda-text-search-extra-files) 'agenda-archives)
-	(pop org-agenda-text-search-extra-files)
-	(setq files (org-add-archive-files files)))
-      (setq files (append files org-agenda-text-search-extra-files)
+      ;; Add `org-agenda-text-search-extra-files' unless there is some
+      ;; restriction.
+      (unless (get 'org-agenda-files 'org-restrict)
+	(when (eq (car org-agenda-text-search-extra-files) 'agenda-archives)
+	  (pop org-agenda-text-search-extra-files)
+	  (setq files (org-add-archive-files files))))
+      ;; Uniquify files.  However, let `org-check-agenda-file' handle
+      ;; non-existent ones.
+      (setq files (cl-remove-duplicates
+		   (append files org-agenda-text-search-extra-files)
+		   :test (lambda (a b)
+			   (and (file-exists-p a)
+				(file-exists-p b)
+				(file-equal-p a b))))
 	    rtnall nil)
       (while (setq file (pop files))
 	(setq ee nil)
@@ -4537,12 +4548,12 @@ in `org-agenda-text-search-extra-files'."
 				   (point-at-bol)
 				   (if hdl-only (point-at-eol) end)))
 			(mapc (lambda (wr) (when (string-match wr str)
-					     (goto-char (1- end))
-					     (throw :skip t)))
+					(goto-char (1- end))
+					(throw :skip t)))
 			      regexps-)
 			(mapc (lambda (wr) (unless (string-match wr str)
-					     (goto-char (1- end))
-					     (throw :skip t)))
+					(goto-char (1- end))
+					(throw :skip t)))
 			      (if todo-only
 				  (cons (concat "^\\*+[ \t]+"
                                                 org-not-done-regexp)
@@ -4867,39 +4878,41 @@ keywords.  Possible classes are: `todo', `done', `any'.
 If any of these conditions is met, this function returns the end point of
 the entity, causing the search to continue from there.  This is a function
 that can be put into `org-agenda-skip-function' for the duration of a command."
-  (let (beg end m)
-    (org-back-to-heading t)
-    (setq beg (point)
-	  end (if subtree
-		  (progn (org-end-of-subtree t) (point))
-		(progn (outline-next-heading) (1- (point)))))
-    (goto-char beg)
+  (org-back-to-heading t)
+  (let* ((beg (point))
+	 (end (if subtree (save-excursion (org-end-of-subtree t) (point))
+		(org-entry-end-position)))
+	 (planning-end (if subtree end (line-end-position 2)))
+	 m)
     (and
-     (or
-      (and (memq 'scheduled conditions)
-	   (re-search-forward org-scheduled-time-regexp end t))
-      (and (memq 'notscheduled conditions)
-	   (not (re-search-forward org-scheduled-time-regexp end t)))
-      (and (memq 'deadline conditions)
-	   (re-search-forward org-deadline-time-regexp end t))
-      (and (memq 'notdeadline conditions)
-	   (not (re-search-forward org-deadline-time-regexp end t)))
-      (and (memq 'timestamp conditions)
-	   (re-search-forward org-ts-regexp end t))
-      (and (memq 'nottimestamp conditions)
-	   (not (re-search-forward org-ts-regexp end t)))
-      (and (setq m (memq 'regexp conditions))
-	   (stringp (nth 1 m))
-	   (re-search-forward (nth 1 m) end t))
-      (and (setq m (memq 'notregexp conditions))
-	   (stringp (nth 1 m))
-	   (not (re-search-forward (nth 1 m) end t)))
-      (and (or
-	    (setq m (memq 'nottodo conditions))
-	    (setq m (memq 'todo-unblocked conditions))
-	    (setq m (memq 'nottodo-unblocked conditions))
-	    (setq m (memq 'todo conditions)))
-	   (org-agenda-skip-if-todo m end)))
+     (or (and (memq 'scheduled conditions)
+	      (re-search-forward org-scheduled-time-regexp planning-end t))
+	 (and (memq 'notscheduled conditions)
+	      (not
+	       (save-excursion
+		 (re-search-forward org-scheduled-time-regexp planning-end t))))
+	 (and (memq 'deadline conditions)
+	      (re-search-forward org-deadline-time-regexp planning-end t))
+	 (and (memq 'notdeadline conditions)
+	      (not
+	       (save-excursion
+		 (re-search-forward org-deadline-time-regexp planning-end t))))
+	 (and (memq 'timestamp conditions)
+	      (re-search-forward org-ts-regexp end t))
+	 (and (memq 'nottimestamp conditions)
+	      (not (save-excursion (re-search-forward org-ts-regexp end t))))
+	 (and (setq m (memq 'regexp conditions))
+	      (stringp (nth 1 m))
+	      (re-search-forward (nth 1 m) end t))
+	 (and (setq m (memq 'notregexp conditions))
+	      (stringp (nth 1 m))
+	      (not (save-excursion (re-search-forward (nth 1 m) end t))))
+	 (and (or
+	       (setq m (memq 'nottodo conditions))
+	       (setq m (memq 'todo-unblocked conditions))
+	       (setq m (memq 'nottodo-unblocked conditions))
+	       (setq m (memq 'todo conditions)))
+	      (org-agenda-skip-if-todo m end)))
      end)))
 
 (defun org-agenda-skip-if-todo (args end)
@@ -4908,43 +4921,36 @@ ARGS is a list with first element either `todo', `nottodo',
 `todo-unblocked' or `nottodo-unblocked'.  The remainder is either
 a list of TODO keywords, or a state symbol `todo' or `done' or
 `any'."
-  (let ((kw (car args))
-	(arg (cadr args))
-	todo-wds todo-re)
-    (setq todo-wds
-	  (org-uniquify
-	   (cond
-	    ((listp arg)   ;; list of keywords
-	     (if (member "*" arg)
-		 (mapcar 'substring-no-properties org-todo-keywords-1)
-	       arg))
-	    ((symbolp arg) ;; keyword class name
-	     (cond
-	      ((eq arg 'todo)
-	       (org-delete-all org-done-keywords
-			       (mapcar 'substring-no-properties
-				       org-todo-keywords-1)))
-	      ((eq arg 'done) org-done-keywords)
-	      ((eq arg 'any)
-	       (mapcar 'substring-no-properties org-todo-keywords-1)))))))
-    (setq todo-re
-	  (concat "^\\*+[ \t]+\\<\\("
-		  (mapconcat 'identity todo-wds  "\\|")
-		  "\\)\\>"))
-    (cond
-     ((eq kw 'todo) (re-search-forward todo-re end t))
-     ((eq kw 'nottodo) (not (re-search-forward todo-re end t)))
-     ((eq kw 'todo-unblocked)
-      (catch 'unblocked
-	(while (re-search-forward todo-re end t)
-	  (or (org-entry-blocked-p) (throw 'unblocked t)))
-	nil))
-     ((eq kw 'nottodo-unblocked)
-      (catch 'unblocked
-	(while (re-search-forward todo-re end t)
-	  (or (org-entry-blocked-p) (throw 'unblocked nil)))
-	t))
-     )))
+  (let ((todo-re
+	 (concat "^\\*+[ \t]+"
+		 (regexp-opt
+		  (pcase args
+		    (`(,_ todo)
+		     (org-delete-all org-done-keywords
+				     (copy-sequence org-todo-keywords-1)))
+		    (`(,_ done) org-done-keywords)
+		    (`(,_ any) org-todo-keywords-1)
+		    (`(,_ ,(pred atom))
+		     (error "Invalid TODO class or type: %S" args))
+		    (`(,_ ,(pred (member "*"))) org-todo-keywords-1)
+		    (`(,_ ,todo-list) todo-list))
+		  'words))))
+    (pcase args
+      (`(todo . ,_)
+       (let (case-fold-search) (re-search-forward todo-re end t)))
+      (`(nottodo . ,_)
+       (not (let (case-fold-search) (re-search-forward todo-re end t))))
+      (`(todo-unblocked . ,_)
+       (catch :unblocked
+	 (while (let (case-fold-search) (re-search-forward todo-re end t))
+	   (when (org-entry-blocked-p) (throw :unblocked t)))
+	 nil))
+      (`(nottodo-unblocked . ,_)
+       (catch :unblocked
+	 (while (let (case-fold-search) (re-search-forward todo-re end t))
+	   (when (org-entry-blocked-p) (throw :unblocked nil)))
+	 t))
+      (`(,type . ,_) (error "Unknown TODO skip type: %S" type)))))
 
 ;;;###autoload
 (defun org-agenda-list-stuck-projects (&rest ignore)
@@ -5717,7 +5723,8 @@ then those holidays will be skipped."
 		(list
 		 (if (memq 'closed items) (concat "\\<" org-closed-string))
 		 (if (memq 'clock items) (concat "\\<" org-clock-string))
-		 (if (memq 'state items) "- State \"\\([a-zA-Z0-9]+\\)\".*?"))))
+		 (if (memq 'state items)
+		     (format "- State \"%s\".*?" org-todo-regexp)))))
 	 (parts-re (if parts (mapconcat 'identity parts "\\|")
 		     (error "`org-agenda-log-mode-items' is empty")))
 	 (regexp (concat

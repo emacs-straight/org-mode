@@ -594,7 +594,7 @@ properties to export, as strings.
 This option can also be set with the OPTIONS keyword,
 e.g. \"prop:t\"."
   :group 'org-export-general
-  :version "24.4"
+  :version "26.1"
   :package-version '(Org . "8.3")
   :type '(choice
 	  (const :tag "All properties" t)
@@ -1452,7 +1452,7 @@ for export.  Return options as a plist."
 				  (parse
 				   (org-element-parse-secondary-string
 				    value (org-element-restriction 'keyword)))
-				  (split (org-split-string value))
+				  (split (split-string value))
 				  (t value))))))))))))
 
 (defun org-export--get-inbuffer-options (&optional backend)
@@ -1560,7 +1560,7 @@ Assume buffer is in Org mode.  Narrowing, if any, is ignored."
 					   "\n"
 					   (org-trim val))))
 				 (split `(,@(plist-get plist property)
-					  ,@(org-split-string val)))
+					  ,@(split-string val)))
 				 ((t) val)
 				 (otherwise
 				  (if (not (plist-member plist property)) val
