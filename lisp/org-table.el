@@ -1646,12 +1646,14 @@ In particular, this does handle wide and invisible characters."
   (if (not (org-at-table-p))
       (user-error "Not at a table"))
   (let ((col (current-column))
-	(dline (org-table-current-dline)))
+	(dline (and (not (org-match-line org-table-hline-regexp))
+		    (org-table-current-dline))))
     (kill-region (point-at-bol) (min (1+ (point-at-eol)) (point-max)))
     (if (not (org-at-table-p)) (beginning-of-line 0))
     (org-move-to-column col)
-    (when (or (not org-table-fix-formulas-confirm)
-	      (funcall org-table-fix-formulas-confirm "Fix formulas? "))
+    (when (and dline
+	       (or (not org-table-fix-formulas-confirm)
+		   (funcall org-table-fix-formulas-confirm "Fix formulas? ")))
       (org-table-fix-formulas "@" (list (cons (number-to-string dline) "INVALID"))
 			      dline -1 dline))))
 
@@ -5131,7 +5133,7 @@ information."
 	     (column
 	      ;; Call costly `org-export-table-cell-address' only if
 	      ;; absolutely necessary, i.e., if one
-	      ;; of :fmt :efmt :hmft has a "plist type" value.
+	      ;; of :fmt :efmt :hfmt has a "plist type" value.
 	      ,(and (cl-some (lambda (v) (integerp (car-safe v)))
 			     (list efmt hfmt fmt))
 		    '(1+ (cdr (org-export-table-cell-address cell info))))))

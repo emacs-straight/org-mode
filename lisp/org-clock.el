@@ -478,7 +478,17 @@ to add an effort property.")
 	  (funcall dichotomy
 		   most-negative-fixnum
 		   0
-		   (lambda (m) (ignore-errors (decode-time (list m 0))))))
+		   (lambda (m)
+                     ;; libc in macOS 10.6 hangs when decoding times
+                     ;; around year -2**31.  Limit `high' not to go
+                     ;; any earlier than that.
+                     (unless (and (eq system-type 'darwin)
+                                  (string-match-p
+                                   "10\\.6\\.[[:digit:]]"
+                                   (shell-command-to-string
+                                    "sw_vers -productVersion"))
+                                  (<= m -1034058203136))
+                       (ignore-errors (decode-time (list m 0)))))))
 	 (low
 	  (funcall dichotomy
 		   most-negative-fixnum
@@ -2974,6 +2984,7 @@ The details of what will be saved are regulated by the variable
 
 ;; Local variables:
 ;; generated-autoload-file: "org-loaddefs.el"
+;; coding: utf-8
 ;; End:
 
 ;;; org-clock.el ends here
