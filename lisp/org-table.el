@@ -3242,7 +3242,7 @@ existing formula for column %s"
 	 (goto-char beg)
 	 ;; Mark named fields untouchable.  Also check if several
 	 ;; field/range formulas try to set the same field.
-	 (remove-text-properties beg end '(org-untouchable t))
+	 (remove-text-properties beg end '(:org-untouchable t))
 	 (let ((current-line (count-lines org-table-current-begin-pos
 					  (line-beginning-position)))
 	       seen-fields)

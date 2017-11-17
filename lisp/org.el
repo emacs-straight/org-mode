@@ -1284,7 +1284,7 @@ star at the beginning of the headline, you can do this:
 This list will be checked before `org-speed-commands-default'
 when the variable `org-use-speed-commands' is non-nil
 and when the cursor is at the beginning of a headline.
-The car if each entry is a string with a single letter, which must
+The car of each entry is a string with a single letter, which must
 be assigned to `self-insert-command' in the global map.
 The cdr is either a command to be called interactively, a function
 to be called, or a form to be evaluated.
@@ -5290,7 +5290,8 @@ is available.  This option applies only if FILE is a URL."
 	;; Move point to after the url-retrieve header.
 	(search-forward "\n\n" nil :move)
 	;; Search for the success code only in the url-retrieve header.
-	(if (save-excursion (re-search-backward "HTTP.*\\s-+200\\s-OK" nil :noerror))
+	(if (save-excursion
+	      (re-search-backward "HTTP.*\\s-+200\\s-OK" nil :noerror))
 	    ;; Update the cache `org--file-cache' and return contents.
 	    (puthash file
 		     (buffer-substring-no-properties (point) (point-max))
@@ -5300,13 +5301,14 @@ is available.  This option applies only if FILE is a URL."
 		   file))))
      (t
       (with-temp-buffer
-        (condition-case err
+        (condition-case nil
 	    (progn
 	      (insert-file-contents file)
 	      (buffer-string))
 	  (file-error
            (funcall (if noerror #'message #'user-error)
-		    (error-message-string err)))))))))
+		    "Unable to read file %S"
+		    file))))))))
 
 (defun org-extract-log-state-settings (x)
   "Extract the log state setting from a TODO keyword string.
@@ -5750,18 +5752,23 @@ This should be called after the variable `org-link-parameters' has changed."
 	       (verbatim? (member marker '("~" "="))))
 	  (when (save-excursion
 		  (goto-char (match-beginning 0))
-		  ;; Do not match headline stars.  Do not consider
-		  ;; stars of a headline as closing marker for bold
-		  ;; markup either.  Do not match table hlines.
 		  (and
-		   (not (looking-at-p org-outline-regexp-bol))
+		   ;; Do not match headline stars.  Do not consider
+		   ;; stars of a headline as closing marker for bold
+		   ;; markup either.
+		   (not (and (equal marker "*")
+			     (save-excursion
+			       (forward-char)
+			       (skip-chars-backward "*")
+			       (looking-at-p org-outline-regexp-bol))))
+		   ;; Do not match table hlines.
 		   (not (and (equal marker "+")
 			     (org-match-line
 			      "^[ \t]*\\(|[-+]+|?\\|\\+[-+]+\\+\\)[ \t]*$")))
 		   (looking-at (if verbatim? org-verbatim-re org-emph-re))
-		   (not (string-match-p
-			 (concat org-outline-regexp-bol "\\'")
-			 (match-string 0)))))
+		   ;; At a table row, do not cross cell boundaries.
+		   (not (and (save-match-data (org-match-line "[ \t]*|"))
+			     (string-match-p "|" (match-string 4))))))
 	    (pcase-let ((`(,_ ,face ,_) (assoc marker org-emphasis-alist)))
 	      (font-lock-prepend-text-property
 	       (match-beginning 2) (match-end 2) 'face face)
@@ -7945,8 +7952,7 @@ unchecked check box."
     (org-insert-heading (or (and (equal arg '(16)) '(16))
 			    force-heading))
     (save-excursion
-      (org-back-to-heading)
-      (outline-previous-heading)
+      (org-forward-heading-same-level -1)
       (let ((case-fold-search nil)) (looking-at org-todo-line-regexp)))
     (let* ((new-mark-x
 	    (if (or (equal arg '(4))
@@ -9845,7 +9851,9 @@ active region."
 	(car org-stored-links)))))
 
 (defun org-store-link-props (&rest plist)
-  "Store link properties, extract names, addresses and dates."
+  "Store link properties.
+The properties are pre-processed by extracting names, addresses
+and dates."
   (let ((x (plist-get plist :from)))
     (when x
       (let ((adr (mail-extract-address-components x)))
@@ -19327,9 +19335,9 @@ boundaries."
 	    ;; "file:" links.  Also check link abbreviations since
 	    ;; some might expand to "file" links.
 	    (file-types-re (format "[][]\\[\\(?:file\\|[./~]%s\\)"
-				   (and link-abbrevs
-					(format "\\|\\(?:%s:\\)"
-						(regexp-opt link-abbrevs))))))
+				   (if (not link-abbrevs) ""
+				     (format "\\|\\(?:%s:\\)"
+					     (regexp-opt link-abbrevs))))))
        (while (re-search-forward file-types-re end t)
 	 (let ((link (save-match-data (org-element-context))))
 	   ;; Check if we're at an inline image, i.e., an image file
@@ -20782,8 +20790,8 @@ This command does many different things, depending on context:
 	     '(babel-call clock dynamic-block footnote-definition
 			  footnote-reference inline-babel-call inline-src-block
 			  inlinetask item keyword node-property paragraph
-			  plain-list property-drawer radio-target src-block
-			  statistics-cookie table table-cell table-row
+			  plain-list planning property-drawer radio-target
+			  src-block statistics-cookie table table-cell table-row
 			  timestamp)
 	     t))
 	   (type (org-element-type context)))
@@ -20935,7 +20943,8 @@ Use `\\[org-edit-special]' to edit table.el tables"))
 	     (cond (arg (call-interactively #'org-table-recalculate))
 		   ((org-table-maybe-recalculate-line))
 		   (t (org-table-align))))))
-	(`timestamp (org-timestamp-change 0 'day))
+	((or `timestamp (and `planning (guard (org-at-timestamp-p 'lax))))
+	 (org-timestamp-change 0 'day))
 	((and `nil (guard (org-at-heading-p)))
 	 ;; When point is on an unsupported object type, we can miss
 	 ;; the fact that it also is at a heading.  Handle it here.
@@ -21568,7 +21577,9 @@ Your bug report will be posted to the Org mailing list.
 	   ["Cycle through agenda files" org-cycle-agenda-files t]
 	   ["Occur in all agenda files" org-occur-in-agenda-files t]
 	   "--")
-	  (mapcar 'org-file-menu-entry (org-agenda-files t))))))))
+	  (mapcar 'org-file-menu-entry
+		  ;; Prevent initialization from failing.
+		  (ignore-errors (org-agenda-files t)))))))))
 
 ;;;; Documentation
 
@@ -23617,7 +23628,9 @@ depending on context."
 					(skip-chars-forward " \r\t\n"))))
 	    (narrow-to-region (org-element-property :contents-begin element)
 			      contents-end))
-	  (call-interactively #'forward-sentence))))))
+	  ;; End of heading is considered as the end of a sentence.
+	  (let ((sentence-end (concat (sentence-end) "\\|^\\*+ .*$")))
+	    (call-interactively #'forward-sentence)))))))
 
 (define-key org-mode-map "\M-a" 'org-backward-sentence)
 (define-key org-mode-map "\M-e" 'org-forward-sentence)
@@ -24230,10 +24243,11 @@ convenience:
 	(backward-char)
 	(org-backward-paragraph))
        ((<= (point) post-affiliated) (goto-char begin))
+       ;; Special behavior: on a table or a property drawer, move to
+       ;; its beginning.
        ((memq type '(node-property table-row))
 	(goto-char (org-element-property
 		    :post-affiliated (org-element-property :parent element))))
-       ((memq type '(property-drawer table)) (goto-char begin))
        (special?
 	(if (<= (point) contents-begin) (goto-char post-affiliated)
 	  ;; Inside a verse block, see blank lines as paragraph
@@ -24244,8 +24258,7 @@ convenience:
 	      (skip-chars-forward " \r\t\n" origin)
 	      (if (= (point) origin) (goto-char contents-begin)
 		(beginning-of-line))))))
-       ((eq type 'paragraph)
-	(goto-char contents-begin)
+       ((eq type 'paragraph) (goto-char contents-begin)
 	;; When at first paragraph in an item or a footnote definition,
 	;; move directly to beginning of line.
 	(let ((parent-contents
@@ -24253,9 +24266,9 @@ convenience:
 		:contents-begin (org-element-property :parent element))))
 	  (when (and parent-contents (= parent-contents contents-begin))
 	    (beginning-of-line))))
-       ;; At the end of a greater element, move to the beginning of the
-       ;; last element within.
-       ((>= (point) contents-end)
+       ;; At the end of a greater element, move to the beginning of
+       ;; the last element within.
+       ((and contents-end (>= (point) contents-end))
 	(goto-char (1- contents-end))
 	(org-backward-paragraph))
        (t (goto-char (or post-affiliated begin))))

@@ -1416,6 +1416,13 @@
     (org-test-with-temp-text "* H\n- an item\n- another one"
       (search-forward "an ")
       (org-insert-todo-heading-respect-content)
+      (buffer-substring-no-properties (line-beginning-position) (point-max)))))
+  ;; Use the same TODO keyword as current heading.
+  (should
+   (equal
+    "* TODO \n"
+    (org-test-with-temp-text "* TODO\n** WAITING\n"
+      (org-insert-todo-heading-respect-content)
       (buffer-substring-no-properties (line-beginning-position) (point-max))))))
 
 (ert-deftest test-org/clone-with-time-shift ()
@@ -3414,8 +3421,8 @@ SCHEDULED: <2017-05-06 Sat>
    (org-test-with-temp-text "Paragraph 1.<point>\n\nParagraph 2."
      (org-forward-sentence)
      (eobp)))
-  ;; On a headline, stop at the end of the line, unless point is
-  ;; already there.
+  ;; Headlines are considered to be sentences by themselves, even if
+  ;; they do not end with a full stop.
   (should
    (equal
     "* Headline"
@@ -3425,7 +3432,11 @@ SCHEDULED: <2017-05-06 Sat>
   (should
    (org-test-with-temp-text "* Headline<point>\nSentence."
      (org-forward-sentence)
-     (eobp))))
+     (eobp)))
+  (should
+   (org-test-with-temp-text "Sentence.<point>\n\n* Headline\n\nSentence 2."
+     (org-forward-sentence)
+     (and (org-at-heading-p) (eolp)))))
 
 (ert-deftest test-org/backward-sentence ()
   "Test `org-backward-sentence' specifications."
@@ -3606,6 +3617,11 @@ SCHEDULED: <2017-05-06 Sat>
   ;; beginning of block.
   (should
    (org-test-with-temp-text "#+BEGIN_<point>EXAMPLE\nL1\n#+END_EXAMPLE"
+     (org-backward-paragraph)
+     (bobp)))
+  ;; Pathological case: on an empty heading, move to its beginning.
+  (should
+   (org-test-with-temp-text "* <point>H"
      (org-backward-paragraph)
      (bobp))))
 

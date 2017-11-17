@@ -2154,21 +2154,17 @@ CODE is a string representing the source code to colorize.  LANG
 is the language used for CODE, as a string, or nil."
   (when code
     (cond
-     ;; Case 1: No lang.  Possibly an example block.
-     ((not lang)
-      ;; Simple transcoding.
-      (org-html-encode-plain-text code))
-     ;; Case 2: No htmlize or an inferior version of htmlize
+     ;; No language.  Possibly an example block.
+     ((not lang) (org-html-encode-plain-text code))
+     ;; Plain text explicitly set.
+     ((not org-html-htmlize-output-type) (org-html-encode-plain-text code))
+     ;; No htmlize library or an inferior version of htmlize.
      ((not (and (or (require 'htmlize nil t)
-		    (error "Please install htmlize from https://github.com/hniksic/emacs-htmlize"))
+		    (error "Please install htmlize from \
+https://github.com/hniksic/emacs-htmlize"))
 		(fboundp 'htmlize-region-for-paste)))
       ;; Emit a warning.
       (message "Cannot fontify src block (htmlize.el >= 1.34 required)")
-      ;; Simple transcoding.
-      (org-html-encode-plain-text code))
-     ;; Case 3: plain text explicitly set
-     ((not org-html-htmlize-output-type)
-      ;; Simple transcoding.
       (org-html-encode-plain-text code))
      (t
       ;; Map language
@@ -2177,7 +2173,6 @@ is the language used for CODE, as a string, or nil."
 	(cond
 	 ;; Case 1: Language is not associated with any Emacs mode
 	 ((not (functionp lang-mode))
-	  ;; Simple transcoding.
 	  (org-html-encode-plain-text code))
 	 ;; Case 2: Default.  Fontify code.
 	 (t
@@ -2328,15 +2323,7 @@ INFO is a plist used as a communication channel."
 			(org-element-property :priority headline)))
 	 (text (org-export-data-with-backend
 		(org-export-get-alt-title headline info)
-		;; Create an anonymous back-end that will ignore any
-		;; footnote-reference, link, radio-target and target
-		;; in table of contents.
-		(org-export-create-backend
-		 :parent 'html
-		 :transcoders '((footnote-reference . ignore)
-				(link . (lambda (object c i) c))
-				(radio-target . (lambda (object c i) c))
-				(target . ignore)))
+		(org-export-toc-entry-backend 'html)
 		info))
 	 (tags (and (eq (plist-get info :with-tags) t)
 		    (org-export-get-tags headline info))))
