@@ -182,7 +182,8 @@ Stars are put in group 1 and the trimmed body in group 2.")
 (declare-function org-export-get-environment "ox" (&optional backend subtreep ext-plist))
 (declare-function org-latex-make-preamble "ox-latex" (info &optional template snippet?))
 
-(defvar ffap-url-regexp)		;Silence byte-compiler
+(defvar ffap-url-regexp)
+(defvar org-element-paragraph-separate)
 
 (defsubst org-uniquify (list)
   "Non-destructively remove duplicate elements from LIST."
@@ -5753,6 +5754,10 @@ This should be called after the variable `org-link-parameters' has changed."
 	  (when (save-excursion
 		  (goto-char (match-beginning 0))
 		  (and
+		   ;; Do not match table hlines.
+		   (not (and (equal marker "+")
+			     (org-match-line
+			      "[ \t]*\\(|[-+]+|?\\|\\+[-+]+\\+\\)[ \t]*$")))
 		   ;; Do not match headline stars.  Do not consider
 		   ;; stars of a headline as closing marker for bold
 		   ;; markup either.
@@ -5761,12 +5766,12 @@ This should be called after the variable `org-link-parameters' has changed."
 			       (forward-char)
 			       (skip-chars-backward "*")
 			       (looking-at-p org-outline-regexp-bol))))
-		   ;; Do not match table hlines.
-		   (not (and (equal marker "+")
-			     (org-match-line
-			      "^[ \t]*\\(|[-+]+|?\\|\\+[-+]+\\+\\)[ \t]*$")))
+		   ;; Match full emphasis markup regexp.
 		   (looking-at (if verbatim? org-verbatim-re org-emph-re))
-		   ;; At a table row, do not cross cell boundaries.
+		   ;; Do not span over paragraph boundaries.
+		   (not (string-match-p org-element-paragraph-separate
+					(match-string 2)))
+		   ;; Do not span over cells in table rows.
 		   (not (and (save-match-data (org-match-line "[ \t]*|"))
 			     (string-match-p "|" (match-string 4))))))
 	    (pcase-let ((`(,_ ,face ,_) (assoc marker org-emphasis-alist)))
@@ -9642,28 +9647,37 @@ active region."
 	    (move-beginning-of-line 2)
 	    (set-mark (point)))))
     (setq org-store-link-plist nil)
-    (let (link cpltxt desc description search
-	       txt custom-id agenda-link sfuns sfunsn)
+    (let (link cpltxt desc description search txt custom-id agenda-link)
       (cond
-
-       ;; Store a link using an external link type
+       ;; Store a link using an external link type, if any function is
+       ;; available. If more than one can generate a link from current
+       ;; location, ask which one to use.
        ((and (not (equal arg '(16)))
-	     (setq sfuns
-		   (delq
-		    nil (mapcar (lambda (f)
-				  (let (fs) (if (funcall f) (push f fs))))
-				(org-store-link-functions)))
-		   sfunsn (mapcar (lambda (fu) (symbol-name (car fu))) sfuns))
-	     (or (and (cdr sfuns)
-		      (funcall (intern
-				(completing-read
-				 "Which function for creating the link? "
-				 sfunsn nil t (car sfunsn)))))
-		 (funcall (caar sfuns)))
-	     (setq link (plist-get org-store-link-plist :link)
-		   desc (or (plist-get org-store-link-plist
-				       :description)
-			    link))))
+	     (let ((results-alist nil))
+	       (dolist (f (org-store-link-functions))
+		 (when (funcall f)
+		   ;; XXX: return value is not link's plist, so we
+		   ;; store the new value before it is modified.  It
+		   ;; would be cleaner to ask store link functions to
+		   ;; return the plist instead.
+		   (push (cons f (copy-sequence org-store-link-plist))
+			 results-alist)))
+	       (pcase results-alist
+		 (`nil nil)
+		 (`((,_ . ,_)) t)	;single choice: nothing to do
+		 (`((,name . ,_) . ,_)
+		  ;; Reinstate link plist associated to the chosen
+		  ;; function.
+		  (apply #'org-store-link-props
+			 (cdr (assoc-string
+			       (completing-read
+				"Which function for creating the link? "
+				(mapcar #'car results-alist) nil t name)
+			       results-alist)))
+		  t))))
+	(setq link (plist-get org-store-link-plist :link))
+	(setq desc (or (plist-get org-store-link-plist :description)
+		       link)))
 
        ;; Store a link from a source code buffer.
        ((org-src-edit-buffer-p)
@@ -14618,7 +14632,7 @@ it as a time string and apply `float-time' to it.  If S is nil, just return 0."
    ((numberp s) s)
    ((stringp s)
     (condition-case nil
-	(float-time (apply #'encode-time (org-parse-time-string s nil t)))
+	(float-time (apply #'encode-time (org-parse-time-string s)))
       (error 0.)))
    (t 0.)))
 
@@ -17377,8 +17391,8 @@ both scheduled and deadline timestamps."
 			   'timestamp)
 		     (org-at-planning-p))
 		   (time-less-p
-		    (org-time-string-to-time match t)
-		    (org-time-string-to-time d t)))))))
+		    (org-time-string-to-time match)
+		    (org-time-string-to-time d)))))))
     (message "%d entries before %s"
 	     (org-occur regexp nil callback)
 	     d)))
@@ -17399,8 +17413,8 @@ both scheduled and deadline timestamps."
 			   'timestamp)
 		     (org-at-planning-p))
 		   (not (time-less-p
-			 (org-time-string-to-time match t)
-			 (org-time-string-to-time d t))))))))
+			 (org-time-string-to-time match)
+			 (org-time-string-to-time d))))))))
     (message "%d entries after %s"
 	     (org-occur regexp nil callback)
 	     d)))
@@ -17423,11 +17437,11 @@ both scheduled and deadline timestamps."
 			'timestamp)
 		  (org-at-planning-p))
 		(not (time-less-p
-		      (org-time-string-to-time match t)
-		      (org-time-string-to-time start-date t)))
+		      (org-time-string-to-time match)
+		      (org-time-string-to-time start-date)))
 		(time-less-p
-		 (org-time-string-to-time match t)
-		 (org-time-string-to-time end-date t))))))))
+		 (org-time-string-to-time match)
+		 (org-time-string-to-time end-date))))))))
     (message "%d entries between %s and %s"
 	     (org-occur regexp nil callback) start-date end-date)))
 
@@ -17512,19 +17526,13 @@ days in order to avoid rounding problems."
       (push m l))
     (apply 'format fmt (nreverse l))))
 
-(defun org-time-string-to-time (s &optional zone)
-  "Convert timestamp string S into internal time.
-The optional ZONE is omitted or nil for Emacs local time, t for
-Universal Time, ‘wall’ for system wall clock time, or a string as
-in the TZ environment variable."
-  (apply #'encode-time (org-parse-time-string s nil zone)))
+(defun org-time-string-to-time (s)
+  "Convert timestamp string S into internal time."
+  (apply #'encode-time (org-parse-time-string s)))
 
-(defun org-time-string-to-seconds (s &optional zone)
-  "Convert a timestamp string S into a number of seconds.
-The optional ZONE is omitted or nil for Emacs local time, t for
-Universal Time, ‘wall’ for system wall clock time, or a string as
-in the TZ environment variable."
-  (float-time (org-time-string-to-time s zone)))
+(defun org-time-string-to-seconds (s)
+  "Convert a timestamp string S into a number of seconds."
+  (float-time (org-time-string-to-time s)))
 
 (org-define-error 'org-diary-sexp-no-match "Unable to match diary sexp")
 
@@ -17741,17 +17749,13 @@ day number."
 	   (list (nth 4 d) (nth 3 d) (nth 5 d))))
 	((listp d) (list (nth 4 d) (nth 3 d) (nth 5 d)))))
 
-(defun org-parse-time-string (s &optional nodefault zone)
+(defun org-parse-time-string (s &optional nodefault)
   "Parse the standard Org time string.
 
 This should be a lot faster than the normal `parse-time-string'.
 
 If time is not given, defaults to 0:00.  However, with optional
-NODEFAULT, hour and minute fields will be nil if not given.
-
-The optional ZONE is omitted or nil for Emacs local time, t for
-Universal Time, ‘wall’ for system wall clock time, or a string as
-in the TZ environment variable."
+NODEFAULT, hour and minute fields will be nil if not given."
   (cond ((string-match org-ts-regexp0 s)
 	 (list 0
 	       (when (or (match-beginning 8) (not nodefault))
@@ -17761,7 +17765,7 @@ in the TZ environment variable."
 	       (string-to-number (match-string 4 s))
 	       (string-to-number (match-string 3 s))
 	       (string-to-number (match-string 2 s))
-	       nil nil zone))
+	       nil nil nil))
 	((string-match "^<[^>]+>$" s)
 	 ;; FIXME: `decode-time' needs to be called with ZONE as its
 	 ;; second argument.  However, this requires at least Emacs
@@ -21036,13 +21040,17 @@ object (e.g., within a comment).  In these case, you need to use
   (let ((context (if org-return-follows-link (org-element-context)
 		   (org-element-at-point))))
     (cond
-     ;; In a table, call `org-table-next-row'.
+     ;; In a table, call `org-table-next-row'.  However, before first
+     ;; column or after last one, split the table.
      ((or (and (eq (org-element-type context) 'table)
 	       (>= (point) (org-element-property :contents-begin context))
 	       (< (point) (org-element-property :contents-end context)))
 	  (org-element-lineage context '(table-row table-cell) t))
-      (org-table-justify-field-maybe)
-      (call-interactively #'org-table-next-row))
+      (if (or (looking-at-p "[ \t]*$")
+	      (save-excursion (skip-chars-backward " \t") (bolp)))
+	  (insert "\n")
+	(org-table-justify-field-maybe)
+	(call-interactively #'org-table-next-row)))
      ;; On a link or a timestamp, call `org-open-at-point' if
      ;; `org-return-follows-link' allows it.  Tolerate fuzzy
      ;; locations, e.g., in a comment, as `org-open-at-point'.
@@ -21383,7 +21391,7 @@ an argument, unconditionally call `org-insert-heading'."
       ["Next keyword set" org-shiftcontrolright (and (> (length org-todo-sets) 1) (org-at-heading-p))]
       ["Previous keyword set" org-shiftcontrolright (and (> (length org-todo-sets) 1) (org-at-heading-p))])
      ["Show TODO Tree" org-show-todo-tree :active t :keys "C-c / t"]
-     ["Global TODO list" org-todo-list :active t :keys "C-c a t"]
+     ["Global TODO list" org-todo-list :active t :keys "\\[org-agenda] t"]
      "--"
      ["Enforce dependencies" (customize-variable 'org-enforce-todo-dependencies)
       :selected org-enforce-todo-dependencies :style toggle :active t]
@@ -21462,8 +21470,8 @@ an argument, unconditionally call `org-insert-heading'."
     "--"
     ["Export/Publish..." org-export-dispatch t]
     ("LaTeX"
-     ["Org CDLaTeX mode" org-cdlatex-mode :style toggle
-      :selected org-cdlatex-mode]
+     ["Org CDLaTeX mode" org-cdlatex-mode :active (require 'cdlatex nil t)
+      :style toggle :selected org-cdlatex-mode]
      ["Insert Environment" cdlatex-environment (fboundp 'cdlatex-environment)]
      ["Insert math symbol" cdlatex-math-symbol (fboundp 'cdlatex-math-symbol)]
      ["Modify math symbol" org-cdlatex-math-modify
@@ -21473,7 +21481,7 @@ an argument, unconditionally call `org-insert-heading'."
     ("MobileOrg"
      ["Push Files and Views" org-mobile-push t]
      ["Get Captured and Flagged" org-mobile-pull t]
-     ["Find FLAGGED Tasks" (org-agenda nil "?") :active t :keys "C-c a ?"]
+     ["Find FLAGGED Tasks" (org-agenda nil "?") :active t :keys "\\[org-agenda] ?"]
      "--"
      ["Setup" (progn (require 'org-mobile) (customize-group 'org-mobile)) t])
     "--"
@@ -22775,7 +22783,6 @@ assumed to be significant there."
 ;; `org-setup-filling' installs filling and auto-filling related
 ;; variables during `org-mode' initialization.
 
-(defvar org-element-paragraph-separate) ; org-element.el
 (defun org-setup-filling ()
   (require 'org-element)
   ;; Prevent auto-fill from inserting unwanted new items.

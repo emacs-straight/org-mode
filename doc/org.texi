@@ -1299,7 +1299,7 @@ level, all sibling headings.  With a double prefix argument, also show the
 entire subtree of the parent.
 @cindex show branches, command
 @orgcmd{C-c C-k,outline-show-branches}
-Expose all the headings of the subtree, CONTENT view for just one subtree.
+Expose all the headings of the subtree, CONTENTS view for just one subtree.
 @cindex show children, command
 @orgcmd{C-c @key{TAB},outline-show-children}
 Expose all direct children of the subtree.  With a numeric prefix argument N,
@@ -5818,8 +5818,7 @@ The following commands insert or update the dynamic block:
 Insert a dynamic block capturing a column view.  You will be prompted
 for the scope or ID of the view.
 @orgcmdkkc{C-c C-c,C-c C-x C-u,org-dblock-update}
-Update dynamic block at point.  The cursor needs to be in the
-@code{#+BEGIN} line of the dynamic block.
+Update dynamic block at point.
 @orgcmd{C-u C-c C-x C-u,org-update-all-dblocks}
 Update all dynamic blocks (@pxref{Dynamic blocks}).  This is useful if
 you have several clock table blocks, column-capturing blocks or other dynamic
@@ -6604,8 +6603,7 @@ argument, jump to the first clock report in the current document and
 update it.  The clock table always includes also trees with
 @code{:ARCHIVE:} tag.
 @orgcmdkkc{C-c C-c,C-c C-x C-u,org-dblock-update}
-Update dynamic block at point.  The cursor needs to be in the
-@code{#+BEGIN} line of the dynamic block.
+Update dynamic block at point.
 @orgkey{C-u C-c C-x C-u}
 Update all dynamic blocks (@pxref{Dynamic blocks}).  This is useful if
 you have several clock table blocks in a buffer.
@@ -10791,8 +10789,9 @@ Toggle inclusion of inlinetasks (@code{org-export-with-inlinetasks}).
 @cindex property, UNNUMBERED
 Toggle section-numbers (@code{org-export-with-section-numbers}).  When set to
 number @samp{n}, Org numbers only those headlines at level @samp{n} or above.
-Set @code{UNNUMBERED} property to non-@code{nil} to disable numbering of
-heading and subheadings entirely.
+Setting @code{UNNUMBERED} property to non-@code{nil} disables numbering of
+a heading.  Since subheadings inherit from this property, it affects their
+numbering, too.
 
 @item p:
 @vindex org-export-with-planning
