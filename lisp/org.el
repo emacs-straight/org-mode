@@ -1710,7 +1710,7 @@ doesn't specify any upper case character."
   :type '(choice
 	  (const :tag "Case-sensitive" nil)
 	  (const :tag "Case-insensitive" t)
-	  (const :tag "Case-insensitive for lower case searches only" 'smart)))
+	  (const :tag "Case-insensitive for lower case searches only" smart)))
 
 (defcustom org-occur-hook '(org-first-headline-recenter)
   "Hook that is run after `org-occur' has constructed a sparse tree.
@@ -4167,7 +4167,10 @@ A string will be inserted as-is in the header of the document."
 	   (list :tag "options/package pair"
 		 (string :tag "options")
 		 (string :tag "package")
-		 (boolean :tag "Snippet"))
+		 (boolean :tag "Snippet")
+		 (choice
+		  (const :tag "For all compilers" nil)
+		  (repeat :tag "Allowed compiler" string)))
 	   (string :tag "A line of LaTeX"))))
 
 (defcustom org-latex-packages-alist nil
@@ -7181,11 +7184,12 @@ are at least `org-cycle-separator-lines' empty lines before the headline."
   "Return `org-agenda-files' list, plus all open Org files.
 This is useful for operations that need to scan all of a user's
 open and agenda-wise Org files."
-  (let ((files (mapcar 'expand-file-name (org-agenda-files))))
+  (let ((files (mapcar #'expand-file-name (org-agenda-files))))
     (dolist (buf (buffer-list))
       (with-current-buffer buf
 	(when (and (derived-mode-p 'org-mode) (buffer-file-name))
-	  (cl-pushnew (expand-file-name (buffer-file-name)) files))))
+	  (cl-pushnew (expand-file-name (buffer-file-name)) files
+		      :test #'equal))))
     files))
 
 (defsubst org-entry-beginning-position ()
@@ -9949,20 +9953,24 @@ according to FMT (default from `org-email-link-description-format')."
 				    (reverse slines))) "\n")))))
     (mapconcat #'identity (split-string s) " ")))
 
+(defconst org-link-escape-chars
+  ;;%20 %5B %5D %25
+  '(?\s ?\[ ?\] ?%)
+  "List of characters that should be escaped in a link when stored to Org.
+This is the list that is used for internal purposes.")
+
 (defun org-make-link-string (link &optional description)
   "Make a link with brackets, consisting of LINK and DESCRIPTION."
   (unless (org-string-nw-p link) (error "Empty link"))
   (let ((uri (cond ((string-match org-link-types-re link)
 		    (concat (match-string 1 link)
 			    (org-link-escape (substring link (match-end 1)))))
-		   ;; For readability, url-encode internal links only
-		   ;; when absolutely needed (i.e, when they contain
-		   ;; square brackets).  File links however, are
-		   ;; encoded since, e.g., spaces are significant.
 		   ((or (file-name-absolute-p link)
-			(string-match-p "\\`\\.\\.?/\\|[][]" link))
+			(string-match-p "\\`\\.\\.?/" link))
 		    (org-link-escape link))
-		   (t link)))
+		   ;; For readability, do not encode space characters
+		   ;; in fuzzy links.
+		   (t (org-link-escape link (remq ?\s org-link-escape-chars)))))
 	(description
 	 (and (org-string-nw-p description)
 	      ;; Remove brackets from description, as they are fatal.
@@ -9972,12 +9980,6 @@ according to FMT (default from `org-email-link-description-format')."
     (format "[[%s]%s]"
 	    uri
 	    (if description (format "[%s]" description) ""))))
-
-(defconst org-link-escape-chars
-  ;;%20 %5B %5D %25
-  '(?\s ?\[ ?\] ?%)
-  "List of characters that should be escaped in a link when stored to Org.
-This is the list that is used for internal purposes.")
 
 (defun org-link-escape (text &optional table merge)
   "Return percent escaped representation of TEXT.
@@ -12185,7 +12187,7 @@ There are two templates for each key, the first uses the original Org syntax,
 the second uses Emacs Muse-like syntax tags.  These Muse-like tags become
 the default when the /org-mtags.el/ module has been loaded.  See also the
 variable `org-mtags-prefer-muse-templates'."
-  :group 'org-completion
+  :group 'org-edit-structure
   :type '(repeat
 	  (list
 	   (string :tag "Key")
