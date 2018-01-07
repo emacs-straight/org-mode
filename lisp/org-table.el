@@ -496,12 +496,6 @@ variable is initialized with `org-table-analyze'.")
   (concat "\\(" "@[-0-9I$]+" "\\|" "[a-zA-Z]\\{1,2\\}\\([0-9]+\\|&\\)" "\\)")
   "Match a reference that needs translation, for reference display.")
 
-(defconst org-table-separator-space
-  (propertize " " 'display '(space :width 1))
-  "Space used around fields when aligning the table.
-This space serves as a segment separator for the purposes of the
-bidirectional reordering.")
-
 (defmacro org-table-save-field (&rest body)
   "Save current field; execute BODY; restore field.
 Field is restored even in case of abnormal exit."
@@ -650,17 +644,30 @@ nil      When nil, the command tries to be smart and figure out the
       (org-table-align))))
 
 ;;;###autoload
-(defun org-table-import (file arg)
+(defun org-table-import (file separator)
   "Import FILE as a table.
-The file is assumed to be tab-separated.  Such files can be produced by most
-spreadsheet and database applications.  If no tabs (at least one per line)
-are found, lines will be split on whitespace into fields."
+
+The command tries to be smart and figure out the separator in the
+following way:
+
+  - when each line contains a TAB, assume TAB-separated material
+  - when each line contains a comma, assume CSV material
+  - else, assume one or more SPACE characters as separator.
+
+When non-nil, SEPARATOR specifies the field separator in the
+lines.  It can have the following values:
+
+(4)     Use the comma as a field separator
+(16)    Use a TAB as field separator
+(64)    Prompt for a regular expression as field separator
+integer When a number, use that many spaces, or a TAB, as field separator
+regexp  When a regular expression, use it to match the separator."
   (interactive "f\nP")
-  (or (bolp) (newline))
+  (unless (bolp) (insert "\n"))
   (let ((beg (point))
 	(pm (point-max)))
     (insert-file-contents file)
-    (org-table-convert-region beg (+ (point) (- (point-max) pm)) arg)))
+    (org-table-convert-region beg (+ (point) (- (point-max) pm)) separator)))
 
 
 ;;;###autoload
@@ -888,10 +895,7 @@ edit.  Full value is:\n"
        ;; Compute the formats needed for output of the table.
        (let ((hfmt (concat indent "|"))
              (rfmt (concat indent "|"))
-             (rfmt1 (concat org-table-separator-space
-			    "%%%s%ds"
-			    org-table-separator-space
-			    "|"))
+             (rfmt1 " %%%s%ds |")
              (hfmt1 "-%s-+"))
          (dolist (l lengths (setq hfmt (concat (substring hfmt 0 -1) "|")))
            (let ((ty (if (pop typenums) "" "-"))) ; Flush numbers right.
@@ -1175,7 +1179,7 @@ to a number.  In the case of a timestamp, increment by days."
 			      (- (org-time-string-to-absolute txt)
 				 (org-time-string-to-absolute txt-up)))
 			     ((string-match org-ts-regexp3 txt) 1)
-			     ((string-match "\\([-+]\\)?[0-9]+\\(?:\.[0-9]+\\)?" txt-up)
+			     ((string-match "\\([-+]\\)?\\(?:[0-9]+\\)?\\(?:\.[0-9]+\\)?" txt-up)
 			      (- (string-to-number txt)
 				 (string-to-number (match-string 0 txt-up))))
 			     (t 1)))
@@ -4320,14 +4324,14 @@ FACE, when non-nil, for the highlight."
 
 ;;;###autoload
 (define-minor-mode orgtbl-mode
-  "The `org-mode' table editor as a minor mode for use in other modes."
+  "The Org mode table editor as a minor mode for use in other modes."
   :lighter " OrgTbl" :keymap orgtbl-mode-map
   (org-load-modules-maybe)
   (cond
    ((derived-mode-p 'org-mode)
-    ;; Exit without error, in case some hook functions calls this
-    ;; by accident in org-mode.
-    (message "Orgtbl-mode is not useful in org-mode, command ignored"))
+    ;; Exit without error, in case some hook functions calls this by
+    ;; accident in Org mode.
+    (message "Orgtbl mode is not useful in Org mode, command ignored"))
    (orgtbl-mode
     (and (orgtbl-setup) (defun orgtbl-setup () nil)) ;; FIXME: Yuck!?!
     ;; Make sure we are first in minor-mode-map-alist

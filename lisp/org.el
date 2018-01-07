@@ -1,7 +1,7 @@
 ;;; org.el --- Outline-based notes management and organizer -*- lexical-binding: t; -*-
 
 ;; Carstens outline-mode for keeping track of everything.
-;; Copyright (C) 2004-2017 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2018 Free Software Foundation, Inc.
 ;;
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Maintainer: Carsten Dominik <carsten at orgmode dot org>
@@ -749,7 +749,7 @@ For export specific modules, see also `org-export-backends'."
 	(const :tag "C  panel:             Simple routines for us with bad memory" org-panel)
 	(const :tag "C  registry:          A registry for Org links" org-registry)
 	(const :tag "C  screen:            Visit screen sessions through Org links" org-screen)
-	(const :tag "C  secretary:         Team management with org-mode" org-secretary)
+	(const :tag "C  secretary:         Team management with Org" org-secretary)
 	(const :tag "C  sqlinsert:         Convert Org tables to SQL insertions" orgtbl-sqlinsert)
 	(const :tag "C  toc:               Table of contents for Org buffer" org-toc)
 	(const :tag "C  track:             Keep up with Org mode development" org-track)
@@ -4873,7 +4873,7 @@ After a match, the following groups carry important information:
     ("beamer" org-startup-with-beamer-mode t)
     ("entitiespretty" org-pretty-entities t)
     ("entitiesplain" org-pretty-entities nil))
-  "Variable associated with STARTUP options for org-mode.
+  "Variable associated with STARTUP options for Org.
 Each element is a list of three items: the startup options (as written
 in the #+STARTUP line), the corresponding variable, and the value to set
 this variable to if the option is found.  An optional forth element PUSH
@@ -5937,7 +5937,7 @@ by a #."
 (defun org-fontify-meta-lines-and-blocks (limit)
   (condition-case nil
       (org-fontify-meta-lines-and-blocks-1 limit)
-    (error (message "org-mode fontification error in %S at %d"
+    (error (message "Org mode fontification error in %S at %d"
 		    (current-buffer)
 		    (line-number-at-pos)))))
 
@@ -6928,6 +6928,7 @@ If POS is nil, use `point' instead."
 	  (org-list-set-item-visibility (point-at-bol) struct 'children)
 	(org-show-entry)
 	(org-with-limited-levels (org-show-children))
+	(org-show-set-visibility 'canonical)
 	;; FIXME: This slows down the func way too much.
 	;; How keep drawers hidden in subtree anyway?
 	;; (when (memq 'org-cycle-hide-drawers org-cycle-hook)
@@ -7022,20 +7023,22 @@ With a numeric prefix, show all headlines up to that level."
 	 (save-excursion
 	   (org-back-to-heading t)
 	   (outline-hide-subtree)
-	   (org-reveal)
-	   (cond
-	    ((equal state "folded")
-	     (outline-hide-subtree))
-	    ((equal state "children")
-	     (org-show-hidden-entry)
-	     (org-show-children))
-	    ((equal state "content")
-	     (save-excursion
-	       (save-restriction
-		 (org-narrow-to-subtree)
-		 (org-content))))
-	    ((member state '("all" "showall"))
-	     (outline-show-subtree)))))))
+	   (org-reveal))
+	 (cond
+	  ((equal state "folded")
+	   (outline-hide-subtree)
+	   (org-end-of-subtree t t))
+	  ((equal state "children")
+	   (org-show-hidden-entry)
+	   (org-show-children))
+	  ((equal state "content")
+	   (save-excursion
+	     (save-restriction
+	       (org-narrow-to-subtree)
+	       (org-content)))
+	   (org-end-of-subtree t t))
+	  ((member state '("all" "showall"))
+	   (outline-show-subtree))))))
    (unless no-cleanup
      (org-cycle-hide-archived-subtrees 'all)
      (org-cycle-hide-drawers 'all)
@@ -10282,11 +10285,19 @@ Use TAB to complete link prefixes, then RET for type-specific completion support
 	    ;; We are linking to this same file, with a search option
 	    (setq link search)))))
 
-    ;; Check if we can/should use a relative path.  If yes, simplify the link
+    ;; Check if we can/should use a relative path.  If yes, simplify
+    ;; the link.
     (let ((case-fold-search nil))
       (when (string-match "\\`\\(file\\|docview\\):" link)
 	(let* ((type (match-string-no-properties 0 link))
-	       (path (substring-no-properties link (match-end 0)))
+	       (path-start (match-end 0))
+	       (search (and (string-match "::\\(.*\\)\\'" link)
+			    (match-string 1 link)))
+	       (path
+		(if search
+		    (substring-no-properties
+		     link path-start (match-beginning 0))
+		  (substring-no-properties link (match-end 0))))
 	       (origpath path))
 	  (cond
 	   ((or (eq org-link-file-path-type 'absolute)
@@ -10307,7 +10318,7 @@ Use TAB to complete link prefixes, then RET for type-specific completion support
 		  (setq path (substring (expand-file-name path)
 					(match-end 0)))
 		(setq path (abbreviate-file-name (expand-file-name path)))))))
-	  (setq link (concat type path))
+	  (setq link (concat type path (and search (concat "::" search))))
 	  (when (equal desc origpath)
 	    (setq desc path)))))
 
@@ -12379,7 +12390,7 @@ When called through ELisp, arg is also interpreted in the following way:
 	  (or (looking-at (concat " +" org-todo-regexp "\\( +\\|[ \t]*$\\)"))
 	      (looking-at "\\(?: *\\|[ \t]*$\\)"))
 	  (let* ((match-data (match-data))
-		 (startpos (point-at-bol))
+		 (startpos (copy-marker (line-beginning-position)))
 		 (logging (save-match-data (org-entry-get nil "LOGGING" t t)))
 		 (org-log-done org-log-done)
 		 (org-log-repeat org-log-repeat)
