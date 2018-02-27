@@ -445,6 +445,17 @@ Paragraph"
 	    (org-test-with-temp-text "#+FILETAGS: noexp\n* Head1"
 	      (org-export-as (org-test-default-backend)
 			     nil nil nil '(:exclude-tags ("noexp")))))))
+  ;; Excluding a tag excludes its whole group.
+  (should
+   (equal ""
+	  (let (org-export-filter-body-functions
+		org-export-filter-final-output-functions)
+	    (org-test-with-temp-text "* Head1 :baz:"
+	      (let ((org-tag-alist '((:startgrouptag)
+				     ("foo") (:grouptags) ("bar") ("baz")
+				     (:endgrouptag))))
+		(org-export-as (org-test-default-backend)
+			       nil nil nil '(:exclude-tags ("foo"))))))))
   ;; Test include tags for headlines and inlinetasks.
   (should
    (equal (org-test-with-temp-text "* H1\n* H2\n** Sub :exp:\n*** Sub Sub\n* H3"
@@ -452,6 +463,18 @@ Paragraph"
 	      (org-export-as (org-test-default-backend)
 			     nil nil nil '(:select-tags ("exp")))))
 	  "* H2\n** Sub :exp:\n*** Sub Sub\n"))
+  ;; Including a tag includes its whole group.
+  (should
+   (string-match-p
+    "\\`\\* H2"
+    (let (org-export-filter-body-functions
+	  org-export-filter-final-output-functions)
+      (org-test-with-temp-text "* H1\n* H2 :bar:"
+	(let ((org-tag-alist '((:startgrouptag)
+			       ("foo") (:grouptags) ("bar") ("baz")
+			       (:endgrouptag))))
+	  (org-export-as (org-test-default-backend)
+			 nil nil nil '(:select-tags ("foo"))))))))
   ;; If there is an include tag, ignore the section before the first
   ;; headline, if any.
   (should
@@ -2835,19 +2858,19 @@ Para2"
   "Test `org-export-insert-image-links' specifications."
   (should-not
    (member "file"
-	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.png]]"
+	   (org-test-with-parsed-data "[[https://orgmode.org][file:image.png]]"
 	     (org-element-map tree 'link
 	       (lambda (l) (org-element-property :type l))))))
   (should
    (member "file"
-	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.png]]"
+	   (org-test-with-parsed-data "[[https://orgmode.org][file:image.png]]"
 	     (org-element-map (org-export-insert-image-links tree info) 'link
 	       (lambda (l) (org-element-property :type l))))))
   ;; Properly set `:parent' property when replace contents with image
   ;; link.
   (should
    (memq 'link
-	 (org-test-with-parsed-data "[[http://orgmode.org][file:image.png]]"
+	 (org-test-with-parsed-data "[[https://orgmode.org][file:image.png]]"
 	   (org-element-map (org-export-insert-image-links tree info) 'link
 	     (lambda (l)
 	       (org-element-type (org-element-property :parent l)))))))
@@ -2855,12 +2878,12 @@ Para2"
   ;; images.
   (should-not
    (member "file"
-	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.xxx]]"
+	   (org-test-with-parsed-data "[[https://orgmode.org][file:image.xxx]]"
 	     (org-element-map (org-export-insert-image-links tree info) 'link
 	       (lambda (l) (org-element-property :type l))))))
   (should
    (member "file"
-	   (org-test-with-parsed-data "[[http://orgmode.org][file:image.xxx]]"
+	   (org-test-with-parsed-data "[[https://orgmode.org][file:image.xxx]]"
 	     (org-element-map
 		 (org-export-insert-image-links tree info '(("file" . "xxx")))
 		 'link
@@ -4362,7 +4385,7 @@ Another text. (ref:text)
   ;; Replace plain links with contents, or with path.
   (should
    (equal "H Org mode\n"
-	  (org-test-with-temp-text "* H [[http://orgmode.org][Org mode]]"
+	  (org-test-with-temp-text "* H [[https://orgmode.org][Org mode]]"
 	    (let (org-export-registered-backends)
 	      (org-export-define-backend 'test
 		'((headline . (lambda (h _c i) (org-export-data-with-backend
@@ -4371,8 +4394,8 @@ Another text. (ref:text)
 					   i)))))
 	      (org-export-as 'test)))))
   (should
-   (equal "H http://orgmode.org\n"
-	  (org-test-with-temp-text "* H [[http://orgmode.org]]"
+   (equal "H https://orgmode.org\n"
+	  (org-test-with-temp-text "* H [[https://orgmode.org]]"
 	    (let (org-export-registered-backends)
 	      (org-export-define-backend 'test
 		'((headline . (lambda (h _c i) (org-export-data-with-backend

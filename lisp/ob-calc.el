@@ -4,7 +4,7 @@
 
 ;; Author: Eric Schulte
 ;; Keywords: literate programming, reproducible research
-;; Homepage: http://orgmode.org
+;; Homepage: https://orgmode.org
 
 ;; This file is part of GNU Emacs.
 
@@ -37,7 +37,7 @@
 (declare-function org-trim "org" (s &optional keep-lead))
 
 (defvar org-babel-default-header-args:calc nil
-  "Default arguments for evaluating an calc source block.")
+  "Default arguments for evaluating a calc source block.")
 
 (defun org-babel-expand-body:calc (body _params)
   "Expand BODY according to PARAMS, return the expanded body." body)

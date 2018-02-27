@@ -640,20 +640,20 @@ CLOCK: [2016-12-27 Wed 13:09]--[2016-12-28 Wed 15:09] => 26:00"
 |--------------+---------|
 | *Total time* | *26:00* |
 |--------------+---------|
-| [[Foo %5B%5Bhttp://orgmode.org%5D%5BOrg mode%5D%5D][Foo Org mode]] | 26:00   |"
+| [[Foo %5B%5Bhttps://orgmode.org%5D%5BOrg mode%5D%5D][Foo Org mode]] | 26:00   |"
     (org-test-with-temp-text
-	"* Foo [[http://orgmode.org][Org mode]]
+	"* Foo [[https://orgmode.org][Org mode]]
 CLOCK: [2016-12-27 Wed 13:09]--[2016-12-28 Wed 15:09] => 26:00"
       (test-org-clock-clocktable-contents ":link t"))))
   (should
    (equal
-    "| Headline               | Time    |
-|------------------------+---------|
-| *Total time*           | *26:00* |
-|------------------------+---------|
-| [[Foo %5B%5Bhttp://orgmode.org%5D%5D][Foo http://orgmode.org]] | 26:00   |"
+    "| Headline                | Time    |
+|-------------------------+---------|
+| *Total time*            | *26:00* |
+|-------------------------+---------|
+| [[Foo %5B%5Bhttps://orgmode.org%5D%5D][Foo https://orgmode.org]] | 26:00   |"
     (org-test-with-temp-text
-	"* Foo [[http://orgmode.org]]
+	"* Foo [[https://orgmode.org]]
 CLOCK: [2016-12-27 Wed 13:09]--[2016-12-28 Wed 15:09] => 26:00"
       (test-org-clock-clocktable-contents ":link t")))))
 
@@ -840,14 +840,14 @@ Weekly report starting on: [2017-09-25 Mon]
 | *Total time* | *1:00* |
 |--------------+--------|
 | Foo          | 1:00   |"
-    (org-test-with-temp-text
-	"* Foo
+	  (org-test-with-temp-text
+	      "* Foo
 CLOCK: [2017-09-30 Sat 12:00]--[2017-09-30 Sat 13:00] =>  1:00
 CLOCK: [2017-10-01 Sun 11:00]--[2017-10-01 Sun 13:00] =>  2:00
 CLOCK: [2017-10-02 Mon 11:00]--[2017-10-02 Mon 14:00] =>  3:00"
-      (let ((system-time-locale "en_US"))
-	(test-org-clock-clocktable-contents
-	    ":step week :block 2017-09 :stepskip0 t")))))
+	    (let ((system-time-locale "en_US"))
+	      (test-org-clock-clocktable-contents
+		  ":step week :block 2017-09 :stepskip0 t")))))
   (should
    (equal "
 Weekly report starting on: [2017-10-01 Sun]
@@ -931,7 +931,38 @@ CLOCK: [2017-10-08 Sun 09:00]--[2017-10-08 Sun 13:00] =>  4:00
 CLOCK: [2017-10-09 Mon 09:00]--[2017-10-09 Mon 14:00] =>  5:00"
 	    (let ((system-time-locale "en_US"))
 	      (test-org-clock-clocktable-contents
-		  ":step day :block 2017-W40"))))))
+		  ":step day :block 2017-W40")))))
+  ;; Regression test: take :tstart and :tend hours into consideration.
+  (should
+   (equal "
+Weekly report starting on: [2017-12-25 Mon]
+| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *8:00* |
+|--------------+--------|
+| Foo          | 8:00   |"
+	  (org-test-with-temp-text
+	      "* Foo
+CLOCK: [2017-12-27 Wed 08:00]--[2017-12-27 Wed 16:00] =>  8:00"
+	    (let ((system-time-locale "en_US"))
+	      (test-org-clock-clocktable-contents
+		  (concat ":step week :tstart \"<2017-12-25 Mon>\" "
+			  ":tend \"<2017-12-27 Wed 23:59>\""))))))
+  (should
+   (equal "
+Daily report: [2017-12-27 Wed]
+| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *8:00* |
+|--------------+--------|
+| Foo          | 8:00   |"
+	  (org-test-with-temp-text
+	      "* Foo
+CLOCK: [2017-12-27 Wed 08:00]--[2017-12-27 Wed 16:00] =>  8:00"
+	    (let ((system-time-locale "en_US"))
+	      (test-org-clock-clocktable-contents
+		  (concat ":step day :tstart \"<2017-12-25 Mon>\" "
+			  ":tend \"<2017-12-27 Wed 23:59>\" :stepskip0 t")))))))
 
 (provide 'test-org-clock)
 ;;; test-org-clock.el end here

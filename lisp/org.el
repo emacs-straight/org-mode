@@ -6,7 +6,8 @@
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Maintainer: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
-;; Homepage: http://orgmode.org
+;; Homepage: https://orgmode.org
+;; Version: 9.1.7
 ;;
 ;; This file is part of GNU Emacs.
 ;;
@@ -48,7 +49,7 @@
 ;; ---------------------------
 ;; See the corresponding sections in the manual at
 ;;
-;;   http://orgmode.org/org.html#Installation
+;;   https://orgmode.org/org.html#Installation
 ;;
 ;; Documentation
 ;; -------------
@@ -59,7 +60,7 @@
 ;; in the doc/ directory.
 ;;
 ;; A list of recent changes can be found at
-;; http://orgmode.org/Changes.html
+;; https://orgmode.org/Changes.html
 ;;
 ;;; Code:
 
@@ -1865,7 +1866,7 @@ See the manual for examples."
 
 (defcustom org-descriptive-links t
   "Non-nil means Org will display descriptive links.
-E.g. [[http://orgmode.org][Org website]] will be displayed as
+E.g. [[https://orgmode.org][Org website]] will be displayed as
 \"Org Website\", hiding the link itself and just displaying its
 description.  When set to nil, Org will display the full links
 literally.
@@ -3757,7 +3758,7 @@ This variable is populated from #+PROPERTY lines.")
   :group 'org)
 
 (defvar-local org-category nil
-  "Variable used by org files to set a category for agenda display.
+  "Variable used by Org files to set a category for agenda display.
 Such files should use a file variable to set it, for example
 
 #   -*- mode: org; org-category: \"ELisp\"
@@ -4039,7 +4040,7 @@ Place-holders only used by `:image-converter':
 (defcustom org-preview-latex-image-directory "ltximg/"
   "Path to store latex preview images.
 A relative path here creates many directories relative to the
-processed org files paths.  An absolute path puts all preview
+processed Org files paths.  An absolute path puts all preview
 images at the same place."
   :group 'org-latex
   :version "26.1"
@@ -4237,9 +4238,9 @@ lines to the buffer:
   :type 'boolean)
 
 (defcustom org-hidden-keywords nil
-  "List of symbols corresponding to keywords to be hidden the org buffer.
-For example, a value \\='(title) for this list will make the document's title
-appear in the buffer without the initial #+TITLE: keyword."
+  "List of symbols corresponding to keywords to be hidden in the Org buffer.
+For example, a value \\='(title) for this list makes the document's title
+appear in the buffer without the initial \"#+TITLE:\" part."
   :group 'org-appearance
   :version "24.1"
   :type '(set (const :tag "#+AUTHOR" author)
@@ -6051,17 +6052,21 @@ by a #."
 
 (defun org-fontify-macros (limit)
   "Fontify macros."
-  (when (re-search-forward "\\({{{\\).+?\\(}}}\\)" limit t)
-    (add-text-properties
-     (match-beginning 0) (match-end 0)
-     '(font-lock-fontified t face org-macro))
-    (when org-hide-macro-markers
-      (add-text-properties (match-end 2) (match-beginning 2)
-			   '(invisible t))
-      (add-text-properties (match-beginning 1) (match-end 1)
-			   '(invisible t)))
-    (org-remove-flyspell-overlays-in (match-beginning 0) (match-end 0))
-    t))
+  (when (re-search-forward "{{{\\([a-zA-Z][-a-zA-Z0-9_]*\\)" limit t)
+    (let ((begin (match-beginning 0))
+	  (opening-end (match-beginning 1)))
+      (when (and (re-search-forward "\n[ \t]*\n\\|\\(}}}\\)" limit t)
+		 (match-string 1))
+	(let ((end (match-end 1))
+	      (closing-start (match-beginning 1)))
+	  (add-text-properties
+	   begin end
+	   '(font-lock-multiline t font-lock-fontified t face org-macro))
+	  (org-remove-flyspell-overlays-in begin end)
+	  (when org-hide-macro-markers
+	    (add-text-properties begin opening-end '(invisible t))
+	    (add-text-properties closing-start end '(invisible t)))
+	  t)))))
 
 (defun org-activate-footnote-links (limit)
   "Add text properties for footnotes."
@@ -8458,7 +8463,7 @@ This is a short-hand for marking the subtree and then cutting it."
   (org-copy-subtree n 'cut))
 
 (defun org-copy-subtree (&optional n cut force-store-markers nosubtrees)
-  "Copy the current subtree it in the clipboard.
+  "Copy the current subtree into the clipboard.
 With prefix arg N, copy this many sequential subtrees.
 This is a short-hand for marking the subtree and then copying it.
 If CUT is non-nil, actually cut the subtree.
@@ -9679,7 +9684,8 @@ active region."
 			 (cdr (assoc-string
 			       (completing-read
 				"Which function for creating the link? "
-				(mapcar #'car results-alist) nil t name)
+				(mapcar #'car results-alist)
+				nil t (symbol-name name))
 			       results-alist)))
 		  t))))
 	(setq link (plist-get org-store-link-plist :link))
@@ -14123,7 +14129,7 @@ headlines matching this string."
 		      'org-todo-regexp org-todo-regexp
 		      'org-complex-heading-regexp org-complex-heading-regexp
 		      'help-echo
-		      (format "mouse-2 or RET jump to org file %s"
+		      (format "mouse-2 or RET jump to Org file %S"
 			      (abbreviate-file-name
 			       (or (buffer-file-name (buffer-base-buffer))
 				   (buffer-name (buffer-base-buffer)))))))
@@ -16509,7 +16515,7 @@ a priority cookie and tags in the standard locations."
 	   (move-marker (make-marker) (match-beginning 0))))))))
 
 (defun org-find-exact-heading-in-directory (heading &optional dir)
-  "Find Org node headline HEADING in all .org files in directory DIR.
+  "Find Org node headline HEADING in all \".org\" files in directory DIR.
 When the target headline is found, return a marker to this location."
   (let ((files (directory-files (or dir default-directory)
 				t "\\`[^.#].*\\.org\\'"))
@@ -18229,7 +18235,7 @@ Prompt for confirmation when there are unsaved changes.
 Be sure you know what you are doing before letting this function
 overwrite your changes.
 
-This function is useful in a setup where one tracks org files
+This function is useful in a setup where one tracks Org files
 with a version control system, to revert on one machine after pulling
 changes from another.  I believe the procedure must be like this:
 
@@ -20987,9 +20993,12 @@ Use `\\[org-edit-special]' to edit table.el tables"))
   "Abort storing current note, or call `outline-show-branches'."
   (interactive)
   (if (not org-finish-function)
-      (progn
-	(outline-hide-subtree)
-	(call-interactively 'outline-show-branches))
+      (save-excursion
+	(save-restriction
+	  (org-narrow-to-subtree)
+	  (org-flag-subtree t)
+	  (call-interactively 'outline-show-branches)
+	  (org-hide-archived-subtrees (point-min) (point-max))))
     (let ((org-note-abort t))
       (funcall org-finish-function))))
 
@@ -21103,7 +21112,13 @@ object (e.g., within a comment).  In these case, you need to use
 	     (delete-and-extract-region (point) (line-end-position))))
 	(newline-and-indent)
 	(save-excursion (insert trailing-data))))
-     (t (if indent (newline-and-indent) (newline))))))
+     (t
+      ;; Do not auto-fill when point is in an Org property drawer.
+      (let ((auto-fill-function (and (not (org-at-property-p))
+				     auto-fill-function)))
+	(if indent
+	    (newline-and-indent)
+	  (newline)))))))
 
 (defun org-return-indent ()
   "Goto next table row or insert a newline and indent.
@@ -21572,7 +21587,7 @@ such private information before sending the email.")
      "Remember to cover the basics, that is, what you expected to happen and
 what in fact did happen.  You don't know how to make a good report?  See
 
-     http://orgmode.org/manual/Feedback.html#Feedback
+     https://orgmode.org/manual/Feedback.html#Feedback
 
 Your bug report will be posted to the Org mailing list.
 ------------------------------------------------------------------------")
@@ -21612,7 +21627,7 @@ Your bug report will be posted to the Org mailing list.
 
 ;;;###autoload
 (defun org-reload (&optional uncompiled)
-  "Reload all org lisp files.
+  "Reload all Org Lisp files.
 With prefix arg UNCOMPILED, load the uncompiled versions."
   (interactive "P")
   (require 'loadhist)
