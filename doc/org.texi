@@ -4,7 +4,7 @@
 @settitle The Org Manual
 @include docstyle.texi
 
-@set VERSION 9.1.8
+@set VERSION 9.1.9
 @set DATE 2018-03-22
 
 @c Version and Contact Info
