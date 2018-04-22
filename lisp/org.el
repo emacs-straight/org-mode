@@ -7,7 +7,7 @@
 ;; Maintainer: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
 ;; Homepage: https://orgmode.org
-;; Version: 9.1.9
+;; Version: 9.1.10
 ;;
 ;; This file is part of GNU Emacs.
 ;;
@@ -2294,7 +2294,7 @@ Possible values for the file identifier are:
                  In a custom function, you can access the group matches with
                  (match-string n link).
 
-                 Example: (\"\\\\.pdf::\\\\(\\\\d+\\\\)\\\\\\='\" . \
+                 Example: (\"\\\\.pdf::\\\\([0-9]+\\\\)\\\\\\='\" . \
 \"evince -p %1 %s\")
                      to open [[file:document.pdf::5]] with evince at page 5.
 
@@ -14162,6 +14162,9 @@ headlines matching this string."
 	       (re-search-forward re nil t))
 	(setq org-map-continue-from nil)
 	(catch :skip
+	  ;; Ignore closing parts of inline tasks.
+	  (when (and (fboundp 'org-inlinetask-end-p) (org-inlinetask-end-p))
+	    (throw :skip t))
 	  (setq todo
 		;; TODO: is the 1-2 difference a bug?
 		(when (match-end 1) (match-string-no-properties 2))
@@ -17799,7 +17802,8 @@ NODEFAULT, hour and minute fields will be nil if not given."
 (defun org-timestamp-up (&optional arg)
   "Increase the date item at the cursor by one.
 If the cursor is on the year, change the year.  If it is on the month,
-the day or the time, change that.
+the day or the time, change that.  If the cursor is on the enclosing
+bracket, change the timestamp type.
 With prefix ARG, change by that many units."
   (interactive "p")
   (org-timestamp-change (prefix-numeric-value arg) nil 'updown))
@@ -17807,7 +17811,8 @@ With prefix ARG, change by that many units."
 (defun org-timestamp-down (&optional arg)
   "Decrease the date item at the cursor by one.
 If the cursor is on the year, change the year.  If it is on the month,
-the day or the time, change that.
+the day or the time, change that.  If the cursor is on the enclosing
+bracket, change the timestamp type.
 With prefix ARG, change by that many units."
   (interactive "p")
   (org-timestamp-change (- (prefix-numeric-value arg)) nil 'updown))
@@ -21080,7 +21085,14 @@ object (e.g., within a comment).  In these case, you need to use
      ;; `org-return-follows-link' allows it.  Tolerate fuzzy
      ;; locations, e.g., in a comment, as `org-open-at-point'.
      ((and org-return-follows-link
-	   (or (org-in-regexp org-ts-regexp-both nil t)
+	   (or (and (eq 'link (org-element-type context))
+		    ;; Ensure point is not on the white spaces after
+		    ;; the link.
+		    (let ((origin (point)))
+		      (org-with-point-at (org-element-property :end context)
+			(skip-chars-backward " \t")
+			(> (point) origin))))
+	       (org-in-regexp org-ts-regexp-both nil t)
 	       (org-in-regexp org-tsr-regexp-both nil  t)
 	       (org-in-regexp org-any-link-re nil t)))
       (call-interactively #'org-open-at-point))
@@ -23684,7 +23696,9 @@ depending on context."
 	       org-ctrl-k-protect-subtree
 	       (or (eq org-ctrl-k-protect-subtree 'error)
 		   (not (y-or-n-p "Kill hidden subtree along with headline? "))))
-      (user-error "C-k aborted as it would kill a hidden subtree"))
+      (user-error
+       (substitute-command-keys
+	"`\\[org-kill-line]' aborted as it would kill a hidden subtree")))
     (call-interactively
      (if (bound-and-true-p visual-line-mode) 'kill-visual-line 'kill-line)))
    ((looking-at ".*?\\S-\\([ \t]+\\(:[[:alnum:]_@#%:]+:\\)\\)[ \t]*$")
