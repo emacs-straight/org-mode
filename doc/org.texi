@@ -4,8 +4,8 @@
 @settitle The Org Manual
 @include docstyle.texi
 
-@set VERSION 9.1.10
-@set DATE 2018-04-21
+@set VERSION 9.1.11
+@set DATE 2018-04-22
 
 @c Version and Contact Info
 @set MAINTAINERSITE @uref{https://orgmode.org,maintainers web page}
