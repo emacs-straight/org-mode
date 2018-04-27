@@ -4487,9 +4487,9 @@ is active."
       (setq files (org-agenda-files nil 'ifmode))
       ;; Add `org-agenda-text-search-extra-files' unless there is some
       ;; restriction.
-      (unless (get 'org-agenda-files 'org-restrict)
-	(when (eq (car org-agenda-text-search-extra-files) 'agenda-archives)
-	  (pop org-agenda-text-search-extra-files)
+      (when (eq (car org-agenda-text-search-extra-files) 'agenda-archives)
+	(pop org-agenda-text-search-extra-files)
+	(unless (get 'org-agenda-files 'org-restrict)
 	  (setq files (org-add-archive-files files))))
       ;; Uniquify files.  However, let `org-check-agenda-file' handle
       ;; non-existent ones.
@@ -4751,11 +4751,11 @@ The prefix arg TODO-ONLY limits the search to TODO entries."
 		    (format "*Org Agenda(%s:%s)*"
 			    (or org-keys (or (and todo-only "M") "m")) match)
 		  (format "*Org Agenda(%s)*" (or (and todo-only "M") "m")))))
+      (setq matcher (org-make-tags-matcher match))
       ;; Prepare agendas (and `org-tag-alist-for-agenda') before
       ;; expanding tags within `org-make-tags-matcher'
       (org-agenda-prepare (concat "TAGS " match))
-      (setq matcher (org-make-tags-matcher match)
-	    match (car matcher)
+      (setq match (car matcher)
 	    matcher (cdr matcher))
       (org-compile-prefix-format 'tags)
       (org-set-sorting-strategy 'tags)
@@ -6004,10 +6004,7 @@ specification like [h]h:mm."
 			 org-deadline-warning-days))
 		   ;; Set pre-warning to deadline.
 		   (t 0))))
-	       (wdays (if suppress-prewarning
-			  (let ((org-deadline-warning-days suppress-prewarning))
-			    (org-get-wdays s))
-			(org-get-wdays s))))
+	       (wdays (or suppress-prewarning (org-get-wdays s))))
 	  (cond
 	   ;; Only display deadlines at their base date, at future
 	   ;; repeat occurrences or in today agenda.
