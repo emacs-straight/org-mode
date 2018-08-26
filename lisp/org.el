@@ -7,7 +7,7 @@
 ;; Maintainer: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
 ;; Homepage: https://orgmode.org
-;; Version: 9.1.13
+;; Version: 9.1.14
 ;;
 ;; This file is part of GNU Emacs.
 ;;
@@ -13594,8 +13594,8 @@ EXTRA is additional text that will be inserted into the notes buffer."
 		      (regexp-quote (cdr (assq 'state org-log-note-headings)))
 		      `(("%d" . ,org-ts-regexp-inactive)
 			("%D" . ,org-ts-regexp)
-			("%s" . "\"\\S-+\"")
-			("%S" . "\"\\S-+\"")
+			("%s" . "\\(?:\"\\S-+\"\\)?")
+			("%S" . "\\(?:\"\\S-+\"\\)?")
 			("%t" . ,org-ts-regexp-inactive)
 			("%T" . ,org-ts-regexp)
 			("%u" . ".*?")
