@@ -1,6 +1,6 @@
 ;;; ob-J.el --- Babel Functions for J                -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2011-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2011-2019 Free Software Foundation, Inc.
 
 ;; Author: Oleh Krehel
 ;; Keywords: literate programming, reproducible research
@@ -31,8 +31,8 @@
 ;;; Code:
 
 (require 'ob)
+(require 'org-macs)
 
-(declare-function org-trim "org" (s &optional keep-lead))
 (declare-function j-console-ensure-session "ext:j-console" ())
 
 (defcustom org-babel-J-command "jconsole"

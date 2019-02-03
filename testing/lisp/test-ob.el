@@ -1,6 +1,6 @@
 ;;; test-ob.el --- tests for ob.el
 
-;; Copyright (c) 2010-2015 Eric Schulte
+;; Copyright (c) 2010-2015, 2019 Eric Schulte
 ;; Authors: Eric Schulte, Martyn Jago
 
 ;; This file is not part of GNU Emacs.
@@ -19,6 +19,8 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
+
+(eval-and-compile (require 'cl-lib))
 
 (ert-deftest test-ob/indented-cached-org-bracket-link ()
   "When the result of a source block is a cached indented link it
@@ -553,7 +555,7 @@ on two lines
 
 #+NAME: read-literal-example
 #+BEGIN_SRC emacs-lisp :var x=literal-example
-  (concatenate 'string x \" for me.\")
+  (cl-concatenate 'string x \" for me.\")
 #+END_SRC"
     (org-babel-next-src-block 1)
     (should (string= (org-babel-execute-src-block)
@@ -690,8 +692,7 @@ x
   <<foo>>
 #+end_src
 
-#+name: foo
-#+begin_src sh :noweb-sep \"\"
+#+begin_src sh :noweb-ref foo :noweb-sep \"\"
   bar
 #+end_src
 
@@ -997,6 +998,36 @@ trying to find the :END: marker."
     (should (search-forward "[[file:foo][bar]]" nil t))
     (should (search-forward "[[file:foo][foo]]" nil t))))
 
+(ert-deftest test-ob/result-file-link-type-header-argument ()
+  "Ensure that the result is a link to a file.
+The file is just a link to `:file' value.  Inhibit non-empty
+result write to `:file' value."
+  (org-test-with-temp-text "
+<point>#+begin_src shell :results value link :file \"/tmp/test.txt\"
+echo \"hello\" > /tmp/test.txt
+echo \"test\"
+#+end_src"
+   (org-babel-execute-src-block)
+   (should (search-forward "[[file:/tmp/test.txt]]" nil nil))
+   (should (with-temp-buffer
+	     (insert-file-contents "/tmp/test.txt")
+	     (string= "hello\n" (buffer-string))))))
+
+(ert-deftest test-ob/result-graphics-link-type-header-argument ()
+  "Ensure that the result is a link to a file.
+The file is just a link to `:file' value.  Inhibit non-empty
+result write to `:file' value."
+  (org-test-with-temp-text "
+<point>#+begin_src shell :results value graphics :file \"/tmp/test.txt\"
+echo \"hello\" > /tmp/test.txt
+echo \"test\"
+#+end_src"
+   (org-babel-execute-src-block)
+   (should (search-forward "[[file:/tmp/test.txt]]" nil nil))
+   (should (with-temp-buffer
+	     (insert-file-contents "/tmp/test.txt")
+	     (string= "hello\n" (buffer-string))))))
+
 (ert-deftest test-ob/inline-src_blk-preceded-punct-preceded-by-point ()
   (let ((test-line ".src_emacs-lisp[ :results verbatim ]{ \"x\"  }")
 	(org-babel-inline-result-wrap "=%s="))
@@ -1057,12 +1088,11 @@ replacement happens correctly."
   (test-ob-verify-result-and-removed-result
    "- 1
 - 2
-- 3
-- (quote (4 5))"
+- 3"
 
    "* org-babel-remove-result
 #+begin_src emacs-lisp :results list
-'(1 2 3 '(4 5))
+'(1 2 3)
 #+end_src
 
 * next heading"))
@@ -1070,9 +1100,9 @@ replacement happens correctly."
 (ert-deftest test-ob/org-babel-remove-result--results-wrap ()
   "Test `org-babel-remove-result' with :results wrap."
   (test-ob-verify-result-and-removed-result
-   ":RESULTS:
+   ":results:
 hello there
-:END:"
+:end:"
 
    "* org-babel-remove-result
 
@@ -1085,11 +1115,11 @@ hello there
 (ert-deftest test-ob/org-babel-remove-result--results-org ()
   "Test `org-babel-remove-result' with :results org."
   (test-ob-verify-result-and-removed-result
-   "#+BEGIN_SRC org
+   "#+begin_src org
 ,* heading
 ,** subheading
 content
-#+END_SRC"
+#+end_src"
 
    "* org-babel-remove-result
 #+begin_src emacs-lisp :results org
@@ -1103,9 +1133,9 @@ content\"
 (ert-deftest test-ob/org-babel-remove-result--results-html ()
   "Test `org-babel-remove-result' with :results html."
   (test-ob-verify-result-and-removed-result
-   "#+BEGIN_EXPORT html
+   "#+begin_export html
 <head><body></body></head>
-#+END_EXPORT"
+#+end_export"
 
    "* org-babel-remove-result
 #+begin_src emacs-lisp :results html
@@ -1117,11 +1147,11 @@ content\"
 (ert-deftest test-ob/org-babel-remove-result--results-latex ()
   "Test `org-babel-remove-result' with :results latex."
   (test-ob-verify-result-and-removed-result
-   "#+BEGIN_EXPORT latex
+   "#+begin_export latex
 Line 1
 Line 2
 Line 3
-#+END_EXPORT"
+#+end_export"
 
    "* org-babel-remove-result
 #+begin_src emacs-lisp :results latex
@@ -1136,9 +1166,9 @@ Line 3\"
   "Test `org-babel-remove-result' with :results code."
 
   (test-ob-verify-result-and-removed-result
-   "#+BEGIN_SRC emacs-lisp
+   "#+begin_src emacs-lisp
 \"I am working!\"
-#+END_SRC"
+#+end_src"
 
    "* org-babel-remove-result
 #+begin_src emacs-lisp :results code
@@ -1404,7 +1434,7 @@ echo \"$data\"
 	       (org-babel-execute-src-block))))))
 
 (ert-deftest test-ob/preserve-results-indentation ()
-  "Preserve indentation when executing a src block."
+  "Preserve indentation when executing a source block."
   (should
    (equal
     '(2 2)

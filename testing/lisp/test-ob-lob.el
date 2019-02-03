@@ -1,6 +1,6 @@
 ;;; test-ob-lob.el --- test for ob-lob.el
 
-;; Copyright (c) 2010-2015 Eric Schulte
+;; Copyright (c) 2010-2015, 2019 Eric Schulte
 ;; Authors: Eric Schulte
 
 ;; This file is not part of GNU Emacs.
@@ -17,6 +17,8 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(eval-and-compile (require 'cl-lib))
 
 
 ;;; Tests
@@ -39,7 +41,7 @@
 
 (ert-deftest test-ob-lob/call-with-header-arguments ()
   "Test the evaluation of a library of babel #+call: line."
-  (letf (((symbol-function 'org-babel-insert-result)
+  (cl-letf (((symbol-function 'org-babel-insert-result)
 	  (symbol-function 'ignore)))
     (let ((org-babel-library-of-babel
 	   (org-test-with-temp-text-in-file

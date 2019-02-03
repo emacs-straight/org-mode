@@ -1,6 +1,6 @@
 ;;; org-feed.el --- Add RSS feed items to Org files  -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2009-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
 ;;
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -414,7 +414,6 @@ it can be a list structured like an entry in `org-feed-alist'."
 	  (goto-char inbox-pos)
 	  (outline-hide-subtree)
 	  (org-show-children)
-	  (org-cycle-hide-drawers 'children)
 
 	  ;; Hooks and messages
 	  (when org-feed-save-after-adding (save-buffer))
@@ -567,7 +566,7 @@ If that property is already present, nothing changes."
 			      (if (looking-at
 				   (concat "^\\([ \t]*\\)%" name "[ \t]*$"))
 				  (org-feed-make-indented-block
-				   v (org-get-indentation))
+				   v (current-indentation))
 				v))))))))
 		(when replacement
 		  (insert

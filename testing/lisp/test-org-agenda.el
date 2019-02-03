@@ -1,6 +1,6 @@
 ;;; test-org-agenda.el --- Tests for org-agenda.el -*- lexical-binding: t ; -*-
 
-;; Copyright (C) 2017 Marco Wahl
+;; Copyright (C) 2017, 2019 Marco Wahl
 
 ;; Author: Marco Wahl <marcowahlsoft@gmail.com>
 
@@ -25,6 +25,7 @@
 
 (require 'org-test)
 (require 'org-agenda)
+(eval-and-compile (require 'cl-lib))
 
 
 ;; General auxilliaries
@@ -84,6 +85,23 @@
 	    (looking-at " *agenda-file:Scheduled: *test agenda"))))
   (org-test-agenda--kill-all-agendas))
 
+(ert-deftest test-org-agenda/set-priority ()
+  "One informative line in the agenda. Check that org-agenda-priority updates the agenda."
+  (cl-assert (not org-agenda-sticky) nil "precondition violation")
+  (cl-assert (not (org-test-agenda--agenda-buffers))
+	     nil "precondition violation")
+  (let ((org-agenda-span 'day)
+	(org-agenda-files `(,(expand-file-name "examples/agenda-file.org"
+					       org-test-dir))))
+    (org-agenda-list nil "<2017-07-19 Wed>")
+    (set-buffer org-agenda-buffer-name)
+
+    (should
+     (progn (goto-line 3)
+	    (org-agenda-priority ?B)
+	    (looking-at-p " *agenda-file:Scheduled: *\\[#B\\] test agenda"))))
+  (org-test-agenda--kill-all-agendas))
+
 (ert-deftest test-org-agenda/sticky-agenda-name ()
   "Agenda buffer name after having created one sticky agenda buffer."
   (cl-assert (not org-agenda-sticky) nil "precondition violation")
@@ -112,7 +130,7 @@
     (org-agenda-list)
     (let* ((agenda-buffer-name
 	    (progn
-	      (assert (= 1 (length (org-test-agenda--agenda-buffers))))
+	      (cl-assert (= 1 (length (org-test-agenda--agenda-buffers))))
 	      (buffer-name (car (org-test-agenda--agenda-buffers))))))
       (set-buffer agenda-buffer-name)
       (org-agenda-redo)
@@ -121,6 +139,27 @@
                        (buffer-name (car (org-test-agenda--agenda-buffers)))))))
   (org-toggle-sticky-agenda)
   (org-test-agenda--kill-all-agendas))
+
+
+;; agenda redo
+
+(require 'face-remap)
+
+(ert-deftest test-org-agenda/rescale ()
+  "Text scale survives `org-agenda-redo'."
+  (org-test-agenda--kill-all-agendas)
+  (unwind-protect
+      (let ((org-agenda-span 'day)
+         org-agenda-files)
+     (org-agenda-list)
+     (set-buffer org-agenda-buffer-name)
+     (text-scale-mode)
+     (text-scale-set 11)
+     (cl-assert (and (boundp text-scale-mode) text-scale-mode))
+     (org-agenda-redo)
+     (should text-scale-mode)
+     (should (= 11 text-scale-mode-amount)))
+   (org-test-agenda--kill-all-agendas)))
 
 
 (provide 'test-org-agenda)

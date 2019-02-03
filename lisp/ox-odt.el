@@ -1,6 +1,6 @@
 ;;; ox-odt.el --- OpenDocument Text Exporter for Org Mode -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2010-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2010-2019 Free Software Foundation, Inc.
 
 ;; Author: Jambunathan K <kjambunathan at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -27,8 +27,9 @@
 
 (require 'cl-lib)
 (require 'format-spec)
-(require 'ox)
 (require 'org-compat)
+(require 'org-macs)
+(require 'ox)
 (require 'table nil 'noerror)
 
 ;;; Define Back-End
@@ -1357,16 +1358,18 @@ original parsed data.  INFO is a plist holding export options."
   ;; Update styles file.
   ;; Copy styles.xml.  Also dump htmlfontify styles, if there is any.
   ;; Write styles file.
-  (let* ((styles-file (plist-get info :odt-styles-file))
-	 (styles-file (and (org-string-nw-p styles-file)
-			   (org-trim styles-file)))
-	 ;; Non-availability of styles.xml is not a critical
-	 ;; error. For now, throw an error.
-	 (styles-file (or styles-file
-			  (expand-file-name "OrgOdtStyles.xml"
-					    org-odt-styles-dir)
-			  (error "org-odt: Missing styles file?"))))
+  (let* ((styles-file
+	  (pcase (plist-get info :odt-styles-file)
+	    (`nil (expand-file-name "OrgOdtStyles.xml" org-odt-styles-dir))
+	    ((and s (pred (string-match-p "\\`(.*)\\'")))
+	     (condition-case nil
+		 (read s)
+	       (error (user-error "Invalid styles file specification: %S" s))))
+	    (filename (org-strip-quotes filename)))))
     (cond
+     ;; Non-availability of styles.xml is not a critical error.  For
+     ;; now, throw an error.
+     ((null styles-file) (error "Missing styles file"))
      ((listp styles-file)
       (let ((archive (nth 0 styles-file))
 	    (members (nth 1 styles-file)))
@@ -1376,7 +1379,7 @@ original parsed data.  INFO is a plist holding export options."
 	    (let* ((image-type (file-name-extension member))
 		   (media-type (format "image/%s" image-type)))
 	      (org-odt-create-manifest-file-entry media-type member))))))
-     ((and (stringp styles-file) (file-exists-p styles-file))
+     ((file-exists-p styles-file)
       (let ((styles-file-type (file-name-extension styles-file)))
 	(cond
 	 ((string= styles-file-type "xml")
@@ -2190,6 +2193,10 @@ SHORT-CAPTION are strings."
     (copy-file path (concat org-odt-zip-dir target-file) 'overwrite)
     (org-odt-create-manifest-file-entry media-type target-file)
     target-file))
+
+;; For --without-x builds.
+(declare-function clear-image-cache "image.c" (&optional filter))
+(declare-function image-size "image.c" (spec &optional pixels frame))
 
 (defun org-odt--image-size
   (file info &optional user-width user-height scale dpi embed-as)
@@ -3139,7 +3146,7 @@ and prefix with \"OrgSrc\".  For example,
 	 (code-info (org-export-unravel-code element))
 	 (code (car code-info))
 	 (refs (cdr code-info))
-	 ;; Does the src block contain labels?
+	 ;; Does the source block contain labels?
 	 (retain-labels (org-element-property :retain-labels element))
 	 ;; Does it have line numbers?
 	 (num-start (org-export-get-loc element info)))

@@ -1,6 +1,6 @@
 ;;; test-org-list.el --- Tests for org-list.el
 
-;; Copyright (C) 2012, 2013, 2014  Nicolas Goaziou
+;; Copyright (C) 2012, 2013, 2014, 2018, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 
@@ -941,6 +941,24 @@
 	  (org-test-with-temp-text "* TODO line"
 	    (org-toggle-item nil)
 	    (buffer-string))))
+  ;; When turning headlines into items, make sure planning info line
+  ;; and properties drawers are removed.  This also includes empty
+  ;; lines following them.
+  (should
+   (equal "- H\n"
+	  (org-test-with-temp-text "* H\nSCHEDULED: <2012-03-29 Thu>"
+	    (org-toggle-item nil)
+	    (buffer-string))))
+  (should
+   (equal "- H\n"
+	  (org-test-with-temp-text "* H\n:PROPERTIES:\n:A: 1\n:END:"
+	    (org-toggle-item nil)
+	    (buffer-string))))
+  (should
+   (equal "- H\nText"
+	  (org-test-with-temp-text "* H\n:PROPERTIES:\n:A: 1\n:END:\n\n\nText"
+	    (org-toggle-item nil)
+	    (buffer-string))))
   ;; When a region is marked and first line is a headline, all
   ;; headlines are turned into items.
   (should
@@ -1019,16 +1037,32 @@
 (ert-deftest test-org-list/sort ()
   "Test `org-sort-list'."
   ;; Sort alphabetically.
-  (should
-   (equal "- abc\n- def\n- xyz\n"
-	  (org-test-with-temp-text "- def\n- xyz\n- abc\n"
-	    (org-sort-list nil ?a)
-	    (buffer-string))))
-  (should
-   (equal "- xyz\n- def\n- abc\n"
-	  (org-test-with-temp-text "- def\n- xyz\n- abc\n"
-	    (org-sort-list nil ?A)
-	    (buffer-string))))
+  (let ((original-string-collate-lessp (symbol-function 'string-collate-lessp)))
+    (cl-letf (((symbol-function 'string-collate-lessp)
+	       (lambda (s1 s2 &optional locale ignore-case)
+		 (funcall original-string-collate-lessp
+			  s1 s2 "C" ignore-case))))
+      (should
+       (equal "- abc\n- def\n- XYZ\n"
+	      (org-test-with-temp-text "- def\n- XYZ\n- abc\n"
+		(org-sort-list nil ?a)
+		(buffer-string))))
+      (should
+       (equal "- XYZ\n- def\n- abc\n"
+	      (org-test-with-temp-text "- def\n- XYZ\n- abc\n"
+		(org-sort-list nil ?A)
+		(buffer-string))))
+      ;; Sort alphabetically (with case).
+      (should
+       (equal "- C\n- a\n- b\n"
+	      (org-test-with-temp-text "- b\n- C\n- a\n"
+		(org-sort-list t ?a)
+		(buffer-string))))
+      (should
+       (equal "- b\n- a\n- C\n"
+	      (org-test-with-temp-text "- b\n- C\n- a\n"
+		(org-sort-list t ?A)
+		(buffer-string))))))
   ;; Sort numerically.
   (should
    (equal "- 1\n- 2\n- 10\n"
@@ -1085,59 +1119,7 @@
 	    (buffer-string)))))
 
 
-;;; Radio Lists
-
-(ert-deftest test-org-list/send-list ()
-  "Test various checks for `org-list-send-list'."
-  ;; Error when not at a list item.
-  (should-error
-   (org-test-with-temp-text "Not a list item"
-     (org-list-send-list)))
-  ;; Error when ORGLST line is not provided.
-  (should-error
-   (org-test-with-temp-text "- item"
-     (org-list-send-list)))
-  ;; Error when transformation function is unknown.
-  (should-error
-   (org-test-with-temp-text "@ignore
-#+ORGLST: SEND list unknown-function
-- item
-@end ignore"
-     (forward-line 2)
-     (org-list-send-list)))
-  ;; Error when receiving location is not defined.
-  (should-error
-   (org-test-with-temp-text "@ignore
-#+ORGLST: SEND list org-list-to-texinfo
-- item
-@end ignore"
-     (forward-line 2)
-     (org-list-send-list)))
-  ;; Error when insertion region is ill-formed.
-  (should-error
-   (org-test-with-temp-text "@c BEGIN RECEIVE ORGLST list
-@ignore
-#+ORGLST: SEND list org-list-to-texinfo
-- item
-@end ignore"
-     (forward-line 3)
-     (org-list-send-list)))
-  ;; Allow multiple receiver locations.
-  (should
-   (org-test-with-temp-text "
-@c BEGIN RECEIVE ORGLST list
-@c END RECEIVE ORGLST list
-
-@ignore
-#+ORGLST: SEND list org-list-to-texinfo
-<point>- item contents
-@end ignore
-
-@c BEGIN RECEIVE ORGLST list
-@c END RECEIVE ORGLST list"
-     (org-list-send-list)
-     (goto-char (point-min))
-     (search-forward "item contents" nil t 3))))
+;;; List transformations
 
 (ert-deftest test-org-list/to-generic ()
   "Test `org-list-to-generic' specifications."
@@ -1353,71 +1335,22 @@
   "Test `org-list-to-html' specifications."
   (should
    (equal "<ul class=\"org-ul\">\n<li>a</li>\n</ul>"
-	  (let (org-html-indent)
-	    (with-temp-buffer
-	      (insert "<!-- BEGIN RECEIVE ORGLST name -->
-<!-- END RECEIVE ORGLST name -->
-<!--
-#+ORGLST: SEND name org-list-to-html
-- a
--->")
-	      (goto-char (point-min))
-	      (re-search-forward "^- a" nil t)
-	      (beginning-of-line)
-	      (org-list-send-list)
-	      (goto-line 2)
-	      (buffer-substring-no-properties
-	       (point)
-	       (progn (re-search-forward "^<!-- END" nil t)
-		      (beginning-of-line)
-		      (skip-chars-backward " \r\t\n")
-		      (point))))))))
+	  (org-test-with-temp-text "- a"
+	    (org-list-to-html (org-list-to-lisp) nil)))))
 
 (ert-deftest test-org-list/to-latex ()
   "Test `org-list-to-latex' specifications."
   (should
    (equal "\\begin{itemize}\n\\item a\n\\end{itemize}"
-	  (with-temp-buffer
-	    (insert "% BEGIN RECEIVE ORGLST name
-% END RECEIVE ORGLST name
-\\begin{comment}
-#+ORGLST: SEND name org-list-to-latex
-- a
-\\end{comment}")
-	    (goto-char (point-min))
-	    (re-search-forward "^- a" nil t)
-	    (beginning-of-line)
-	    (org-list-send-list)
-	    (goto-line 2)
-	    (buffer-substring-no-properties
-	     (point)
-	     (progn (re-search-forward "^% END" nil t)
-		    (beginning-of-line)
-		    (skip-chars-backward " \r\t\n")
-		    (point)))))))
+	  (org-test-with-temp-text "- a"
+	    (org-list-to-latex (org-list-to-lisp) nil)))))
 
 (ert-deftest test-org-list/to-texinfo ()
   "Test `org-list-to-texinfo' specifications."
   (should
    (equal "@itemize\n@item\na\n@end itemize"
-	  (with-temp-buffer
-	    (insert "@c BEGIN RECEIVE ORGLST name
-@c END RECEIVE ORGLST name
-@ignore
-#+ORGLST: SEND name org-list-to-texinfo
-- a
-@end ignore")
-	    (goto-char (point-min))
-	    (re-search-forward "^- a" nil t)
-	    (beginning-of-line)
-	    (org-list-send-list)
-	    (goto-line 2)
-	    (buffer-substring-no-properties
-	     (point)
-	     (progn (re-search-forward "^@c END" nil t)
-		    (beginning-of-line)
-		    (skip-chars-backward " \r\t\n")
-		    (point)))))))
+	  (org-test-with-temp-text "- a"
+	    (org-list-to-texinfo (org-list-to-lisp) nil)))))
 
 (ert-deftest test-org-list/to-org ()
   "Test `org-list-to-org' specifications."

@@ -1,6 +1,6 @@
 ;;; test-ob-sqlite.el --- tests for ob-sqlite.el
 
-;; Copyright (C) 2017  Eduardo Bellani
+;; Copyright (C) 2017, 2019  Eduardo Bellani
 
 ;; Author: Eduardo Bellani <ebellani@gmail.com>
 ;; Keywords: lisp
@@ -19,7 +19,8 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
-(org-test-for-executable "sqlite")
+(org-test-for-executable "sqlite3")
+(require 'ob-sqlite)
 (unless (featurep 'ob-sqlite)
   (signal 'missing-test-dependency "Support for sqlite code blocks"))
 

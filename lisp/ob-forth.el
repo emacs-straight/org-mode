@@ -1,6 +1,6 @@
 ;;; ob-forth.el --- Babel Functions for Forth        -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2014-2019 Free Software Foundation, Inc.
 
 ;; Author: Eric Schulte
 ;; Keywords: literate programming, reproducible research, forth
@@ -33,9 +33,9 @@
 
 ;;; Code:
 (require 'ob)
+(require 'org-macs)
 
 (declare-function forth-proc "ext:gforth" ())
-(declare-function org-trim "org" (s &optional keep-lead))
 
 (defvar org-babel-default-header-args:forth '((:session . "yes"))
   "Default header arguments for forth code blocks.")

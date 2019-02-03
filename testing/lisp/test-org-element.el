@@ -1,6 +1,6 @@
 ;;; test-org-element.el --- Tests for org-element.el
 
-;; Copyright (C) 2012-2015  Nicolas Goaziou
+;; Copyright (C) 2012-2015, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 
@@ -18,6 +18,8 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
+
+(eval-and-compile (require 'cl-lib))
 
 (unless (featurep 'org-element)
   (signal 'missing-test-dependency "org-element"))
@@ -46,7 +48,7 @@ Some other text
 	(let ((count 0))
 	  (org-element-map
 	   (org-element-parse-buffer) 'plain-text
-	   (lambda (s) (when (string-match "text" s) (incf count))))
+	   (lambda (s) (when (string-match "text" s) (cl-incf count))))
 	  count))))
   ;; Applies to secondary strings
   (should
@@ -728,9 +730,9 @@ Some other text
 	 (org-element-type (org-element-at-point)))))
   ;; Properly un-escape code.
   (should
-   (equal "* Headline\n #+keyword\nText\n"
+   (equal "* Headline\n #+keyword:\nText\n"
 	  (org-test-with-temp-text
-	      "#+BEGIN_EXAMPLE\n,* Headline\n ,#+keyword\nText\n#+END_EXAMPLE"
+	      "#+BEGIN_EXAMPLE\n,* Headline\n ,#+keyword:\nText\n#+END_EXAMPLE"
 	    (org-element-property :value (org-element-at-point)))))
   ;; Handle non-empty blank line at the end of buffer.
   (should
@@ -898,29 +900,32 @@ Some other text
   "Test fixed-width area parsing."
   ;; Preserve indentation.
   (should
-   (org-test-with-temp-text ": no blank\n:  one blank"
-     (org-element-map (org-element-parse-buffer) 'fixed-width 'identity)))
+   (equal "no blank\n one blank"
+	  (org-test-with-temp-text ": no blank\n:  one blank"
+	    (org-element-property :value (org-element-at-point)))))
   ;; Fixed-width with empty lines.
   (should
-   (org-test-with-temp-text ": first part\n:\n: \n: second part"
-     (org-element-map (org-element-parse-buffer) 'fixed-width 'identity)))
+   (equal "first part\n\n\nsecond part"
+	  (org-test-with-temp-text ": first part\n:\n: \n: second part"
+	    (org-element-property :value (org-element-at-point)))))
   ;; Parse indented fixed-width markers.
   (should
-   (org-test-with-temp-text "Text\n  : no blank\n  :  one blank"
-     (org-element-map (org-element-parse-buffer) 'fixed-width 'identity)))
+   (eq 'fixed-width
+       (org-test-with-temp-text "Text\n<point>  : no blank\n  :  one blank"
+	 (org-element-type (org-element-at-point)))))
   ;; Distinguish fixed-width areas within a list and outside of it.
   (should
-   (= 2
-      (length
-       (org-test-with-temp-text "
+   (org-test-with-temp-text "
 - Item
-  : fixed-width inside
+  : fixed-width inside<point>
 : fixed-width outside"
-	 (org-element-map (org-element-parse-buffer) 'fixed-width 'identity)))))
+     (= (org-element-property :end (org-element-at-point))
+	(line-beginning-position 2))))
   ;; Handle non-empty blank line at the end of buffer.
   (should
    (org-test-with-temp-text ": A\n "
-     (= (org-element-property :end (org-element-at-point)) (point-max)))))
+     (= (org-element-property :end (org-element-at-point))
+	(point-max)))))
 
 
 ;;;; Footnote Definition
@@ -969,7 +974,20 @@ Some other text
    (org-test-with-temp-text "[fn:1]\n\n"
      (let ((footnote (org-element-at-point)))
        (or (org-element-property :contents-begin footnote)
-	   (org-element-property :contents-end footnote))))))
+	   (org-element-property :contents-end footnote)))))
+  ;; Parse `:pre-blank'.
+  (should
+   (= 0
+      (org-test-with-temp-text "[fn:1] A"
+	(org-element-property :pre-blank (org-element-at-point)))))
+  (should
+   (= 1
+      (org-test-with-temp-text "[fn:1]\nA"
+	(org-element-property :pre-blank (org-element-at-point)))))
+  (should
+   (= 2
+      (org-test-with-temp-text "[fn:1]\n\nA"
+	(org-element-property :pre-blank (org-element-at-point))))))
 
 
 ;;;; Footnotes Reference.
@@ -1444,9 +1462,8 @@ DEADLINE: <2012-03-29 thu.>"
 - [-] item 1
   - [X] item 1.1
   - [ ] item 1.2"
-      (org-element-map
-       (org-element-parse-buffer) 'item
-       (lambda (item) (org-element-property :checkbox item))))))
+      (org-element-map (org-element-parse-buffer) 'item
+	(lambda (item) (org-element-property :checkbox item))))))
   ;; Item starting with special syntax.
   (should
    (equal '(("- item"))
@@ -1458,6 +1475,19 @@ DEADLINE: <2012-03-29 thu.>"
    (org-test-with-temp-text
        "-<point> item\n  #+begin_src emacs-lisp\n(+ 1 1)\n  #+end_src"
      (= (org-element-property :end (org-element-at-point)) (point-max))))
+  ;; Parse `:pre-blank'.
+  (should
+   (= 0
+      (org-test-with-temp-text "-<point> A"
+	(org-element-property :pre-blank (org-element-at-point)))))
+  (should
+   (= 1
+      (org-test-with-temp-text "-<point>\n  A"
+	(org-element-property :pre-blank (org-element-at-point)))))
+  (should
+   (= 2
+      (org-test-with-temp-text "-<point>\n\n  A"
+	(org-element-property :pre-blank (org-element-at-point)))))
   ;; Last item in a list or sub-list has no `:post-blank' lines, since
   ;; those belong to the plain-list.
   (should
@@ -2375,7 +2405,7 @@ Outside list"
 
 ;;;; Timestamp
 
-(ert-deftest test-org-element/timestamp ()
+(ert-deftest test-org-element/timestamp-parser ()
   "Test `timestamp' parser."
   ;; Active timestamp.
   (should
@@ -2513,32 +2543,32 @@ Outside list"
    (equal
     (org-element-interpret-data
      '(org-data nil (paragraph (:name "para") "Paragraph")))
-    "#+NAME: para\nParagraph\n"))
+    "#+name: para\nParagraph\n"))
   ;; Interpret multiple affiliated keywords.
   (should
    (equal
     (org-element-interpret-data
      '(org-data nil (paragraph (:attr_ascii ("line2" "line1")) "Paragraph")))
-    "#+ATTR_ASCII: line1\n#+ATTR_ASCII: line2\nParagraph\n"))
+    "#+attr_ascii: line1\n#+attr_ascii: line2\nParagraph\n"))
   ;; Interpret parsed affiliated keywords.
   (should
    (equal
     (org-element-interpret-data
      '(org-data nil (paragraph (:caption (("caption"))) "Paragraph")))
-    "#+CAPTION: caption\nParagraph\n"))
+    "#+caption: caption\nParagraph\n"))
   ;; Interpret dual affiliated keywords.
   (should
    (equal
     (org-element-interpret-data
      '(org-data nil (paragraph (:caption ((("long") "short"))) "Paragraph")))
-    "#+CAPTION[short]: long\nParagraph\n"))
+    "#+caption[short]: long\nParagraph\n"))
   ;; Interpret multiple parsed dual keywords.
   (should
    (equal
     (org-element-interpret-data
      '(org-data nil (paragraph
 		     (:caption ((("l2") "s2") (("l1") "s1"))) "Paragraph")))
-    "#+CAPTION[s1]: l1\n#+CAPTION[s2]: l2\nParagraph\n"))
+    "#+caption[s1]: l1\n#+caption[s2]: l2\nParagraph\n"))
   ;; Pseudo objects and elements are transparent.
   (should
    (equal "A B"
@@ -2556,7 +2586,7 @@ Outside list"
   "Test center block interpreter."
   (should
    (equal (org-test-parse-and-interpret "#+BEGIN_CENTER\nTest\n#+END_CENTER")
-	  "#+BEGIN_CENTER\nTest\n#+END_CENTER\n")))
+	  "#+begin_center\nTest\n#+end_center\n")))
 
 (ert-deftest test-org-element/drawer-interpreter ()
   "Test drawer interpreter."
@@ -2569,11 +2599,18 @@ Outside list"
   (should
    (equal (org-test-parse-and-interpret
 	   "#+BEGIN: myblock :parameter value1\nTest\n#+END:")
-	  "#+BEGIN: myblock :parameter value1\nTest\n#+END:\n")))
+	  "#+begin: myblock :parameter value1\nTest\n#+end:\n")))
 
 (ert-deftest test-org-element/footnote-definition-interpreter ()
   "Test footnote definition interpreter."
-  (should (equal (org-test-parse-and-interpret "[fn:1] Test") "[fn:1] Test\n")))
+  (should (equal (org-test-parse-and-interpret "[fn:1] Test") "[fn:1] Test\n"))
+  ;; Handle `:pre-blank' in definitions.
+  (should
+   (equal (org-test-parse-and-interpret "[fn:1]\nparagraph")
+	  "[fn:1]\nparagraph\n"))
+  (should
+   (equal (org-test-parse-and-interpret "[fn:1]\n\nparagraph")
+	  "[fn:1]\n\nparagraph\n")))
 
 (ert-deftest test-org-element/headline-interpreter ()
   "Test headline and section interpreters."
@@ -2628,13 +2665,13 @@ Outside list"
       ;; 1. Regular inlinetask.
      (should (equal (org-test-parse-and-interpret
 		     "*************** Task\nTest\n*************** END")
-		    "*************** Task\nTest\n*************** END\n"))
+		    "*************** Task\nTest\n*************** end\n"))
      ;; 2. Degenerate inlinetask.
      (should (equal (org-test-parse-and-interpret "*************** Task")
 		    "*************** Task\n"))
      ;; 3. Prefer degenerate form when there are no contents.
      (should (equal (org-test-parse-and-interpret
-		     "*************** Task\n*************** END")
+		     "*************** Task\n*************** end")
 		    "*************** Task\n"))
      ;; 4. With TODO keywords.
      (should
@@ -2694,6 +2731,13 @@ Outside list"
     (should
      (equal (org-test-parse-and-interpret "-\n  | a | b |")
 	    "- \n  | a | b |\n"))
+    ;; Handle `:pre-blank' in items.
+    (should
+     (equal (org-test-parse-and-interpret "-\n  paragraph")
+	    "- \n  paragraph\n"))
+    (should
+     (equal (org-test-parse-and-interpret "-\n\n  paragraph")
+	    "- \n\n  paragraph\n"))
     ;; Special case: correctly handle "*" bullets.
     (should (org-test-parse-and-interpret " * item"))
     ;; Special case: correctly handle empty items.
@@ -2703,26 +2747,26 @@ Outside list"
   "Test quote block interpreter."
   (should (equal (org-test-parse-and-interpret
 		  "#+BEGIN_QUOTE\nTest\n#+END_QUOTE")
-		 "#+BEGIN_QUOTE\nTest\n#+END_QUOTE\n")))
+		 "#+begin_quote\nTest\n#+end_quote\n")))
 
 (ert-deftest test-org-element/special-block-interpreter ()
   "Test special block interpreter."
   (should (equal (org-test-parse-and-interpret
 		  "#+BEGIN_SPECIAL\nTest\n#+END_SPECIAL")
-		 "#+BEGIN_SPECIAL\nTest\n#+END_SPECIAL\n")))
+		 "#+begin_SPECIAL\nTest\n#+end_SPECIAL\n")))
 
 (ert-deftest test-org-element/babel-call-interpreter ()
   "Test Babel call interpreter."
   ;; Without argument.
   (should (equal (org-test-parse-and-interpret "#+CALL: test()")
-		 "#+CALL: test()\n"))
+		 "#+call: test()\n"))
   ;; With argument.
   (should (equal (org-test-parse-and-interpret "#+CALL: test(x=2)")
-		 "#+CALL: test(x=2)\n"))
+		 "#+call: test(x=2)\n"))
   ;; With header arguments.
   (should (equal (org-test-parse-and-interpret
 		  "#+CALL: test[:results output]() :results html")
-		 "#+CALL: test[:results output]() :results html\n")))
+		 "#+call: test[:results output]() :results html\n")))
 
 (ert-deftest test-org-element/clock-interpreter ()
   "Test clock interpreter."
@@ -2753,12 +2797,11 @@ CLOCK: [2012-01-01 sun. 00:01]--[2012-01-01 sun. 00:02] =>  0:01"))))
   "Test comment block interpreter."
   (should (equal (org-test-parse-and-interpret
 		  "#+BEGIN_COMMENT\nTest\n#+END_COMMENT")
-		 "#+BEGIN_COMMENT\nTest\n#+END_COMMENT\n"))
+		 "#+begin_comment\nTest\n#+end_comment\n"))
   ;; Accept missing final newline in value.
   (should
-   (equal
-    "#+BEGIN_COMMENT\nTest\n#+END_COMMENT\n"
-    (org-element-interpret-data '(comment-block (:value "Test"))))))
+   (equal "#+begin_comment\nTest\n#+end_comment\n"
+	  (org-element-interpret-data '(comment-block (:value "Test"))))))
 
 (ert-deftest test-org-element/diary-sexp ()
   "Test diary-sexp interpreter."
@@ -2771,30 +2814,46 @@ CLOCK: [2012-01-01 sun. 00:01]--[2012-01-01 sun. 00:02] =>  0:01"))))
 (ert-deftest test-org-element/example-block-interpreter ()
   "Test example block interpreter."
   ;; Without switches.
-  (should (equal (org-test-parse-and-interpret
-		  "#+BEGIN_EXAMPLE\nTest\n#+END_EXAMPLE")
-		 "#+BEGIN_EXAMPLE\nTest\n#+END_EXAMPLE\n"))
+  (should (equal "#+begin_example\nTest\n#+end_example\n"
+		 (let ((org-src-preserve-indentation t))
+		   (org-test-parse-and-interpret
+		    "#+BEGIN_EXAMPLE\nTest\n#+END_EXAMPLE"))))
   ;; With switches.
   (should
-   (equal (org-test-parse-and-interpret
-	   "#+BEGIN_EXAMPLE -n -k\n(+ 1 1)\n#+END_EXAMPLE")
-	  "#+BEGIN_EXAMPLE -n -k\n(+ 1 1)\n#+END_EXAMPLE\n"))
+   (equal "#+begin_example -n -k\n(+ 1 1)\n#+end_example\n"
+	  (let ((org-src-preserve-indentation t))
+	    (org-test-parse-and-interpret
+	     "#+BEGIN_EXAMPLE -n -k\n(+ 1 1)\n#+END_EXAMPLE"))))
   ;; Preserve code escaping.
   (should
-   (equal (org-test-parse-and-interpret
-	   "#+BEGIN_EXAMPLE\n,* Headline\n ,#+keyword\nText #+END_EXAMPLE")
-	  "#+BEGIN_EXAMPLE\n,* Headline\n ,#+keyword\nText #+END_EXAMPLE\n"))
+   (equal
+    (let ((org-src-preserve-indentation t))
+      (org-test-parse-and-interpret
+       "#+BEGIN_EXAMPLE\n,* Headline\n,#+KEYWORD: value\nText\n#+END_EXAMPLE"))
+    "#+begin_example\n,* Headline\n,#+KEYWORD: value\nText\n#+end_example\n"))
   ;; Accept missing final newline in value.
   (should
    (equal
-    "#+BEGIN_EXAMPLE\nTest\n#+END_EXAMPLE\n"
-    (org-element-interpret-data '(example-block (:value "Test"))))))
+    "#+begin_example\nTest\n#+end_example\n"
+    (let ((org-src-preserve-indentation t))
+      (org-element-interpret-data '(example-block (:value "Test"))))))
+  ;; Handle indentation.
+  (should (equal "#+begin_example\n  Test\n#+end_example\n"
+		 (let ((org-src-preserve-indentation nil)
+		       (org-edit-src-content-indentation 2))
+		   (org-test-parse-and-interpret
+		    "#+BEGIN_EXAMPLE\nTest\n#+END_EXAMPLE"))))
+  (should (equal "#+begin_example\n Test\n#+end_example\n"
+		 (let ((org-src-preserve-indentation t)
+		       (org-edit-src-content-indentation 2))
+		   (org-test-parse-and-interpret
+		    "#+BEGIN_EXAMPLE\n Test\n#+END_EXAMPLE")))))
 
 (ert-deftest test-org-element/export-block-interpreter ()
   "Test export block interpreter."
   (should (equal (org-test-parse-and-interpret
-		  "#+BEGIN_EXPORT HTML\nTest\n#+END_EXPORT")
-		 "#+BEGIN_EXPORT HTML\nTest\n#+END_EXPORT\n")))
+		  "#+begin_export HTML\nTest\n#+end_export")
+		 "#+begin_export HTML\nTest\n#+end_export\n")))
 
 (ert-deftest test-org-element/fixed-width-interpreter ()
   "Test fixed width interpreter."
@@ -2803,15 +2862,6 @@ CLOCK: [2012-01-01 sun. 00:01]--[2012-01-01 sun. 00:02] =>  0:01"))))
   ;; Preserve indentation.
   (should (equal (org-test-parse-and-interpret ":  2 blanks\n: 1 blank")
 		 ":  2 blanks\n: 1 blank\n"))
-  ;; Remove last newline character
-  (should
-   (equal (org-element-fixed-width-interpreter
-	   '(fixed-width (:value "Test\n")) nil)
-	  ": Test"))
-  (should
-   (equal (org-element-fixed-width-interpreter
-	   '(fixed-width (:value "Test")) nil)
-	  ": Test"))
   ;; Handle empty string.
   (should
    (equal (org-element-fixed-width-interpreter
@@ -2829,7 +2879,7 @@ CLOCK: [2012-01-01 sun. 00:01]--[2012-01-01 sun. 00:02] =>  0:01"))))
 (ert-deftest test-org-element/keyword-interpreter ()
   "Test keyword interpreter."
   (should (equal (org-test-parse-and-interpret "#+KEYWORD: value")
-		 "#+KEYWORD: value\n")))
+		 "#+keyword: value\n")))
 
 (ert-deftest test-org-element/latex-environment-interpreter ()
   "Test latex environment interpreter."
@@ -2865,21 +2915,22 @@ DEADLINE: <2012-03-29 thu.> SCHEDULED: <2012-03-29 thu.> CLOSED: [2012-03-29 thu
 		(org-src-preserve-indentation nil))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp :results silent\n(+ 1 1)\n#+END_SRC"))
-	  "#+BEGIN_SRC emacs-lisp :results silent\n  (+ 1 1)\n#+END_SRC\n"))
+	  "#+begin_src emacs-lisp :results silent\n  (+ 1 1)\n#+end_src\n"))
   ;; With switches.
   (should
    (equal (let ((org-edit-src-content-indentation 2)
 		(org-src-preserve-indentation nil))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp -n -k\n(+ 1 1)\n#+END_SRC"))
-	  "#+BEGIN_SRC emacs-lisp -n -k\n  (+ 1 1)\n#+END_SRC\n"))
+	  "#+begin_src emacs-lisp -n -k\n  (+ 1 1)\n#+end_src\n"))
   ;; Preserve code escaping.
   (should
-   (equal (let ((org-edit-src-content-indentation 2)
-		(org-src-preserve-indentation nil))
-	    (org-test-parse-and-interpret
-	     "#+BEGIN_SRC org\n,* Headline\n ,#+keyword\nText #+END_SRC"))
-	  "#+BEGIN_SRC org\n,* Headline\n ,#+keyword\nText #+END_SRC\n"))
+   (equal
+    (let ((org-edit-src-content-indentation 2)
+	  (org-src-preserve-indentation nil))
+      (org-test-parse-and-interpret
+       "#+BEGIN_SRC org\n,* Headline\n,#+KEYWORD: value\nText\n#+END_SRC"))
+    "#+begin_src org\n  ,* Headline\n  ,#+KEYWORD: value\n  Text\n#+end_src\n"))
   ;; Do not apply `org-edit-src-content-indentation' when preserving
   ;; indentation.
   (should
@@ -2887,17 +2938,17 @@ DEADLINE: <2012-03-29 thu.> SCHEDULED: <2012-03-29 thu.> CLOSED: [2012-03-29 thu
 		(org-src-preserve-indentation t))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp\n(+ 1 1)\n#+END_SRC"))
-	  "#+BEGIN_SRC emacs-lisp\n(+ 1 1)\n#+END_SRC\n"))
+	  "#+begin_src emacs-lisp\n(+ 1 1)\n#+end_src\n"))
   (should
    (equal (let ((org-edit-src-content-indentation 2)
 		(org-src-preserve-indentation nil))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp -i\n(+ 1 1)\n#+END_SRC"))
-	  "#+BEGIN_SRC emacs-lisp -i\n(+ 1 1)\n#+END_SRC\n"))
+	  "#+begin_src emacs-lisp -i\n(+ 1 1)\n#+end_src\n"))
   ;; Accept missing final newline in value.
   (should
    (equal
-    "#+BEGIN_SRC emacs-lisp\n  Test\n#+END_SRC\n"
+    "#+begin_src emacs-lisp\n  Test\n#+end_src\n"
     (let ((org-edit-src-content-indentation 2)
 	  (org-src-preserve-indentation nil))
       (org-element-interpret-data
@@ -3026,7 +3077,7 @@ DEADLINE: <2012-03-29 thu.> SCHEDULED: <2012-03-29 thu.> CLOSED: [2012-03-29 thu
   "Test verse block interpretation."
   (should
    (equal (org-test-parse-and-interpret "#+BEGIN_VERSE\nTest\n#+END_VERSE")
-	  "#+BEGIN_VERSE\nTest\n#+END_VERSE\n")))
+	  "#+begin_verse\nTest\n#+end_verse\n")))
 
 (ert-deftest test-org-element/bold-interpreter ()
   "Test bold interpreter."

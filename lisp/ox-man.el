@@ -1,6 +1,6 @@
 ;; ox-man.el --- Man Back-End for Org Export Engine -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2011-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2011-2019 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;;      Luis R Anaya <papoanaya aroba hot mail punto com>
@@ -424,7 +424,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 CONTENTS is nil.  INFO is a plist holding contextual information."
   (org-man--wrap-label
    fixed-width
-   (format "\\fC\n%s\\fP"
+   (format "\\fC\n%s\n\\fP"
            (org-remove-indentation
             (org-element-property :value fixed-width)))))
 

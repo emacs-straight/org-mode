@@ -1,6 +1,6 @@
 ;;; ob-exp.el --- Exportation of Babel Source Blocks -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 ;; Authors: Eric Schulte
 ;;	Dan Davison
@@ -33,7 +33,6 @@
 (declare-function org-escape-code-in-string "org-src" (s))
 (declare-function org-export-copy-buffer "ox" ())
 (declare-function org-fill-template "org" (template alist))
-(declare-function org-get-indentation "org" (&optional line))
 (declare-function org-in-commented-heading-p "org" (&optional no-inheritance))
 
 (defvar org-src-preserve-indentation)
@@ -85,7 +84,7 @@ none ---- do not display either code or results upon export
 Assume point is at block opening line."
   (interactive)
   (save-excursion
-    (let* ((info (org-babel-get-src-block-info 'light))
+    (let* ((info (org-babel-get-src-block-info))
 	   (lang (nth 0 info))
 	   (raw-params (nth 2 info))
 	   hash)
@@ -108,7 +107,7 @@ Assume point is at block opening line."
 				   (symbol-value lang-headers))
 			      (append (org-babel-params-from-properties lang)
 				      (list raw-params)))))))
-	  (setf hash (org-babel-sha1-hash info)))
+	  (setf hash (org-babel-sha1-hash info :export)))
 	(org-babel-exp-do-export info 'block hash)))))
 
 (defcustom org-babel-exp-call-line-template
@@ -210,9 +209,9 @@ this template."
 					      (progn (goto-char end)
 						     (skip-chars-forward " \t")
 						     (point)))
-			     ;; Otherwise: remove inline src block but
-			     ;; preserve following white spaces.  Then
-			     ;; insert value.
+			     ;; Otherwise: remove inline source block
+			     ;; but preserve following white spaces.
+			     ;; Then insert value.
 			     (delete-region begin end)
 			     (insert replacement)))))
 		      ((or `babel-call `inline-babel-call)
@@ -244,7 +243,7 @@ this template."
 			   (insert rep))))
 		      (`src-block
 		       (let ((match-start (copy-marker (match-beginning 0)))
-			     (ind (org-get-indentation)))
+			     (ind (current-indentation)))
 			 ;; Take care of matched block: compute
 			 ;; replacement string.  In particular, a nil
 			 ;; REPLACEMENT means the block is left as-is

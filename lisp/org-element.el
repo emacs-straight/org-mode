@@ -1,6 +1,6 @@
 ;;; org-element.el --- Parser for Org Syntax         -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2012-2019 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -307,8 +307,9 @@ Don't modify it, set `org-element-affiliated-keywords' instead.")
       (strike-through ,@standard-set)
       (subscript ,@standard-set)
       (superscript ,@standard-set)
-      ;; Ignore inline babel call and inline src block as formulas are
-      ;; possible.  Also ignore line breaks and statistics cookies.
+      ;; Ignore inline babel call and inline source block as formulas
+      ;; are possible.  Also ignore line breaks and statistics
+      ;; cookies.
       (table-cell bold code entity export-snippet footnote-reference italic
 		  latex-fragment link macro radio-target strike-through
 		  subscript superscript target timestamp underline verbatim)
@@ -491,6 +492,7 @@ objects, or a strings.
 
 The function takes care of setting `:parent' property for CHILD.
 Return parent element."
+  (declare (indent 1))
   (if (not children) parent
     ;; Link every child to PARENT. If PARENT is nil, it is a secondary
     ;; string: parent is the list itself.
@@ -677,7 +679,7 @@ Assume point is at the beginning of the block."
 (defun org-element-center-block-interpreter (_ contents)
   "Interpret a center-block element as Org syntax.
 CONTENTS is the contents of the element."
-  (format "#+BEGIN_CENTER\n%s#+END_CENTER" contents))
+  (format "#+begin_center\n%s#+end_center" contents))
 
 
 ;;;; Drawer
@@ -787,7 +789,7 @@ Assume point is at beginning of dynamic block."
 (defun org-element-dynamic-block-interpreter (dynamic-block contents)
   "Interpret DYNAMIC-BLOCK element as Org syntax.
 CONTENTS is the contents of the element."
-  (format "#+BEGIN: %s%s\n%s#+END:"
+  (format "#+begin: %s%s\n%s#+end:"
 	  (org-element-property :block-name dynamic-block)
 	  (let ((args (org-element-property :arguments dynamic-block)))
 	    (if args (concat " " args) ""))
@@ -812,7 +814,8 @@ their value.
 
 Return a list whose CAR is `footnote-definition' and CDR is
 a plist containing `:label', `:begin' `:end', `:contents-begin',
-`:contents-end', `:post-blank' and `:post-affiliated' keywords.
+`:contents-end', `:pre-blank',`:post-blank' and
+`:post-affiliated' keywords.
 
 Assume point is at the beginning of the footnote definition."
   (save-excursion
@@ -838,12 +841,16 @@ Assume point is at the beginning of the footnote definition."
 	       ((eq ?* (char-after (match-beginning 0))) (match-beginning 0))
 	       (t (skip-chars-forward " \r\t\n" limit)
 		  (if (= limit (point)) limit (line-beginning-position))))))
+	   (pre-blank 0)
 	   (contents-begin
 	    (progn (search-forward "]")
 		   (skip-chars-forward " \r\t\n" end)
 		   (cond ((= (point) end) nil)
 			 ((= (line-beginning-position) post-affiliated) (point))
-			 (t (line-beginning-position)))))
+			 (t
+			  (setq pre-blank
+				(count-lines (line-beginning-position) begin))
+			  (line-beginning-position)))))
 	   (contents-end
 	    (progn (goto-char end)
 		   (skip-chars-backward " \r\t\n")
@@ -855,6 +862,7 @@ Assume point is at the beginning of the footnote definition."
 		   :end end
 		   :contents-begin contents-begin
 		   :contents-end (and contents-begin contents-end)
+		   :pre-blank pre-blank
 		   :post-blank (count-lines contents-end end)
 		   :post-affiliated post-affiliated)
 	     (cdr affiliated))))))
@@ -862,9 +870,18 @@ Assume point is at the beginning of the footnote definition."
 (defun org-element-footnote-definition-interpreter (footnote-definition contents)
   "Interpret FOOTNOTE-DEFINITION element as Org syntax.
 CONTENTS is the contents of the footnote-definition."
-  (concat (format "[fn:%s]" (org-element-property :label footnote-definition))
-	  " "
-	  contents))
+  (let ((pre-blank
+	 (min (or (org-element-property :pre-blank footnote-definition)
+		  ;; 0 is specific to paragraphs at the beginning of
+		  ;; the footnote definition, so we use 1 as
+		  ;; a fall-back value, which is more universal.
+		  1)
+	      ;; Footnote ends after more than two consecutive empty
+	      ;; lines: limit ourselves to 2 newline characters.
+	      2)))
+    (concat (format "[fn:%s]" (org-element-property :label footnote-definition))
+	    (if (= pre-blank 0) (concat " " (org-trim contents))
+	      (concat (make-string pre-blank ?\n) contents)))))
 
 
 ;;;; Headline
@@ -1172,18 +1189,18 @@ CONTENTS is the contents of inlinetask."
 		(concat
 		 (make-string
 		  (max (- (+ org-tags-column (length task) (length tags))) 1)
-		  ? )
+		  ?\s)
 		 tags))
 	       (t
 		(concat
-		 (make-string (max (- org-tags-column (length task)) 1) ? )
+		 (make-string (max (- org-tags-column (length task)) 1) ?\s)
 		 tags))))
 	    ;; Prefer degenerate inlinetasks when there are no
 	    ;; contents.
 	    (when contents
 	      (concat "\n"
 		      contents
-		      (make-string level ?*) " END")))))
+		      (make-string level ?*) " end")))))
 
 
 ;;;; Item
@@ -1195,8 +1212,8 @@ STRUCT is the structure of the plain list.
 
 Return a list whose CAR is `item' and CDR is a plist containing
 `:bullet', `:begin', `:end', `:contents-begin', `:contents-end',
-`:checkbox', `:counter', `:tag', `:structure', `:post-blank' and
-`:post-affiliated' keywords.
+`:checkbox', `:counter', `:tag', `:structure', `:pre-blank',
+`:post-blank' and `:post-affiliated' keywords.
 
 When optional argument RAW-SECONDARY-P is non-nil, item's tag, if
 any, will not be parsed as a secondary string, but as a plain
@@ -1223,20 +1240,25 @@ Assume point is at the beginning of the item."
 			  (string-to-number (match-string 0 c)))))))
 	   (end (progn (goto-char (nth 6 (assq (point) struct)))
 		       (if (bolp) (point) (line-beginning-position 2))))
+	   (pre-blank 0)
 	   (contents-begin
-	    (progn (goto-char
-		    ;; Ignore tags in un-ordered lists: they are just
-		    ;; a part of item's body.
-		    (if (and (match-beginning 4)
-			     (save-match-data (string-match "[.)]" bullet)))
-			(match-beginning 4)
-		      (match-end 0)))
-		   (skip-chars-forward " \r\t\n" end)
-		   (cond ((= (point) end) nil)
-			 ;; If first line isn't empty, contents really
-			 ;; start at the text after item's meta-data.
-			 ((= (line-beginning-position) begin) (point))
-			 (t (line-beginning-position)))))
+	    (progn
+	      (goto-char
+	       ;; Ignore tags in un-ordered lists: they are just
+	       ;; a part of item's body.
+	       (if (and (match-beginning 4)
+			(save-match-data (string-match "[.)]" bullet)))
+		   (match-beginning 4)
+		 (match-end 0)))
+	      (skip-chars-forward " \r\t\n" end)
+	      (cond ((= (point) end) nil)
+		    ;; If first line isn't empty, contents really
+		    ;; start at the text after item's meta-data.
+		    ((= (line-beginning-position) begin) (point))
+		    (t
+		     (setq pre-blank
+			   (count-lines (line-beginning-position) begin))
+		     (line-beginning-position)))))
 	   (contents-end (and contents-begin
 			      (progn (goto-char end)
 				     (skip-chars-backward " \r\t\n")
@@ -1251,6 +1273,7 @@ Assume point is at the beginning of the item."
 			:checkbox checkbox
 			:counter counter
 			:structure struct
+			:pre-blank pre-blank
 			:post-blank (count-lines (or contents-end begin) end)
 			:post-affiliated begin))))
       (org-element-put-property
@@ -1266,35 +1289,43 @@ Assume point is at the beginning of the item."
 (defun org-element-item-interpreter (item contents)
   "Interpret ITEM element as Org syntax.
 CONTENTS is the contents of the element."
-  (let* ((bullet (let ((bullet (org-element-property :bullet item)))
-		   (org-list-bullet-string
-		    (cond ((not (string-match "[0-9a-zA-Z]" bullet)) "- ")
-			  ((eq org-plain-list-ordered-item-terminator ?\)) "1)")
-			  (t "1.")))))
-	 (checkbox (org-element-property :checkbox item))
-	 (counter (org-element-property :counter item))
-	 (tag (let ((tag (org-element-property :tag item)))
-		(and tag (org-element-interpret-data tag))))
-	 ;; Compute indentation.
-	 (ind (make-string (length bullet) 32))
-	 (item-starts-with-par-p
-	  (eq (org-element-type (car (org-element-contents item)))
-	      'paragraph)))
-    ;; Indent contents.
+  (let ((tag (pcase (org-element-property :tag item)
+	       (`nil nil)
+	       (tag (format "%s :: " (org-element-interpret-data tag)))))
+	(bullet
+	 (org-list-bullet-string
+	  (cond
+	   ((not (string-match-p "[0-9a-zA-Z]"
+				 (org-element-property :bullet item))) "- ")
+	   ((eq org-plain-list-ordered-item-terminator ?\)) "1)")
+	   (t "1.")))))
     (concat
      bullet
-     (and counter (format "[@%d] " counter))
-     (pcase checkbox
+     (pcase (org-element-property :counter item)
+       (`nil nil)
+       (counter (format "[@%d] " counter)))
+     (pcase (org-element-property :checkbox item)
        (`on "[X] ")
        (`off "[ ] ")
        (`trans "[-] ")
        (_ nil))
-     (and tag (format "%s :: " tag))
+     tag
      (when contents
-       (let ((contents (replace-regexp-in-string
-			"\\(^\\)[ \t]*\\S-" ind contents nil nil 1)))
-	 (if item-starts-with-par-p (org-trim contents)
-	   (concat "\n" contents)))))))
+       (let* ((ind (make-string (if tag 5 (length bullet)) ?\s))
+	      (pre-blank
+	       (min (or (org-element-property :pre-blank item)
+			;; 0 is specific to paragraphs at the
+			;; beginning of the item, so we use 1 as
+			;; a fall-back value, which is more universal.
+			1)
+		    ;; Lists ends after more than two consecutive
+		    ;; empty lines: limit ourselves to 2 newline
+		    ;; characters.
+		    2))
+	      (contents (replace-regexp-in-string
+			 "\\(^\\)[ \t]*\\S-" ind contents nil nil 1)))
+	 (if (= pre-blank 0) (org-trim contents)
+	   (concat (make-string pre-blank ?\n) contents)))))))
 
 
 ;;;; Plain List
@@ -1516,7 +1547,7 @@ Assume point is at the beginning of the block."
 (defun org-element-quote-block-interpreter (_ contents)
   "Interpret quote-block element as Org syntax.
 CONTENTS is the contents of the element."
-  (format "#+BEGIN_QUOTE\n%s#+END_QUOTE" contents))
+  (format "#+begin_quote\n%s#+end_quote" contents))
 
 
 ;;;; Section
@@ -1602,7 +1633,7 @@ Assume point is at the beginning of the block."
   "Interpret SPECIAL-BLOCK element as Org syntax.
 CONTENTS is the contents of the element."
   (let ((block-type (org-element-property :type special-block)))
-    (format "#+BEGIN_%s\n%s#+END_%s" block-type contents block-type)))
+    (format "#+begin_%s\n%s#+end_%s" block-type contents block-type)))
 
 
 
@@ -1670,7 +1701,7 @@ containing `:call', `:inside-header', `:arguments',
 
 (defun org-element-babel-call-interpreter (babel-call _)
   "Interpret BABEL-CALL element as Org syntax."
-  (concat "#+CALL: "
+  (concat "#+call: "
 	  (org-element-property :call babel-call)
 	  (let ((h (org-element-property :inside-header babel-call)))
 	    (and h (format "[%s]" h)))
@@ -1824,7 +1855,7 @@ Assume point is at comment block beginning."
 
 (defun org-element-comment-block-interpreter (comment-block _)
   "Interpret COMMENT-BLOCK element as Org syntax."
-  (format "#+BEGIN_COMMENT\n%s#+END_COMMENT"
+  (format "#+begin_comment\n%s#+end_comment"
 	  (org-element-normalize-string
 	   (org-remove-indentation
 	    (org-element-property :value comment-block)))))
@@ -1951,15 +1982,22 @@ containing `:begin', `:end', `:number-lines', `:preserve-indent',
 (defun org-element-example-block-interpreter (example-block _)
   "Interpret EXAMPLE-BLOCK element as Org syntax."
   (let ((switches (org-element-property :switches example-block))
-	(value (org-element-property :value example-block)))
-    (concat "#+BEGIN_EXAMPLE" (and switches (concat " " switches)) "\n"
-	    (org-element-normalize-string
-	     (org-escape-code-in-string
-	      (if (or org-src-preserve-indentation
-		      (org-element-property :preserve-indent example-block))
-		  value
-		(org-remove-indentation value))))
-	    "#+END_EXAMPLE")))
+	(value
+	 (let ((val (org-element-property :value example-block)))
+	   (cond
+	    ((or org-src-preserve-indentation
+		 (org-element-property :preserve-indent example-block))
+	     val)
+	    ((= 0 org-edit-src-content-indentation)
+	     (org-remove-indentation val))
+	    (t
+	     (let ((ind (make-string org-edit-src-content-indentation ?\s)))
+	       (replace-regexp-in-string "^[ \t]*\\S-"
+					 (concat ind "\\&")
+					 (org-remove-indentation val))))))))
+    (concat "#+begin_example" (and switches (concat " " switches)) "\n"
+	    (org-element-normalize-string (org-escape-code-in-string value))
+	    "#+end_example")))
 
 
 ;;;; Export Block
@@ -2012,7 +2050,7 @@ Assume point is at export-block beginning."
 
 (defun org-element-export-block-interpreter (export-block _)
   "Interpret EXPORT-BLOCK element as Org syntax."
-  (format "#+BEGIN_EXPORT %s\n%s#+END_EXPORT"
+  (format "#+begin_export %s\n%s#+end_export"
 	  (org-element-property :type export-block)
 	  (org-element-property :value export-block)))
 
@@ -2035,26 +2073,22 @@ Assume point is at the beginning of the fixed-width area."
   (save-excursion
     (let* ((begin (car affiliated))
 	   (post-affiliated (point))
-	   value
 	   (end-area
 	    (progn
 	      (while (and (< (point) limit)
 			  (looking-at "[ \t]*:\\( \\|$\\)"))
-		;; Accumulate text without starting colons.
-		(setq value
-		      (concat value
-			      (buffer-substring-no-properties
-			       (match-end 0) (point-at-eol))
-			      "\n"))
 		(forward-line))
-	      (point)))
+	      (if (bolp) (line-end-position 0) (point))))
 	   (end (progn (skip-chars-forward " \r\t\n" limit)
 		       (if (eobp) (point) (line-beginning-position)))))
       (list 'fixed-width
 	    (nconc
 	     (list :begin begin
 		   :end end
-		   :value value
+		   :value (replace-regexp-in-string
+			   "^[ \t]*: ?" ""
+			   (buffer-substring-no-properties post-affiliated
+							   end-area))
 		   :post-blank (count-lines end-area end)
 		   :post-affiliated post-affiliated)
 	     (cdr affiliated))))))
@@ -2062,10 +2096,7 @@ Assume point is at the beginning of the fixed-width area."
 (defun org-element-fixed-width-interpreter (fixed-width _)
   "Interpret FIXED-WIDTH element as Org syntax."
   (let ((value (org-element-property :value fixed-width)))
-    (and value
-	 (replace-regexp-in-string
-	  "^" ": "
-	  (if (string-match "\n\\'" value) (substring value 0 -1) value)))))
+    (and value (replace-regexp-in-string "^" ": " value))))
 
 
 ;;;; Horizontal Rule
@@ -2139,7 +2170,7 @@ containing `:key', `:value', `:begin', `:end', `:post-blank' and
 (defun org-element-keyword-interpreter (keyword _)
   "Interpret KEYWORD element as Org syntax."
   (format "#+%s: %s"
-	  (org-element-property :key keyword)
+	  (downcase (org-element-property :key keyword))
 	  (org-element-property :value keyword)))
 
 
@@ -2369,7 +2400,7 @@ containing `:closed', `:deadline', `:scheduled', `:begin',
 ;;;; Src Block
 
 (defun org-element-src-block-parser (limit affiliated)
-  "Parse a src block.
+  "Parse a source block.
 
 LIMIT bounds the search.  AFFILIATED is a list of which CAR is
 the buffer position at the beginning of the first affiliated
@@ -2425,7 +2456,7 @@ Assume point is at the beginning of the block."
 		       (string-match "-l +\"\\([^\"\n]+\\)\"" switches)
 		       (match-string 1 switches)))
 		 ;; Should labels be retained in (or stripped from)
-		 ;; src blocks?
+		 ;; source blocks?
 		 (retain-labels
 		  (or (not switches)
 		      (not (string-match "-r\\>" switches))
@@ -2480,14 +2511,14 @@ Assume point is at the beginning of the block."
 	     (org-remove-indentation val))
 	    (t
 	     (let ((ind (make-string org-edit-src-content-indentation ?\s)))
-	       (replace-regexp-in-string
-		"^" ind (org-remove-indentation val))))))))
-    (concat (format "#+BEGIN_SRC%s\n"
-		    (concat (and lang (concat " " lang))
-			    (and switches (concat " " switches))
-			    (and params (concat " " params))))
-	    (org-element-normalize-string (org-escape-code-in-string value))
-	    "#+END_SRC")))
+	       (replace-regexp-in-string "^[ \t]*\\S-"
+					 (concat ind "\\&")
+					 (org-remove-indentation val))))))))
+    (format "#+begin_src%s\n%s#+end_src"
+	    (concat (and lang (concat " " lang))
+		    (and switches (concat " " switches))
+		    (and params (concat " " params)))
+	    (org-element-normalize-string (org-escape-code-in-string value)))))
 
 
 ;;;; Table
@@ -2635,7 +2666,7 @@ Assume point is at beginning of the block."
 (defun org-element-verse-block-interpreter (_ contents)
   "Interpret verse-block element as Org syntax.
 CONTENTS is verse block contents."
-  (format "#+BEGIN_VERSE\n%s#+END_VERSE" contents))
+  (format "#+begin_verse\n%s#+end_verse" contents))
 
 
 
@@ -2899,7 +2930,7 @@ When at an inline source block, return a list whose car is
 `:language', `:value', `:parameters' and `:post-blank' as
 keywords.  Otherwise, return nil.
 
-Assume point is at the beginning of the inline src block."
+Assume point is at the beginning of the inline source block."
   (save-excursion
     (catch :no-object
       (when (let ((case-fold-search nil))
@@ -3218,15 +3249,18 @@ a plist with `:key', `:args', `:begin', `:end', `:value' and
 
 Assume point is at the macro."
   (save-excursion
-    (when (looking-at "{{{\\([a-zA-Z][-a-zA-Z0-9_]*\\)\\(([ \t\n]*\\([^\000]*?\\))\\)?}}}")
+    (when (looking-at "{{{\\([a-zA-Z][-a-zA-Z0-9_]*\\)\\((\\([^\000]*?\\))\\)?}}}")
       (let ((begin (point))
 	    (key (downcase (match-string-no-properties 1)))
 	    (value (match-string-no-properties 0))
 	    (post-blank (progn (goto-char (match-end 0))
 			       (skip-chars-forward " \t")))
 	    (end (point))
-	    (args (let ((args (match-string-no-properties 3)))
-		    (and args (org-macro-extract-arguments args)))))
+	    (args (pcase (match-string-no-properties 3)
+		    (`nil nil)
+		    (a (org-macro-extract-arguments
+			(replace-regexp-in-string
+			 "[ \t\r\n]+" " " (org-trim a)))))))
 	(list 'macro
 	      (list :key key
 		    :value value
@@ -3237,7 +3271,11 @@ Assume point is at the macro."
 
 (defun org-element-macro-interpreter (macro _)
   "Interpret MACRO object as Org syntax."
-  (org-element-property :value macro))
+  (format "{{{%s%s}}}"
+	  (org-element-property :key macro)
+	  (pcase (org-element-property :args macro)
+	    (`nil "")
+	    (args (format "(%s)" (apply #'org-macro-escape-arguments args))))))
 
 
 ;;;; Radio-target
@@ -3874,7 +3912,18 @@ element it has to parse."
 	     ((looking-at "%%(")
 	      (org-element-diary-sexp-parser limit affiliated))
 	     ;; Table.
-	     ((looking-at "[ \t]*\\(|\\|\\+\\(-+\\+\\)+[ \t]*$\\)")
+	     ((or (looking-at "[ \t]*|")
+		  ;; There is no strict definition of a table.el
+		  ;; table.  Try to prevent false positive while being
+		  ;; quick.
+		  (let ((rule-regexp "[ \t]*\\+\\(-+\\+\\)+[ \t]*$")
+			(next (line-beginning-position 2)))
+		    (and (looking-at rule-regexp)
+			 (save-excursion
+			   (forward-line)
+			   (re-search-forward "^[ \t]*\\($\\|[^|]\\)" limit t)
+			   (and (> (line-beginning-position) next)
+				(org-match-line rule-regexp))))))
 	      (org-element-table-parser limit affiliated))
 	     ;; List.
 	     ((looking-at (org-item-re))
@@ -4046,7 +4095,10 @@ If STRING is the empty string or nil, return nil."
 	    (ignore-errors
 	      (if (symbolp v) (makunbound v)
 		(set (make-local-variable (car v)) (cdr v)))))
-	  (insert string)
+	  ;; Transferring local variables may put the temporary buffer
+	  ;; into a read-only state.  Make sure we can insert STRING.
+	  (let ((inhibit-read-only t)) (insert string))
+	  ;; Prevent "Buffer *temp* modified; kill anyway?".
 	  (restore-buffer-modified-p nil)
 	  (org-element--parse-objects
 	   (point-min) (point-max) nil restriction parent))))))
@@ -4532,8 +4584,9 @@ to interpret.  Return Org syntax as a string."
 			      (and (eq type 'paragraph)
 				   (memq (org-element-type parent)
 					 '(footnote-definition item))
-				   (eq data
-				       (car (org-element-contents parent)))))))
+				   (eq data (car (org-element-contents parent)))
+				   (eq (org-element-property :pre-blank parent)
+				       0)))))
 			  ""))))))
 		(if (memq type '(org-data plain-text nil)) results
 		  ;; Build white spaces.  If no `:post-blank' property
@@ -4555,7 +4608,7 @@ If there is no affiliated keyword, return the empty string."
 	    (let (dual)
 	      (when (member key org-element-dual-keywords)
 		(setq dual (cdr value) value (car value)))
-	      (concat "#+" key
+	      (concat "#+" (downcase key)
 		      (and dual
 			   (format "[%s]" (org-element-interpret-data dual)))
 		      ": "
@@ -4856,7 +4909,7 @@ table is cleared once the synchronization is complete."
 (defun org-element--cache-generate-key (lower upper)
   "Generate a key between LOWER and UPPER.
 
-LOWER and UPPER are integers or lists, possibly empty.
+LOWER and UPPER are fixnums or lists of same, possibly empty.
 
 If LOWER and UPPER are equals, return LOWER.  Otherwise, return
 a unique key, as an integer or a list of integers, according to
@@ -5118,6 +5171,9 @@ updated before current modification are actually submitted."
 	     (and next (aref next 0))
 	     threshold
 	     (and (not threshold)
+		  ;; NOTE: Here and in other `time-add' calls, we use
+		  ;; (current-time) rather than nil for Emacs 24
+		  ;; compatibility.
 		  (time-add (current-time)
 			    org-element-cache-sync-duration))
 	     future-change)
@@ -5868,24 +5924,24 @@ Providing it allows for quicker computation."
 		    ;; Otherwise, return NEXT.
 		    (t (throw 'exit next)))))))))))))
 
-(defun org-element-lineage (blob &optional types with-self)
+(defun org-element-lineage (datum &optional types with-self)
   "List all ancestors of a given element or object.
 
-BLOB is an object or element.
+DATUM is an object or element.
 
-When optional argument TYPES is a list of symbols, return the
-first element or object in the lineage whose type belongs to that
-list.
+Return ancestors from the closest to the farthest.  When optional
+argument TYPES is a list of symbols, return the first element or
+object in the lineage whose type belongs to that list instead.
 
 When optional argument WITH-SELF is non-nil, lineage includes
-BLOB itself as the first element, and TYPES, if provided, also
+DATUM itself as the first element, and TYPES, if provided, also
 apply to it.
 
-When BLOB is obtained through `org-element-context' or
+When DATUM is obtained through `org-element-context' or
 `org-element-at-point', only ancestors from its section can be
-found.  There is no such limitation when BLOB belongs to a full
+found.  There is no such limitation when DATUM belongs to a full
 parse tree."
-  (let ((up (if with-self blob (org-element-property :parent blob)))
+  (let ((up (if with-self datum (org-element-property :parent datum)))
 	ancestors)
     (while (and up (not (memq (org-element-type up) types)))
       (unless types (push up ancestors))
@@ -5913,16 +5969,16 @@ end of ELEM-A."
     ;; ELEM-A position in such a situation.  Note that the case of
     ;; a footnote definition is impossible: it cannot contain two
     ;; paragraphs in a row because it cannot contain a blank line.
-    (if (and specialp
-	     (or (not (eq (org-element-type elem-B) 'paragraph))
-		 (/= (org-element-property :begin elem-B)
-		     (org-element-property :contents-begin elem-B))))
-	(error "Cannot swap elements"))
+    (when (and specialp
+	       (or (not (eq (org-element-type elem-B) 'paragraph))
+		   (/= (org-element-property :begin elem-B)
+		       (org-element-property :contents-begin elem-B))))
+      (error "Cannot swap elements"))
     ;; In a special situation, ELEM-A will have no indentation.  We'll
     ;; give it ELEM-B's (which will in, in turn, have no indentation).
     (let* ((ind-B (when specialp
 		    (goto-char (org-element-property :begin elem-B))
-		    (org-get-indentation)))
+		    (current-indentation)))
 	   (beg-A (org-element-property :begin elem-A))
 	   (end-A (save-excursion
 		    (goto-char (org-element-property :end elem-A))

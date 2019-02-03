@@ -1,6 +1,6 @@
 ;;; org-habit.el --- The habit tracking code for Org -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 ;; Author: John Wiegley <johnw at gnu dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -288,7 +288,7 @@ Habits are assigned colors on the following basis:
 	 (deadline (if scheduled-days
 		       (+ scheduled-days (- d-repeat s-repeat))
 		     (org-habit-deadline habit)))
-	 (m-days (or now-days (time-to-days (current-time)))))
+	 (m-days (or now-days (time-to-days nil))))
     (cond
      ((< m-days scheduled)
       '(org-habit-clear-face . org-habit-clear-future-face))

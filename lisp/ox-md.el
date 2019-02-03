@@ -1,6 +1,6 @@
 ;;; ox-md.el --- Markdown Back-End for Org Export Engine -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2012-2019 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou@gmail.com>
 ;; Keywords: org, wp, markdown
@@ -175,7 +175,7 @@ channel."
 	    value)))
 
 
-;;;; Example Block, Src Block and export Block
+;;;; Example Block, Src Block and Export Block
 
 (defun org-md-example-block (example-block _contents info)
   "Transcode EXAMPLE-BLOCK element into Markdown format.
@@ -211,8 +211,7 @@ a communication channel."
 	   (tags (and (plist-get info :with-tags)
 		      (let ((tag-list (org-export-get-tags headline info)))
 			(and tag-list
-			     (format "     :%s:"
-				     (mapconcat 'identity tag-list ":"))))))
+			     (concat "     " (org-make-tag-string tag-list))))))
 	   (priority
 	    (and (plist-get info :with-priority)
 		 (let ((char (org-element-property :priority headline)))
@@ -449,7 +448,7 @@ a communication channel."
      (t (let* ((raw-path (org-element-property :path link))
 	       (path
 		(cond
-		 ((member type '("http" "https" "ftp" "mailto" "irc"))
+		 ((member type '("http" "https" "ftp" "mailto"))
 		  (concat type ":" raw-path))
 		 ((string= type "file")
 		  (org-export-file-uri (funcall link-org-files-as-md raw-path)))
@@ -592,10 +591,8 @@ contents according to the current headline."
 			  (org-export-get-reference headline info))))
 	     (tags (and (plist-get info :with-tags)
 			(not (eq 'not-in-toc (plist-get info :with-tags)))
-			(let ((tags (org-export-get-tags headline info)))
-			  (and tags
-			       (format ":%s:"
-				       (mapconcat #'identity tags ":")))))))
+			(org-make-tag-string
+			 (org-export-get-tags headline info)))))
 	(concat indentation bullet title tags)))
     (org-export-collect-headlines info n (and local keyword)) "\n")
    "\n"))

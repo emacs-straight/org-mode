@@ -1,6 +1,6 @@
 ;;; ob-tangle.el --- Extract Source Code From Org Files -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 ;; Author: Eric Schulte
 ;; Keywords: literate programming, reproducible research
@@ -40,14 +40,12 @@
 (declare-function org-element-type "org-element" (element))
 (declare-function org-fill-template "org" (template alist))
 (declare-function org-heading-components "org" ())
+(declare-function org-id-find "org-id" (id &optional markerp))
 (declare-function org-in-commented-heading-p "org" (&optional no-inheritance))
 (declare-function org-link-escape "org" (text &optional table merge))
 (declare-function org-open-link-from-string "org" (s &optional arg reference-buffer))
-(declare-function org-remove-indentation "org" (code &optional n))
-(declare-function org-store-link "org" (arg))
-(declare-function org-trim "org" (s &optional keep-lead))
+(declare-function org-store-link "org" (arg &optional interactive?))
 (declare-function outline-previous-heading "outline" ())
-(declare-function org-id-find "org-id" (id &optional markerp))
 
 (defvar org-link-types-re)
 
@@ -409,7 +407,8 @@ can be used to limit the collected code blocks by target file."
 	      (if by-lang (setcdr by-lang (cons block (cdr by-lang)))
 		(push (cons src-lang (list block)) blocks)))))))
     ;; Ensure blocks are in the correct order.
-    (mapcar (lambda (b) (cons (car b) (nreverse (cdr b)))) blocks)))
+    (mapcar (lambda (b) (cons (car b) (nreverse (cdr b))))
+	    (nreverse blocks))))
 
 (defun org-babel-tangle-single-block (block-counter &optional only-this-block)
   "Collect the tangled source for current block.
@@ -583,10 +582,12 @@ which enable the original code blocks to be found."
 		  (t (org-babel-next-src-block (1- n)))))
         (org-babel-goto-named-src-block block-name))
       (goto-char (org-babel-where-is-src-block-head))
-      ;; Preserve location of point within the source code in tangled
-      ;; code file.
       (forward-line 1)
-      (forward-char (- mid body-start))
+      ;; Try to preserve location of point within the source code in
+      ;; tangled code file.
+      (let ((offset (- mid body-start)))
+	(when (> end (+ offset (point)))
+	  (forward-char offset)))
       (setq target-char (point)))
     (org-src-switch-to-buffer target-buffer t)
     (goto-char target-char)

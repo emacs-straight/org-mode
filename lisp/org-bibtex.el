@@ -1,6 +1,6 @@
 ;;; org-bibtex.el --- Org links to BibTeX entries    -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2007-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2007-2019 Free Software Foundation, Inc.
 ;;
 ;; Authors: Bastien Guerry <bzg@gnu.org>
 ;;       Carsten Dominik <carsten dot dominik at gmail dot com>
@@ -354,9 +354,8 @@ and `org-exclude-tags-from-inheritance'."
 					    (append org-bibtex-tags
 						    org-bibtex-no-export-tags))
 			      tag))
-			  (if org-bibtex-inherit-tags
-			      (org-get-tags-at)
-			    (org-get-local-tags-at)))))))
+			  (if org-bibtex-inherit-tags (org-get-tags)
+			    (org-get-tags nil t)))))))
     (when type
       (let ((entry (format
 		    "@%s{%s,\n%s\n}\n" type id

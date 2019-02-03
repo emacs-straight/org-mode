@@ -1,6 +1,6 @@
 ;;; ob-lilypond.el --- Babel Functions for Lilypond  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2010-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2010-2019 Free Software Foundation, Inc.
 
 ;; Author: Martyn Jago
 ;; Keywords: babel language, literate programming
@@ -33,7 +33,9 @@
 
 ;;; Code:
 (require 'ob)
-(require 'outline)
+
+(declare-function org-show-all "org" (&optional types))
+
 (defalias 'lilypond-mode 'LilyPond-mode)
 
 (add-to-list 'org-babel-tangle-lang-exts '("LilyPond" . "ly"))
@@ -264,7 +266,7 @@ LINE is the erroneous line"
     (setq case-fold-search nil)
     (if (search-forward line nil t)
         (progn
-          (outline-show-all)
+          (org-show-all)
           (set-mark (point))
           (goto-char (- (point) (length line))))
       (goto-char temp))))

@@ -1,6 +1,6 @@
 ;;; test-org-colview.el --- Tests for org-colview.el -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Nicolas Goaziou
+;; Copyright (C) 2016, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 
@@ -683,6 +683,56 @@
 	     '(("custom" . (lambda (s _) (mapconcat #'identity s "|")))))
 	    (org-columns-default-format "%A{custom}")) (org-columns))
       (get-char-property (point) 'org-columns-value-modified))))
+  ;; Allow custom _collect_ for summary types.
+  (should
+   (equal
+    "2"
+    (org-test-with-temp-text
+	"* H
+** S1
+:PROPERTIES:
+:A: 1
+:END:
+** S1
+:PROPERTIES:
+:A: 2
+:A-OK: 1
+:END:"
+     (let ((org-columns-summary-types
+	    '(("custom" org-columns--summary-sum
+	       (lambda (p)
+                 (if (equal "1" (org-entry-get nil (format "%s-OK" p)))
+		     (org-entry-get nil p)
+		   "")))))
+	   (org-columns-default-format "%A{custom}")) (org-columns))
+     (get-char-property (point) 'org-columns-value-modified))))
+  ;; Allow custom collect function to be used for different columns
+  (should
+   (equal
+    '("2" "1")
+    (org-test-with-temp-text
+     "* H
+** S1
+:PROPERTIES:
+:A: 1
+:B: 1
+:B-OK: 1
+:END:
+** S1
+:PROPERTIES:
+:A: 2
+:B: 2
+:A-OK: 1
+:END:"
+     (let ((org-columns-summary-types
+	    '(("custom" org-columns--summary-sum
+	       (lambda (p)
+                 (if (equal "1" (org-entry-get nil (format "%s-OK" p)))
+		     (org-entry-get nil p)
+		   "")))))
+	   (org-columns-default-format "%A{custom} %B{custom}")) (org-columns))
+     (list (get-char-property (point) 'org-columns-value-modified)
+	   (get-char-property (1+ (point)) 'org-columns-value-modified)))))
   ;; Allow multiple summary types applied to the same property.
   (should
    (equal
@@ -1434,19 +1484,6 @@
     (org-test-with-temp-text
         "* H\n<point>#+BEGIN: columnview :format \"%ITEM(Name)\"\n#+END:"
       (let ((org-columns-default-format "%ITEM")) (org-update-dblock))
-      (buffer-substring-no-properties (point) (point-max)))))
-  ;; Test `:width' parameter
-  (should
-   (equal
-    "#+BEGIN: columnview :width t
-| ITEM       | A |
-|------------+---|
-| H          |   |
-| <10>       |   |
-#+END:"
-    (org-test-with-temp-text
-        "* H\n<point>#+BEGIN: columnview :width t\n#+END:"
-      (let ((org-columns-default-format "%10ITEM %A")) (org-update-dblock))
       (buffer-substring-no-properties (point) (point-max)))))
   ;; When inserting ITEM values, make sure to clean sensitive
   ;; contents, like unique targets or forbidden inline src-blocks.

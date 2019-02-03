@@ -1,6 +1,6 @@
 ;;; org-faces.el --- Face definitions -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2004-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2019 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -311,7 +311,7 @@ determines if it is a foreground or a background color."
   (if (not value)
       (setq org-tags-special-faces-re nil)
     (setq org-tags-special-faces-re
-	  (concat ":\\(" (mapconcat 'car value "\\|") "\\):"))))
+	  (concat ":" (regexp-opt (mapcar #'car value) t) ":"))))
 
 (defface org-checkbox '((t :inherit bold))
   "Face for checkboxes."
@@ -395,8 +395,7 @@ follows a #+DATE:, #+AUTHOR: or #+EMAIL: keyword."
 
 (defface org-block '((t :inherit shadow))
   "Face text in #+begin ... #+end blocks.
-For source-blocks `org-src-block-faces' takes precedence.
-See also `org-fontify-quote-and-verse-blocks'."
+For source-blocks `org-src-block-faces' takes precedence."
   :group 'org-faces
   :version "26.1")
 
@@ -414,11 +413,13 @@ See also `org-fontify-quote-and-verse-blocks'."
   :version "22.1")
 
 (defface org-quote '((t (:inherit org-block)))
-  "Face for #+BEGIN_QUOTE ... #+END_QUOTE blocks."
+  "Face for #+BEGIN_QUOTE ... #+END_QUOTE blocks.
+Active when `org-fontify-quote-and-verse-blocks' is set."
   :group 'org-faces)
 
 (defface org-verse '((t (:inherit org-block)))
-  "Face for #+BEGIN_VERSE ... #+END_VERSE blocks."
+  "Face for #+BEGIN_VERSE ... #+END_VERSE blocks.
+Active when `org-fontify-quote-and-verse-blocks' is set."
   :group 'org-faces)
 
 (defcustom org-fontify-quote-and-verse-blocks nil
@@ -511,13 +512,18 @@ which days belong to the weekend."
     (((class color) (min-colors 8)  (background light)) (:foreground "red"))
     (((class color) (min-colors 8)  (background dark)) (:foreground "red" :bold t))
     (t (:bold t)))
-  "Face for items scheduled previously, and not yet done."
+  "Face for items scheduled previously, and not yet done.
+See also `org-agenda-deadline-faces'."
   :group 'org-faces)
+
+(defface org-upcoming-distant-deadline '((t :inherit org-default))
+  "Face for items scheduled previously, not done, and have a distant deadline.
+See also `org-agenda-deadline-faces'.")
 
 (defcustom org-agenda-deadline-faces
   '((1.0 . org-warning)
     (0.5 . org-upcoming-deadline)
-    (0.0 . default))
+    (0.0 . org-upcoming-distant-deadline))
   "Faces for showing deadlines in the agenda.
 This is a list of cons cells.  The cdr of each cell is a face to be used,
 and it can also just be like \\='(:foreground \"yellow\").

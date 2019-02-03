@@ -1,6 +1,6 @@
 ;;; test-org-timer.el --- Tests for org-timer.el
 
-;; Copyright (C) 2014-2015  Kyle Meyer
+;; Copyright (C) 2014-2015, 2019  Kyle Meyer
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 
@@ -21,11 +21,13 @@
 
 ;;; Code:
 
+(eval-and-compile (require 'cl-lib))
+
 (defmacro test-org-timer/with-temp-text (text &rest body)
   "Like `org-test-with-temp-text', but set timer-specific variables.
 Also, mute output from `message'."
   (declare (indent 1))
-  `(letf (((symbol-function 'message) (lambda (&rest args) nil)))
+  `(cl-letf (((symbol-function 'message) (lambda (&rest args) nil)))
      (org-test-with-temp-text ,text
        (let (org-timer-start-time
 	     org-timer-pause-time
@@ -38,7 +40,7 @@ Also, mute output from `message'."
 (defmacro test-org-timer/with-current-time (time &rest body)
   "Run BODY, setting `current-time' output to TIME."
   (declare (indent 1))
-  `(letf (((symbol-function 'current-time) (lambda () ,time)))
+  `(cl-letf (((symbol-function 'current-time) (lambda () ,time)))
      ,@body))
 
 

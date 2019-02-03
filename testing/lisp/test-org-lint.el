@@ -1,6 +1,6 @@
 ;;; test-org-lint.el --- Tests for Org Lint          -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Nicolas Goaziou
+;; Copyright (C) 2016, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 
@@ -487,17 +487,18 @@ SCHEDULED: <2012-03-29 thu.>"
 #+end_src"
      (org-lint '(wrong-header-value)))))
 
-(ert-deftest test-org-lint/empty-headline-with-tags ()
-  "Test `org-lint-empty-headline-with-tags' checker."
-  (should
-   (org-test-with-temp-text "* :tag:"
-     (org-lint '(empty-headline-with-tags))))
-  (should
-   (org-test-with-temp-text "*   :tag: "
-     (org-lint '(empty-headline-with-tags))))
+(ert-deftest test-org/spurious-colons ()
+  "Test `org-list-spurious-colons' checker."
   (should-not
-   (org-test-with-temp-text "* notag: "
-     (org-lint '(empty-headline-with-tags)))))
+   (org-test-with-temp-text "* H :tag:tag2:"
+     (org-lint '(spurious-colons))))
+  (should
+   (org-test-with-temp-text "* H :tag::tag2:"
+     (org-lint '(spurious-colons))))
+  (should
+   (org-test-with-temp-text "* H :tag::"
+     (org-lint '(spurious-colons)))))
+
 
 (provide 'test-org-lint)
 ;;; test-org-lint.el ends here

@@ -1,6 +1,6 @@
 ;;; ox.el --- Export Framework for Org Mode          -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2012-2019 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -1499,7 +1499,7 @@ Assume buffer is in Org mode.  Narrowing, if any, is ignored."
 			 (cond
 			  ;; Options in `org-export-special-keywords'.
 			  ((equal key "SETUPFILE")
-			   (let* ((uri (org-unbracket-string "\"" "\"" (org-trim val)))
+			   (let* ((uri (org-strip-quotes (org-trim val)))
 				  (uri-is-url (org-file-url-p uri))
 				  (uri (if uri-is-url
 					   uri
@@ -1650,7 +1650,7 @@ an alist where associations are (VARIABLE-NAME VALUE)."
 				      "BIND")
 			       (push (read (format "(%s)" val)) alist)
 			     ;; Enter setup file.
-			     (let* ((uri (org-unbracket-string "\"" "\"" val))
+			     (let* ((uri (org-strip-quotes val))
 				    (uri-is-url (org-file-url-p uri))
 				    (uri (if uri-is-url
 					     uri
@@ -2007,17 +2007,18 @@ Return a string."
 				  ;; normalized first.
 				  (org-element-normalize-contents
 				   data
-				   ;; When normalizing contents of the
-				   ;; first paragraph in an item or
-				   ;; a footnote definition, ignore
-				   ;; first line's indentation: there is
-				   ;; none and it might be misleading.
-				   (when (eq type 'paragraph)
-				     (and
-				      (eq (car (org-element-contents parent))
-					  data)
-				      (memq (org-element-type parent)
-					    '(footnote-definition item)))))))
+				   ;; When normalizing first paragraph
+				   ;; of an item or
+				   ;; a footnote-definition, ignore
+				   ;; first line's indentation.
+				   (and
+				    (eq type 'paragraph)
+				    (memq (org-element-type parent)
+					  '(footnote-definition item))
+				    (eq (car (org-element-contents parent))
+					data)
+				    (eq (org-element-property :pre-blank parent)
+					0)))))
 			       "")))
 			(broken-link-handler
 			 (funcall transcoder data
@@ -2672,10 +2673,7 @@ The function assumes BUFFER's major mode is `org-mode'."
 				    (quote ,val))
 			      vars))))))
 	 ;; Whole buffer contents.
-	 (insert
-	  ,(org-with-wide-buffer
-	    (buffer-substring-no-properties
-	     (point-min) (point-max))))
+	 (insert ,(org-with-wide-buffer (buffer-string)))
 	 ;; Narrowing.
 	 ,(if (org-region-active-p)
 	      `(narrow-to-region ,(region-beginning) ,(region-end))
@@ -3042,20 +3040,23 @@ Return code as a string."
 	 ;; Run first hook with current back-end's name as argument.
 	 (run-hook-with-args 'org-export-before-processing-hook
 			     (org-export-backend-name backend))
-	 ;; Include files, delete comments and expand macros.
 	 (org-export-expand-include-keyword)
 	 (org-export--delete-comment-trees)
 	 (org-macro-initialize-templates)
-	 (org-macro-replace-all
-	  (append org-macro-templates org-export-global-macros)
-	  nil parsed-keywords)
-	 ;; Refresh buffer properties and radio targets after
-	 ;; potentially invasive previous changes.  Likewise, do it
-	 ;; again after executing Babel code.
+	 (org-macro-replace-all (append org-macro-templates
+					org-export-global-macros)
+				parsed-keywords)
+	 ;; Refresh buffer properties and radio targets after previous
+	 ;; potentially invasive changes.
 	 (org-set-regexps-and-options)
 	 (org-update-radio-target-regexp)
+	 ;;  Possibly execute Babel code.  Re-run a macro expansion
+	 ;;  specifically for {{{results}}} since inline source blocks
+	 ;;  may have generated some more.  Refresh buffer properties
+	 ;;  and radio targets another time.
 	 (when org-export-use-babel
 	   (org-babel-exp-process-buffer)
+	   (org-macro-replace-all '(("results" . "$1")) parsed-keywords)
 	   (org-set-regexps-and-options)
 	   (org-update-radio-target-regexp))
 	 ;; Run last hook with current back-end's name as argument.
@@ -3090,29 +3091,6 @@ Return code as a string."
 	   (dolist (filter (plist-get info :filter-options))
 	     (let ((result (funcall filter info backend-name)))
 	       (when result (setq info result)))))
-	 ;; Expand export-specific set of macros: {{{author}}},
-	 ;; {{{date(FORMAT)}}}, {{{email}}} and {{{title}}}.  It must
-	 ;; be done once regular macros have been expanded, since
-	 ;; parsed keywords may contain one of them.
-	 (org-macro-replace-all
-	  (list
-	   (cons "author" (org-element-interpret-data (plist-get info :author)))
-	   (cons "date"
-		 (let* ((date (plist-get info :date))
-			(value (or (org-element-interpret-data date) "")))
-		   (if (and (consp date)
-			    (not (cdr date))
-			    (eq (org-element-type (car date)) 'timestamp))
-		       (format "(eval (if (org-string-nw-p \"$1\") %s %S))"
-			       (format "(org-timestamp-format '%S \"$1\")"
-				       (org-element-copy (car date)))
-			       value)
-		     value)))
-	   (cons "email" (org-element-interpret-data (plist-get info :email)))
-	   (cons "title" (org-element-interpret-data (plist-get info :title)))
-	   (cons "results" "$1"))
-	  'finalize
-	  parsed-keywords)
 	 ;; Parse buffer.
 	 (setq tree (org-element-parse-buffer nil visible-only))
 	 ;; Prune tree from non-exported elements and transform
@@ -3252,7 +3230,7 @@ locally for the subtree through node properties."
       (let ((val (cond ((equal (car key) "DATE")
 			(or (cdr key)
 			    (with-temp-buffer
-			      (org-insert-time-stamp (current-time)))))
+			      (org-insert-time-stamp nil))))
 		       ((equal (car key) "TITLE")
 			(or (let ((visited-file
 				   (buffer-file-name (buffer-base-buffer))))
@@ -3275,7 +3253,8 @@ avoid infinite recursion.  Optional argument DIR is the current
 working directory.  It is used to properly resolve relative
 paths.  Optional argument FOOTNOTES is a hash-table used for
 storing and resolving footnotes.  It is created automatically."
-  (let ((case-fold-search t)
+  (let ((includer-file (buffer-file-name (buffer-base-buffer)))
+	(case-fold-search t)
 	(file-prefix (make-hash-table :test #'equal))
 	(current-prefix 0)
 	(footnotes (or footnotes (make-hash-table :test #'equal)))
@@ -3298,11 +3277,11 @@ storing and resolving footnotes.  It is created automatically."
 	    (beginning-of-line)
 	    ;; Extract arguments from keyword's value.
 	    (let* ((value (org-element-property :value element))
-		   (ind (org-get-indentation))
+		   (ind (current-indentation))
 		   location
 		   (file
-		    (and (string-match
-			  "^\\(\".+?\"\\|\\S-+\\)\\(?:\\s-+\\|$\\)" value)
+		    (and (string-match "^\\(\".+?\"\\|\\S-+\\)\\(?:\\s-+\\|$\\)"
+				       value)
 			 (prog1
 			     (save-match-data
 			       (let ((matched (match-string 1 value)))
@@ -3311,9 +3290,8 @@ storing and resolving footnotes.  It is created automatically."
 				   (setq location (match-string 2 matched))
 				   (setq matched
 					 (replace-match "" nil nil matched 1)))
-				 (expand-file-name
-				  (org-unbracket-string "\"" "\"" matched)
-				  dir)))
+				 (expand-file-name (org-strip-quotes matched)
+						   dir)))
 			   (setq value (replace-match "" nil nil value)))))
 		   (only-contents
 		    (and (string-match ":only-contents *\\([^: \r\t\n]\\S-*\\)?"
@@ -3388,10 +3366,12 @@ storing and resolving footnotes.  It is created automatically."
 		       (insert
 			(org-export--prepare-file-contents
 			 file lines ind minlevel
-			 (or
-			  (gethash file file-prefix)
-			  (puthash file (cl-incf current-prefix) file-prefix))
-			 footnotes)))
+			 (or (gethash file file-prefix)
+			     (puthash file
+				      (cl-incf current-prefix)
+				      file-prefix))
+			 footnotes
+			 includer-file)))
 		     (org-export-expand-include-keyword
 		      (cons (list file lines) included)
 		      (file-name-directory file)
@@ -3469,7 +3449,7 @@ Return a string of lines to be included in the format expected by
 		       counter))))))))
 
 (defun org-export--prepare-file-contents
-    (file &optional lines ind minlevel id footnotes)
+    (file &optional lines ind minlevel id footnotes includer)
   "Prepare contents of FILE for inclusion and return it as a string.
 
 When optional argument LINES is a string specifying a range of
@@ -3491,7 +3471,10 @@ This is useful to avoid conflicts when more than one Org file
 with footnotes is included in a document.
 
 Optional argument FOOTNOTES is a hash-table to store footnotes in
-the included document."
+the included document.
+
+Optional argument INCLUDER is the file name where the inclusion
+is to happen."
   (with-temp-buffer
     (insert-file-contents file)
     (when lines
@@ -3507,6 +3490,37 @@ the included document."
 		    (forward-line (1- lend))
 		    (point))))
 	(narrow-to-region beg end)))
+    ;; Adapt all file links within the included document that contain
+    ;; relative paths in order to make these paths relative to the
+    ;; base document, or absolute.
+    (when includer
+      (let ((file-dir (file-name-directory file))
+	    (includer-dir (file-name-directory includer)))
+	(unless (file-equal-p file-dir includer-dir)
+	  (goto-char (point-min))
+	  (unless (eq major-mode 'org-mode)
+	    (let ((org-inhibit-startup t)) (org-mode)))	;set regexps
+	  (while (re-search-forward org-any-link-re nil t)
+	    (let ((link (save-excursion (backward-char) (org-element-context))))
+	      (when (and (eq 'link (org-element-type link))
+			 (string= "file" (org-element-property :type link)))
+		(let ((old-path (org-element-property :path link)))
+		  (unless (or (file-remote-p old-path)
+			      (file-name-absolute-p old-path))
+		    (let ((new-path (file-relative-name
+				     (expand-file-name old-path file-dir)
+				     includer-dir)))
+		      (insert
+		       (let ((new (org-element-copy link)))
+			 (org-element-put-property new :path new-path)
+			 (when (org-element-property :contents-begin link)
+			   (org-element-adopt-elements new
+			     (buffer-substring
+			      (org-element-property :contents-begin link)
+			      (org-element-property :contents-end link))))
+			 (delete-region (org-element-property :begin link)
+					(org-element-property :end link))
+			 (org-element-interpret-data new))))))))))))
     ;; Remove blank lines at beginning and end of contents.  The logic
     ;; behind that removal is that blank lines around include keyword
     ;; override blank lines in included file.
@@ -4010,19 +4024,19 @@ inherited from parent headlines and FILETAGS keywords."
        ;; Add FILETAGS keywords and return results.
        (org-uniquify (append (plist-get info :filetags) current-tag-list))))))
 
-(defun org-export-get-node-property (property blob &optional inherited)
-  "Return node PROPERTY value for BLOB.
+(defun org-export-get-node-property (property datum &optional inherited)
+  "Return node PROPERTY value for DATUM.
 
-PROPERTY is an upcase symbol (i.e. `:COOKIE_DATA').  BLOB is an
+PROPERTY is an upcase symbol (e.g., `:COOKIE_DATA').  DATUM is an
 element or object.
 
 If optional argument INHERITED is non-nil, the value can be
 inherited from a parent headline.
 
 Return value is a string or nil."
-  (let ((headline (if (eq (org-element-type blob) 'headline) blob
-		    (org-export-get-parent-headline blob))))
-    (if (not inherited) (org-element-property property blob)
+  (let ((headline (if (eq (org-element-type datum) 'headline) datum
+		    (org-export-get-parent-headline datum))))
+    (if (not inherited) (org-element-property property datum)
       (let ((parent headline))
 	(catch 'found
 	  (while parent
@@ -4406,7 +4420,7 @@ has type \"radio\"."
   "Return file URI associated to FILENAME."
   (cond ((string-prefix-p "//" filename) (concat "file:" filename))
 	((not (file-name-absolute-p filename)) filename)
-	((org-file-remote-p filename) (concat "file:/" filename))
+	((file-remote-p filename) (concat "file:/" filename))
 	(t
 	 (let ((fullname (expand-file-name filename)))
 	   (concat (if (string-prefix-p "/" fullname) "file://" "file:///")
@@ -4449,9 +4463,19 @@ REFERENCE is a number representing a reference, as returned by
 DATUM is either an element or an object.  INFO is the current
 export state, as a plist.
 
-This function checks `:crossrefs' property in INFO for search
-cells matching DATUM before creating a new reference.  Returned
-reference consists of alphanumeric characters only."
+References for the current document are stored in
+`:internal-references' property.  Its value is an alist with
+associations of the following types:
+
+  (REFERENCE . DATUM) and (SEARCH-CELL . ID)
+
+REFERENCE is the reference string to be used for object or
+element DATUM.  SEARCH-CELL is a search cell, as returned by
+`org-export-search-cells'.  ID is a number or a string uniquely
+identifying DATUM within the document.
+
+This function also checks `:crossrefs' property for search cells
+matching DATUM before creating a new reference."
   (let ((cache (plist-get info :internal-references)))
     (or (car (rassq datum cache))
 	(let* ((crossrefs (plist-get info :crossrefs))
@@ -5231,10 +5255,12 @@ Footnote sections are ignored."
 		     (+ (org-export-get-relative-level scope info) n))
 		   limit))))
     (org-element-map (org-element-contents scope) 'headline
-      (lambda (headline)
-	(unless (org-element-property :footnote-section-p headline)
-	  (let ((level (org-export-get-relative-level headline info)))
-	    (and (<= level n) headline))))
+      (lambda (h)
+	(and (not (org-element-property :footnote-section-p h))
+	     (not (equal "notoc"
+			 (org-export-get-node-property :UNNUMBERED h t)))
+	     (>= n (org-export-get-relative-level h info))
+	     h))
       info)))
 
 (defun org-export-collect-elements (type info &optional predicate)
@@ -5280,12 +5306,26 @@ Return a list of elements recognized as figures."
   (org-export-collect-elements 'paragraph info predicate))
 
 (defun org-export-collect-listings (info)
-  "Build a list of src blocks.
+  "Build a list of source blocks.
 
 INFO is a plist used as a communication channel.
 
-Return a list of src-block elements with a caption."
+Return a list of `src-block' elements with a caption."
   (org-export-collect-elements 'src-block info))
+
+(defun org-export-excluded-from-toc-p (headline info)
+  "Non-nil if HEADLINE should be excluded from tables of contents.
+
+INFO is a plist used as a communication channel.
+
+Note that such headlines are already excluded from
+`org-export-collect-headlines'.  Therefore, this function is not
+necessary if you only need to list headlines in the table of
+contents.  However, it is useful if some additional processing is
+required on headlines excluded from table of contents."
+  (or (org-element-property :footnote-section-p headline)
+      (org-export-low-level-p headline info)
+      (equal "notoc" (org-export-get-node-property :UNNUMBERED headline t))))
 
 (defun org-export-toc-entry-backend (parent &rest transcoders)
   "Return an export back-end appropriate for table of contents entries.
@@ -5707,6 +5747,7 @@ them."
      ("ja" :default "前ページからの続き")
      ("nl" :default "Vervolg van vorige pagina")
      ("pt" :default "Continuação da página anterior")
+     ("pt_BR" :html "Continua&ccedil;&atilde;o da p&aacute;gina anterior" :ascii "Continuacao da pagina anterior" :default "Continuação da página anterior")
      ("ru" :html "(&#1055;&#1088;&#1086;&#1076;&#1086;&#1083;&#1078;&#1077;&#1085;&#1080;&#1077;)"
       :utf-8 "(Продолжение)")
      ("sl" :default "Nadaljevanje s prejšnje strani"))
@@ -5720,11 +5761,13 @@ them."
      ("ja" :default "次ページに続く")
      ("nl" :default "Vervolg op volgende pagina")
      ("pt" :default "Continua na página seguinte")
+     ("pt_BR" :html "Continua na pr&oacute;xima p&aacute;gina" :ascii "Continua na proxima pagina" :default "Continua na próxima página")
      ("ru" :html "(&#1055;&#1088;&#1086;&#1076;&#1086;&#1083;&#1078;&#1077;&#1085;&#1080;&#1077; &#1089;&#1083;&#1077;&#1076;&#1091;&#1077;&#1090;)"
       :utf-8 "(Продолжение следует)")
      ("sl" :default "Nadaljevanje na naslednji strani"))
     ("Created"
      ("cs" :default "Vytvořeno")
+     ("pt_BR" :default "Criado em")
      ("sl" :default "Ustvarjeno"))
     ("Date"
      ("ar" :default "بتاريخ")
@@ -5779,6 +5822,7 @@ them."
      ("es" :default "Figura")
      ("et" :default "Joonis")
      ("is" :default "Mynd")
+     ("it" :default "Figura")
      ("ja" :default "図" :html "&#22259;")
      ("no" :default "Illustrasjon")
      ("nb" :default "Illustrasjon")
@@ -5796,6 +5840,7 @@ them."
      ("et" :default "Joonis %d:")
      ("fr" :default "Figure %d :" :html "Figure&nbsp;%d&nbsp;:")
      ("is" :default "Mynd %d")
+     ("it" :default "Figura %d:")
      ("ja" :default "図%d: " :html "&#22259;%d: ")
      ("no" :default "Illustrasjon %d")
      ("nb" :default "Illustrasjon %d")
@@ -5844,6 +5889,7 @@ them."
      ("ja" :default "ソースコード目次")
      ("no" :default "Dataprogrammer")
      ("nb" :default "Dataprogrammer")
+     ("pt_BR" :html "&Iacute;ndice de Listagens" :default "Índice de Listagens" :ascii "Indice de Listagens")
      ("ru" :html "&#1057;&#1087;&#1080;&#1089;&#1086;&#1082; &#1088;&#1072;&#1089;&#1087;&#1077;&#1095;&#1072;&#1090;&#1086;&#1082;"
       :utf-8 "Список распечаток")
      ("sl" :default "Seznam programskih izpisov")
@@ -5857,11 +5903,12 @@ them."
      ("et" :default "Tabelite nimekiri")
      ("fr" :default "Liste des tableaux")
      ("is" :default "Töfluskrá" :html "T&ouml;fluskr&aacute;")
+     ("it" :default "Indice delle tabelle")
      ("ja" :default "表目次")
      ("no" :default "Tabeller")
      ("nb" :default "Tabeller")
      ("nn" :default "Tabeller")
-     ("pt_BR" :default "Índice de Tabelas" :ascii "Indice de Tabelas")
+     ("pt_BR" :html "&Iacute;ndice de Tabelas" :default "Índice de Tabelas" :ascii "Indice de Tabelas")
      ("ru" :html "&#1057;&#1087;&#1080;&#1089;&#1086;&#1082; &#1090;&#1072;&#1073;&#1083;&#1080;&#1094;"
       :utf-8 "Список таблиц")
      ("sl" :default "Seznam tabel")
@@ -5875,6 +5922,7 @@ them."
      ("es" :default "Listado de programa")
      ("et" :default "Loend")
      ("fr" :default "Programme" :html "Programme")
+     ("it" :default "Listato")
      ("ja" :default "ソースコード")
      ("no" :default "Dataprogram")
      ("nb" :default "Dataprogram")
@@ -5891,10 +5939,11 @@ them."
      ("es" :default "Listado de programa %d")
      ("et" :default "Loend %d")
      ("fr" :default "Programme %d :" :html "Programme&nbsp;%d&nbsp;:")
+     ("it" :default "Listato %d :")
      ("ja" :default "ソースコード%d:")
      ("no" :default "Dataprogram %d")
      ("nb" :default "Dataprogram %d")
-     ("pt_BR" :default "Listagem %d")
+     ("pt_BR" :default "Listagem %d:")
      ("ru" :html "&#1056;&#1072;&#1089;&#1087;&#1077;&#1095;&#1072;&#1090;&#1082;&#1072; %d.:"
       :utf-8 "Распечатка %d.:")
      ("sl" :default "Izpis programa %d")
@@ -5902,19 +5951,24 @@ them."
     ("References"
      ("ar" :default "المراجع")
      ("cs" :default "Reference")
-     ("fr" :ascii "References" :default "Références")
      ("de" :default "Quellen")
      ("es" :default "Referencias")
+     ("fr" :ascii "References" :default "Références")
+     ("it" :default "Riferimenti")
+     ("pt_BR" :html "Refer&ecirc;ncias" :default "Referências" :ascii "Referencias")
      ("sl" :default "Reference"))
     ("See figure %s"
      ("cs" :default "Viz obrázek %s")
      ("fr" :default "cf. figure %s"
       :html "cf.&nbsp;figure&nbsp;%s" :latex "cf.~figure~%s")
+     ("it" :default "Vedi figura %s")
+     ("pt_BR" :default "Veja a figura %s")
      ("sl" :default "Glej sliko %s"))
     ("See listing %s"
      ("cs" :default "Viz program %s")
      ("fr" :default "cf. programme %s"
       :html "cf.&nbsp;programme&nbsp;%s" :latex "cf.~programme~%s")
+     ("pt_BR" :default "Veja a listagem %s")
      ("sl" :default "Glej izpis programa %s"))
     ("See section %s"
      ("ar" :default "انظر قسم %s")
@@ -5924,6 +5978,7 @@ them."
      ("es" :ascii "Vea seccion %s" :html "Vea secci&oacute;n %s" :default "Vea sección %s")
      ("et" :html "Vaata peat&#252;kki %s" :utf-8 "Vaata peatükki %s")
      ("fr" :default "cf. section %s")
+     ("it" :default "Vedi sezione %s")
      ("ja" :default "セクション %s を参照")
      ("pt_BR" :html "Veja a se&ccedil;&atilde;o %s" :default "Veja a seção %s"
       :ascii "Veja a secao %s")
@@ -5935,6 +5990,8 @@ them."
      ("cs" :default "Viz tabulka %s")
      ("fr" :default "cf. tableau %s"
       :html "cf.&nbsp;tableau&nbsp;%s" :latex "cf.~tableau~%s")
+     ("it" :default "Vedi tabella %s")
+     ("pt_BR" :default "Veja a tabela %s")
      ("sl" :default "Glej tabelo %s"))
     ("Table"
      ("ar" :default "جدول")
@@ -5944,6 +6001,7 @@ them."
      ("et" :default "Tabel")
      ("fr" :default "Tableau")
      ("is" :default "Tafla")
+     ("it" :default "Tabella")
      ("ja" :default "表" :html "&#34920;")
      ("pt_BR" :default "Tabela")
      ("ru" :html "&#1058;&#1072;&#1073;&#1083;&#1080;&#1094;&#1072;"
@@ -5958,11 +6016,12 @@ them."
      ("et" :default "Tabel %d")
      ("fr" :default "Tableau %d :")
      ("is" :default "Tafla %d")
+     ("it" :default "Tabella %d:")
      ("ja" :default "表%d:" :html "&#34920;%d:")
      ("no" :default "Tabell %d")
      ("nb" :default "Tabell %d")
      ("nn" :default "Tabell %d")
-     ("pt_BR" :default "Tabela %d")
+     ("pt_BR" :default "Tabela %d:")
      ("ru" :html "&#1058;&#1072;&#1073;&#1083;&#1080;&#1094;&#1072; %d.:"
       :utf-8 "Таблица %d.:")
      ("sl" :default "Tabela %d")
@@ -6003,9 +6062,9 @@ them."
      ("es" :default "Referencia desconocida")
      ("et" :default "Tundmatu viide")
      ("fr" :ascii "Destination inconnue" :default "Référence inconnue")
+     ("it" :default "Riferimento sconosciuto")
      ("ja" :default "不明な参照先")
-     ("pt_BR" :default "Referência desconhecida"
-      :ascii "Referencia desconhecida")
+     ("pt_BR" :html "Refer&ecirc;ncia desconhecida" :default "Referência desconhecida" :ascii "Referencia desconhecida")
      ("ru" :html "&#1053;&#1077;&#1080;&#1079;&#1074;&#1077;&#1089;&#1090;&#1085;&#1072;&#1103; &#1089;&#1089;&#1099;&#1083;&#1082;&#1072;"
       :utf-8 "Неизвестная ссылка")
      ("sl" :default "Neznana referenca")

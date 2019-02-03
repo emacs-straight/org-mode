@@ -1,6 +1,6 @@
 ;;; test-ox.el --- Tests for ox.el                   -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2016  Nicolas Goaziou
+;; Copyright (C) 2012-2016, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 
@@ -439,7 +439,7 @@ Paragraph"
 	      (org-export-as (org-test-default-backend)
 			     nil nil nil '(:exclude-tags ("noexp")))))))
   (should
-   (equal "#+FILETAGS: noexp\n"
+   (equal "#+filetags: noexp\n"
 	  (let (org-export-filter-body-functions
 		org-export-filter-final-output-functions)
 	    (org-test-with-temp-text "#+FILETAGS: noexp\n* Head1"
@@ -1363,12 +1363,145 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
      (org-export-expand-include-keyword)
      (eq 3 (org-current-level)))))
 
+(ert-deftest test-org/expand-include/links ()
+  "Test links modifications when including files."
+  ;; Preserve relative plain links.
+  (should
+   (string-prefix-p
+    "file:org-includee-"
+    (let* ((subdir (make-temp-file "org-includee-" t))
+	   (includee (expand-file-name "includee.org" subdir))
+	   (includer (make-temp-file "org-includer-")))
+      (write-region "file:foo.org" nil includee)
+      (write-region (format "#+INCLUDE: %S"
+			    (file-relative-name includee
+						temporary-file-directory))
+		    nil includer)
+      (let ((buffer (find-file-noselect includer t)))
+	(unwind-protect
+	    (with-current-buffer buffer
+	      (org-export-expand-include-keyword)
+	      (org-trim (buffer-string)))
+	  (when (buffer-live-p buffer)
+	    (with-current-buffer buffer (set-buffer-modified-p nil))
+	    (kill-buffer buffer))
+	  (when (file-exists-p subdir) (delete-directory subdir t))
+	  (when (file-exists-p includer) (delete-file includer)))))))
+  ;; Preserve relative angular links.
+  (should
+   (string-prefix-p
+    "<file:org-includee-"
+    (let* ((subdir (make-temp-file "org-includee-" t))
+	   (includee (expand-file-name "includee.org" subdir))
+	   (includer (make-temp-file "org-includer-")))
+      (write-region "<file:foo.org>" nil includee)
+      (write-region (format "#+INCLUDE: %S"
+			    (file-relative-name includee
+						temporary-file-directory))
+		    nil includer)
+      (let ((buffer (find-file-noselect includer t)))
+	(unwind-protect
+	    (with-current-buffer buffer
+	      (org-export-expand-include-keyword)
+	      (org-trim (buffer-string)))
+	  (when (buffer-live-p buffer)
+	    (with-current-buffer buffer (set-buffer-modified-p nil))
+	    (kill-buffer buffer))
+	  (when (file-exists-p subdir) (delete-directory subdir t))
+	  (when (file-exists-p includer) (delete-file includer)))))))
+  ;; Preserve relative bracket links without description.
+  (should
+   (string-prefix-p
+    "[[file:org-includee-"
+    (let* ((subdir (make-temp-file "org-includee-" t))
+	   (includee (expand-file-name "includee.org" subdir))
+	   (includer (make-temp-file "org-includer-")))
+      (write-region "[[file:foo.org]]" nil includee)
+      (write-region (format "#+INCLUDE: %S"
+			    (file-relative-name includee
+						temporary-file-directory))
+		    nil includer)
+      (let ((buffer (find-file-noselect includer t)))
+	(unwind-protect
+	    (with-current-buffer buffer
+	      (org-export-expand-include-keyword)
+	      (org-trim (buffer-string)))
+	  (when (buffer-live-p buffer)
+	    (with-current-buffer buffer (set-buffer-modified-p nil))
+	    (kill-buffer buffer))
+	  (when (file-exists-p subdir) (delete-directory subdir t))
+	  (when (file-exists-p includer) (delete-file includer)))))))
+  ;; Preserve relative bracket links with description.
+  (should
+   (string-prefix-p
+    "[[file:org-includee-"
+    (let* ((subdir (make-temp-file "org-includee-" t))
+	   (includee (expand-file-name "includee.org" subdir))
+	   (includer (make-temp-file "org-includer-")))
+      (write-region "[[file:foo.org][description]]" nil includee)
+      (write-region (format "#+INCLUDE: %S"
+			    (file-relative-name includee
+						temporary-file-directory))
+		    nil includer)
+      (let ((buffer (find-file-noselect includer t)))
+	(unwind-protect
+	    (with-current-buffer buffer
+	      (org-export-expand-include-keyword)
+	      (org-trim (buffer-string)))
+	  (when (buffer-live-p buffer)
+	    (with-current-buffer buffer (set-buffer-modified-p nil))
+	    (kill-buffer buffer))
+	  (when (file-exists-p subdir) (delete-directory subdir t))
+	  (when (file-exists-p includer) (delete-file includer)))))))
+  ;; Preserve absolute links.
+  (should
+   (string=
+    "[[file:/foo/bar.org]]"
+    (let* ((subdir (make-temp-file "org-includee-" t))
+	   (includee (expand-file-name "includee.org" subdir))
+	   (includer (make-temp-file "org-includer-")))
+      (write-region "[[file:/foo/bar.org]]" nil includee)
+      (write-region (format "#+INCLUDE: %S"
+			    (file-relative-name includee
+						temporary-file-directory))
+		    nil includer)
+      (let ((buffer (find-file-noselect includer t)))
+	(unwind-protect
+	    (with-current-buffer buffer
+	      (org-export-expand-include-keyword)
+	      (org-trim (buffer-string)))
+	  (when (buffer-live-p buffer)
+	    (with-current-buffer buffer (set-buffer-modified-p nil))
+	    (kill-buffer buffer))
+	  (when (file-exists-p subdir) (delete-directory subdir t))
+	  (when (file-exists-p includer) (delete-file includer)))))))
+  ;; Pathological case: Do not error when fixing a path in a headline.
+  (should
+   (let* ((subdir (make-temp-file "org-includee-" t))
+	  (includee (expand-file-name "includee.org" subdir))
+	  (includer (make-temp-file "org-includer-")))
+     (write-region "* [[file:foo.org]]" nil includee)
+     (write-region (format "#+INCLUDE: %S"
+			   (file-relative-name includee
+					       temporary-file-directory))
+		   nil includer)
+     (let ((buffer (find-file-noselect includer t)))
+       (unwind-protect
+	   (with-current-buffer buffer
+	     (org-export-expand-include-keyword)
+	     (org-trim (buffer-string)))
+	 (when (buffer-live-p buffer)
+	   (with-current-buffer buffer (set-buffer-modified-p nil))
+	   (kill-buffer buffer))
+	 (when (file-exists-p subdir) (delete-directory subdir t))
+	 (when (file-exists-p includer) (delete-file includer)))))))
+
 (ert-deftest test-org-export/expand-macro ()
   "Test macro expansion in an Org buffer."
   (require 'ox-org)
   ;; Standard macro expansion.
   (should
-   (equal "#+MACRO: macro1 value\nvalue\n"
+   (equal "#+macro: macro1 value\nvalue\n"
 	  (org-test-with-temp-text "#+MACRO: macro1 value\n{{{macro1}}}"
 	    (org-export-as (org-test-default-backend)))))
   ;; Include global macros.  However, local macros override them.
@@ -1388,7 +1521,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	    (let ((org-export-global-macros '(("M" . "(eval (+ 1 1))"))))
 	      (org-export-as (org-test-default-backend))))))
   (should
-   (equal "#+MACRO: M local\nlocal\n"
+   (equal "#+macro: M local\nlocal\n"
 	  (org-test-with-temp-text "#+macro: M local\n{{{M}}}"
 	    (let ((org-export-global-macros '(("M" . "global"))))
 	      (org-export-as (org-test-default-backend))))))
@@ -1396,7 +1529,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
   ;; Standard macro expansion.
   (should
    (string-match
-    "#\\+K: value"
+    "#\\+k: value"
     (let ((backend (org-export-create-backend
 		    :parent 'org
 		    :options '((:k "K" nil nil parse)))))
@@ -1409,7 +1542,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 		    :parent 'org
 		    :options '((:k "K" nil nil parse)))))
       (org-test-with-temp-text
-	  "#+MACRO: m v\n* H\n:PROPERTIES:\n:EXPORT_K: {{{m}}}\n:END:"
+	  "#+macro: m v\n* H\n:PROPERTIES:\n:EXPORT_K: {{{m}}}\n:END:"
 	(org-export-as backend nil nil nil '(:with-properties t))))))
   ;; Expand specific macros.
   (should
@@ -1454,13 +1587,30 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
   ;; Throw an error when a macro definition is missing.
   (should-error
    (org-test-with-temp-text "{{{missing}}}"
-     (org-export-as (org-test-default-backend)))))
+     (org-export-as (org-test-default-backend))))
+  ;; Inline source blocks generate {{{results}}} macros.  Evaluate
+  ;; those.
+  (should
+   (equal "=2=\n"
+	  (org-test-with-temp-text "src_emacs-lisp{(+ 1 1)}"
+	    (let ((org-export-use-babel t)
+		  (org-babel-inline-result-wrap "=%s="))
+	      (org-export-as (org-test-default-backend))))))
+  ;; If inline source block is already associated to a "results"
+  ;; macro, do not duplicate it.
+  (should
+   (equal "src_emacs-lisp{(+ 1 1)} {{{results(=2=)}}}"
+	  (org-test-with-temp-text "src_emacs-lisp{(+ 1 1)} {{{results(=2=)}}}"
+	    (let ((org-export-use-babel t)
+		  (org-babel-inline-result-wrap "=%s="))
+	      (org-export-as (org-test-default-backend)))
+	    (buffer-string)))))
 
 (ert-deftest test-org-export/before-processing-hook ()
   "Test `org-export-before-processing-hook'."
   (should
    (equal
-    "#+MACRO: mac val\nTest\n"
+    "#+macro: mac val\nTest\n"
     (org-test-with-temp-text "#+MACRO: mac val\n{{{mac}}} Test"
       (let ((org-export-before-processing-hook
 	     '((lambda (backend)
@@ -4324,39 +4474,96 @@ Another text. (ref:text)
   "Test `org-export-collect-headlines' specifications."
   ;; Standard test.
   (should
-   (= 2
-      (length
-       (org-test-with-parsed-data "* H1\n** H2"
-	 (org-export-collect-headlines info)))))
+   (equal '("H1" "H2")
+	  (org-test-with-parsed-data "* H1\n** H2"
+	    (mapcar (lambda (h) (org-element-property :raw-value h))
+		    (org-export-collect-headlines info)))))
   ;; Do not collect headlines below optional argument.
   (should
-   (= 1
-      (length
-       (org-test-with-parsed-data "* H1\n** H2"
-	 (org-export-collect-headlines info 1)))))
+   (equal '("H1")
+	  (org-test-with-parsed-data "* H1\n** H2"
+	    (mapcar (lambda (h) (org-element-property :raw-value h))
+		    (org-export-collect-headlines info 1)))))
   ;; Never collect headlines below maximum headline level.
   (should
-   (= 1
-      (length
-       (org-test-with-parsed-data "#+OPTIONS: H:1\n* H1\n** H2"
-	 (org-export-collect-headlines info)))))
+   (equal '("H1")
+	  (org-test-with-parsed-data "#+OPTIONS: H:1\n* H1\n** H2"
+	    (mapcar (lambda (h) (org-element-property :raw-value h))
+		    (org-export-collect-headlines info)))))
   (should
-   (= 1
-      (length
-       (org-test-with-parsed-data "#+OPTIONS: H:1\n* H1\n** H2"
-	 (org-export-collect-headlines info 2)))))
+   (equal '("H1")
+	  (org-test-with-parsed-data "#+OPTIONS: H:1\n* H1\n** H2"
+	    (mapcar (lambda (h) (org-element-property :raw-value h))
+		    (org-export-collect-headlines info 2)))))
+  ;; Do not collect footnote section.
+  (should
+   (equal '("H1")
+	  (let ((org-footnote-section "Footnotes"))
+	    (org-test-with-parsed-data "* H1\n** Footnotes"
+	      (mapcar (lambda (h) (org-element-property :raw-value h))
+		      (org-export-collect-headlines info))))))
+  ;; Do not collect headlines with UNNUMBERED property set to "notoc".
+  ;; Headlines with another value for the property are still
+  ;; collected.  UNNUMBERED property is inherited.
+  (should
+   (equal '("H1")
+	  (org-test-with-parsed-data
+	      "* H1\n* H2\n:PROPERTIES:\n:UNNUMBERED: notoc\n:END:"
+	    (mapcar (lambda (h) (org-element-property :raw-value h))
+		    (org-export-collect-headlines info)))))
+  (should-not
+   (org-test-with-parsed-data
+       "* H1\n:PROPERTIES:\n:UNNUMBERED: notoc\n:END:\n** H2"
+     (mapcar (lambda (h) (org-element-property :raw-value h))
+	     (org-export-collect-headlines info))))
+  (should
+   (equal '("H1" "H2")
+	  (org-test-with-parsed-data
+	      "* H1\n* H2\n:PROPERTIES:\n:UNNUMBERED: t\n:END:"
+	    (mapcar (lambda (h) (org-element-property :raw-value h))
+		    (org-export-collect-headlines info)))))
   ;; Collect headlines locally.
   (should
-   (= 2
-      (org-test-with-parsed-data "* H1\n** H2\n** H3"
-	(let ((scope (org-element-map tree 'headline #'identity info t)))
-	  (length (org-export-collect-headlines info nil scope))))))
+   (equal '("H2" "H3")
+	  (org-test-with-parsed-data "* H1\n** H2\n** H3"
+	    (let ((scope (org-element-map tree 'headline #'identity info t)))
+	      (mapcar (lambda (h) (org-element-property :raw-value h))
+		      (org-export-collect-headlines info nil scope))))))
   ;; When collecting locally, optional level is relative.
   (should
-   (= 1
-      (org-test-with-parsed-data "* H1\n** H2\n*** H3"
-	(let ((scope (org-element-map tree 'headline #'identity info t)))
-	  (length (org-export-collect-headlines info 1 scope)))))))
+   (equal '("H2")
+	  (org-test-with-parsed-data "* H1\n** H2\n*** H3"
+	    (let ((scope (org-element-map tree 'headline #'identity info t)))
+	      (mapcar (lambda (h) (org-element-property :raw-value h))
+		      (org-export-collect-headlines info 1 scope)))))))
+
+(ert-deftest test-org-export/excluded-from-toc-p ()
+  "Test `org-export-excluded-from-toc-p' specifications."
+  ;; By default, headlines are not excluded.
+  (should-not
+   (org-test-with-parsed-data "* H1"
+     (org-element-map tree 'headline
+       (lambda (h) (org-export-excluded-from-toc-p h info)) info t)))
+  ;; Exclude according to a maximum level.
+  (should
+   (equal '(in out)
+	  (org-test-with-parsed-data "#+OPTIONS: H:1\n* H1\n** H2"
+	    (org-element-map tree 'headline
+	      (lambda (h) (if (org-export-excluded-from-toc-p h info) 'out 'in))
+	      info))))
+  ;; Exclude according to UNNUMBERED property.
+  (should
+   (org-test-with-parsed-data "* H1\n:PROPERTIES:\n:UNNUMBERED: notoc\n:END:"
+     (org-element-map tree 'headline
+       (lambda (h) (org-export-excluded-from-toc-p h info)) info t)))
+  ;; UNNUMBERED property is inherited, so is "notoc" value.
+  (should
+   (equal '(out out)
+	  (org-test-with-parsed-data
+	      "* H1\n:PROPERTIES:\n:UNNUMBERED: notoc\n:END:\n** H2"
+	    (org-element-map tree 'headline
+	      (lambda (h) (if (org-export-excluded-from-toc-p h info) 'out 'in))
+	      info)))))
 
 (ert-deftest test-org-export/toc-entry-backend ()
   "Test `org-export-toc-entry-backend' specifications."
@@ -4422,10 +4629,10 @@ Another text. (ref:text)
 	    (let (org-export-registered-backends)
 	      (org-export-define-backend 'test
 		'((headline . (lambda (h _c i) (org-export-data-with-backend
-					   (org-element-property :title h)
-					   (org-export-toc-entry-backend 'test
-					     '(bold . (lambda (_b c _i) c)))
-					   i)))))
+						(org-element-property :title h)
+						(org-export-toc-entry-backend 'test
+						  '(bold . (lambda (_b c _i) c)))
+						i)))))
 	      (org-export-as 'test))))))
 
 

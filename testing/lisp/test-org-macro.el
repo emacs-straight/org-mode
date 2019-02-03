@@ -1,6 +1,6 @@
 ;;; test-org-macro.el --- Tests for org-macro.el
 
-;; Copyright (C) 2013, 2014  Nicolas Goaziou
+;; Copyright (C) 2013, 2014, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <n.goaziou@gmail.com>
 
@@ -29,9 +29,9 @@
    (equal
     "#+MACRO: A B\n1 B 3"
     (org-test-with-temp-text "#+MACRO: A B\n1 {{{A}}} 3"
-      (progn (org-macro-initialize-templates)
-             (org-macro-replace-all org-macro-templates)
-             (buffer-string)))))
+      (org-macro-initialize-templates)
+      (org-macro-replace-all org-macro-templates)
+      (buffer-string))))
   ;; Macro with arguments.
   (should
    (equal
@@ -43,20 +43,22 @@
   ;; Macro with "eval".
   (should
    (equal
-    "#+MACRO: add (eval (+ $1 $2))\n3"
-    (org-test-with-temp-text "#+MACRO: add (eval (+ $1 $2))\n{{{add(1,2)}}}"
-      (progn (org-macro-initialize-templates)
-             (org-macro-replace-all org-macro-templates)
-             (buffer-string)))))
+    "3"
+    (org-test-with-temp-text
+	"#+MACRO: add (eval (+ (string-to-number $1) (string-to-number $2)))
+<point>{{{add(1,2)}}}"
+      (org-macro-initialize-templates)
+      (org-macro-replace-all org-macro-templates)
+      (buffer-substring-no-properties (point) (line-end-position)))))
   ;; Nested macros.
   (should
    (equal
     "#+MACRO: in inner\n#+MACRO: out {{{in}}} outer\ninner outer"
     (org-test-with-temp-text
         "#+MACRO: in inner\n#+MACRO: out {{{in}}} outer\n{{{out}}}"
-      (progn (org-macro-initialize-templates)
-             (org-macro-replace-all org-macro-templates)
-             (buffer-string)))))
+      (org-macro-initialize-templates)
+      (org-macro-replace-all org-macro-templates)
+      (buffer-string))))
   ;; Error out when macro expansion is circular.
   (should-error
    (org-test-with-temp-text
@@ -75,39 +77,6 @@
       (org-macro-initialize-templates)
       (org-macro-replace-all org-macro-templates)
       (buffer-string))))
-  ;; Test special "property" macro.  With only one argument, retrieve
-  ;; property from current headline.  Otherwise, the second argument
-  ;; is a search option to get the property from another headline.
-  (should
-   (equal "1"
-	  (org-test-with-temp-text
-	      "* H\n:PROPERTIES:\n:A: 1\n:END:\n{{{property(A)}}}<point>"
-	    (org-macro-initialize-templates)
-	    (org-macro-replace-all org-macro-templates)
-	    (buffer-substring-no-properties
-	     (line-beginning-position) (line-end-position)))))
-  (should
-   (equal "1"
-	  (org-test-with-temp-text
-	      "* H\n:PROPERTIES:\n:A: 1\n:END:\n{{{property(A,)}}}<point>"
-	    (org-macro-initialize-templates)
-	    (org-macro-replace-all org-macro-templates)
-	    (buffer-substring-no-properties
-	     (line-beginning-position) (line-end-position)))))
-  (should
-   (equal
-    "1"
-    (org-test-with-temp-text
-	"* H1\n:PROPERTIES:\n:A: 1\n:END:\n* H2\n{{{property(A,*H1)}}}<point>"
-      (org-macro-initialize-templates)
-      (org-macro-replace-all org-macro-templates)
-      (buffer-substring-no-properties
-       (line-beginning-position) (line-end-position)))))
-  (should-error
-   (org-test-with-temp-text
-       "* H1\n:PROPERTIES:\n:A: 1\n:END:\n* H2\n{{{property(A,*???)}}}<point>"
-     (org-macro-initialize-templates)
-     (org-macro-replace-all org-macro-templates)))
   ;; Macro expansion ignores narrowing.
   (should
    (string-match
@@ -134,7 +103,18 @@
         "#+MACRO: macro expansion\n* COMMENT H1\n** H2\n<point>{{{macro}}}"
       (org-macro-initialize-templates)
       (org-macro-replace-all org-macro-templates)
-      (org-with-wide-buffer (buffer-string))))))
+      (org-with-wide-buffer (buffer-string)))))
+  ;; User-defined macros take precedence over built-in macros.
+  (should
+   (equal
+    "foo"
+    (org-test-with-temp-text
+        "#+MACRO: title foo\n#+TITLE: bar\n<point>{{{title}}}"
+      (org-macro-initialize-templates)
+      (org-macro-replace-all org-macro-templates)
+      (goto-char (point-max))
+      (buffer-substring-no-properties (line-beginning-position)
+				      (line-end-position))))))
 
 (ert-deftest test-org-macro/property ()
   "Test {{{property}}} macro."
@@ -321,6 +301,29 @@
             (org-macro-replace-all org-macro-templates)
             (buffer-substring-no-properties
              (line-beginning-position) (line-end-position))))))
+
+(ert-deftest test-org-macro/keyword ()
+  "Test {{{keyword}}} macro."
+  ;; Replace macro with keyword's value.
+  (should
+   (equal
+    "value"
+    (org-test-with-temp-text
+	"#+keyword: value\n<point>{{{keyword(KEYWORD)}}}"
+      (org-macro-initialize-templates)
+      (org-macro-replace-all org-macro-templates)
+      (buffer-substring-no-properties
+       (line-beginning-position) (point-max)))))
+  ;; Replace macro with keyword's value.
+  (should
+   (equal
+    "value value2"
+    (org-test-with-temp-text
+	"#+keyword: value\n#+keyword: value2\n<point>{{{keyword(KEYWORD)}}}"
+      (org-macro-initialize-templates)
+      (org-macro-replace-all org-macro-templates)
+      (buffer-substring-no-properties
+       (line-beginning-position) (point-max))))))
 
 (ert-deftest test-org-macro/escape-arguments ()
   "Test `org-macro-escape-arguments' specifications."

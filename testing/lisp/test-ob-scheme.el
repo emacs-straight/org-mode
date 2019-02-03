@@ -1,6 +1,6 @@
 ;;; test-ob-scheme.el --- Tests for Babel scheme     -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Nicolas Goaziou
+;; Copyright (C) 2017, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 
@@ -38,6 +38,26 @@
 	 (org-test-with-temp-text "#+begin_src scheme\n'(1 2 3)\n#+end_src"
 	   (org-babel-execute-maybe)
 	   (buffer-string))))
+
+(ert-deftest test-ob-scheme/verbatim ()
+  "Test verbatim output."
+  (should
+   (equal ": (1 2 3)\n"
+	  (org-test-with-temp-text "#+begin_src scheme :results verbatim\n'(1 2 3)\n#+end_src"
+	    (org-babel-execute-src-block)
+	    (let ((case-fold-search t)) (search-forward "#+results"))
+	    (buffer-substring-no-properties (line-beginning-position 2)
+					    (point-max))))))
+
+(ert-deftest test-ob-scheme/list ()
+  "Test list output."
+  (should
+   (equal "- 1\n- 2\n- 3\n"
+	  (org-test-with-temp-text "#+begin_src scheme :results list\n'(1 2 3)\n#+end_src"
+	    (org-babel-execute-maybe)
+	    (let ((case-fold-search t)) (search-forward "#+results"))
+	    (buffer-substring-no-properties (line-beginning-position 2)
+					    (point-max))))))
 
 (ert-deftest test-ob-scheme/prologue ()
   "Test :prologue parameter."

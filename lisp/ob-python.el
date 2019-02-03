@@ -1,6 +1,6 @@
 ;;; ob-python.el --- Babel Functions for Python      -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 ;; Authors: Eric Schulte
 ;;	 Dan Davison
@@ -28,9 +28,8 @@
 
 ;;; Code:
 (require 'ob)
+(require 'org-macs)
 
-(declare-function org-remove-indentation "org" )
-(declare-function org-trim "org" (s &optional keep-lead))
 (declare-function py-shell "ext:python-mode" (&optional argprompt))
 (declare-function py-toggle-shells "ext:python-mode" (arg))
 (declare-function run-python "ext:python" (&optional cmd dedicated show))
@@ -266,13 +265,13 @@ last statement in BODY, as elisp."
   (let ((raw
          (pcase result-type
            (`output (org-babel-eval org-babel-python-command
-				    (concat (if preamble (concat preamble "\n"))
+				    (concat preamble (and preamble "\n")
 					    body)))
            (`value (let ((tmp-file (org-babel-temp-file "python-")))
 		     (org-babel-eval
 		      org-babel-python-command
 		      (concat
-		       (if preamble (concat preamble "\n") "")
+		       preamble (and preamble "\n")
 		       (format
 			(if (member "pp" result-params)
 			    org-babel-python-pp-wrapper-method

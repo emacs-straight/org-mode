@@ -1,6 +1,6 @@
 ;;; test-org-clock.el --- Tests for org-clock.el
 
-;; Copyright (C) 2012, 2014, 2015  Nicolas Goaziou
+;; Copyright (C) 2012, 2014, 2015, 2019  Nicolas Goaziou
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 
@@ -322,9 +322,9 @@ the buffer."
       (insert (org-test-clock-create-clock "-2d 15:00" "-2d 18:00"))
       (test-org-clock-clocktable-contents ":block untilnow :indent nil")))))
 
-(ert-deftest test-org-clock/clocktable/tags ()
-  "Test \":tags\" parameter in Clock table."
-  ;; Test tag filtering.
+(ert-deftest test-org-clock/clocktable/match ()
+  "Test \":match\" parameter in Clock table."
+  ;; Test match filtering.
   (should
    (equal
     "| Headline     | Time   |      |
@@ -336,7 +336,22 @@ the buffer."
       (insert (org-test-clock-create-clock ". 1:00" ". 2:00"))
       (goto-line 4)
       (insert (org-test-clock-create-clock ". 2:00" ". 4:00"))
-      (test-org-clock-clocktable-contents ":tags \"tag\" :indent nil")))))
+      (test-org-clock-clocktable-contents ":match \"tag\" :indent nil")))))
+
+(ert-deftest test-org-clock/clocktable/tags ()
+  "Test \":tags\" parameter in Clock table."
+  ;; Test tags column.
+  (should
+   (equal
+    "| Tags | Headline     | Time   |      |
+|------+--------------+--------+------|
+|      | *Total time* | *1:00* |      |
+|------+--------------+--------+------|
+| tag  | H1           |        | 1:00 |"
+    (org-test-with-temp-text "** H1 :tag:\n\n*** H2 \n<point>"
+      (insert (org-test-clock-create-clock ". 1:00" ". 2:00"))
+      (goto-line 4)
+      (test-org-clock-clocktable-contents ":tags t :indent nil")))))
 
 (ert-deftest test-org-clock/clocktable/scope ()
   "Test \":scope\" parameter in Clock table."
@@ -962,7 +977,76 @@ CLOCK: [2017-12-27 Wed 08:00]--[2017-12-27 Wed 16:00] =>  8:00"
 	    (let ((system-time-locale "en_US"))
 	      (test-org-clock-clocktable-contents
 		  (concat ":step day :tstart \"<2017-12-25 Mon>\" "
-			  ":tend \"<2017-12-27 Wed 23:59>\" :stepskip0 t")))))))
+			  ":tend \"<2017-12-27 Wed 23:59>\" :stepskip0 t"))))))
+  ;; Regression test: Respect DST
+  (should
+   (equal "
+Daily report: [2018-10-29 Mon]
+| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *8:00* |
+|--------------+--------|
+| Foo          | 8:00   |
+"
+	  (org-test-with-temp-text
+	      "* Foo
+CLOCK: [2018-10-29 Mon 08:00]--[2018-10-29 Mon 16:00] =>  8:00"
+	    (let ((system-time-locale "en_US"))
+	      (test-org-clock-clocktable-contents
+		  (concat ":step day "
+			  ":stepskip0 t "
+			  ":tstart \"2018-10-01\" "
+			  ":tend \"2018-11-01\"")))))))
+
+(ert-deftest test-org-clock/clocktable/extend-today-until ()
+  "Test assignment of clock time to days in presence of \"org-extend-today-until\"."
+  ;; Basic test of :block with org-extend-today-until - the report for
+  ;; 2017-09-30 should include the time clocked on 2017-10-01 before
+  ;; 04:00.
+  (should
+   (equal "| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *2:00* |
+|--------------+--------|
+| Foo          | 2:00   |"
+	  (org-test-with-temp-text
+	   "* Foo
+CLOCK: [2017-09-30 Sat 12:00]--[2017-09-30 Sat 13:00] =>  1:00
+CLOCK: [2017-10-01 Sun 02:00]--[2017-10-01 Sun 03:00] =>  1:00
+CLOCK: [2017-10-01 Sun 11:00]--[2017-10-01 Sun 13:00] =>  2:00"
+	   (setq-local org-extend-today-until 4)
+	   (let ((system-time-locale "en_US"))
+	     (test-org-clock-clocktable-contents
+	      ":block 2017-09-30")))))
+
+  ;; Week-length block - time on Monday before 04:00 should be
+  ;; assigned to previous week.
+  (should
+   (equal "
+Weekly report starting on: [2017-10-01 Sun]
+| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *2:00* |
+|--------------+--------|
+| Foo          | 2:00   |
+
+Weekly report starting on: [2017-10-02 Mon]
+| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *2:00* |
+|--------------+--------|
+| Foo          | 2:00   |
+"
+	  (org-test-with-temp-text
+	   "* Foo
+CLOCK: [2017-10-01 Sun 12:00]--[2017-10-01 Sun 13:00] =>  1:00
+CLOCK: [2017-10-02 Mon 02:00]--[2017-10-02 Mon 03:00] =>  1:00
+CLOCK: [2017-10-02 Mon 11:00]--[2017-10-02 Mon 13:00] =>  2:00"
+	   (setq-local org-extend-today-until 4)
+	   (let ((system-time-locale "en_US"))
+	     (test-org-clock-clocktable-contents
+	      ":step week :block 2017-10 :stepskip0 t"))))))
+
 
 (provide 'test-org-clock)
 ;;; test-org-clock.el end here
