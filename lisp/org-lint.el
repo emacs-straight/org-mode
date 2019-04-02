@@ -558,8 +558,8 @@ Use :header-args: instead"
 (defun org-lint-link-to-local-file (ast)
   (org-element-map ast 'link
     (lambda (l)
-      (when (equal (org-element-property :type l) "file")
-	(let ((file (org-link-unescape (org-element-property :path l))))
+      (when (equal "file" (org-element-property :type l))
+	(let ((file (org-element-property :path l)))
 	  (and (not (file-remote-p file))
 	       (not (file-exists-p file))
 	       (list (org-element-property :begin l)
@@ -574,12 +574,13 @@ Use :header-args: instead"
     (lambda (k)
       (when (equal (org-element-property :key k) "SETUPFILE")
 	(let ((file (org-unbracket-string
-		     "\"" "\""
-		     (org-element-property :value k))))
-	  (and (not (file-remote-p file))
+			"\"" "\""
+		      (org-element-property :value k))))
+	  (and (not (org-file-url-p file))
+	       (not (file-remote-p file))
 	       (not (file-exists-p file))
 	       (list (org-element-property :begin k)
-		     (format "Non-existent setup file \"%s\"" file))))))))
+		     (format "Non-existent setup file %S" file))))))))
 
 (defun org-lint-wrong-include-link-parameter (ast)
   (org-element-map ast 'keyword

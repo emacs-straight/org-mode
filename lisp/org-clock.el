@@ -38,6 +38,7 @@
 (declare-function org-table-goto-line "org-table" (n))
 
 (defvar org-frame-title-format-backup frame-title-format)
+(defvar org-state)
 (defvar org-time-stamp-formats)
 
 
@@ -332,11 +333,12 @@ For more information, see `org-clocktable-write-default'."
   :version "24.1"
   :type 'alist)
 
-(defcustom org-clock-clocktable-default-properties '(:maxlevel 2 :scope file)
+(defcustom org-clock-clocktable-default-properties '(:maxlevel 2)
   "Default properties for new clocktables.
 These will be inserted into the BEGIN line, to make it easy for users to
 play with them."
   :group 'org-clocktable
+  :package-version '(Org . "9.2")
   :type 'plist)
 
 (defcustom org-clock-idle-time nil
@@ -1168,8 +1170,7 @@ so long."
 	     org-clock-marker (marker-buffer org-clock-marker))
     (let* ((org-clock-user-idle-seconds (org-user-idle-seconds))
 	   (org-clock-user-idle-start
-	    (time-subtract (current-time)
-			   (seconds-to-time org-clock-user-idle-seconds)))
+	    (time-since (seconds-to-time org-clock-user-idle-seconds)))
 	   (org-clock-resolving-clocks-due-to-idleness t))
       (if (> org-clock-user-idle-seconds (* 60 org-clock-idle-time))
 	  (org-clock-resolve
@@ -1178,9 +1179,8 @@ so long."
 	   (lambda (_)
 	     (format "Clocked in & idle for %.1f mins"
 		     (/ (float-time
-			 (time-subtract (current-time)
-					org-clock-user-idle-start))
-			60.0)))
+			 (time-since org-clock-user-idle-start))
+			60)))
 	   org-clock-user-idle-start)))))
 
 (defvar org-clock-current-task nil "Task currently clocked in.")
@@ -1599,7 +1599,7 @@ to, overriding the existing value of `org-clock-out-switch-to-state'."
 	  ;; Possibly remove zero time clocks.  However, do not add
 	  ;; a note associated to the CLOCK line in this case.
 	  (cond ((and org-clock-out-remove-zero-time-clocks
-		      (= (+ h m) 0))
+		      (= 0 h m))
 		 (setq remove t)
 		 (delete-region (line-beginning-position)
 				(line-beginning-position 2)))
@@ -1633,9 +1633,10 @@ to, overriding the existing value of `org-clock-out-switch-to-state'."
 						"\\>"))))
 		  (org-todo org-clock-out-switch-to-state))))))
 	  (force-mode-line-update)
-	  (message (concat "Clock stopped at %s after "
-			   (org-duration-from-minutes (+ (* 60 h) m)) "%s")
-		   te (if remove " => LINE REMOVED" ""))
+	  (message (if remove
+		       "Clock stopped at %s after %s => LINE REMOVED"
+		     "Clock stopped at %s after %s")
+		   te (org-duration-from-minutes (+ (* 60 h) m)))
 	  (run-hooks 'org-clock-out-hook)
 	  (unless (org-clocking-p)
 	    (setq org-clock-current-task nil)))))))
@@ -1934,13 +1935,14 @@ Use `\\[org-clock-remove-overlays]' to remove the subtree times."
 		    nil 'local))))
     (let* ((h (/ org-clock-file-total-minutes 60))
 	   (m (- org-clock-file-total-minutes (* 60 h))))
-      (message (concat (format "Total file time%s: "
-			       (cond (todayp " for today")
-				     (customp " (custom)")
-				     (t "")))
-		       (org-duration-from-minutes
-			org-clock-file-total-minutes)
-		       " (%d hours and %d minutes)")
+      (message (cond
+		(todayp
+		 "Total file time for today: %s (%d hours and %d minutes)")
+		(customp
+		 "Total file time (custom): %s (%d hours and %d minutes)")
+		(t
+		 "Total file time: %s (%d hours and %d minutes)"))
+	       (org-duration-from-minutes org-clock-file-total-minutes)
 	       h m))))
 
 (defvar-local org-clock-overlays nil)
@@ -1982,7 +1984,7 @@ If NOREMOVE is nil, remove this function from the
       (remove-hook 'before-change-functions
 		   'org-clock-remove-overlays 'local))))
 
-(defvar org-state) ;; dynamically scoped into this function
+;;;###autoload
 (defun org-clock-out-if-current ()
   "Clock out if the current entry contains the running clock.
 This is used to stop the clock after a TODO entry is marked DONE,
@@ -1999,15 +2001,12 @@ and is only done if the variable `org-clock-out-when-done' is not nil."
 		    (or (buffer-base-buffer (current-buffer))
 			(current-buffer)))
 	     (< (point) org-clock-marker)
-	     (> (save-excursion (outline-next-heading) (point))
+	     (> (org-with-wide-buffer (org-entry-end-position))
 		org-clock-marker))
     ;; Clock out, but don't accept a logging message for this.
     (let ((org-log-note-clock-out nil)
 	  (org-clock-out-switch-to-state nil))
       (org-clock-out))))
-
-(add-hook 'org-after-todo-state-change-hook
-	  'org-clock-out-if-current)
 
 ;;;###autoload
 (defun org-clock-get-clocktable (&rest props)
@@ -2383,9 +2382,15 @@ the currently selected interval size."
 		    (`file-with-archives
 		     (and buffer-file-name
 			  (org-add-archive-files (list buffer-file-name))))
+		    ((or `nil `file `subtree `tree
+			 (and (pred symbolp)
+			      (guard (string-match "\\`tree\\([0-9]+\\)\\'"
+						   (symbol-name scope)))))
+		     (or (buffer-file-name (buffer-base-buffer))
+			 (current-buffer)))
 		    ((pred functionp) (funcall scope))
 		    ((pred consp) scope)
-		    (_ (or (buffer-file-name) (current-buffer)))))
+		    (_ (user-error "Unknown scope: %S" scope))))
 	   (block (plist-get params :block))
 	   (ts (plist-get params :tstart))
 	   (te (plist-get params :tend))
@@ -2598,7 +2603,7 @@ from the dynamic block definition."
 	  (when multifile
 	    ;; Summarize the time collected from this file.
 	    (insert-before-markers
-	     (format (concat "| %s %s | %s%s"
+	     (format (concat "| %s %s | %s%s%s"
 			     (format org-clock-file-time-cell-format
 				     (org-clock--translate "File time" lang))
 			     " | *%s*|\n")

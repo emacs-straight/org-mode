@@ -1610,7 +1610,7 @@ INFO is a plist used as a communication channel."
 
 (defun org-latex-clean-invalid-line-breaks (data _backend _info)
   (replace-regexp-in-string
-   "\\(\\end{[A-Za-z0-9*]+}\\|^\\)[ \t]*\\\\\\\\[ \t]*$" "\\1"
+   "\\(\\\\end{[A-Za-z0-9*]+}\\|^\\)[ \t]*\\\\\\\\[ \t]*$" "\\1"
    data))
 
 
@@ -2500,8 +2500,10 @@ INFO is a plist holding contextual information.  See
 	 (path (org-latex--protect-text
 		(cond ((member type '("http" "https" "ftp" "mailto" "doi"))
 		       (concat type ":" raw-path))
-		      ((string= type "file") (org-export-file-uri raw-path))
-		      (t raw-path)))))
+		      ((string= type "file")
+		       (org-export-file-uri raw-path))
+		      (t
+		       raw-path)))))
     (cond
      ;; Link type is handled by a special function.
      ((org-export-custom-protocol-maybe link desc 'latex))

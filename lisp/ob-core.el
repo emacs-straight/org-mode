@@ -175,9 +175,14 @@ This string must include a \"%s\" which will be replaced by the results."
   :safe #'booleanp)
 
 (defun org-babel-noweb-wrap (&optional regexp)
-  (concat org-babel-noweb-wrap-start
-	  (or regexp "\\([^ \t\n].+?[^ \t]\\|[^ \t\n]\\)")
-	  org-babel-noweb-wrap-end))
+  "Return regexp matching a Noweb reference.
+
+Match any reference, or only those matching REGEXP, if non-nil.
+
+When matching, reference is stored in match group 1."
+  (concat (regexp-quote org-babel-noweb-wrap-start)
+	  (or regexp "\\([^ \t\n]\\(?:.*?[^ \t\n]\\)?\\)")
+	  (regexp-quote org-babel-noweb-wrap-end)))
 
 (defvar org-babel-src-name-regexp
   "^[ \t]*#\\+name:[ \t]*"
@@ -2967,7 +2972,7 @@ If the table is trivial, then return it as a scalar."
 (defun org-babel-string-read (cell)
   "Strip nested \"s from around strings."
   (org-babel-read (or (and (stringp cell)
-                           (string-match "\\\"\\(.+\\)\\\"" cell)
+                           (string-match "\"\\(.+\\)\"" cell)
                            (match-string 1 cell))
                       cell) t))
 
@@ -3148,7 +3153,8 @@ after the babel API for OLD-type source blocks is fully defined.
 Callers of this function will probably want to add an entry to
 `org-src-lang-modes' as well."
   (dolist (fn '("execute" "expand-body" "prep-session"
-		"variable-assignments" "load-session"))
+		"variable-assignments" "load-session"
+		"edit-prep"))
     (let ((sym (intern-soft (concat "org-babel-" fn ":" old))))
       (when (and sym (fboundp sym))
 	(defalias (intern (concat "org-babel-" fn ":" new)) sym))))

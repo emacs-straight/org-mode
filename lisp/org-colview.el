@@ -482,13 +482,15 @@ for the duration of the command.")
 (defun org-columns-hscroll-title ()
   "Set the `header-line-format' so that it scrolls along with the table."
   (sit-for .0001) ; need to force a redisplay to update window-hscroll
-  (when (not (= (window-hscroll) org-columns-previous-hscroll))
-    (setq header-line-format
-	  (concat (substring org-columns-full-header-line-format 0 1)
-		  (substring org-columns-full-header-line-format
-			     (1+ (window-hscroll))))
-	  org-columns-previous-hscroll (window-hscroll))
-    (force-mode-line-update)))
+  (let ((hscroll (window-hscroll)))
+    (when (/= org-columns-previous-hscroll hscroll)
+      (setq header-line-format
+	    (concat (substring org-columns-full-header-line-format 0 1)
+		    (substring org-columns-full-header-line-format
+			       (min (length org-columns-full-header-line-format)
+				    (1+ hscroll))))
+	    org-columns-previous-hscroll hscroll)
+      (force-mode-line-update))))
 
 (defvar org-colview-initial-truncate-line-value nil
   "Remember the value of `truncate-lines' across colview.")
@@ -565,9 +567,15 @@ for the duration of the command.")
       (org-columns-next-allowed-value)
     (org-columns-edit-value "TAGS")))
 
-(defvar org-agenda-overriding-columns-format nil
+(defvar org-overriding-columns-format nil
   "When set, overrides any other format definition for the agenda.
-Don't set this, this is meant for dynamic scoping.")
+Don't set this, this is meant for dynamic scoping.  Set
+`org-local-columns-format' instead.")
+
+(defvar-local org-local-columns-format nil
+  "When set, overrides any other format definition for the agenda.
+This can be set as a buffer local value to avoid interfering with
+dynamic scoping for `org-overriding-columns-format'.")
 
 (defun org-columns-edit-value (&optional key)
   "Edit the value of the property at point in column view.
@@ -628,7 +636,7 @@ Where possible, use the standard interface for changing this line."
       (org-columns--call action)
       ;; The following let preserves the current format, and makes
       ;; sure that in only a single file things need to be updated.
-      (let* ((org-agenda-overriding-columns-format org-columns-current-fmt)
+      (let* ((org-overriding-columns-format org-columns-current-fmt)
 	     (buffer (marker-buffer pom))
 	     (org-agenda-contributing-files
 	      (list (with-current-buffer buffer
@@ -722,7 +730,7 @@ an integer, select that value."
 	(org-columns--call action)
 	;; The following let preserves the current format, and makes
 	;; sure that in only a single file things need to be updated.
-	(let* ((org-agenda-overriding-columns-format org-columns-current-fmt)
+	(let* ((org-overriding-columns-format org-columns-current-fmt)
 	       (buffer (marker-buffer pom))
 	       (org-agenda-contributing-files
 		(list (with-current-buffer buffer
@@ -1224,10 +1232,7 @@ column specification."
   "Compute all columns that have operators defined."
   (with-silent-modifications
     (remove-text-properties (point-min) (point-max) '(org-summaries t)))
-  ;; Pass `current-time' result to `float-time' (instead of calling
-  ;; without arguments) so that only `current-time' has to be
-  ;; overridden in tests.
-  (let ((org-columns--time (float-time (current-time)))
+  (let ((org-columns--time (float-time))
 	seen)
     (dolist (spec org-columns-current-fmt-compiled)
       (let ((property (car spec)))
@@ -1566,7 +1571,8 @@ PARAMS is a property list of parameters:
   (let* ((org-columns--time (float-time))
 	 (fmt
 	  (cond
-	   ((bound-and-true-p org-agenda-overriding-columns-format))
+	   ((bound-and-true-p org-overriding-columns-format))
+	   ((bound-and-true-p org-local-columns-format))
 	   ((let ((m (org-get-at-bol 'org-hd-marker)))
 	      (and m
 		   (or (org-entry-get m "COLUMNS" t)

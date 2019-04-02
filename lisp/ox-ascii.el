@@ -1472,8 +1472,8 @@ contextual information."
 		   (replace-regexp-in-string
 		    "-" "•"
 		    (replace-regexp-in-string
-		     "+" "⁃"
-		     (replace-regexp-in-string "*" "‣" bul))))))))
+		     "\\+" "⁃"
+		     (replace-regexp-in-string "\\*" "‣" bul))))))))
 	 (indentation (if (eq list-type 'descriptive) org-ascii-quote-margin
 			(string-width bullet))))
     (concat
@@ -1600,7 +1600,9 @@ INFO is a plist holding contextual information."
 	  ;; Don't know what to do.  Signal it.
 	  (_ "???"))))
      (t
-      (let ((raw-link (org-element-property :raw-link link)))
+      (let ((raw-link (concat (org-element-property :type link)
+			      ":"
+			      (org-element-property :path link))))
 	(if (not (org-string-nw-p desc)) (format "<%s>" raw-link)
 	  (concat (format "[%s]" desc)
 		  (and (not (plist-get info :ascii-links-to-notes))
