@@ -92,7 +92,6 @@ Introduction
 
 Document Structure
 
-* Outlines::                     Org is based on Outline mode.
 * Headlines::                    How to typeset Org tree headlines.
 * Visibility Cycling::           Show and hide, much simplified.
 * Motion::                       Jumping to other headlines.
@@ -879,12 +878,16 @@ call @code{org-table-move-column-right}.
 
 @cindex document structure
 @cindex structure of document
-
-Org is based on Outline mode and provides flexible commands to
-edit the structure of the document.
+Org is an outliner.  Outlines allow a document to be organized in
+a hierarchical structure, which, least for me, is the best
+representation of notes and thoughts.  An overview of this structure
+is achieved by folding, i.e., hiding large parts of the document to
+show only the general document structure and the parts currently being
+worked on.  Org greatly simplifies the use of outlines by compressing
+the entire show and hide functionalities into a single command,
+@code{org-cycle}, which is bound to the @kbd{@key{TAB}} key.
 
 @menu
-* Outlines::                     Org is based on Outline mode.
 * Headlines::                    How to typeset Org tree headlines.
 * Visibility Cycling::           Show and hide, much simplified.
 * Motion::                       Jumping to other headlines.
@@ -895,21 +898,6 @@ edit the structure of the document.
 * Blocks::                       Folding blocks.
 * Creating Footnotes::           How footnotes are defined in Org's syntax.
 @end menu
-
-@node Outlines
-@section Outlines
-
-@cindex outlines
-@cindex Outline mode
-
-Org is implemented on top of Outline mode.  Outlines allow a document
-to be organized in a hierarchical structure, which, least for me, is
-the best representation of notes and thoughts.  An overview of this
-structure is achieved by folding, i.e., hiding large parts of the
-document to show only the general document structure and the parts
-currently being worked on.  Org greatly simplifies the use of outlines
-by compressing the entire show and hide functionalities into a single
-command, @code{org-cycle}, which is bound to the @kbd{@key{TAB}} key.
 
 @node Headlines
 @section Headlines
@@ -3493,8 +3481,16 @@ links to other files, Usenet articles, emails, and much more.
 @cindex link format
 @cindex format, of links
 
-Org recognizes plain URL-like links and activate them as clickable
-links.  The general link format, however, looks like this:
+@cindex angle bracket links
+@cindex plain links
+Org recognizes plain URIs, possibly wrapped within angle
+brackets@footnote{Plain URIs are recognized only for a well-defined set of
+schemes.  See @ref{External Links}.  Unlike URI syntax, they cannot contain
+parenthesis or white spaces, either.  URIs within angle brackets have
+no such limitation.}, and activate them as clickable links.
+
+@cindex bracket links
+The general link format, however, looks like this:
 
 @example
 [[LINK][DESCRIPTION]]
@@ -3509,7 +3505,20 @@ or alternatively
 @end example
 
 
-Once a link in the buffer is complete---all brackets present---, Org
+@cindex square brackets in links
+@cindex escape syntax, for links
+The @var{LINK} part cannot contain @samp{[} and @samp{]} characters.  You
+can replace them with their percent-encoded counterparts, which are,
+respectively, @samp{%5B} and @samp{%5D}.  You also need to encode @samp{%} characters
+as @samp{%25}.  Optionally, it may also come handy to encode consecutive
+spaces as @samp{%20}.
+
+Org takes for granted that such links are correctly escaped.  Luckily,
+functions inserting links (see @ref{Handling Links}) take care of this.
+You really need to bother about it only when inserting manually a URI
+within square brackets.
+
+Once a link in the buffer is complete, with all brackets present, Org
 changes the display so that @samp{DESCRIPTION} is displayed instead of
 @samp{[[LINK][DESCRIPTION]]} and @samp{LINK} is displayed instead of @samp{[[LINK]]}.
 Links are highlighted in the @code{org-link} face, which, by default, is an
@@ -7307,10 +7316,11 @@ Set to @code{week} or @code{day} to split the table into chunks.  To use
 this, @code{:block} or @code{:tstart}, @code{:tend} are needed.
 
 @item @samp{:stepskip0}
-Do not show steps that have zero time.
+When non-@code{nil}, do not show steps that have zero time.
 
 @item @samp{:fileskip0}
-Do not show table sections from files which did not contribute.
+When non-@code{nil}, do not show table sections from files which did
+not contribute.
 
 @item @samp{:match}
 A tags match to select entries that should contribute.  See
@@ -7325,7 +7335,7 @@ using the @samp{:formatter} parameter.
 
 @table @asis
 @item @samp{:emphasize}
-When @code{t}, emphasize level one and level two items.
+When non-@code{nil}, emphasize level one and level two items.
 
 @item @samp{:lang}
 Language@footnote{Language terms can be set through the variable
@@ -8333,7 +8343,7 @@ Add the following lines to the Emacs init file to have @kbd{C-c C-x a} attach fi
           (lambda ()
             (define-key dired-mode-map
               (kbd "C-c C-x a")
-              #'org-attach-dired-to-subtree))))
+              #'org-attach-dired-to-subtree)))
 @end lisp
 
 The following code shows how to bind the previous command with
@@ -8850,7 +8860,7 @@ important for a particular date, this information must be collected,
 sorted and displayed in an organized way.
 
 Org can select items based on various criteria and display them in
-a separate buffer.  Seven different view types are provided:
+a separate buffer.  Six different view types are provided:
 
 @itemize
 @item
@@ -10529,7 +10539,7 @@ Toggle mark of the entry at point for bulk action.
 @kindex M-*
 @findex org-agenda-bulk-toggle-all
 
-Mark entries matching a regular expression for bulk action.
+Toggle mark of every entry for bulk action.
 
 @item @kbd{%} (@code{org-agenda-bulk-mark-regexp})
 @kindex %
@@ -11105,11 +11115,11 @@ Org needs to make a decision which columns format to use.  Since
 the entries in the agenda are collected from different files, and
 different files may have different columns formats, this is
 a non-trivial problem.  Org first checks if the variable
-@code{org-agenda-overriding-columns-format} is currently set, and if so,
-takes the format from there.  Otherwise it takes the format
-associated with the first item in the agenda, or, if that item does
-not have a specific format (defined in a property, or in its file),
-it uses @code{org-columns-default-format}.
+@code{org-overriding-columns-format} is currently set, and if so, takes
+the format from there.  Otherwise it takes the format associated
+with the first item in the agenda, or, if that item does not have
+a specific format (defined in a property, or in its file), it uses
+@code{org-columns-default-format}.
 
 @item
 @cindex @samp{CLOCKSUM}, special property
@@ -12395,7 +12405,7 @@ backslash character.}.  For
 example
 
 @example
-#+MACRO: poem The rose is $1, The violet's $2. Life's ordered: Org assists you.
+#+MACRO: poem Rose is $1, violet's $2. Life's ordered: Org assists you.
 @{@{@{poem(red,blue)@}@}@}
 @end example
 
@@ -12403,7 +12413,7 @@ example
 becomes
 
 @example
-The rose is red, The violet's blue. Life's ordered: Org assists you.
+Rose is red, violet's blue. Life's ordered: Org assists you.
 @end example
 
 
@@ -12413,12 +12423,12 @@ Within such templates, arguments become strings.  Thus, the following
 macro
 
 @example
-#+MACRO: gnucheck (eval (concat "GNU/" (capitalize $1)))
+#+MACRO: gnustamp (eval (concat "GNU/" (capitalize $1)))
 @end example
 
 
 @noindent
-turns @samp{@{@{@{gnucheck(linux)@}@}@}} into @samp{GNU/Linux} during export.
+turns @samp{@{@{@{gnustamp(linux)@}@}@}} into @samp{GNU/Linux} during export.
 
 Org recognizes macro references in following Org markup areas:
 paragraphs, headlines, verse blocks, tables cells and lists.  Org also
@@ -12933,13 +12943,13 @@ property.
 Here is an example of an Org document ready for Beamer export.
 
 @example
-;#+TITLE: Example Presentation
-;#+AUTHOR: Carsten Dominik
-;#+OPTIONS: H:2 toc:t num:t
-;#+LATEX_CLASS: beamer
-;#+LATEX_CLASS_OPTIONS: [presentation]
-;#+BEAMER_THEME: Madrid
-;#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col) %8BEAMER_OPT(Opt)
+#+TITLE: Example Presentation
+#+AUTHOR: Carsten Dominik
+#+OPTIONS: H:2 toc:t num:t
+#+LATEX_CLASS: beamer
+#+LATEX_CLASS_OPTIONS: [presentation]
+#+BEAMER_THEME: Madrid
+#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
 
 * This is the first structural section
 
@@ -20125,8 +20135,8 @@ further based on their usage needs.  For example, the normal
 @cindex Info
 
 @findex org-info-find-node
-@kindex C-c C-x C-i
-@kbd{C-c C-x C-i} in an Org file tries to open a suitable section
+@kindex C-c C-x I
+@kbd{C-c C-x I} in an Org file tries to open a suitable section
 of the Org manual depending on the syntax at point.  For example,
 using it on a headline displays ``Document Structure'' section.
 
@@ -20881,8 +20891,9 @@ Comment and un-comment each line of the table during edits.  The
 To wrap a source table in @LaTeX{}, use the @samp{comment} environment
 provided by @samp{comment.sty}@footnote{@uref{https://www.ctan.org/pkg/comment}}.  To activate it, put
 @code{\usepackage@{comment@}} in the document header.  Orgtbl mode inserts
-a radio table skeleton@footnote{Because @samp{LEVEL=2} has 3 stars, @samp{LEVEL=3} has 4 stars, and so
-on.} with the command @kbd{M-x orgtbl-insert-radio-table}, which prompts for a table name.  For
+a radio table skeleton@footnote{By default this works only for @LaTeX{}, HTML, and Texinfo.
+Configure the variable @code{orgtbl-radio-table-templates} to install
+templates for other modes.} with the command @kbd{M-x orgtbl-insert-radio-table}, which prompts for a table name.  For
 example, if @samp{salesfigures} is the name, the template inserts:
 
 @example
