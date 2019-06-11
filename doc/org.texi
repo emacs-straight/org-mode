@@ -1120,24 +1120,24 @@ invisible edits and process them.
 The following commands jump to other headlines in the buffer.
 
 @table @asis
-@item @kbd{C-c C-n} (@code{outline-next-visible-heading})
+@item @kbd{C-c C-n} (@code{org-next-visible-heading})
 @kindex C-c C-n
-@findex outline-next-visible-heading
+@findex org-next-visible-heading
 Next heading.
 
-@item @kbd{C-c C-p} (@code{outline-previous-visible-heading})
+@item @kbd{C-c C-p} (@code{org-previous-visible-heading})
 @kindex C-c C-p
-@findex outline-previous-visible-heading
+@findex org-previous-visible-heading
 Previous heading.
 
-@item @kbd{C-c C-f} (@code{org-forward-same-level})
+@item @kbd{C-c C-f} (@code{org-forward-heading-same-level})
 @kindex C-c C-f
-@findex org-forward-same-level
+@findex org-forward-heading-same-level
 Next heading same level.
 
-@item @kbd{C-c C-b} (@code{org-backward-same-level})
+@item @kbd{C-c C-b} (@code{org-backward-heading-same-level})
 @kindex C-c C-b
-@findex org-backward-same-level
+@findex org-backward-heading-same-level
 Previous heading same level.
 
 @item @kbd{C-c C-u} (@code{outline-up-heading})
@@ -3786,12 +3786,12 @@ headline, which is also the description@footnote{If the headline contains a time
 link, which results in a wrong link---you should avoid putting
 a timestamp in the headline.}.
 
-@vindex org-link-to-org-use-id
+@vindex org-id-link-to-org-use-id
 @cindex @samp{CUSTOM_ID}, property
 @cindex @samp{ID}, property
 If the headline has a @samp{CUSTOM_ID} property, store a link to this
 custom ID@.  In addition or alternatively, depending on the value
-of @code{org-link-to-org-use-id}, create and/or use a globally unique
+of @code{org-id-link-to-org-use-id}, create and/or use a globally unique
 @samp{ID} property for the link@footnote{The Org Id library must first be loaded, either through
 @code{org-customize}, by enabling @code{id} in @code{org-modules}, or by adding
 @samp{(require 'org-id)} in your Emacs init file.}.  So using this command in Org
@@ -4023,7 +4023,7 @@ replacement text.  Here is an example:
         ("google"    . "http://www.google.com/search?q=")
         ("gmap"      . "http://maps.google.com/maps?q=%s")
         ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")
-        ("ads"       . "http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?author=%s&db_key=AST")))
+        ("ads"       . "https://ui.adsabs.harvard.edu/search/q=%20author%3A\"%s\"")))
 @end lisp
 
 If the replacement text contains the string @samp{%s}, it is replaced with
@@ -6844,16 +6844,6 @@ remove the scheduling date from the entry.  Depending on the
 variable @code{org-log-reschedule}, take a note when changing an
 existing scheduling time@footnote{Note the corresponding @samp{STARTUP} options @samp{logreschedule},
 @samp{lognotereschedule}, and @samp{nologreschedule}.}.
-
-@item @kbd{C-c C-x C-k} (@code{org-mark-entry-for-agenda-action})
-@kindex C-c C-x C-k
-@kindex k a
-@kindex k s
-@findex org-mark-entry-for-agenda-action
-Mark the current entry for agenda action.  After you have marked
-the entry like this, you can open the agenda or the calendar to
-find an appropriate date.  With point on the selected date, press
-@kbd{k s} or @kbd{k d} to schedule the marked item.
 
 @item @kbd{C-c / d} (@code{org-check-deadlines})
 @kindex C-c / d
@@ -10953,8 +10943,8 @@ See the docstring of the variable for more information.
 
 If you are away from your computer, it can be very useful to have
 a printed version of some agenda views to carry around.  Org mode can
-export custom agenda views as plain text, HTML@footnote{For HTML you need to install Hrvoje Niksic's @samp{htmlize.el}
-from @uref{https://github.com/hniksic/emacs-htmlize, Hrvoje Niksic's repository}.}, Postscript,
+export custom agenda views as plain text, HTML@footnote{For HTML you need to install Hrvoje Nikšić's @samp{htmlize.el}
+from @uref{https://github.com/hniksic/emacs-htmlize, Hrvoje Nikšić's repository}.}, Postscript,
 PDF@footnote{To create PDF output, the Ghostscript ps2pdf utility must be
 installed on the system.  Selecting a PDF file also creates the
 postscript file.}, and iCalendar files.  If you want to do this only
@@ -20022,7 +20012,7 @@ get the effect right.  For some black and white combinations,
 @item @emph{Odd levels}
 @vindex org-odd-levels-only
 Using stars for only odd levels, 1, 3, 5, @dots{}, can also clean up
-the clutter.  This removes two stars from each level@footnote{Because @samp{LEVEL=2} has 3 stars, @samp{LEVEL=3} has 4 stars, and so
+the clutter.  This removes two stars from each level@footnote{Because @samp{LEVEL=2} has 3 stars, @samp{LEVEL=3} has 5 stars, and so
 on.}.
 For Org to properly handle this cleaner structure during edits
 and exports, configure the variable @code{org-odd-levels-only}.  To
