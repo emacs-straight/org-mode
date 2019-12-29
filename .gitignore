@@ -33,7 +33,6 @@ org
 orgguide
 org-loaddefs.el
 org-version.el
-doc/orgguide.texi
 doc/org-version.inc
 doc/org-version.tex
 org-*.tar*
