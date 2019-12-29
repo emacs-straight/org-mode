@@ -1709,7 +1709,7 @@ The function assumes `org-table-copy-increment' is non-nil."
 	 (number-suffix-regexp (rx (and (one-or-more digit) string-end)))
 	 (analyze
 	  (lambda (field)
-	    ;; Analyse string FIELD and return information related to
+	    ;; Analyze string FIELD and return information related to
 	    ;; increment or nil.  When non-nil, return value has the
 	    ;; following scheme: (TYPE VALUE PATTERN) where
 	    ;; - TYPE is a symbol among `number', `prefix', `suffix'
@@ -4642,7 +4642,7 @@ blank, and the content is appended to the field above."
 	(skip-chars-backward " ")
 	(insert " " (org-trim s))
 	(org-table-align)))
-     ((looking-at "\\([^|]+\\)+|")	; Split field.
+     ((looking-at "\\([^|]+\\)|")	; Split field.
       (let ((s (match-string 1)))
 	(replace-match " |")
 	(goto-char (match-beginning 0))

@@ -6,7 +6,7 @@
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
 ;; Homepage: https://orgmode.org
-;; Version: 9.3
+;; Version: 9.3.1
 ;;
 ;; This file is part of GNU Emacs.
 ;;
@@ -4955,7 +4955,8 @@ The following commands are available:
 		   ("8.3" . "26.1")
 		   ("9.0" . "26.1")
 		   ("9.1" . "26.1")
-		   ("9.2" . "27.1")))
+		   ("9.2" . "27.1")
+		   ("9.3" . "27.1")))
 
 (defvar org-mode-transpose-word-syntax-table
   (let ((st (make-syntax-table text-mode-syntax-table)))
@@ -5249,7 +5250,15 @@ by a #."
   "Fontify #+ lines and blocks."
   (let ((case-fold-search t))
     (when (re-search-forward
-	   "^\\([ \t]*#\\(\\(\\+[a-zA-Z]+:?\\| \\|$\\)\\(_\\([a-zA-Z]+\\)\\)?\\)[ \t]*\\(\\([^ \t\n]*\\)[ \t]*\\(.*\\)\\)\\)"
+	   (rx bol (group (zero-or-more blank) "#"
+			  (group (group (or (seq "+" (one-or-more (any "a-zA-Z")) (optional ":"))
+					    space
+					    eol))
+				 (optional (group "_" (group (one-or-more (any "a-zA-Z"))))))
+			  (zero-or-more blank)
+			  (group (group (zero-or-more (not (any " \t\n"))))
+				 (zero-or-more blank)
+				 (group (zero-or-more any)))))
 	   limit t)
       (let ((beg (match-beginning 0))
 	    (end-of-beginline (match-end 0))
@@ -5267,7 +5276,12 @@ by a #."
 	  (setq block-type (downcase (match-string 5))
 		quoting (member block-type org-protecting-blocks)) ; src, example, export, maybe more
 	  (when (re-search-forward
-		 (concat "^[ \t]*#\\+end" (match-string 4) "\\>.*")
+		 (rx-to-string `(group bol (or (seq (one-or-more "*") space)
+					       (seq (zero-or-more blank)
+						    "#+end"
+						    ,(match-string 4)
+						    word-end
+						    (zero-or-more any)))))
 		 nil t)  ;; on purpose, we look further than LIMIT
 	    ;; We do have a matching #+end line
 	    (setq beg-of-endline (match-beginning 0)
@@ -5306,10 +5320,14 @@ by a #."
 	    (add-text-properties
 	     beg (if whole-blockline bol-after-beginline end-of-beginline)
 	     '(face org-block-begin-line))
-	    (add-text-properties
-	     beg-of-endline
-	     (min (point-max) (if whole-blockline (min (point-max) (1+ end-of-endline)) end-of-endline))
-	     '(face org-block-end-line))
+	    (unless (string-prefix-p "*" (match-string 1))
+	      (add-text-properties
+	       beg-of-endline
+	       (if whole-blockline
+		   (let ((beg-of-next-line (1+ end-of-endline)))
+		     (min (point-max) beg-of-next-line))
+		 (min (point-max) end-of-endline))
+	       '(face org-block-end-line)))
 	    t))
 	 ((member dc1 '("+title:" "+author:" "+email:" "+date:"))
 	  (org-remove-flyspell-overlays-in
@@ -5332,7 +5350,11 @@ by a #."
 	  ;; Handle short captions.
 	  (save-excursion
 	    (beginning-of-line)
-	    (looking-at "\\([ \t]*#\\+caption\\(?:\\[.*\\]\\)?:\\)[ \t]*"))
+	    (looking-at (rx (group (zero-or-more blank)
+				   "#+caption"
+				   (optional "[" (zero-or-more any) "]")
+				   ":")
+			    (zero-or-more blank))))
 	  (add-text-properties (line-beginning-position) (match-end 1)
 			       '(font-lock-fontified t face org-meta-line))
 	  (add-text-properties (match-end 0) (line-end-position)
@@ -7825,7 +7847,7 @@ with the original repeater."
 		"")))			;No time shift
 	 (doshift
 	  (and (org-string-nw-p shift)
-	       (or (string-match "\\`[ \t]*\\([\\+\\-]?[0-9]+\\)\\([dwmy]\\)[ \t]*\\'"
+	       (or (string-match "\\`[ \t]*\\([+-]?[0-9]+\\)\\([dwmy]\\)[ \t]*\\'"
 				 shift)
 		   (user-error "Invalid shift specification %s" shift)))))
     (goto-char end-of-tree)
@@ -9854,9 +9876,9 @@ Elements of length one have a tab appended.  Elements of length
 two are kept as is.  Longer elements are truncated to length two.
 
 If an element cannot be made unique, an error is raised."
-  (let ((orderd-keys (cl-sort (copy-sequence keys) #'< :key #'length))
+  (let ((ordered-keys (cl-sort (copy-sequence keys) #'< :key #'length))
 	menu-keys)
-    (dolist (key orderd-keys)
+    (dolist (key ordered-keys)
       (let ((potential-key
 	     (cl-case (length key)
 	       (1 (concat key "\t"))
@@ -10008,7 +10030,7 @@ By default the available states are \"TODO\" and \"DONE\".  So, for this
 example: when the item starts with TODO, it is changed to DONE.
 When it starts with DONE, the DONE is removed.  And when neither TODO nor
 DONE are present, add TODO at the beginning of the heading.
-You can set up single-charcter keys to fast-select the new state.  See the
+You can set up single-character keys to fast-select the new state.  See the
 `org-todo-keywords' and `org-use-fast-todo-selection' for details.
 
 With `\\[universal-argument]' prefix ARG, force logging the state change \
@@ -16499,12 +16521,16 @@ a HTML file."
 	(setq bg (org-latex-color :background))
       (setq bg (org-latex-color-format
 		(if (string= bg "Transparent") "white" bg))))
+    ;; Remove TeX \par at end of snippet to avoid trailing space.
+    (if (string-suffix-p string "\n")
+        (aset string (1- (length string)) ?%)
+      (setq string (concat string "%")))
     (with-temp-file texfile
       (insert latex-header)
       (insert "\n\\begin{document}\n"
-	      "\\definecolor{fg}{rgb}{" fg "}\n"
-	      "\\definecolor{bg}{rgb}{" bg "}\n"
-	      "\n\\pagecolor{bg}\n"
+	      "\\definecolor{fg}{rgb}{" fg "}%\n"
+	      "\\definecolor{bg}{rgb}{" bg "}%\n"
+	      "\n\\pagecolor{bg}%\n"
 	      "\n{\\color{fg}\n"
 	      string
 	      "\n}\n"
