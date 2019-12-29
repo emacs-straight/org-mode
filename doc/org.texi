@@ -549,7 +549,7 @@ Markdown.  New export backends can be derived from existing ones, or
 defined from scratch.
 
 Org files can include source code blocks, which makes Org uniquely
-suited for authoring technical documents with code examples. Org
+suited for authoring technical documents with code examples.  Org
 source code blocks are fully functional; they can be evaluated in
 place and their results can be captured in the file.  This makes it
 possible to create a single file reproducible research compendium.
@@ -1560,7 +1560,7 @@ My favorite scenes are (in this order)
 But in the end, no individual scenes matter but the film as a whole.
 Important actors in this film are:
 - Elijah Wood :: He plays Frodo
-- Sean Astin :: He plays Sam, Frodo's friend. I still remember him
+- Sean Astin :: He plays Sam, Frodo's friend.  I still remember him
      very well from his role as Mikey Walsh in /The Goonies/.
 @end example
 
@@ -1812,7 +1812,7 @@ as the first non-whitespace character is considered part of a table.
 @samp{|} is also the column separator@footnote{To insert a vertical bar into a table field, use @samp{\vert} or,
 inside a word @samp{abc\vert@{@}def}.}.  Moreover, a line starting
 with @samp{|-} is a horizontal rule.  It separates rows explicitly.  Rows
-before the first horizontal rule are header lines. A table might look
+before the first horizontal rule are header lines.  A table might look
 like this:
 
 @example
@@ -2163,12 +2163,12 @@ several columns or display them with a fixed width, regardless of
 content, as shown in the following example.
 
 @example
-|---+---------------------+--------|           |---+-------…|…|
+|---+---------------------+--------|           |---+-------…+…|
 |   | <6>                 |        |           |   | <6>   …|…|
 | 1 | one                 | some   |   ----\   | 1 | one   …|…|
 | 2 | two                 | boring |   ----/   | 2 | two   …|…|
 | 3 | This is a long text | column |           | 3 | This i…|…|
-|---+---------------------+--------|           |---+-------…|…|
+|---+---------------------+--------|           |---+-------…+…|
 @end example
 
 To set the width of a column, one field anywhere in the column may
@@ -2446,7 +2446,7 @@ Insert column number on odd rows, set field to empty on even rows.
 Copy text or values of each row of column 1 of the table named
 @var{FOO} into column 2 of the current table.
 
-@item @samp{@@3 = 2 * remote(FOO, @@@@1$$#)}
+@item @samp{@@3 = 2 * remote(FOO, @@1$$#)}
 Insert the doubled value of each column of row 1 of the table
 named @var{FOO} into row 3 of the current table.
 @end table
@@ -3429,29 +3429,26 @@ or alternatively
 
 @cindex escape syntax, for links
 @cindex backslashes, in links
-Some @samp{\} and @samp{]} characters in the @var{LINK} part need to be
-``escaped'', i.e., preceded by another @samp{\} character.  More
-specifically, the following character categories, and only them, must
-be escaped, in order:
+Some @samp{\}, @samp{[} and @samp{]} characters in the @var{LINK} part need to
+be ``escaped'', i.e., preceded by another @samp{\} character.  More
+specifically, the following characters, and only them, must be
+escaped:
 
 @enumerate
 @item
-all consecutive @samp{\} characters at the end of the link,
+all @samp{[} and @samp{]} characters,
 @item
-any @samp{]} character at the very end of the link,
+every @samp{\} character preceding either @samp{]} or @samp{[},
 @item
-all consecutive @samp{\} characters preceding @samp{][} or @samp{]]} patterns,
-@item
-any @samp{]} character followed by either @samp{[} or @samp{]}.
+every @samp{\} character at the end of the link.
 @end enumerate
 
 @findex org-link-escape
-Org takes for granted that such links are correctly escaped.
-Functions inserting links (see @ref{Handling Links}) take care of this.
-You only need to bother about those rules when inserting directly, or
-yanking, a URI within square brackets.  When in doubt, you may use the
-function @code{org-link-escape}, which turns a link string into its
-properly escaped form.
+Functions inserting links (see @ref{Handling Links}) properly escape
+ambiguous characters.  You only need to bother about the rules above
+when inserting directly, or yanking, a URI within square brackets.
+When in doubt, you may use the function @code{org-link-escape}, which turns
+a link string into its escaped form.
 
 Once a link in the buffer is complete, with all brackets present, Org
 changes the display so that @samp{DESCRIPTION} is displayed instead of
@@ -3479,29 +3476,32 @@ Literal links.
 
 @cindex internal links
 @cindex links, internal
-@cindex targets, for links
+
+A link that does not look like a URL---i.e., does not start with
+a known scheme or a file name---refers to the current document.  You
+can follow it with @kbd{C-c C-o} when point is on the link, or
+with a mouse click (see @ref{Handling Links}).
 
 @cindex @samp{CUSTOM_ID}, property
-If the link does not look like a URL, it is considered to be internal
-in the current file.  The most important case is a link like
-@samp{[[#my-custom-id]]} which links to the entry with the @samp{CUSTOM_ID} property
-@samp{my-custom-id}.  You are responsible yourself to make sure these
-custom IDs are unique in a file.
+Org provides several refinements to internal navigation within
+a document.  Most notably, a construct like @samp{[[#my-custom-id]]}
+specifically targets the entry with the @samp{CUSTOM_ID} property set to
+@samp{my-custom-id}.  Also, an internal link looking like @samp{[[*Some
+section]]} points to a headline with the name @samp{Some section}@footnote{To insert a link targeting a headline, in-buffer completion
+can be used.  Just type a star followed by a few optional letters into
+the buffer and press @kbd{M-@key{TAB}}.  All headlines in the current
+buffer are offered as completions.}.
 
-Links such as @samp{[[My Target]]} or @samp{[[My Target][Find my target]]} lead to a text search in
-the current file.
-
-The link can be followed with @kbd{C-c C-o} when point is on
-the link, or with a mouse click (see @ref{Handling Links}).  Links to
-custom IDs point to the corresponding headline.  The preferred match
-for a text link is a @emph{dedicated target}: the same string in double
-angular brackets, like @samp{<<My Target>>}.
+@cindex targets, for links
+When the link does not belong to any of the cases above, Org looks for
+a @emph{dedicated target}: the same string in double angular brackets, like
+@samp{<<My Target>>}.
 
 @cindex @samp{NAME}, keyword
 If no dedicated target exists, the link tries to match the exact name
-of an element within the buffer.  Naming is done with the @samp{NAME}
-keyword, which has to be put in the line before the element it refers
-to, as in the following example
+of an element within the buffer.  Naming is done, unsurprisingly, with
+the @samp{NAME} keyword, which has to be put in the line before the element
+it refers to, as in the following example
 
 @example
 #+NAME: My Target
@@ -3510,12 +3510,15 @@ to, as in the following example
 | of | four cells |
 @end example
 
-If none of the above succeeds, Org searches for a headline that is
-exactly the link text but may also include a TODO keyword and
-tags@footnote{To insert a link targeting a headline, in-buffer completion
-can be used.  Just type a star followed by a few optional letters into
-the buffer and press @kbd{M-@key{TAB}}.  All headlines in the current
-buffer are offered as completions.}.
+@vindex org-link-search-must-match-exact-headline
+Ultimately, if none of the above succeeds, Org searches for a headline
+that is exactly the link text but may also include a TODO keyword and
+tags, or initiates a plain text search, according to the value of
+@code{org-link-search-must-match-exact-headline}.
+
+Note that you must make sure custom IDs, dedicated targets, and names
+are unique throughout the document.  Org provides a linter to assist
+you in the process, if needed.  See @ref{Org Syntax}.
 
 During export, internal links are used to mark objects and assign them
 a number.  Marked objects are then referenced by links pointing to
@@ -3673,7 +3676,7 @@ options:
 @item 
 @tab @samp{file:projects.org}
 @item 
-@tab @samp{file:projects.org::some words} (text search) @footnote{The actual behavior of the search depends on the value of the
+@tab @samp{file:projects.org::some words} (text search)@footnote{The actual behavior of the search depends on the value of the
 variable @code{org-link-search-must-match-exact-headline}.  If its value is
 @code{nil}, then a fuzzy text search is done.  If it is @code{t}, then only the
 exact headline is matched, ignoring spaces and statistic cookies.  If
@@ -3834,7 +3837,7 @@ user/channel/server under the point.
 For any other file, the link points to the file, with a search
 string (see @ref{Search Options}) pointing to the contents
 of the current line.  If there is an active region, the selected
-words form the basis of the search string. You can write custom Lisp
+words form the basis of the search string.  You can write custom Lisp
 functions to select the search string and perform the search for
 particular file types (see @ref{Custom Searches}).
 
@@ -8107,7 +8110,7 @@ going through the interactive template selection, you can create your
 key binding like this:
 
 @lisp
-(define-key global-map "\C-cx"
+(define-key global-map (kbd "C-c x")
   (lambda () (interactive) (org-capture nil "x")))
 @end lisp
 
@@ -8226,9 +8229,15 @@ file and moves point to the right location.
 The template for creating the capture item.  If you leave this
 empty, an appropriate default template will be used.  Otherwise this
 is a string with escape codes, which will be replaced depending on
-time and context of the capture call.  The string with escapes may
-be loaded from a template file, using the special syntax @samp{(file
-  "template filename")}.  See below for more details.
+time and context of the capture call.  You may also get this
+template string from a file@footnote{When the file name is not absolute, Org assumes it is relative
+to @code{org-directory}.}, or dynamically, from a function
+using either syntax:
+
+@example
+(file "/path/to/template-file")
+(function FUNCTION-RETURNING-THE-TEMPLATE)
+@end example
 
 @item properties
 The rest of the entry is a property list of additional options.
@@ -8619,7 +8628,7 @@ By default folders attached to an outline node are inherited from
 parents according to @code{org-use-property-inheritance}.  If one instead
 want to set inheritance specifically for org-attach that can be done
 using @code{org-attach-use-inheritance}.  Inheriting documents through
-the node hierarchy makes a lot of sense in most cases. Especially
+the node hierarchy makes a lot of sense in most cases.  Especially
 since the introduction of @ref{Attachment links}.  The following example
 shows one use case for attachment inheritance:
 
@@ -8641,14 +8650,14 @@ image @samp{1.jpg}, since the link is inside a sub-heading to @samp{Chapter
 
 Inheritance works the same way for both @samp{ID} and @samp{DIR} property.  If
 both properties are defined on the same headline then @samp{DIR} takes
-precedance.  This is also true if inheritance is enabled.  If @samp{DIR}
+precedence.  This is also true if inheritance is enabled.  If @samp{DIR}
 is inherited from a parent node in the outline, that property still
 takes precedence over an @samp{ID} property defined on the node itself.
 
 @item @code{org-attach-method}
 @vindex org-attach-method
 When attaching files using the dispatcher @kbd{C-c C-a} it
-defaults to copying files.  The behaviour can be changed by
+defaults to copying files.  The behavior can be changed by
 customizing @code{org-attach-method}.  Options are Copy, Move/Rename,
 Hard link or Symbolic link.
 
@@ -9756,7 +9765,7 @@ then applied to the view and persists as a basic filter through
 refreshes and more secondary filtering.  The filter is a global
 property of the entire agenda view---in a block agenda, you should
 only set this in the global options section, not in the section of an
-individual block.}. You can switch quickly between
+individual block.}.  You can switch quickly between
 different filters without having to recreate the agenda.  @emph{Limits} on
 the other hand take effect before the agenda buffer is populated, so
 they are mostly useful when defined as local variables within custom
@@ -9804,7 +9813,7 @@ again by pressing @kbd{<}.
 @item @kbd{=} (@code{org-agenda-filter-by-regexp})
 @findex org-agenda-filter-by-regexp
 Filter the agenda view by a regular expression: only show agenda
-entries matching the regular expression the user entered. To clear
+entries matching the regular expression the user entered.  To clear
 the filter, call the command again by pressing @kbd{=}.
 
 @item @kbd{_} (@code{org-agenda-filter-by-effort})
@@ -9846,17 +9855,18 @@ in a single string, with full completion support.  For example,
 +work-John+<0:10-/plot/
 @end example
 
-selects entries with category `work' and effort estimates below 10
-minutes, and deselects entries with tag `John' or matching the
-regexp `plot'.  `+' can be left out if that does not lead to
+
+selects entries with category @samp{work} and effort estimates below 10
+minutes, and deselects entries with tag @samp{John} or matching the
+regexp @samp{plot}.  You can leave @samp{+} out if that does not lead to
 ambiguities.  The sequence of elements is arbitrary.  The filter
-syntax assumes that there is no overlap between categories and tags
-(tags will take priority).  If you reply to the prompt with the
+syntax assumes that there is no overlap between categories and tags.
+Otherwise, tags take priority.  If you reply to the prompt with the
 empty string, all filtering is removed.  If a filter is specified,
-it replaces all current filters.  But if you call the command with a
-double prefix argument, or if you add an additional `+'
-(e.g. `++work') to the front of the string, the new filter elements
-are added to the active ones.  A single prefix argument applies the
+it replaces all current filters.  But if you call the command with
+a double prefix argument, or if you add an additional @samp{+} (e.g.,
+@samp{++work}) to the front of the string, the new filter elements are
+added to the active ones.  A single prefix argument applies the
 entire filter in a negative sense.
 
 @item @kbd{|} (@code{org-agenda-filter-remove-all})
@@ -9867,35 +9877,34 @@ Remove all filters in the current agenda view.
 @subsubheading Computed tag filtering
 
 @vindex org-agenda-auto-exclude-function
-If the variable @code{org-agenda-auto-exclude-function} is set to a
-user-defined function, that function can select tags that should be
+If the variable @code{org-agenda-auto-exclude-function} is set to
+a user-defined function, that function can select tags that should be
 used as a tag filter when requested.  The function will be called with
-lower-case versions of all tags represented in the current view. The
-function should the return @samp{"-tag"} if the filter should remove
+lower-case versions of all tags represented in the current view.  The
+function should return @samp{"-tag"} if the filter should remove
 entries with that tag, @samp{"+tag"} if only entries with this tag should
-be kept, or @samp{nil} if that tag is irrelevant. For example, let's say
+be kept, or @samp{nil} if that tag is irrelevant.  For example, let's say
 you use a @samp{Net} tag to identify tasks which need network access, an
 @samp{Errand} tag for errands in town, and a @samp{Call} tag for making phone
 calls.  You could auto-exclude these tags based on the availability of
 the Internet, and outside of business hours, with something like this:
 
 @lisp
-(defun org-my-auto-exclude-fn (tag)
-  (if (cond
-       ((string= tag "net")
-        (/= 0 (call-process "/sbin/ping" nil nil nil
-                            "-c1" "-q" "-t1" "mail.gnu.org")))
-       ((member tag '("errand" "call"))
-        (let ((hr (nth 2 (decode-time))))
-          (or (< hr 8) (> hr 21)))))
-      (concat "-" tag)))
+(defun my-auto-exclude-fn (tag)
+  (when (cond ((string= tag "net")
+               (/= 0 (call-process "/sbin/ping" nil nil nil
+                                   "-c1" "-q" "-t1" "mail.gnu.org")))
+              ((member tag '("errand" "call"))
+               (let ((hr (nth 2 (decode-time))))
+                 (or (< hr 8) (> hr 21)))))
+    (concat "-" tag)))
 
-(setq org-agenda-auto-exclude-function 'org-my-auto-exclude-fn)
+(setq org-agenda-auto-exclude-function #'my-auto-exclude-fn)
 @end lisp
 
-You can apply this self-adapting filter by using a double prefix
-argument to @code{org-agenda-filter}, i.e. press @kbd{C-u C-u /}, or
-by pressing @kbd{@key{RET}} in @code{org-agenda-filter-by-tag}.
+You can apply this self-adapting filter by using a triple prefix
+argument to @code{org-agenda-filter}, i.e.@tie{}press @kbd{C-u C-u C-u /},
+or by pressing @kbd{@key{RET}} in @code{org-agenda-filter-by-tag}.
 
 @anchor{Setting limits for the agenda}
 @subsubheading Setting limits for the agenda
@@ -10294,7 +10303,7 @@ both in the agenda buffer and in the remote buffer.
 @kindex t
 @findex org-agenda-todo
 Change the TODO state of the item, both in the agenda and in the
-original Org file. A prefix arg is passed through to the @code{org-todo}
+original Org file.  A prefix arg is passed through to the @code{org-todo}
 command, so for example a @kbd{C-u} prefix are will trigger
 taking a note to document the state change.
 
@@ -11892,7 +11901,7 @@ back-ends:
 @end itemize
 
 Users can install libraries for additional formats from the Emacs
-packaging system. For easy discovery, these packages have a common
+packaging system.  For easy discovery, these packages have a common
 naming scheme: @code{ox-NAME}, where @var{NAME} is a format.  For
 example, @code{ox-koma-letter} for @emph{koma-letter} back-end.  More libraries
 can be found in the @samp{contrib/} directory (see @ref{Installation}).
@@ -12070,7 +12079,7 @@ Language to use for translating certain strings
 example, Org translates @samp{Table of contents} to the French @samp{Table des
   matières}@footnote{For export to @LaTeX{} format---or @LaTeX{}-related formats such as
 Beamer---, the @samp{org-latex-package-alist} variable needs further
-configuration. See @ref{@LaTeX{} specific export settings}.}.
+configuration.  See @ref{@LaTeX{} specific export settings}.}.
 
 @item @samp{SELECT_TAGS}
 @cindex @samp{SELECT_TAGS}, keyword
@@ -17989,7 +17998,7 @@ variable @code{org-babel-inline-result-wrap}, which by default is set to
 This is the name of the code block (see @ref{Structure of Code Blocks})
 to be evaluated in the current document.  If the block is located in
 another file, start @samp{<name>} with the file name followed by
-a colon. For example, in order to execute a block named @samp{clear-data}
+a colon.  For example, in order to execute a block named @samp{clear-data}
 in @samp{file.org}, you can write the following:
 
 @example
@@ -18165,7 +18174,7 @@ explicit @code{return} statement is mandatory when using @samp{:results
 code block.
 
 When evaluating the code block in a session (see @ref{Environment of a Code Block}), Org passes the code to an interpreter running as an
-interactive Emacs inferior process. Org gets the value from the
+interactive Emacs inferior process.  Org gets the value from the
 source code interpreter's last statement output.  Org has to use
 language-specific methods to obtain the value.  For example, from
 the variable @code{_} in Python and Ruby, and the value of @code{.Last.value}
@@ -20117,8 +20126,10 @@ using it on a headline displays ``Document Structure'' section.
 @cindex zero width space
 You may sometimes want to write text that looks like Org syntax, but
 should really read as plain text.  Org may use a specific escape
-character in some situations, e.g., a backslash in macros (see @ref{Macro Replacement}) or a comma in source and example blocks (see @ref{Literal Examples}).  In the general case, however, we suggest to use the zero
-width space.  You can insert one with any of the following:
+character in some situations, i.e., a backslash in macros (see @ref{Macro Replacement}) and links (see @ref{Link Format}), or a comma in source and
+example blocks (see @ref{Literal Examples}).  In the general case, however,
+we suggest to use the zero width space.  You can insert one with any
+of the following:
 
 @example
 C-x 8 <RET> zero width space <RET>
@@ -20618,8 +20629,8 @@ javascript:location.href='org-protocol://capture?template=x'+
 
 @vindex org-protocol-default-template-key
 The capture template to be used can be specified in the bookmark (like
-@samp{X} above). If unspecified, the template key is set in the variable
-@code{org-protocol-default-template-key}. The following template
+@samp{X} above).  If unspecified, the template key is set in the variable
+@code{org-protocol-default-template-key}.  The following template
 placeholders are available:
 
 @example
@@ -21385,11 +21396,11 @@ Update all dynamic blocks in the current file.
 
 Before updating a dynamic block, Org removes content between the
 @samp{BEGIN} and @samp{END} markers.  Org then reads the parameters on the
-@samp{BEGIN} line for passing to the writer function as a plist. The
+@samp{BEGIN} line for passing to the writer function as a plist.  The
 previous content of the dynamic block becomes erased from the buffer
 and appended to the plist under @code{:content}.
 
-The syntax for naming a writer function with a dynamic block labelled
+The syntax for naming a writer function with a dynamic block labeled
 @samp{myblock} is: @code{org-dblock-write:myblock}.
 
 The following is an example of a dynamic block and a block writer function
@@ -21987,7 +21998,7 @@ a JavaScript program for displaying webpages derived from Org using
 an Info-like or a folding interface with single-key navigation.
 @end table
 
-See below for the full list of contributions! Again, please let me
+See below for the full list of contributions!  Again, please let me
 know what I am missing here!
 
 @anchor{From Bastien}
