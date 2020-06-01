@@ -31,6 +31,7 @@
 
 (ert-deftest test-org-attach/dir ()
   "Test `org-attach-get' specifications."
+  ;; Make sure example files will be visited inside Emacs.
   (let ((org-file-apps '((t . emacs))))
     (should (equal "Text in fileA\n"
 		   (org-test-in-example-file org-test-attachments-file

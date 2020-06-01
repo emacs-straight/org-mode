@@ -259,8 +259,9 @@ echo 1
 
 (ert-deftest ob-tangle/jump-to-org ()
   "Test `org-babel-tangle-jump-to-org' specifications."
-  ;; Standard test.
+  ;; Make sure temporary files will be visited inside Emacs.
   (let ((org-file-apps '((t . emacs))))
+    ;; Standard test.
     (should
      (equal
       "* H\n#+begin_src emacs-lisp\n1\n#+end_src"
