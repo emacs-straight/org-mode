@@ -164,10 +164,7 @@ This function is called by `org-babel-execute-src-block'."
 	      (header (if (or (eq (nth 1 value) 'hline) colnames-p)
 			  "TRUE" "FALSE"))
 	      (row-names (if rownames-p "1" "NULL")))
-	  (if (= max min)
-	      (format "%s = readcsv(\"%s\")" name file)
-	    (format "%s = readcsv(\"%s\")"
-		    name file))))
+	  (format "using DelimitedFiles; %s = readdlm(\"%s\")" name file)))
     (format "%s = %s" name (org-babel-julia-quote-csv-field value))))
 
 (defvar ess-ask-for-ess-directory) ; dynamically scoped
