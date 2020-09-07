@@ -1,6 +1,6 @@
 ;;; org-faces.el --- Face definitions -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2004-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -393,9 +393,10 @@ follows a #+DATE:, #+AUTHOR: or #+EMAIL: keyword."
   "Face for #+TITLE:, #+AUTHOR:, #+EMAIL: and #+DATE: keywords."
   :group 'org-faces)
 
-(defface org-block '((t :inherit shadow))
+(defface org-block `((t :inherit shadow
+			,@(and (>= emacs-major-version 27) '(:extend t))))
   "Face text in #+begin ... #+end blocks.
-For source-blocks `org-src-block-faces' takes precedence."
+For source-blocks, `org-src-block-faces' takes precedence."
   :group 'org-faces
   :version "26.1")
 

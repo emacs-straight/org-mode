@@ -1,6 +1,6 @@
 ;;; ob-tangle.el --- Extract Source Code From Org Files -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2020 Free Software Foundation, Inc.
 
 ;; Author: Eric Schulte
 ;; Keywords: literate programming, reproducible research
@@ -471,9 +471,9 @@ non-nil, return the full association list to be used by
 		  file)
 		(if (and org-babel-tangle-use-relative-file-links
 			 (string-match org-link-types-re link)
-			 (string= (match-string 0 link) "file"))
+			 (string= (match-string 1 link) "file"))
 		    (concat "file:"
-			    (file-relative-name (match-string 1 link)
+			    (file-relative-name (substring link (match-end 0))
 						(file-name-directory
 						 (cdr (assq :tangle params)))))
 		  link)

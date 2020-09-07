@@ -1,6 +1,6 @@
 ;;; org-clock.el --- The time clocking code for Org mode -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2004-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -35,6 +35,10 @@
 (declare-function notifications-notify "notifications" (&rest params))
 (declare-function org-element-property "org-element" (property element))
 (declare-function org-element-type "org-element" (element))
+(declare-function org-inlinetask-at-task-p "org-inlinetask" ())
+(declare-function org-inlinetask-goto-beginning "org-inlinetask" ())
+(declare-function org-inlinetask-goto-end "org-inlinetask" ())
+(declare-function org-inlinetask-in-task-p "org-inlinetask" ())
 (declare-function org-link-display-format "ol" (s))
 (declare-function org-link-heading-search-string "ol" (&optional string))
 (declare-function org-link-make-string "ol" (link &optional description))
@@ -808,6 +812,7 @@ If PLAY-SOUND is non-nil, it overrides `org-clock-sound'."
   "Show notification.
 Use `org-show-notification-handler' if defined,
 use libnotify if available, or fall back on a message."
+  (ignore-errors (require 'notifications))
   (cond ((functionp org-show-notification-handler)
 	 (funcall org-show-notification-handler notification))
 	((stringp org-show-notification-handler)
@@ -1579,7 +1584,7 @@ to, overriding the existing value of `org-clock-out-switch-to-state'."
 	     org-clock-out-switch-to-state))
 	  (now (org-current-time org-clock-rounding-minutes))
 	  ts te s h m remove)
-      (setq org-clock-out-time now)
+      (setq org-clock-out-time (or at-time now))
       (save-excursion ; Do not replace this with `with-current-buffer'.
 	(with-no-warnings (set-buffer (org-clocking-buffer)))
 	(save-restriction
@@ -1890,7 +1895,12 @@ PROPNAME lets you set a custom text property instead of :org-clock-minutes."
   "Return time, clocked on current item in total."
   (save-excursion
     (save-restriction
-      (org-narrow-to-subtree)
+      (if (and (featurep 'org-inlinetask)
+	       (or (org-inlinetask-at-task-p)
+		   (org-inlinetask-in-task-p)))
+	  (narrow-to-region (save-excursion (org-inlinetask-goto-beginning) (point))
+			    (save-excursion (org-inlinetask-goto-end) (point)))
+	(org-narrow-to-subtree))
       (org-clock-sum tstart)
       org-clock-file-total-minutes)))
 
@@ -2067,7 +2077,10 @@ in the buffer and update it."
     (start (goto-char start)))
   (org-update-dblock))
 
-(org-dynamic-block-define "clocktable" #'org-clock-report)
+;;;###autoload
+(eval-after-load 'org
+  '(progn
+     (org-dynamic-block-define "clocktable" #'org-clock-report)))
 
 (defun org-day-of-week (day month year)
   "Return the day of the week as an integer."

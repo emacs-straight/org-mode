@@ -1,5 +1,5 @@
 ;;; org-crypt.el --- Public Key Encryption for Org Entries -*- lexical-binding: t; -*-
-;; Copyright (C) 2007-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2007-2020 Free Software Foundation, Inc.
 
 ;; Emacs Lisp Archive Entry
 ;; Filename: org-crypt.el
@@ -174,7 +174,7 @@ See `org-crypt-disable-auto-save'."
    (org-back-to-heading t)
    (setq-local epg-context (epg-make-context nil t t))
    (let ((start-heading (point)))
-     (org-end-of-meta-data)
+     (org-end-of-meta-data t)
      (unless (looking-at-p "-----BEGIN PGP MESSAGE-----")
        (let ((folded (org-invisible-p))
 	     (crypt-key (org-crypt-key-for-heading))
@@ -205,7 +205,7 @@ See `org-crypt-disable-auto-save'."
 	    (save-excursion
 	      (outline-end-of-heading)
 	      (org-invisible-p))))
-       (org-end-of-meta-data)
+       (org-end-of-meta-data t)
        (when (looking-at "-----BEGIN PGP MESSAGE-----")
 	 (org-crypt-check-auto-save)
 	 (setq-local epg-context (epg-make-context nil t t))

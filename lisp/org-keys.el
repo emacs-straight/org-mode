@@ -1,6 +1,6 @@
 ;;; org-keys.el --- Key bindings for Org mode        -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2018-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2018-2020 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 
@@ -218,7 +218,7 @@
 ;;; Variables
 
 (defvar org-mode-map (make-sparse-keymap)
-  "Keymap fo Org mode.")
+  "Keymap for Org mode.")
 
 (defvaralias 'org-CUA-compatible 'org-replace-disputed-keys)
 

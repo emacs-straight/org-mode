@@ -1,6 +1,6 @@
 ;;; org-goto.el --- Fast navigation in an Org buffer  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2012-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -234,20 +234,15 @@ position or nil."
 	 (and (get-buffer "*org-goto*") (kill-buffer "*org-goto*"))
 	 (pop-to-buffer-same-window
 	  (condition-case nil
-	      (make-indirect-buffer (current-buffer) "*org-goto*")
-	    (error (make-indirect-buffer (current-buffer) "*org-goto*"))))
+	      (make-indirect-buffer (current-buffer) "*org-goto*" t)
+	    (error (make-indirect-buffer (current-buffer) "*org-goto*" t))))
 	 (let (temp-buffer-show-function temp-buffer-show-hook)
 	   (with-output-to-temp-buffer "*Org Help*"
 	   (princ (format help (if org-goto-auto-isearch
 				   "  Just type for auto-isearch."
 				 "  n/p/f/b/u to navigate, q to quit.")))))
 	 (org-fit-window-to-buffer (get-buffer-window "*Org Help*"))
-	 (setq buffer-read-only nil)
-	 (let ((org-startup-truncated t)
-	       (org-startup-folded nil)
-	       (org-startup-align-all-tables nil))
-	   (org-mode)
-	   (org-overview))
+	 (org-overview)
 	 (setq buffer-read-only t)
 	 (if (and (boundp 'org-goto-start-pos)
 		  (integer-or-marker-p org-goto-start-pos))

@@ -1,6 +1,6 @@
 ;;; org-eldoc.el --- display org header and src block info using eldoc
 
-;; Copyright (c) 2014-2018 Free Software Foundation, Inc.
+;; Copyright (c) 2014-2020 Free Software Foundation, Inc.
 
 ;; Author: Łukasz Gruner <lukasz@gruner.lu>
 ;; Maintainer: Łukasz Gruner <lukasz@gruner.lu>
@@ -127,7 +127,7 @@
 (declare-function php-eldoc-function "php-eldoc" ())
 (declare-function go-eldoc--documentation-function "go-eldoc" ())
 
-(defun org-eldoc-documentation-function ()
+(defun org-eldoc-documentation-function (&rest _ignored)
   "Return breadcrumbs when on a headline, args for src block header-line,
   calls other documentation functions depending on lang when inside src body."
   (or
@@ -136,10 +136,16 @@
    (let ((lang (org-eldoc-get-src-lang)))
      (cond ((or
              (string= lang "emacs-lisp")
-             (string= lang "elisp")) (if (fboundp 'elisp-eldoc-documentation-function)
-                                         (elisp-eldoc-documentation-function)
-                                       (let (eldoc-documentation-function)
-                                         (eldoc-print-current-symbol-info))))
+             (string= lang "elisp"))
+	    (cond ((boundp 'eldoc-documentation-functions) ; Emacs>=28
+		   (let ((eldoc-documentation-functions
+			  '(elisp-eldoc-var-docstring elisp-eldoc-funcall)))
+		     (eldoc-print-current-symbol-info)))
+		  ((fboundp 'elisp-eldoc-documentation-function)
+		   (elisp-eldoc-documentation-function))
+		  (t  			; Emacs<25
+		   (let (eldoc-documentation-function)
+		     (eldoc-print-current-symbol-info)))))
            ((or
              (string= lang "c") ;; http://github.com/nflath/c-eldoc
              (string= lang "C")) (when (require 'c-eldoc nil t)
@@ -161,7 +167,18 @@
 (defun org-eldoc-load ()
   "Set up org-eldoc documentation function."
   (interactive)
-  (setq-local eldoc-documentation-function #'org-eldoc-documentation-function))
+  ;; This approach is taken from python.el.
+  (with-no-warnings
+    (cond
+     ((null eldoc-documentation-function) ; Emacs<25
+      (setq-local eldoc-documentation-function
+		  #'org-eldoc-documentation-function))
+     ((boundp 'eldoc-documentation-functions) ; Emacs>=28
+      (add-hook 'eldoc-documentation-functions
+		#'org-eldoc-documentation-function nil t))
+     (t
+      (add-function :before-until (local 'eldoc-documentation-function)
+		    #'org-eldoc-documentation-function)))))
 
 ;;;###autoload
 (add-hook 'org-mode-hook #'org-eldoc-load)

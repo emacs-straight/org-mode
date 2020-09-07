@@ -1,6 +1,6 @@
 ;;; org-compat.el --- Compatibility Code for Older Emacsen -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2004-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -100,6 +100,14 @@ is nil)."
     (floor (float-time time)))
   (defun org-time-convert-to-list (time)
     (seconds-to-time (float-time time))))
+
+(defun org--set-faces-extend (faces extend-p)
+  "Set the :extend attribute of FACES to EXTEND-P.
+
+This is a no-op for Emacs versions lower than 27, since face
+extension beyond end of line was not controllable."
+  (when (fboundp 'set-face-extend)
+    (mapc (lambda (f) (set-face-extend f extend-p)) faces)))
 
 
 ;;; Emacs < 26.1 compatibility
@@ -1043,7 +1051,8 @@ key."
     ((guard (not (lookup-key calendar-mode-map "c")))
      (local-set-key "c" #'org-calendar-goto-agenda))
     (_ nil))
-  (unless (eq org-agenda-diary-file 'diary-file)
+  (unless (and (boundp 'org-agenda-diary-file)
+	       (eq org-agenda-diary-file 'diary-file))
     (local-set-key org-calendar-insert-diary-entry-key
 		   #'org-agenda-diary-entry)))
 

@@ -1,6 +1,6 @@
 ;;; ol-bibtex.el --- Links to BibTeX entries        -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2007-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2007-2020 Free Software Foundation, Inc.
 ;;
 ;; Authors: Bastien Guerry <bzg@gnu.org>
 ;;       Carsten Dominik <carsten dot dominik at gmail dot com>
@@ -95,7 +95,7 @@
 ;; The link creation part has been part of Org for a long time.
 ;;
 ;; Creating better capture template information was inspired by a request
-;; of Austin Frank: http://article.gmane.org/gmane.emacs.orgmode/4112
+;; of Austin Frank: https://orgmode.org/list/m0myu03vbx.fsf@gmail.com
 ;; and then implemented by Bastien Guerry.
 ;;
 ;; Eric Schulte eventually added the functions for translating between

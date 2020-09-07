@@ -1,6 +1,6 @@
 ;;; ox-koma-letter.el --- KOMA Scrlttr2 Back-End for Org Export Engine
 
-;; Copyright (C) 2007-2018  Free Software Foundation, Inc.
+;; Copyright (C) 2007-2020  Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou AT gmail DOT com>
 ;;         Alan Schmitt <alan.schmitt AT polytechnique DOT org>
@@ -748,7 +748,8 @@ holding export options."
                 (if (symbolp with-subject) with-subject
                   (mapconcat #'symbol-name with-subject ","))))
       ;; Hyperref.
-      (format-spec hyperref-template spec)
+      (and (stringp hyperref-template)
+	   (format-spec hyperref-template spec))
       ;; Document start.
       "\\begin{document}\n\n"
       ;; Subject and title.

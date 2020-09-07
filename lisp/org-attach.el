@@ -1,10 +1,9 @@
 ;;; org-attach.el --- Manage file attachments to Org outlines -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2008-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2020 Free Software Foundation, Inc.
 
 ;; Author: John Wiegley <johnw@newartisans.com>
 ;; Keywords: org data attachment
-
 ;; This file is part of GNU Emacs.
 ;;
 ;; GNU Emacs is free software: you can redistribute it and/or modify
@@ -129,8 +128,7 @@ Selective means to respect the inheritance setting in
   :type '(choice
 	  (const :tag "Don't use inheritance" nil)
 	  (const :tag "Inherit parent node attachments" t)
-	  (const :tag "Respect org-use-property-inheritance" selective))
-  :type 'boolean)
+	  (const :tag "Respect org-use-property-inheritance" selective)))
 
 (defcustom org-attach-store-link-p nil
   "Non-nil means store a link to a file when attaching it."
@@ -429,7 +427,7 @@ attachment-folder.
 
 Change of attachment-folder due to unset might be if an ID
 property is set on the node, or if a separate inherited
-DIR-property exists (that is different than the unset one)."
+DIR-property exists (that is different from the unset one)."
   (interactive)
   (let ((old (org-attach-dir))
 	(new
@@ -491,7 +489,7 @@ METHOD may be `cp', `mv', `ln', `lns' or `url' default taken from
 `org-attach-method'."
   (interactive
    (list
-    (read-file-name "File to keep as an attachment:"
+    (read-file-name "File to keep as an attachment: "
                     (or (progn
                           (require 'dired-aux)
                           (dired-dwim-target-directory))
@@ -516,7 +514,7 @@ METHOD may be `cp', `mv', `ln', `lns' or `url' default taken from
              (org-attach-store-link file)))
       (if visit-dir
           (dired attach-dir)
-        (message "File %S is now an attachment." basename)))))
+        (message "File %S is now an attachment" basename)))))
 
 (defun org-attach-attach-cp ()
   "Attach a file by copying it."
@@ -569,13 +567,18 @@ The attachment is created as an Emacs buffer."
 (defun org-attach-delete-all (&optional force)
   "Delete all attachments from the current outline node.
 This actually deletes the entire attachment directory.
-A safer way is to open the directory in dired and delete from there."
+A safer way is to open the directory in dired and delete from there.
+
+With prefix argument FORCE, directory will be recursively deleted
+with no prompts."
   (interactive "P")
   (let ((attach-dir (org-attach-dir)))
     (when (and attach-dir
 	       (or force
 		   (yes-or-no-p "Really remove all attachments of this entry? ")))
-      (delete-directory attach-dir (yes-or-no-p "Recursive?") t)
+      (delete-directory attach-dir
+			(or force (yes-or-no-p "Recursive?"))
+			t)
       (message "Attachment directory removed")
       (run-hook-with-args 'org-attach-after-change-hook attach-dir)
       (org-attach-untag))))

@@ -1,6 +1,6 @@
 ;;; ol.el --- Org links library                      -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2018-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2018-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -1454,10 +1454,16 @@ non-nil."
 	  (org-link-store-props :type "calendar" :date cd)))
 
        ((eq major-mode 'help-mode)
-	(setq link (concat "help:" (save-excursion
-				     (goto-char (point-min))
-				     (looking-at "^[^ ]+")
-				     (match-string 0))))
+	(let ((symbol (replace-regexp-in-string
+		       ;; Help mode escapes backquotes and backslashes
+		       ;; before displaying them.  E.g., "`" appears
+		       ;; as "\'" for reasons.  Work around this.
+		       (rx "\\" (group (or "`" "\\"))) "\\1"
+		       (save-excursion
+			 (goto-char (point-min))
+			 (looking-at "^[^ ]+")
+			 (match-string 0)))))
+	  (setq link (concat "help:" symbol)))
 	(org-link-store-props :type "help"))
 
        ((eq major-mode 'w3-mode)

@@ -1,6 +1,6 @@
 ;;; org-macro.el --- Macro Replacement Code for Org  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2013-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2013-2020 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou@gmail.com>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -88,11 +88,10 @@ directly, use instead:
 VALUE is the template of the macro.  The new value override the
 previous one, unless VALUE is nil.  TEMPLATES is the list of
 templates.  Return the updated list."
-  (when value
-    (let ((old-definition (assoc name templates)))
-      (if old-definition
-	  (setcdr old-definition value)
-	(push (cons name value) templates))))
+  (let ((old-definition (assoc name templates)))
+    (cond ((and value old-definition) (setcdr old-definition value))
+	  (old-definition)
+	  (t (push (cons name (or value "")) templates))))
   templates)
 
 (defun org-macro--collect-macros (&optional files templates)

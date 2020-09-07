@@ -1,6 +1,6 @@
 ;;; ox-html.el --- HTML Back-End for Org Export Engine -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2011-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2011-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;;      Jambunathan K <kjambunathan at gmail dot com>
@@ -236,7 +236,7 @@ property on the headline itself.")
 @licstart  The following is the entire license notice for the
 JavaScript code in this tag.
 
-Copyright (C) 2012-2019 Free Software Foundation, Inc.
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
 
 The JavaScript code in this tag is free software: you can
 redistribute it and/or modify it under the terms of the GNU
@@ -311,7 +311,7 @@ for the JavaScript code in this tag.
   }
   pre.src {
     position: relative;
-    overflow: visible;
+    overflow: auto;
     padding-top: 1.2em;
   }
   pre.src:before {
@@ -539,7 +539,7 @@ means to use the maximum value consistent with other options."
  * @licstart  The following is the entire license notice for the
  *  JavaScript code in %SCRIPT_PATH.
  *
- * Copyright (C) 2012-2019 Free Software Foundation, Inc.
+ * Copyright (C) 2012-2020 Free Software Foundation, Inc.
  *
  *
  * The JavaScript code in this tag is free software: you can
@@ -568,7 +568,7 @@ means to use the maximum value consistent with other options."
 @licstart  The following is the entire license notice for the
 JavaScript code in this tag.
 
-Copyright (C) 2012-2019 Free Software Foundation, Inc.
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
 
 The JavaScript code in this tag is free software: you can
 redistribute it and/or modify it under the terms of the GNU
@@ -1853,13 +1853,8 @@ INFO is a plist used as a communication channel."
          (title (if (org-string-nw-p title) title "&lrm;"))
          (author (and (plist-get info :with-author)
                       (let ((auth (plist-get info :author)))
-                        (and auth
-                             ;; Return raw Org syntax, skipping non
-                             ;; exportable objects.
-                             (org-element-interpret-data
-                              (org-element-map auth
-                                  (cons 'plain-text org-element-all-objects)
-                                'identity info))))))
+			;; Return raw Org syntax.
+                        (and auth (org-element-interpret-data auth)))))
          (description (plist-get info :description))
          (keywords (plist-get info :keywords))
          (charset (or (and org-html-coding-system
@@ -1882,7 +1877,7 @@ INFO is a plist used as a communication channel."
       charset) "\n"
      (let ((viewport-options
 	    (cl-remove-if-not (lambda (cell) (org-string-nw-p (cadr cell)))
-			       (plist-get info :html-viewport))))
+			      (plist-get info :html-viewport))))
        (and viewport-options
 	    (concat
 	     (org-html-close-tag

@@ -1,6 +1,6 @@
 ;;; org-capture.el --- Fast note taking in Org       -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2010-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -156,14 +156,20 @@ description  A short string describing the template, will be shown during
 type         The type of entry.  Valid types are:
                entry       an Org node, with a headline.  Will be filed
                            as the child of the target entry or as a
-                           top-level entry.
+                           top-level entry.  Its default template is:
+                             \"* %?\n %a\"
                item        a plain list item, will be placed in the
-                           first plain list at the target
-                           location.
+                           first plain list at the target location.
+                           Its default template is:
+                             \"- %?\"
                checkitem   a checkbox item.  This differs from the
                            plain list item only in so far as it uses a
-                           different default template.
+                           different default template.  Its default
+                           template is:
+                             \"- [ ] %?\"
                table-line  a new line in the first table at target location.
+                           Its default template is:
+                             \"| %? |\"
                plain       text to be inserted as it is.
 
 target       Specification of where the captured item should be placed.
@@ -211,9 +217,10 @@ target       Specification of where the captured item should be placed.
                 Most general way: write your own function which both visits
                 the file and moves point to the right location
 
-template     The template for creating the capture item.  If you leave this
-             empty, an appropriate default template will be used.  See below
-             for more details.  Instead of a string, this may also be one of
+template     The template for creating the capture item.
+             If it is an empty string or nil, a default template based on
+             the entry type will be used (see the \"type\" section above).
+             Instead of a string, this may also be one of:
 
                  (file \"/path/to/template-file\")
                  (function function-returning-the-template)
@@ -236,15 +243,15 @@ properties are:
 
  :jump-to-captured   When set, jump to the captured entry when finished.
 
- :empty-lines        Set this to the number of lines the should be inserted
+ :empty-lines        Set this to the number of lines that should be inserted
                      before and after the new item.  Default 0, only common
                      other value is 1.
 
- :empty-lines-before Set this to the number of lines the should be inserted
+ :empty-lines-before Set this to the number of lines that should be inserted
                      before the new item.  Overrides :empty-lines for the
                      number lines inserted before.
 
- :empty-lines-after  Set this to the number of lines the should be inserted
+ :empty-lines-after  Set this to the number of lines that should be inserted
                      after the new item.  Overrides :empty-lines for the
                      number of lines inserted after.
 
@@ -625,7 +632,7 @@ of the day at point (if any) or the current HH:MM time."
     (setq org-overriding-default-time
 	  (org-get-cursor-date (equal goto 1))))
   (cond
-   ((equal goto '(4)) (org-capture-goto-target))
+   ((equal goto '(4))  (org-capture-goto-target keys))
    ((equal goto '(16)) (org-capture-goto-last-stored))
    (t
     (let* ((orig-buf (current-buffer))
@@ -724,6 +731,11 @@ captured item after finalizing."
     (error "This does not seem to be a capture buffer for Org mode"))
 
   (run-hooks 'org-capture-prepare-finalize-hook)
+
+  ;; Update `org-capture-plist' with the buffer-local value.  Since
+  ;; captures can be run concurrently, this is to ensure that
+  ;; `org-capture-after-finalize-hook' accesses the proper plist.
+  (setq org-capture-plist org-capture-current-plist)
 
   ;; Did we start the clock in this capture buffer?
   (when (and org-capture-clock-was-started
@@ -1148,14 +1160,11 @@ may have been stored before."
 	  (when insert-here? (narrow-to-region beg beg))
 	  (org-paste-subtree level template 'for-yank))
 	(org-capture-position-for-last-stored beg)
-	(let ((end (if (org-at-heading-p) (line-end-position 0) (point))))
-	  (org-capture-empty-lines-after)
-	  (unless (org-at-heading-p) (outline-next-heading))
-	  (org-capture-mark-kill-region origin (point))
-	  (org-capture-narrow beg end)
-	  (when (or (search-backward "%?" beg t)
-		    (search-forward "%?" end t))
-	    (replace-match "")))))))
+	(org-capture-empty-lines-after)
+	(unless (org-at-heading-p) (outline-next-heading))
+	(org-capture-mark-kill-region origin (point))
+	(org-capture-narrow beg (point))
+	(org-capture--position-cursor beg (point))))))
 
 (defun org-capture-place-item ()
   "Place the template as a new plain list item."
@@ -1267,9 +1276,7 @@ may have been stored before."
 	;; not narrow at the beginning of the next line, possibly
 	;; altering its structure (e.g., when it is a headline).
 	(org-capture-narrow beg (1- end))
-	(when (or (search-backward "%?" beg t)
-		  (search-forward "%?" end t))
-	  (replace-match ""))))))
+	(org-capture--position-cursor beg end)))))
 
 (defun org-capture-place-table-line ()
   "Place the template as a table line."
@@ -1351,9 +1358,7 @@ may have been stored before."
 	;; TEXT is guaranteed to end with a newline character.  Ignore
 	;; it when narrowing so as to not alter data on the next line.
 	(org-capture-narrow beg (1- end))
-	(when (or (search-backward "%?" beg t)
-		  (search-forward "%?" end t))
-	  (replace-match ""))))))
+	(org-capture--position-cursor beg (1- end))))))
 
 (defun org-capture-place-plain-text ()
   "Place the template plainly.
@@ -1388,9 +1393,7 @@ Of course, if exact position has been required, just put it there."
 	(org-capture-empty-lines-after)
 	(org-capture-mark-kill-region origin (point))
 	(org-capture-narrow beg end)
-	(when (or (search-backward "%?" beg t)
-		  (search-forward "%?" end t))
-	  (replace-match ""))))))
+	(org-capture--position-cursor beg end)))))
 
 (defun org-capture-mark-kill-region (beg end)
   "Mark the region that will have to be killed when aborting capture."
@@ -1436,8 +1439,15 @@ Of course, if exact position has been required, just put it there."
 (defun org-capture-narrow (beg end)
   "Narrow, unless configuration says not to narrow."
   (unless (org-capture-get :unnarrowed)
-    (narrow-to-region beg end)
-    (goto-char beg)))
+    (narrow-to-region beg end)))
+
+(defun org-capture--position-cursor (beg end)
+  "Move point to first \"%?\" location or at start of template.
+BEG and END are buffer positions at the beginning and end position
+of the template."
+  (goto-char beg)
+  (when (search-forward "%?" end t)
+    (replace-match "")))
 
 (defun org-capture-empty-lines-before (&optional n)
   "Set the correct number of empty lines before the insertion point.

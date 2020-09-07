@@ -2581,6 +2581,27 @@ Foo Bar
 
 ;;; Mark Region
 
+(ert-deftest test-org/mark-element ()
+  "Test `org-mark-element' specifications."
+  ;; Mark beginning and end of element.
+  (should
+   (equal '(t t)
+	  (org-test-with-temp-text "Para<point>graph"
+	    (org-mark-element)
+	    (list (bobp) (= (mark) (point-max))))))
+  (should
+   (equal '(t t)
+	  (org-test-with-temp-text "P1\n\nPara<point>graph\n\nP2"
+	    (org-mark-element)
+	    (list (looking-at "Paragraph")
+		  (org-with-point-at (mark) (looking-at "P2"))))))
+  ;; Do not set mark past (point-max).
+  (should
+   (org-test-with-temp-text "Para<point>graph"
+     (narrow-to-region 2 6)
+     (org-mark-element)
+     (= 6 (mark)))))
+
 (ert-deftest test-org/mark-subtree ()
   "Test `org-mark-subtree' specifications."
   ;; Error when point is before first headline.
@@ -3013,6 +3034,33 @@ SCHEDULED: <2017-05-06 Sat>
    (org-test-with-temp-text "* H1\n*H2\nContents"
      (org-end-of-meta-data t)
      (looking-at "Contents"))))
+
+(ert-deftest test-org/shiftright-heading ()
+  "Test `org-shiftright' on headings."
+  (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
+    (should
+     (equal "* TODO a1\n** a2\n* DONE b1\n"
+	    (org-test-with-temp-text "* a1\n** a2\n* DONE b1\n"
+	      (org-shiftright)
+	      (buffer-string))))
+    (should
+     (equal "* TODO a1\n** TODO a2\n* b1\n"
+    	    (org-test-with-temp-text "* a1\n** a2\n* DONE b1\n"
+    	      (let ((org-loop-over-headlines-in-active-region t))
+    		(transient-mark-mode 1)
+    		(push-mark (point) t t)
+    		(search-forward "* DONE b1")
+    		(org-shiftright))
+    	      (buffer-string))))
+    (should
+     (equal "* TODO a1\n** a2\n* b1\n"
+    	    (org-test-with-temp-text "* a1\n** a2\n* DONE b1\n"
+    	      (let ((org-loop-over-headlines-in-active-region 'start-level))
+    		(transient-mark-mode 1)
+    		(push-mark (point) t t)
+    		(search-forward "* DONE b1")
+    		(org-shiftright))
+    	      (buffer-string))))))
 
 (ert-deftest test-org/beginning-of-line ()
   "Test `org-beginning-of-line' specifications."
@@ -6184,7 +6232,58 @@ Paragraph<point>"
    (equal "* H1 :foo:\n* H2 :bar:"
 	  (org-test-with-temp-text "* H1    :foo:\n* H2    :bar:"
 	    (let ((org-tags-column 1)) (org-set-tags-command '(4)))
-	    (buffer-string)))))
+	    (buffer-string))))
+  ;; Point does not move with empty headline.
+  (should
+   (equal ":foo:"
+	  (org-test-with-temp-text "* <point>"
+	    (cl-letf (((symbol-function 'completing-read)
+		       (lambda (&rest args) ":foo:")))
+	      (let ((org-use-fast-tag-selection nil)
+		    (org-tags-column 1))
+		(org-set-tags-command)))
+	    (buffer-substring (point) (line-end-position)))))
+  ;; Point does not move at start of line.
+  (should
+   (equal "* H1 :foo:"
+	  (org-test-with-temp-text "* H1"
+	    (cl-letf (((symbol-function 'completing-read)
+		       (lambda (&rest args) ":foo:")))
+	      (let ((org-use-fast-tag-selection nil)
+		    (org-tags-column 1))
+		(org-set-tags-command)))
+	    (buffer-substring (point) (line-end-position)))))
+  ;; Point does not move when within *'s.
+  (should
+   (equal "* H1 :foo:"
+	  (org-test-with-temp-text "*<point>* H1"
+	    (cl-letf (((symbol-function 'completing-read)
+		       (lambda (&rest args) ":foo:")))
+	      (let ((org-use-fast-tag-selection nil)
+		    (org-tags-column 1))
+		(org-set-tags-command)))
+	    (buffer-substring (point) (line-end-position)))))
+  ;; Point workaround does not get fooled when looking at a space.
+  (should
+   (equal " b :foo:"
+	  (org-test-with-temp-text "* a<point> b"
+	    (cl-letf (((symbol-function 'completing-read)
+		       (lambda (&rest args) ":foo:")))
+	      (let ((org-use-fast-tag-selection nil)
+		    (org-tags-column 1))
+		(org-set-tags-command)))
+	    (buffer-substring (point) (line-end-position)))))
+  ;; Handle tags both set locally and inherited.
+  (should
+   (equal "b :foo:"
+	  (org-test-with-temp-text "* a :foo:\n** <point>b :foo:"
+	    (cl-letf (((symbol-function 'completing-read)
+		       (lambda (prompt coll &optional pred req initial &rest args)
+			 initial)))
+	      (let ((org-use-fast-tag-selection nil)
+		    (org-tags-column 1))
+		(org-set-tags-command)))
+	    (buffer-substring (point) (line-end-position))))))
 
 (ert-deftest test-org/toggle-tag ()
   "Test `org-toggle-tag' specifications."
@@ -7256,6 +7355,16 @@ Contents
 :END:"
      (org-set-visibility-according-to-property)
      (invisible-p (point)))))
+
+(ert-deftest test-org/visibility-show-branches ()
+  "Test visibility of inline archived subtrees."
+  (org-test-with-temp-text
+   "* Foo<point>
+** Bar :ARCHIVE:
+*** Baz
+"
+   (org-kill-note-or-show-branches)
+   (should (org-invisible-p (- (point-max) 2)))))
 
 
 ;;; Yank and Kill

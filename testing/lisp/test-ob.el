@@ -545,6 +545,17 @@ duplicate results block."
     (org-babel-next-src-block 1)
     (should (looking-at org-babel-src-block-regexp))))
 
+(ert-deftest test-ob/replace-special-block-result ()
+  (should-error
+   (org-test-with-temp-text "
+#+begin_src emacs-lisp :wrap special<point>
+'foo
+#+end_src"
+     (org-babel-execute-src-block)
+     (org-babel-execute-src-block)
+     (buffer-string)
+     (search-forward "#+begin_special" nil nil 2))))
+
 (ert-deftest test-ob/catches-all-references ()
   (org-test-with-temp-text "
 #+NAME: literal-example
@@ -1836,6 +1847,45 @@ default-directory
 	(message (car pair))
 	(should (eq (org-test-babel-confirm-evaluate (car pair)) (cdr pair)))))))
 
+(ert-deftest test-ob/check-eval-noweb-expanded ()
+  "`org-confirm-babel-evaluate' function receives expanded noweb refs."
+  (should
+   (equal t
+	  (org-test-with-temp-text "
+#+name: foo
+#+begin_src emacs-lisp
+  :bar
+#+end_src
+
+<point>#+begin_src emacs-lisp :noweb yes
+  <<foo>>
+#+end_src"
+	    (let ((org-confirm-babel-evaluate
+		   (lambda (_ body)
+		     (not (string-match-p ":bar" body)))))
+	      (org-babel-check-confirm-evaluate
+	       (org-babel-get-src-block-info))))))
+  ;; The code block passed to `org-confirm-babel-evaluate' does not
+  ;; include coderefs.
+  (should
+   (equal t
+	  (org-test-with-temp-text "
+#+name: foo
+#+begin_src emacs-lisp
+  :bar
+#+end_src
+
+<point>#+begin_src emacs-lisp :noweb yes
+  #(ref:foo)
+  <<foo>>
+#+end_src"
+	    (let ((org-coderef-label-format "#(ref:%s)")
+		  (org-confirm-babel-evaluate
+		   (lambda (_ body)
+		     (string-match-p "ref:foo" body))))
+	      (org-babel-check-confirm-evaluate
+	       (org-babel-get-src-block-info)))))))
+
 (defun org-test-ob/update-block-body ()
   "Test `org-babel-update-block-body' specifications."
   (should
@@ -2120,14 +2170,16 @@ abc
 	  (org-babel-execute-src-block))))))
 
 (ert-deftest test-ob/string-to-number ()
-    (should (=  0   (org-babel--string-to-number "0")))
-    (should (=  1   (org-babel--string-to-number "1")))
-    (should (eq nil (org-babel--string-to-number "000")))
-    (should (eq nil (org-babel--string-to-number "001")))
-    (should (eq nil (org-babel--string-to-number "010")))
-    (should (=  100 (org-babel--string-to-number "100")))
-    (should (=  0.1 (org-babel--string-to-number "0.1")))
-    (should (=  1.0 (org-babel--string-to-number "1.0"))))
+    (should (=  0      (org-babel--string-to-number "0")))
+    (should (=  1      (org-babel--string-to-number "1")))
+    (should (eq nil    (org-babel--string-to-number "1 2")))
+    (should (=  1000.0 (org-babel--string-to-number "1e3")))
+    (should (eq 0      (org-babel--string-to-number "000")))
+    (should (eq 1      (org-babel--string-to-number "001")))
+    (should (eq 10     (org-babel--string-to-number "010")))
+    (should (=  100    (org-babel--string-to-number "100")))
+    (should (=  0.1    (org-babel--string-to-number "0.1")))
+    (should (=  1.0    (org-babel--string-to-number "1.0"))))
 
 (provide 'test-ob)
 

@@ -1,6 +1,6 @@
 ;;; ox-latex.el --- LaTeX Back-End for Org Export Engine -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2011-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2011-2020 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -1586,6 +1586,7 @@ INFO is a plist used as a communication channel."
 			lang))))
     `((?a . ,(org-export-data (plist-get info :author) info))
       (?t . ,(org-export-data (plist-get info :title) info))
+      (?s . ,(org-export-data (plist-get info :subtitle) info))
       (?k . ,(org-export-data (org-latex--wrap-latex-math-block
 			       (plist-get info :keywords) info)
 			      info))
@@ -2171,25 +2172,27 @@ contextual information."
   "Transcode an ITEM element from Org to LaTeX.
 CONTENTS holds the contents of the item.  INFO is a plist holding
 contextual information."
-  (let* ((counter
-	  (let ((count (org-element-property :counter item))
-		(level
-		 ;; Determine level of current item to determine the
-		 ;; correct LaTeX counter to use (enumi, enumii...).
-		 (let ((parent item) (level 0))
-		   (while (memq (org-element-type
-				 (setq parent (org-export-get-parent parent)))
-				'(plain-list item))
-		     (when (and (eq (org-element-type parent) 'plain-list)
-				(eq (org-element-property :type parent)
-				    'ordered))
-		       (cl-incf level)))
-		   level)))
-	    (and count
-		 (< level 5)
-		 (format "\\setcounter{enum%s}{%s}\n"
-			 (nth (1- level) '("i" "ii" "iii" "iv"))
-			 (1- count)))))
+  (let* ((orderedp (eq (org-element-property
+			:type (org-export-get-parent item))
+		       'ordered))
+	 (level
+	  ;; Determine level of current item to determine the
+	  ;; correct LaTeX counter to use (enumi, enumii...).
+	  (let ((parent item) (level 0))
+	    (while (memq (org-element-type
+			  (setq parent (org-export-get-parent parent)))
+			 '(plain-list item))
+	      (when (and (eq (org-element-type parent) 'plain-list)
+			 (eq (org-element-property :type parent)
+			     'ordered))
+		(cl-incf level)))
+	    level))
+	 (count (org-element-property :counter item))
+	 (counter (and count
+		       (< level 5)
+		       (format "\\setcounter{enum%s}{%s}\n"
+			       (nth (1- level) '("i" "ii" "iii" "iv"))
+			       (1- count))))
 	 (checkbox (cl-case (org-element-property :checkbox item)
 		     (on "$\\boxtimes$")
 		     (off "$\\square$")
@@ -2208,9 +2211,11 @@ contextual information."
 	    "\\item"
 	    (cond
 	     ((and checkbox tag)
-	      (format "[{%s %s}] %s" checkbox tag tag-footnotes))
+	      (format (if orderedp "{%s %s} %s" "[{%s %s}] %s")
+		      checkbox tag tag-footnotes))
 	     ((or checkbox tag)
-	      (format "[{%s}] %s" (or checkbox tag) tag-footnotes))
+	      (format (if orderedp "{%s} %s" "[{%s}] %s")
+		      (or checkbox tag) tag-footnotes))
 	     ;; Without a tag or a check-box, if CONTENTS starts with
 	     ;; an opening square bracket, add "\relax" to "\item",
 	     ;; unless the brackets comes from an initial export
@@ -2577,7 +2582,9 @@ INFO is a plist holding contextual information.  See
      ;; equivalent line number.
      ((string= type "coderef")
       (format (org-export-get-coderef-format path desc)
-	      (org-export-resolve-coderef path info)))
+	      ;; Resolve with RAW-PATH since PATH could be tainted
+	      ;; with `org-latex--protect-text' call above.
+	      (org-export-resolve-coderef raw-path info)))
      ;; External link with a description part.
      ((and path desc) (format "\\href{%s}{%s}" path desc))
      ;; External link without a description part.

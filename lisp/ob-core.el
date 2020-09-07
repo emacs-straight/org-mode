@@ -1,6 +1,6 @@
 ;;; ob-core.el --- Working with Code Blocks          -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2020 Free Software Foundation, Inc.
 
 ;; Authors: Eric Schulte
 ;;	Dan Davison
@@ -38,6 +38,7 @@
 (defvar org-link-file-path-type)
 (defvar org-src-lang-modes)
 (defvar org-src-preserve-indentation)
+(defvar org-babel-tangle-uncomment-comments)
 
 (declare-function org-at-item-p "org-list" ())
 (declare-function org-at-table-p "org" (&optional table-type))
@@ -238,7 +239,8 @@ should be asked whether to allow evaluation."
 		    (if (functionp org-confirm-babel-evaluate)
 			(funcall org-confirm-babel-evaluate
 				 ;; Language, code block body.
-				 (nth 0 info) (nth 1 info))
+				 (nth 0 info)
+				 (org-babel--expand-body info))
 		      org-confirm-babel-evaluate))))
     (cond
      (noeval nil)
@@ -622,6 +624,17 @@ a list with the following pattern:
 	(setf (nth 2 info) (org-babel-generate-file-param name (nth 2 info)))
 	info))))
 
+(defun org-babel--expand-body (info)
+  "Expand noweb references in body and remove any coderefs."
+  (let ((coderef (nth 6 info))
+	(expand
+	 (if (org-babel-noweb-p (nth 2 info) :eval)
+	     (org-babel-expand-noweb-references info)
+	   (nth 1 info))))
+    (if (not coderef) expand
+      (replace-regexp-in-string
+       (org-src-coderef-regexp coderef) "" expand nil nil 1))))
+
 ;;;###autoload
 (defun org-babel-execute-src-block (&optional arg info params)
   "Execute the current source code block.
@@ -667,17 +680,7 @@ block."
 	 ((org-babel-confirm-evaluate info)
 	  (let* ((lang (nth 0 info))
 		 (result-params (cdr (assq :result-params params)))
-		 ;; Expand noweb references in BODY and remove any
-		 ;; coderef.
-		 (body
-		  (let ((coderef (nth 6 info))
-			(expand
-			 (if (org-babel-noweb-p params :eval)
-			     (org-babel-expand-noweb-references info)
-			   (nth 1 info))))
-		    (if (not coderef) expand
-		      (replace-regexp-in-string
-		       (org-src-coderef-regexp coderef) "" expand nil nil 1))))
+		 (body (org-babel--expand-body info))
 		 (dir (cdr (assq :dir params)))
 		 (mkdirp (cdr (assq :mkdirp params)))
 		 (default-directory
@@ -2488,7 +2491,7 @@ in the buffer."
 	   (if (memq (org-element-type element)
 		     ;; Possible results types.
 		     '(drawer example-block export-block fixed-width item
-			      plain-list src-block table))
+			      plain-list special-block src-block table))
 	       (save-excursion
 		 (goto-char (min (point-max) ;for narrowed buffers
 				 (org-element-property :end element)))
@@ -2502,16 +2505,19 @@ If the `default-directory' is different from the containing
 file's directory then expand relative links."
   (when (stringp result)
     (let ((same-directory?
-	   (and buffer-file-name
+	   (and (buffer-file-name (buffer-base-buffer))
 		(not (string= (expand-file-name default-directory)
-			      (expand-file-name
-			       (file-name-directory buffer-file-name)))))))
+			    (expand-file-name
+			     (file-name-directory
+			      (buffer-file-name (buffer-base-buffer)))))))))
       (format "[[file:%s]%s]"
-	      (if (and default-directory buffer-file-name same-directory?)
+	      (if (and default-directory
+		       (buffer-file-name (buffer-base-buffer)) same-directory?)
 		  (if (eq org-link-file-path-type 'adaptive)
 		      (file-relative-name
 		       (expand-file-name result default-directory)
-		       (file-name-directory (buffer-file-name)))
+		       (file-name-directory
+			(buffer-file-name (buffer-base-buffer))))
 		    (expand-file-name result default-directory))
 		result)
 	      (if description (concat "[" description "]") "")))))
@@ -2764,11 +2770,12 @@ block but are passed literally to the \"example-block\"."
 			    (lambda (s)
 			      ;; Comment, according to LANG mode,
 			      ;; string S.  Return new string.
-			      (with-temp-buffer
-				(funcall (org-src-get-lang-mode lang))
-				(comment-region (point)
-						(progn (insert s) (point)))
-				(org-trim (buffer-string)))))
+			      (unless org-babel-tangle-uncomment-comments
+				(with-temp-buffer
+				  (funcall (org-src-get-lang-mode lang))
+				  (comment-region (point)
+						  (progn (insert s) (point)))
+				  (org-trim (buffer-string))))))
 			   (expand-body
 			    (lambda (i)
 			      ;; Expand body of code blocked
@@ -2931,8 +2938,10 @@ situations in which is it not appropriate."
 (defun org-babel--string-to-number (string)
   "If STRING represents a number return its value.
 Otherwise return nil."
-  (and (string-match-p "\\`-?\\([0-9]\\|\\([1-9]\\|[0-9]*\\.\\)[0-9]*\\)\\'" string)
-       (string-to-number string)))
+  (unless (string-match-p "\\s-" (org-trim string))
+    (let ((interned-string (ignore-errors (read string))))
+      (when (numberp interned-string)
+	interned-string))))
 
 (defun org-babel-import-elisp-from-file (file-name &optional separator)
   "Read the results located at FILE-NAME into an elisp table.
@@ -3055,7 +3064,9 @@ of `org-babel-temporary-directory'."
 		    (delete-file file)))
 		;; We do not want to delete "." and "..".
 		(directory-files org-babel-temporary-directory 'full
-				 "^\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*"))
+				 ;; Note: Use `any' for compatibility
+				 ;; with Emacs < 27.
+				 (rx (or (not (any ".")) "..."))))
 	  (delete-directory org-babel-temporary-directory))
       (error
        (message "Failed to remove temporary Org-babel directory %s"

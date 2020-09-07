@@ -1,6 +1,6 @@
 ;;; org-src.el --- Source code examples in Org       -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2004-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2004-2020 Free Software Foundation, Inc.
 ;;
 ;; Author: Carsten Dominik <carsten at orgmode dot org>
 ;;	   Bastien Guerry <bzg@gnu.org>
@@ -912,7 +912,7 @@ A coderef format regexp can only match at the end of a line."
 	   ;; remove any newline characters in order to preserve
 	   ;; table's structure.
 	   (when (org-element-lineage definition '(table-cell))
-	     (while (search-forward "\n" nil t) (replace-match "")))))
+	     (while (search-forward "\n" nil t) (replace-match " ")))))
        contents
        'remote))
     ;; Report success.
