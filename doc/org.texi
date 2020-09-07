@@ -7,15 +7,15 @@
 @set txicodequoteundirected
 @set txicodequotebacktick
 @set MAINTAINERSITE @uref{https://orgmode.org,maintainers webpage}
-@set MAINTAINER Carsten Dominik
-@set MAINTAINEREMAIL @email{carsten at orgmode dot org}
-@set MAINTAINERCONTACT @uref{mailto:carsten at orgmode dot org,contact the maintainer}
+@set MAINTAINER Bastien Guerry
+@set MAINTAINEREMAIL @email{bzg@gnu.org}
+@set MAINTAINERCONTACT @uref{mailto:bzg@gnu.org,contact the maintainer}
 @c %**end of header
 
 @copying
 This manual is for Org version 9.3.
 
-Copyright @copyright{} 2004--2019  Free Software Foundation, Inc.
+Copyright @copyright{} 2004--2020 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -31,7 +31,7 @@ modify this GNU manual.''
 @end quotation
 @end copying
 
-@dircategory Emacs
+@dircategory Emacs editing modes
 @direntry
 * Org Mode: (org).      Outline-based notes management and organizer.
 @end direntry
@@ -427,6 +427,7 @@ Sample Configuration
 
 Working with Source Code
 
+* Features::                     Enjoy the versatility of source blocks.
 * Structure of Code Blocks::     Code block syntax described.
 * Using Header Arguments::       Different ways to set header arguments.
 * Environment of a Code Block::  Arguments, sessions, working directory...
@@ -603,7 +604,8 @@ We @strong{strongly recommend} sticking to a single installation method.
 @subheading Using Emacs packaging system
 
 Recent Emacs distributions include a packaging system which lets you
-install Elisp libraries.  You can install Org with @kbd{M-x package-install @key{RET} org}.
+install Elisp libraries.  You can install Org from the ``package menu'',
+with @kbd{M-x list-packages}.  See @ref{Package Menu,Package Menu,,emacs,}.
 
 @quotation Important
 You need to do this in a session where no @samp{.org} file has been
@@ -643,7 +645,7 @@ You can clone Org's repository and install Org like this:
 
 @example
 $ cd ~/src/
-$ git clone git@@code.orgmode.org:bzg/org-mode.git
+$ git clone https://code.orgmode.org/bzg/org-mode.git
 $ cd org-mode/
 $ make autoloads
 @end example
@@ -728,7 +730,7 @@ region by using the mouse to select a region, or pressing
 
 If you find problems with Org, or if you have questions, remarks, or
 ideas about it, please send an email to the Org mailing list
-@email{emacs-orgmode@@gnu.org}.  You can subscribe to the list @uref{https://lists.gnu.org/mailman/listinfo/emacs-orgmode, from this
+@email{emacs-orgmode@@@@gnu.org}.  You can subscribe to the list @uref{https://lists.gnu.org/mailman/listinfo/emacs-orgmode, from this
 web page}.  If you are not a member of the mailing list, your mail will
 be passed to the list after a moderator has approved it@footnote{Please consider subscribing to the mailing list in order to
 minimize the work the mailing list moderators have to do.}.
@@ -827,7 +829,7 @@ or, from the menu: Org @arrow{} Refresh/Reload @arrow{} Reload Org uncompiled.
 Then, activate the debugger:
 
 @example
-M-x toggle-debug-or-error <RET>
+M-x toggle-debug-on-error <RET>
 @end example
 
 
@@ -1481,12 +1483,12 @@ matching the string @samp{FIXME}.
 The other sparse tree commands select headings based on TODO keywords,
 tags, or properties and are discussed later in this manual.
 
-@kindex C-c C-e v
+@kindex C-c C-e C-v
 @cindex printing sparse trees
 @cindex visible text, printing
 To print a sparse tree, you can use the Emacs command
 @code{ps-print-buffer-with-faces} which does not print invisible parts of
-the document.  Or you can use the command @kbd{C-c C-e v} to
+the document.  Or you can use the command @kbd{C-c C-e C-v} to
 export only the visible part of the document and print the resulting
 file.
 
@@ -1677,11 +1679,11 @@ bullets (@samp{-}, @samp{+}, @samp{*}, @samp{1.}, @samp{1)}) or a subset of them
 on @code{org-plain-list-ordered-item-terminator}, the type of list, and
 its indentation.  With a numeric prefix argument N, select the Nth
 bullet from this list.  If there is an active region when calling
-this, selected text is changed into an item.  With a prefix
-argument, all lines are converted to list items.  If the first line
-already was a list item, any item marker is removed from the list.
-Finally, even without an active region, a normal line is converted
-into a list item.
+this, all lines are converted to list items.  With a prefix
+argument, the selected text is changed into a single item.  If the
+first line already was a list item, any item marker is removed from
+the list.  Finally, even without an active region, a normal line is
+converted into a list item.
 
 @item @kbd{C-c *}
 @kindex C-c *
@@ -1937,7 +1939,8 @@ Kill the current column.
 @item @kbd{M-S-@key{RIGHT}} (@code{org-table-insert-column})
 @kindex M-S-RIGHT
 @findex org-table-insert-column
-Insert a new column to the left of point position.
+Insert a new column at point position.  Move the recent column and
+all cells to the right of this column to the right.
 
 @item @kbd{M-@key{UP}} (@code{org-table-move-row-up})
 @kindex M-UP
@@ -2396,11 +2399,12 @@ Here are a few examples:
 @cindex range references
 @cindex references, to ranges
 You may reference a rectangular range of fields by specifying two
-field references connected by two dots @samp{..}.  If both fields are in
-the current row, you may simply use @samp{$2..$7}, but if at least one
-field is in a different row, you need to use the general @samp{@@ROW$COLUMN}
-format at least for the first field, i.e., the reference must start
-with @samp{@@} in order to be interpreted correctly.  Examples:
+field references connected by two dots @samp{..}.  The ends are included in
+the range.  If both fields are in the current row, you may simply use
+@samp{$2..$7}, but if at least one field is in a different row, you need to
+use the general @samp{@@ROW$COLUMN} format at least for the first field,
+i.e., the reference must start with @samp{@@} in order to be interpreted
+correctly.  Examples:
 
 @multitable @columnfractions 0.2 0.8
 @item @samp{$1..$3}
@@ -2410,7 +2414,7 @@ with @samp{@@} in order to be interpreted correctly.  Examples:
 @item @samp{$<<<..$>>}
 @tab start in third column, continue to the last but one
 @item @samp{@@2$1..@@4$3}
-@tab six fields between these two fields (same as @samp{A2..C4})
+@tab nine fields between these two fields (same as @samp{A2..C4})
 @item @samp{@@-1$-2..@@-1}
 @tab 3 fields in the row above, starting from 2 columns on the left
 @item @samp{@@I..II}
@@ -5771,7 +5775,7 @@ not be used as keys in the properties drawer:
 @item @samp{CLOSED}
 @tab When was this entry closed?
 @item @samp{DEADLINE}
-@tab The deadline time string, without the angular brackets.
+@tab The deadline timestamp.
 @item @samp{FILE}
 @tab The filename the entry is located in.
 @item @samp{ITEM}
@@ -5779,7 +5783,7 @@ not be used as keys in the properties drawer:
 @item @samp{PRIORITY}
 @tab The priority of the entry, a string with a single letter.
 @item @samp{SCHEDULED}
-@tab The scheduling timestamp, without the angular brackets.
+@tab The scheduling timestamp.
 @item @samp{TAGS}
 @tab The tags defined directly in the headline.
 @item @samp{TIMESTAMP}
@@ -6260,11 +6264,15 @@ block.
 The following commands insert or update the dynamic block:
 
 @table @asis
-@item @kbd{C-c C-x i} (@code{org-insert-columns-dblock})
-@kindex C-c C-x i
-@findex org-insert-columns-dblock
+@item @code{org-columns-insert-dblock}
+@kindex C-c C-x x
+@findex org-columns-insert-dblock
 Insert a dynamic block capturing a column view.  Prompt for the
 scope or ID of the view.
+
+This command can be invoked by calling
+@code{org-dynamic-block-insert-dblock} (@kbd{C-c C-x x}) and
+selecting ``columnview'' (see @ref{Dynamic Blocks}).
 
 @item @kbd{C-c C-c} @kbd{C-c C-x C-u} (@code{org-dblock-update})
 @kindex C-c C-c
@@ -6638,6 +6646,8 @@ can control the calendar fully from the minibuffer:
 @kindex M-S-RIGHT
 @kindex M-S-LEFT
 @kindex RET
+@kindex .
+@kindex C-.
 @multitable @columnfractions 0.25 0.55
 @item @kbd{@key{RET}}
 @tab Choose date at point in calendar.
@@ -6663,6 +6673,11 @@ can control the calendar fully from the minibuffer:
 @tab Scroll calendar forward by 3 months.
 @item @kbd{C-v}
 @tab Scroll calendar backward by 3 months.
+@item @kbd{C-.}
+@tab Select today's date@footnote{You can also use the calendar command @kbd{.} to jump to
+today's date, but if you are inserting an hour specification for your
+timestamp, @kbd{.} will then insert a dot after the hour.  By contrast,
+@kbd{C-.} will always jump to today's date.}
 @end multitable
 
 @vindex org-read-date-display-live
@@ -7008,7 +7023,7 @@ recorded.  It also computes the total time spent on each
 subtree@footnote{Clocking only works if all headings are indented with less
 than 30 stars.  This is a hard-coded limitation of @code{lmax} in
 @code{org-clock-sum}.} of a project.  And it remembers a history or tasks
-recently clocked, to that you can jump quickly between a number of
+recently clocked, so that you can jump quickly between a number of
 tasks absorbing your time.
 
 To save the clock history across Emacs sessions, use:
@@ -7177,12 +7192,18 @@ Org mode can produce quite complex reports based on the time clocking
 information.  Such a report is called a @emph{clock table}, because it is
 formatted as one or several Org tables.
 
-You can insert, or update, a clock table through Org dynamic blocks
-insert command (see @ref{Dynamic Blocks}), by pressing @kbd{C-c C-x x c l o c k t a b l e @key{RET}}.  When called with a prefix argument,
+@table @asis
+@item @code{org-clock-report}
+@kindex C-c C-x x
+@findex org-clock-report
+Insert or update a clock table.  When called with a prefix argument,
 jump to the first clock table in the current document and update it.
 The clock table includes archived trees.
 
-@table @asis
+This command can be invoked by calling
+@code{org-dynamic-block-insert-dblock} (@kbd{C-c C-x x}) and
+selecting ``clocktable'' (see @ref{Dynamic Blocks}).
+
 @item @kbd{C-c C-c} or @kbd{C-c C-x C-u} (@code{org-dblock-update})
 @kindex C-c C-c
 @kindex C-c C-x C-u
@@ -7206,7 +7227,7 @@ needs to be in the @samp{#+BEGIN: clocktable} line for this command.  If
 @end table
 
 Here is an example of the frame for a clock table as it is inserted
-into the buffer with the @kbd{C-c C-x C-r} command:
+into the buffer by @code{org-clock-report}:
 
 @cindex @samp{BEGIN clocktable}
 @example
@@ -7215,10 +7236,9 @@ into the buffer with the @kbd{C-c C-x C-r} command:
 @end example
 
 @vindex org-clocktable-defaults
-The @samp{#+BEGIN} line and specify a number of options to define the
-scope, structure, and formatting of the report.  Defaults for all
-these options can be configured in the variable
-@code{org-clocktable-defaults}.
+The @samp{#+BEGIN} line contains options to define the scope, structure,
+and formatting of the report.  Defaults for all these options can be
+configured in the variable @code{org-clocktable-defaults}.
 
 First there are options that determine which clock entries are to
 be selected:
@@ -10379,11 +10399,6 @@ the agenda, change a tag for all headings in the region.
 Set the priority for the current item.  Org mode prompts for the
 priority character.  If you reply with @kbd{@key{SPC}}, the priority
 cookie is removed from the entry.
-
-@item @kbd{P} (@code{org-agenda-show-priority})
-@kindex P
-@findex org-agenda-show-priority
-Display weighted priority of current item.
 
 @item @kbd{+} or @kbd{S-@key{UP}} (@code{org-agenda-priority-up})
 @kindex +
@@ -17179,6 +17194,34 @@ Here is an example source code block in the Emacs Lisp language:
 #+END_SRC
 @end example
 
+Source code blocks are one of many Org block types, which also include
+``center'', ``comment'', ``dynamic'', ``example'', ``export'', ``quote'',
+``special'', and ``verse''.  This section pertains to blocks between
+@samp{#+BEGIN_SRC} and @samp{#+END_SRC}.
+
+Details of Org's facilities for working with source code are described
+in the following sections.
+
+@menu
+* Features::                     Enjoy the versatility of source blocks.
+* Structure of Code Blocks::     Code block syntax described.
+* Using Header Arguments::       Different ways to set header arguments.
+* Environment of a Code Block::  Arguments, sessions, working directory...
+* Evaluating Code Blocks::       Place results of evaluation in the Org buffer.
+* Results of Evaluation::        Choosing a results type, post-processing...
+* Exporting Code Blocks::        Export contents and/or results.
+* Extracting Source Code::       Create pure source code files.
+* Languages::                    List of supported code block languages.
+* Editing Source Code::          Language major-mode editing.
+* Noweb Reference Syntax::       Literate programming in Org mode.
+* Library of Babel::             Use and contribute to a library of useful code blocks.
+* Key bindings and Useful Functions:: Work quickly with code blocks.
+* Batch Execution::              Call functions from the command line.
+@end menu
+
+@node Features
+@section Features
+
 Org can manage the source code in the block delimited by @samp{#+BEGIN_SRC}
 @dots{} @samp{#+END_SRC} in several ways that can simplify housekeeping tasks
 essential to modern source code maintenance.  Org can edit, format,
@@ -17187,13 +17230,7 @@ and execute a source code block, then capture the results.  The Org
 mode literature sometimes refers to source code blocks as @emph{live code}
 blocks because they can alter the content of the Org document or the
 material that it exports.  Users can control how live they want each
-source code block by tweaking the header arguments (see @ref{Using Header Arguments}) for compiling, execution, extraction, and
-exporting.
-
-Source code blocks are one of many Org block types, which also include
-``center'', ``comment'', ``dynamic'', ``example'', ``export'', ``quote'',
-``special'', and ``verse''.  This section pertains to blocks between
-@samp{#+BEGIN_SRC} and @samp{#+END_SRC}.
+source code block by tweaking the header arguments (see @ref{Using Header Arguments}) for compiling, execution, extraction, and exporting.
 
 For editing and formatting a source code block, Org uses an
 appropriate Emacs major mode that includes features specifically
@@ -17230,25 +17267,6 @@ publishing reproducible research by keeping text, data, code,
 configuration settings of the execution environment, the results of
 the execution, and associated narratives, claims, references, and
 internal and external links in a single Org document.
-
-Details of Org's facilities for working with source code are described
-in the following sections.
-
-@menu
-* Structure of Code Blocks::     Code block syntax described.
-* Using Header Arguments::       Different ways to set header arguments.
-* Environment of a Code Block::  Arguments, sessions, working directory...
-* Evaluating Code Blocks::       Place results of evaluation in the Org buffer.
-* Results of Evaluation::        Choosing a results type, post-processing...
-* Exporting Code Blocks::        Export contents and/or results.
-* Extracting Source Code::       Create pure source code files.
-* Languages::                    List of supported code block languages.
-* Editing Source Code::          Language major-mode editing.
-* Noweb Reference Syntax::       Literate programming in Org mode.
-* Library of Babel::             Use and contribute to a library of useful code blocks.
-* Key bindings and Useful Functions:: Work quickly with code blocks.
-* Batch Execution::              Call functions from the command line.
-@end menu
 
 @node Structure of Code Blocks
 @section Structure of Code Blocks
@@ -18090,8 +18108,8 @@ A note of warning: when @samp{cache} is used in a session, caching may
 cause unexpected results.
 
 When the caching mechanism tests for any source code changes, it does
-not expand Noweb style references (see @ref{Noweb Reference Syntax}).  For
-reasons why, see @uref{http://thread.gmane.org/gmane.emacs.orgmode/79046}.
+not expand noweb style references (see @ref{Noweb Reference Syntax}).  For
+reasons why, see @uref{https://orgmode.org/list/86fvqqc8jb.fsf@@somewhere.org}
 
 The @samp{cache} header argument can have one of two values: @samp{yes} or @samp{no}.
 
@@ -18322,9 +18340,9 @@ and the extension are mandatory.
 
 @cindex @samp{file-desc}, header argument
 The @samp{file-desc} header argument defines the description (see
-@ref{Link Format}) for the link.  If @samp{file-desc} has no value, Org
-uses the generated file name for both the ``link'' and
-``description'' parts of the link.
+@ref{Link Format}) for the link.  If @samp{file-desc} is present but has no value,
+the @samp{file} value is used as the link description.  When this
+argument is not present, the description is omitted.
 
 @cindex @samp{sep}, header argument
 By default, Org assumes that a table written to a file has
@@ -18359,13 +18377,13 @@ Results enclosed in a @samp{BEGIN_EXPORT latex} block.  Usage example:
 
 @item @samp{link}
 @itemx @samp{graphics}
-Result is a link to the file specified in @samp{:file} header argument.
-However, unlike plain @samp{:file}, nothing is written to the disk.  The
-block is used for its side-effects only, as in the following
-example:
+When used along with @samp{file} type, the result is a link to the file
+specified in @samp{:file} header argument.  However, unlike plain @samp{file}
+type, nothing is written to the disk.  The block is used for its
+side-effects only, as in the following example:
 
 @example
-#+begin_src shell :results link :file "download.tar.gz"
+#+begin_src shell :results file link :file "download.tar.gz"
 wget -c "http://example.com/download.tar.gz"
 #+end_src
 @end example
@@ -18567,7 +18585,7 @@ code.
 When Org tangles code blocks, it expands, merges, and transforms them.
 Then Org recomposes them into one or more separate files, as
 configured through the options.  During this tangling process, Org
-expands variables in the source code, and resolves any Noweb style
+expands variables in the source code, and resolves any noweb style
 references (see @ref{Noweb Reference Syntax}).
 
 @anchor{Header arguments}
@@ -18625,7 +18643,7 @@ the source block.
 Includes both @samp{link} and @samp{org} options.
 
 @item @samp{noweb}
-Includes @samp{link} option, expands Noweb references (see @ref{Noweb Reference Syntax}), and wraps them in link comments inside the body
+Includes @samp{link} option, expands noweb references (see @ref{Noweb Reference Syntax}), and wraps them in link comments inside the body
 of the code block.
 @end table
 
@@ -18664,7 +18682,7 @@ By default Org expands code blocks during tangling.  The @samp{no-expand}
 header argument turns off such expansions.  Note that one side-effect
 of expansion by @code{org-babel-expand-src-block} also assigns values (see
 @ref{Environment of a Code Block}) to variables.  Expansions also replace
-Noweb references with their targets (see @ref{Noweb Reference Syntax}).
+noweb references with their targets (see @ref{Noweb Reference Syntax}).
 Some of these expansions may cause premature assignment, hence this
 option.  This option makes a difference only for tangling.  It has no
 effect when exporting since code blocks for execution have to be
@@ -18925,11 +18943,13 @@ for Python and Emacs Lisp languages.
 @node Noweb Reference Syntax
 @section Noweb Reference Syntax
 
-@cindex code block, Noweb reference
-@cindex syntax, Noweb
-@cindex source code, Noweb reference
+@cindex code block, noweb reference
+@cindex syntax, noweb
+@cindex source code, noweb reference
 
-Org supports named blocks in Noweb@footnote{For Noweb literate programming details, see
+@cindex @samp{noweb-ref}, header argument
+Source code blocks can include references to other source code blocks,
+using a noweb@footnote{For noweb literate programming details, see
 @uref{http://www.cs.tufts.edu/~nr/noweb/}.} style syntax:
 
 @example
@@ -18937,42 +18957,48 @@ Org supports named blocks in Noweb@footnote{For Noweb literate programming detai
 @end example
 
 
-Org can replace the construct with the source code, or the results of
-evaluation, of the code block identified as @var{CODE-BLOCK-ID}.
+@noindent
+where @var{CODE-BLOCK-ID} refers to either the @samp{NAME} of a single
+source code block, or a collection of one or more source code blocks
+sharing the same @samp{noweb-ref} header argument (see @ref{Using Header Arguments}).  Org can replace such references with the source code of
+the block or blocks being referenced, or, in the case of a single
+source code block named with @samp{NAME}, with the results of an evaluation
+of that block.
 
 @cindex @samp{noweb}, header argument
-The @samp{noweb} header argument controls expansion of Noweb syntax
+The @samp{noweb} header argument controls expansion of noweb syntax
 references.  Expansions occur when source code blocks are evaluated,
 tangled, or exported.
 
 @table @asis
 @item @samp{no}
-Default.  No expansion of Noweb syntax references in the body of the
+Default.  No expansion of noweb syntax references in the body of the
 code when evaluating, tangling, or exporting.
 
 @item @samp{yes}
-Expansion of Noweb syntax references in the body of the code block
+Expansion of noweb syntax references in the body of the code block
 when evaluating, tangling, or exporting.
 
 @item @samp{tangle}
-Expansion of Noweb syntax references in the body of the code block
+Expansion of noweb syntax references in the body of the code block
 when tangling.  No expansion when evaluating or exporting.
 
 @item @samp{no-export}
-Expansion of Noweb syntax references in the body of the code block
+Expansion of noweb syntax references in the body of the code block
 when evaluating or tangling.  No expansion when exporting.
 
 @item @samp{strip-export}
-Expansion of Noweb syntax references in the body of the code block
-when expanding prior to evaluating or tangling.  Removes Noweb
+Expansion of noweb syntax references in the body of the code block
+when expanding prior to evaluating or tangling.  Removes noweb
 syntax references when exporting.
 
 @item @samp{eval}
-Expansion of Noweb syntax references in the body of the code block
+Expansion of noweb syntax references in the body of the code block
 only before evaluating.
 @end table
 
-In the following example,
+In the most simple case, the contents of a single source block is
+inserted within other blocks.  Thus, in following example,
 
 @example
 #+NAME: initialization
@@ -18996,10 +19022,105 @@ the second code block is expanded as
 #+END_SRC
 @end example
 
-Noweb insertions honor prefix characters that appear before the Noweb
+You may also include the contents of multiple blocks sharing a common
+@samp{noweb-ref} header argument, which can be set at the file, sub-tree,
+or code block level.  In the example Org file shown next, the body of
+the source code in each block is extracted for concatenation to a pure
+code file when tangled.
+
+@example
+#+BEGIN_SRC sh :tangle yes :noweb yes :shebang #!/bin/sh
+  <<fullest-disk>>
+#+END_SRC
+* the mount point of the fullest disk
+  :PROPERTIES:
+  :header-args: :noweb-ref fullest-disk
+  :END:
+
+** query all mounted disks
+#+BEGIN_SRC sh
+  df \
+#+END_SRC
+
+** strip the header row
+#+BEGIN_SRC sh
+  |sed '1d' \
+#+END_SRC
+
+** output mount point of fullest disk
+#+BEGIN_SRC sh
+  |awk '@{if (u < +$5) @{u = +$5; m = $6@}@} END @{print m@}'
+#+END_SRC
+@end example
+
+@cindex @samp{noweb-sep}, header argument
+By default a newline separates each noweb reference concatenation.  To
+use a different separator, edit the @samp{noweb-sep} header argument.
+
+Alternatively, Org can include the results of evaluation of a single
+code block rather than its body.  Evaluation occurs when parentheses,
+possibly including arguments, are appended to the code block name, as
+shown below.
+
+@example
+<<NAME(optional arguments)>>
+@end example
+
+
+Note that in this case, a code block name set by @samp{NAME} keyword is
+required; the reference set by @samp{noweb-ref} will not work when
+evaluation is desired.
+
+Here is an example that demonstrates how the exported content changes
+when noweb style references are used with parentheses versus without.
+Given:
+
+@example
+#+NAME: some-code
+#+BEGIN_SRC python :var num=0 :results output :exports none
+  print(num*10)
+#+END_SRC
+@end example
+
+@noindent
+this code block:
+
+@example
+#+BEGIN_SRC text :noweb yes
+  <<some-code>>
+#+END_SRC
+@end example
+
+@noindent
+expands to:
+
+@example
+print(num*10)
+@end example
+
+
+Below, a similar noweb style reference is used, but with parentheses,
+while setting a variable @samp{num} to 10:
+
+@example
+#+BEGIN_SRC text :noweb yes
+  <<some-code(num=10)>>
+#+END_SRC
+@end example
+
+@noindent
+Note that the expansion now contains the results of the code block
+@samp{some-code}, not the code block itself:
+
+@example
+100
+@end example
+
+
+Noweb insertions honor prefix characters that appear before the noweb
 syntax reference.  This behavior is illustrated in the following
-example.  Because the @samp{<<example>>} Noweb reference appears behind the
-SQL comment syntax, each line of the expanded Noweb reference is
+example.  Because the @samp{<<example>>} noweb reference appears behind the
+SQL comment syntax, each line of the expanded noweb reference is
 commented.  With:
 
 @example
@@ -19029,8 +19150,8 @@ expands to:
 #+END_SRC
 @end example
 
-Since this change does not affect Noweb replacement text without
-newlines in them, inline Noweb references are acceptable.
+Since this change does not affect noweb replacement text without
+newlines in them, inline noweb references are acceptable.
 
 This feature can also be used for management of indentation in
 exported code snippets.  With:
@@ -19069,102 +19190,17 @@ else:
     print('do things when false')
 @end example
 
-@cindex @samp{noweb-ref}, header argument
-When expanding Noweb style references, Org concatenates code blocks by
-matching the reference name to either the code block name or, if none
-is found, to the @samp{noweb-ref} header argument.
+When in doubt about the outcome of a source code block expansion, you
+can preview the results with the following command:
 
-For simple concatenation, set this @samp{noweb-ref} header argument at the
-sub-tree or file level.  In the example Org file shown next, the body
-of the source code in each block is extracted for concatenation to
-a pure code file when tangled.
-
-@example
-#+BEGIN_SRC sh :tangle yes :noweb yes :shebang #!/bin/sh
-  <<fullest-disk>>
-#+END_SRC
-* the mount point of the fullest disk
-  :PROPERTIES:
-  :header-args: :noweb-ref fullest-disk
-  :END:
-
-** query all mounted disks
-#+BEGIN_SRC sh
-  df \
-#+END_SRC
-
-** strip the header row
-#+BEGIN_SRC sh
-  |sed '1d' \
-#+END_SRC
-
-** output mount point of fullest disk
-#+BEGIN_SRC sh
-  |awk '@{if (u < +$5) @{u = +$5; m = $6@}@} END @{print m@}'
-#+END_SRC
-@end example
-
-@cindex @samp{noweb-sep}, header argument
-By default a newline separates each noweb reference concatenation.  To
-change this newline separator, edit the @samp{noweb-sep} header argument.
-
-Eventually, Org can include the results of a code block rather than
-its body.  To that effect, append parentheses, possibly including
-arguments, to the code block name, as shown below.
-
-@example
-<<code-block-name(optional arguments)>>
-@end example
-
-
-Note that when using the above approach to a code block's results, the
-code block name set by @samp{NAME} keyword is required; the reference set
-by @samp{noweb-ref} does not work in that case.
-
-Here is an example that demonstrates how the exported content changes
-when Noweb style references are used with parentheses versus without.
-With:
-
-@example
-#+NAME: some-code
-#+BEGIN_SRC python :var num=0 :results output :exports none
-  print(num*10)
-#+END_SRC
-@end example
-
-@noindent
-this code block:
-
-@example
-#+BEGIN_SRC text :noweb yes
-  <<some-code>>
-#+END_SRC
-@end example
-
-@noindent
-expands to:
-
-@example
-print(num*10)
-@end example
-
-
-Below, a similar Noweb style reference is used, but with parentheses,
-while setting a variable @samp{num} to 10:
-
-@example
-#+BEGIN_SRC text :noweb yes
-  <<some-code(num=10)>>
-#+END_SRC
-@end example
-
-@noindent
-Note that now the expansion contains the results of the code block
-@samp{some-code}, not the code block itself:
-
-@example
-100
-@end example
+@table @asis
+@item @kbd{C-c C-v v} or @kbd{C-c C-v C-v} (@code{org-babel-expand-src-block})
+@findex org-babel-expand-src-block
+@kindex C-c C-v v
+@kindex C-c C-v C-v
+Expand the current source code block according to its header
+arguments and pop open the results in a preview buffer.
+@end table
 
 @node Library of Babel
 @section Library of Babel
@@ -19421,10 +19457,6 @@ At the beginning of an empty headline, complete TODO keywords.
 After @samp{\}, complete @TeX{} symbols supported by the exporter.
 
 @item
-After @samp{*}, complete headlines in the current buffer so that they
-can be used in search links like: @samp{[[*find this headline]]}
-
-@item
 After @samp{:} in a headline, complete tags.  Org deduces the list of
 tags from the @samp{TAGS} in-buffer option (see @ref{Setting Tags}), the
 variable @code{org-tag-alist}, or from all tags used in the current
@@ -19436,7 +19468,11 @@ of keys is constructed dynamically from all keys used in the
 current buffer.
 
 @item
-After @samp{[}, complete link abbreviations (see @ref{Link Abbreviations}).
+After @samp{[[}, complete link abbreviations (see @ref{Link Abbreviations}).
+
+@item
+After @samp{[[*}, complete headlines in the current buffer so that they
+can be used in search links like: @samp{[[*find this headline]]}
 
 @item
 After @samp{#+}, complete the special keywords like @samp{TYP_TODO} or
@@ -19590,9 +19626,16 @@ through @code{word-wrap}.}.
 @vindex org-indent-indentation-per-level
 To make more horizontal space, the headlines are shifted by two
 characters.  Configure @code{org-indent-indentation-per-level} variable for
-a different number.  Only one star on each headline is visible, the
-rest are masked with the same font color as the background@footnote{Note that turning on Org Indent mode sets
-@code{org-hide-leading-stars} to @code{t} and @code{org-adapt-indentation} to @code{nil}.}.
+a different number.
+
+@vindex org-indent-mode-turns-on-hiding-stars
+@vindex org-indent-mode-turns-off-org-adapt-indentation
+By default, Org Indent mode turns off @code{org-adapt-indentation} and does
+hide leading stars by locally setting @code{org-hide-leading-stars} to @code{t}:
+only one star on each headline is visible, the rest are masked with
+the same font color as the background.  If you want to customize this
+default behavior, see @code{org-indent-mode-turns-on-hiding-stars} and
+@code{org-indent-mode-turns-off-org-adapt-indentation}.
 
 @vindex org-startup-indented
 To globally turn on Org Indent mode for all files, customize the
@@ -19641,7 +19684,7 @@ face @code{org-hide} to them.  For per-file preference, use these file
 @item @emph{Odd levels} (@code{org-odd-levels-only})
 @vindex org-odd-levels-only
 The third setting makes Org use only odd levels, 1, 3, 5, @dots{}, in
-the outline to create more indentation.  On a  per-file level,
+the outline to create more indentation.  On a per-file level,
 control this with:
 
 @example
@@ -20978,11 +21021,11 @@ process of adding Org links to Unix man pages, which look like this
 
 
 @noindent
-The following @samp{org-man.el} file implements it
+The following @samp{ol-man.el} file implements it
 
 @lisp
-;;; org-man.el - Support for links to man pages in Org mode
-(require 'org)
+;;; ol-man.el - Support for links to man pages in Org mode
+(require 'ol)
 
 (org-link-set-parameters "man"
                          :follow org-man-command
@@ -21001,7 +21044,7 @@ The following @samp{org-man.el} file implements it
     (let* ((page (org-man-get-page-name))
            (link (concat "man:" page))
            (description (format "Man page for %s" page)))
-      (org-store-link-props
+      (org-link-store-props
        :type "man"
        :link link
        :description description))))
@@ -21024,8 +21067,8 @@ The following @samp{org-man.el} file implements it
       (`ascii (format "%s (%s)" desc path))
       (t path))))
 
-(provide 'org-man)
-;;; org-man.el ends here
+(provide ol-man)
+;;; ol-man.el ends here
 @end lisp
 
 @noindent
@@ -21033,15 +21076,15 @@ To activate links to man pages in Org, enter this in the Emacs init
 file:
 
 @lisp
-(require 'org-man)
+(require 'ol-man)
 @end lisp
 
 @noindent
-A review of @samp{org-man.el}:
+A review of @samp{ol-man.el}:
 
 @enumerate
 @item
-First, @samp{(require 'org)} ensures @samp{org.el} is loaded.
+First, @samp{(require 'ol)} ensures that @samp{ol.el} is loaded.
 
 @item
 @findex org-link-set-parameters
@@ -21354,7 +21397,7 @@ table.  The first argument is the table whose lines are a list of
 fields or the symbol @code{hline}.  The second argument is the property
 list consisting of parameters specified in the @samp{#+ORGTBL: SEND} line.
 Please share your translator functions by posting them to the Org
-users mailing list, at @email{emacs-orgmode@@gnu.org}.
+users mailing list, at @email{emacs-orgmode@@@@gnu.org}.
 
 @node Dynamic Blocks
 @appendixsec Dynamic Blocks
@@ -21956,7 +21999,7 @@ and intuitive editing features, and to incorporate project planning
 functionality directly into a notes file.
 
 Since the first release, literally thousands of emails to me or to the
-@email{emacs-orgmode@@gnu.org, mailing list} have provided a constant stream of bug reports, feedback,
+@email{emacs-orgmode@@@@gnu.org, mailing list} have provided a constant stream of bug reports, feedback,
 new ideas, and sometimes patches and add-on code.  Many thanks to
 everyone who has helped to improve this package.  I am trying to keep
 here a list of the people who had significant influence in shaping one
@@ -22055,7 +22098,7 @@ be complete if the ones above were not mentioned in this manual.
 
 @itemize
 @item
-Russel Adams came up with the idea for drawers.
+Russell Adams came up with the idea for drawers.
 
 @item
 Thomas Baumann wrote @samp{ol-bbdb.el} and @samp{ol-mhe.el}.

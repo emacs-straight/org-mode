@@ -7,13 +7,13 @@
 @set txicodequoteundirected
 @set txicodequotebacktick
 @set MAINTAINERSITE @uref{https://orgmode.org,maintainers webpage}
-@set MAINTAINER Carsten Dominik
-@set MAINTAINEREMAIL @email{carsten at orgmode dot org}
-@set MAINTAINERCONTACT @uref{mailto:carsten at orgmode dot org,contact the maintainer}
+@set MAINTAINER Bastien Guerry
+@set MAINTAINEREMAIL @email{bzg@gnu.org}
+@set MAINTAINERCONTACT @uref{mailto:bzg@gnu.org,contact the maintainer}
 @c %**end of header
 
 @copying
-Copyright @copyright{} 2004--2019  Free Software Foundation, Inc.
+Copyright @copyright{} 2004--2020  Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -31,7 +31,7 @@ modify this GNU manual.''
 @end quotation
 @end copying
 
-@dircategory Emacs
+@dircategory Emacs editing modes
 @direntry
 * Org Guide: (orgguide). Abbreviated Org mode manual.
 @end direntry
@@ -186,16 +186,14 @@ make autoloads
 @anchor{Activation}
 @heading Activation
 
-Add the following lines to your Emacs init file.  The last four lines
-define @emph{global} keys for some commands---please choose suitable keys
-yourself.
+Add the following lines to your Emacs init file to define @emph{global}
+keys for three commands that are useful in any Emacs buffer, not just
+Org buffers.  Please choose suitable keys yourself.
 
 @lisp
-;; The following lines are always needed.  Choose your own keys.
-(global-set-key (kbd "C-l") 'org-store-link)
-(global-set-key (kbd "C-a") 'org-agenda)
-(global-set-key (kbd "C-c") 'org-capture)
-(global-set-key (kbd "C-b") 'org-switchb)
+(global-set-key (kbd "C-c l") 'org-store-link)
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c c") 'org-capture)
 @end lisp
 
 Files with extension @samp{.org} will be put into Org mode automatically.
@@ -205,7 +203,7 @@ Files with extension @samp{.org} will be put into Org mode automatically.
 
 If you find problems with Org, or if you have questions, remarks, or
 ideas about it, please mail to the Org mailing list
-@email{emacs-orgmode@@gnu.org}.  For information on how to submit bug
+@email{emacs-orgmode@@@@gnu.org}.  For information on how to submit bug
 reports, see the main manual.
 
 @node Document Structure
