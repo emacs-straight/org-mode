@@ -730,7 +730,7 @@ region by using the mouse to select a region, or pressing
 
 If you find problems with Org, or if you have questions, remarks, or
 ideas about it, please send an email to the Org mailing list
-@email{emacs-orgmode@@@@gnu.org}.  You can subscribe to the list @uref{https://lists.gnu.org/mailman/listinfo/emacs-orgmode, from this
+@email{emacs-orgmode@@gnu.org}.  You can subscribe to the list @uref{https://lists.gnu.org/mailman/listinfo/emacs-orgmode, from this
 web page}.  If you are not a member of the mailing list, your mail will
 be passed to the list after a moderator has approved it@footnote{Please consider subscribing to the mailing list in order to
 minimize the work the mailing list moderators have to do.}.
@@ -21397,7 +21397,7 @@ table.  The first argument is the table whose lines are a list of
 fields or the symbol @code{hline}.  The second argument is the property
 list consisting of parameters specified in the @samp{#+ORGTBL: SEND} line.
 Please share your translator functions by posting them to the Org
-users mailing list, at @email{emacs-orgmode@@@@gnu.org}.
+users mailing list, at @email{emacs-orgmode@@gnu.org}.
 
 @node Dynamic Blocks
 @appendixsec Dynamic Blocks
@@ -21999,7 +21999,7 @@ and intuitive editing features, and to incorporate project planning
 functionality directly into a notes file.
 
 Since the first release, literally thousands of emails to me or to the
-@email{emacs-orgmode@@@@gnu.org, mailing list} have provided a constant stream of bug reports, feedback,
+@email{emacs-orgmode@@gnu.org, mailing list} have provided a constant stream of bug reports, feedback,
 new ideas, and sometimes patches and add-on code.  Many thanks to
 everyone who has helped to improve this package.  I am trying to keep
 here a list of the people who had significant influence in shaping one

@@ -203,7 +203,7 @@ Files with extension @samp{.org} will be put into Org mode automatically.
 
 If you find problems with Org, or if you have questions, remarks, or
 ideas about it, please mail to the Org mailing list
-@email{emacs-orgmode@@@@gnu.org}.  For information on how to submit bug
+@email{emacs-orgmode@@gnu.org}.  For information on how to submit bug
 reports, see the main manual.
 
 @node Document Structure
