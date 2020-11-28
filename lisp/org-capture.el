@@ -49,11 +49,13 @@
 
 (require 'cl-lib)
 (require 'org)
+(require 'org-refile)
 
 (declare-function org-at-encrypted-entry-p "org-crypt" ())
 (declare-function org-at-table-p "org-table" (&optional table-type))
 (declare-function org-clock-update-mode-line "org-clock" (&optional refresh))
 (declare-function org-datetree-find-date-create "org-datetree" (date &optional keep-restriction))
+(declare-function org-datetree-find-month-create (d &optional keep-restriction))
 (declare-function org-decrypt-entry "org-crypt" ())
 (declare-function org-element-at-point "org-element" ())
 (declare-function org-element-lineage "org-element" (datum &optional types with-self))
@@ -68,6 +70,7 @@
 
 (defvar dired-buffers)
 (defvar org-end-time-was-given)
+(defvar org-keyword-properties)
 (defvar org-remember-default-headline)
 (defvar org-remember-templates)
 (defvar org-store-link-plist)
@@ -329,7 +332,7 @@ be replaced with content and expanded:
   %^L         Like %^C, but insert as link.
   %^{prop}p   Prompt the user for a value for property `prop'.
   %^{prompt}  Prompt the user for a string and replace this sequence with it.
-              A default value and a completion table ca be specified like this:
+              A default value and a completion table can be specified like this:
               %^{prompt|default|completion2|completion3|...}.
   %?          After completing the template, position cursor here.
   %\\1 ... %\\N Insert the text entered at the nth %^{prompt}, where N
@@ -1006,11 +1009,13 @@ Store them in the capture property list."
 	   (org-capture-put-target-region-and-position)
 	   (widen)
 	   ;; Make a date/week tree entry, with the current date (or
-	   ;; yesterday, if we are extending dates for a couple of hours)
+	   ;; yesterday, if we are extending dates for a couple of
+	   ;; hours)
 	   (funcall
-	    (if (eq (org-capture-get :tree-type) 'week)
-		#'org-datetree-find-iso-week-create
-	      #'org-datetree-find-date-create)
+	    (pcase (org-capture-get :tree-type)
+	      (`week #'org-datetree-find-iso-week-create)
+	      (`month #'org-datetree-find-month-create)
+	      (_ #'org-datetree-find-date-create))
 	    (calendar-gregorian-from-absolute
 	     (cond
 	      (org-overriding-default-time
@@ -1031,7 +1036,7 @@ Store them in the capture property list."
 			 (apply #'encode-time 0 0
 				org-extend-today-until
 				(cl-cdddr (decode-time prompt-time))))
-			((string-match "\\([^ ]+\\)--?[^ ]+[ ]+\\(.*\\)"
+			((string-match "\\([^ ]+\\)-[^ ]+[ ]+\\(.*\\)"
 				       org-read-date-final-answer)
 			 ;; Replace any time range by its start.
 			 (apply #'encode-time
@@ -1068,7 +1073,7 @@ Store them in the capture property list."
 		    (org-capture-put-target-region-and-position)
 		    (widen)
 		    (goto-char org-clock-hd-marker))
-	   (error "No running clock that could be used as capture target")))
+	   (user-error "No running clock that could be used as capture target")))
 	(target (error "Invalid capture target specification: %S" target)))
 
       (org-capture-put :buffer (current-buffer)
@@ -1125,8 +1130,8 @@ may have been stored before."
     (`plain (org-capture-place-plain-text))
     (`item (org-capture-place-item))
     (`checkitem (org-capture-place-item)))
-  (org-capture-mode 1)
-  (setq-local org-capture-current-plist org-capture-plist))
+  (setq-local org-capture-current-plist org-capture-plist)
+  (org-capture-mode 1))
 
 (defun org-capture-place-entry ()
   "Place the template as a new Org entry."
@@ -1139,7 +1144,13 @@ may have been stored before."
     (when exact-position (goto-char exact-position))
     (cond
      ;; Force insertion at point.
-     ((org-capture-get :insert-here) nil)
+     (insert-here?
+      ;; FIXME: level should probably set directly within (let ...).
+      (setq level (org-get-valid-level
+		   (if (or (org-at-heading-p)
+			   (ignore-errors (org-back-to-heading t)))
+		       (org-outline-level)
+		     1))))
      ;; Insert as a child of the current entry.
      ((org-capture-get :target-entry-p)
       (setq level (org-get-valid-level
@@ -1163,7 +1174,7 @@ may have been stored before."
 	(org-capture-empty-lines-after)
 	(unless (org-at-heading-p) (outline-next-heading))
 	(org-capture-mark-kill-region origin (point))
-	(org-capture-narrow beg (point))
+	(org-capture-narrow beg (if (eobp) (point) (1- (point))))
 	(org-capture--position-cursor beg (point))))))
 
 (defun org-capture-place-item ()
@@ -1744,11 +1755,11 @@ The template may still contain \"%?\" for cursor positioning."
 			 (_ (error "Invalid `org-capture--clipboards' value: %S"
 				   org-capture--clipboards)))))
 		    ("p"
-		     ;; We remove file properties inherited from
+		     ;; We remove keyword properties inherited from
 		     ;; target buffer so `org-read-property-value' has
 		     ;; a chance to find allowed values in sub-trees
 		     ;; from the target buffer.
-		     (setq-local org-file-properties nil)
+		     (setq-local org-keyword-properties nil)
 		     (let* ((origin (set-marker (make-marker)
 						(org-capture-get :pos)
 						(org-capture-get :buffer)))
@@ -1932,5 +1943,9 @@ Assume sexps have been marked with
 
 
 (provide 'org-capture)
+
+;; Local variables:
+;; generated-autoload-file: "org-loaddefs.el"
+;; End:
 
 ;;; org-capture.el ends here
