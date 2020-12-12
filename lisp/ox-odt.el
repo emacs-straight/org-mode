@@ -2200,16 +2200,15 @@ SHORT-CAPTION are strings."
 (defun org-odt--image-size
   (file info &optional user-width user-height scale dpi embed-as)
   (let* ((--pixels-to-cms
-	  (function (lambda (pixels dpi)
-		      (let ((cms-per-inch 2.54)
-			    (inches (/ pixels dpi)))
-			(* cms-per-inch inches)))))
+          (lambda (pixels dpi)
+            (let ((cms-per-inch 2.54)
+                  (inches (/ pixels dpi)))
+              (* cms-per-inch inches))))
 	 (--size-in-cms
-	  (function
-	   (lambda (size-in-pixels dpi)
-	     (and size-in-pixels
-		  (cons (funcall --pixels-to-cms (car size-in-pixels) dpi)
-			(funcall --pixels-to-cms (cdr size-in-pixels) dpi))))))
+	  (lambda (size-in-pixels dpi)
+	    (and size-in-pixels
+		 (cons (funcall --pixels-to-cms (car size-in-pixels) dpi)
+		       (funcall --pixels-to-cms (cdr size-in-pixels) dpi)))))
 	 (dpi (or dpi (plist-get info :odt-pixels-per-inch)))
 	 (anchor-type (or embed-as "paragraph"))
 	 (user-width (and (not scale) user-width))
@@ -2948,7 +2947,7 @@ channel."
 	     (when scheduled
 	       (concat
 		(format "<text:span text:style-name=\"%s\">%s</text:span>"
-			"OrgScheduledKeyword" org-deadline-string)
+			"OrgScheduledKeyword" org-scheduled-string)
 		(org-odt-timestamp scheduled contents info)))))))
 
 
@@ -4242,7 +4241,7 @@ Return output file's name."
 			   `((?i . ,(shell-quote-argument in-file))
 			     (?I . ,(browse-url-file-url in-file))
 			     (?f . ,out-fmt)
-			     (?o . ,out-file)
+			     (?o . ,(shell-quote-argument out-file))
 			     (?O . ,(browse-url-file-url out-file))
 			     (?d . , (shell-quote-argument out-dir))
 			     (?D . ,(browse-url-file-url out-dir))

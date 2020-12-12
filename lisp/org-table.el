@@ -935,7 +935,7 @@ lines.  It can have the following values:
 - regexp  When a regular expression, use it to match the separator."
   (interactive "f\nP")
   (when (and (called-interactively-p 'any)
-	     (not (string-match-p "\.\\(?:[tc]sv\\|txt\\)$" file)))
+	     (not (string-match-p (rx "." (or "txt" "tsv" "csv") eos) file)))
     (user-error "Cannot import such file"))
   (unless (bolp) (insert "\n"))
   (let ((beg (point))
@@ -3342,7 +3342,6 @@ Parameters get priority."
       (setq-local org-selected-window sel-win)
       (use-local-map org-table-fedit-map)
       (add-hook 'post-command-hook #'org-table-fedit-post-command t t)
-      (easy-menu-add org-table-fedit-menu)
       (setq startline (org-current-line))
       (dolist (entry eql)
 	(let* ((type (cond
@@ -5173,15 +5172,13 @@ When LOCAL is non-nil, show references for the table at point."
 		  orgtbl-line-start-regexp))
     (when (fboundp 'font-lock-add-keywords)
       (font-lock-add-keywords nil orgtbl-extra-font-lock-keywords)
-      (org-restart-font-lock))
-    (easy-menu-add orgtbl-mode-menu))
+      (org-restart-font-lock)))
    (t
     (setq auto-fill-inhibit-regexp org-old-auto-fill-inhibit-regexp)
     (remove-hook 'before-change-functions 'org-before-change-function t)
     (when (fboundp 'font-lock-remove-keywords)
       (font-lock-remove-keywords nil orgtbl-extra-font-lock-keywords)
       (org-restart-font-lock))
-    (easy-menu-remove orgtbl-mode-menu)
     (force-mode-line-update 'all))))
 
 (defun orgtbl-make-binding (fun n &rest keys)
@@ -6203,7 +6200,7 @@ which will prompt for the width."
 ;; Here are two examples of different styles.
 
 ;; Unicode block characters are used to give a smooth effect.
-;; See http://en.wikipedia.org/wiki/Block_Elements
+;; See https://en.wikipedia.org/wiki/Block_Elements
 ;; Use one of those drawing functions
 ;; - orgtbl-ascii-draw   (the default ascii)
 ;; - orgtbl-uc-draw-grid (unicode with a grid effect)
@@ -6217,7 +6214,7 @@ which will prompt for the width."
 It is a variant of orgtbl-ascii-draw with Unicode block
 characters, for a smooth display.  Bars appear as grids (to the
 extent the font allows)."
-  ;; http://en.wikipedia.org/wiki/Block_Elements
+  ;; https://en.wikipedia.org/wiki/Block_Elements
   ;; best viewed with the "DejaVu Sans Mono" font.
   (orgtbl-ascii-draw value min max width
 		     " \u258F\u258E\u258D\u258C\u258B\u258A\u2589"))

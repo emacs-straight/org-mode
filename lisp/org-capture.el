@@ -270,7 +270,9 @@ properties are:
  :time-prompt        Prompt for a date/time to be used for date/week trees
                      and when filling the template.
 
- :tree-type          When `week', make a week tree instead of the month tree.
+ :tree-type          When `week', make a week tree instead of the month-day
+                     tree.  When `month', make a month tree instead of the
+                     month-day tree.
 
  :unnarrowed         Do not narrow the target buffer, simply show the
                      full buffer.  Default is to narrow it so that you
@@ -1147,10 +1149,11 @@ may have been stored before."
      (insert-here?
       ;; FIXME: level should probably set directly within (let ...).
       (setq level (org-get-valid-level
-		   (if (or (org-at-heading-p)
-			   (ignore-errors (org-back-to-heading t)))
-		       (org-outline-level)
-		     1))))
+                   (if (or (org-at-heading-p)
+                           (ignore-errors
+			     (save-excursion (org-back-to-heading t))))
+                       (org-outline-level)
+                     1))))
      ;; Insert as a child of the current entry.
      ((org-capture-get :target-entry-p)
       (setq level (org-get-valid-level
