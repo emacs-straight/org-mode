@@ -2141,6 +2141,10 @@ Turn on the display of the first data row of the table at point in
 the window header line when this first row is not visible anymore in
 the buffer.  You can activate this minor mode by default by setting
 the option @code{org-table-header-line-p} to @code{t}.
+
+@item @kbd{M-x org-table-transpose-table-at-point}
+@findex org-table-transpose-table-at-point
+Transpose the table at point and eliminate hlines.
 @end table
 
 @node Column Width and Alignment
@@ -6983,7 +6987,7 @@ organize such tasks using a so-called repeater in a @samp{DEADLINE},
 the @samp{+1m} is a repeater; the intended interpretation is that the task
 has a deadline on @samp{<2005-10-01>} and repeats itself every (one) month
 starting from that time.  You can use yearly, monthly, weekly, daily
-and hourly repeat cookies by using the @samp{y}, @samp{w}, @samp{m}, @samp{d} and @samp{h}
+and hourly repeat cookies by using the @samp{y}, @samp{m}, @samp{w}, @samp{d} and @samp{h}
 letters.  If you need both a repeater and a special warning period in
 a deadline entry, the repeater should come first and the warning
 period last
@@ -8410,7 +8414,7 @@ a @kbd{C-1} prefix argument.
 @item @code{:tree-type}
 Use @code{week} to make a week tree instead of the month-day tree,
 i.e., place the headings for each day under a heading with the
-current ISO week.  Use @@code@{month@} to group entries by month
+current ISO week.  Use @code{month} to group entries by month
 only.  Default is to group entries by day.
 
 @item @code{:unnarrowed}
@@ -8631,8 +8635,9 @@ By default, Org attach uses ID properties when adding attachments to
 outline nodes.  This makes working with attachments fully automated.
 There is no decision needed for folder-name or location.  ID-based
 directories are by default located in the @samp{data/} directory, which
-lives in the same directory where your Org file lives@footnote{This is always the other, not the user.  See the variable
-@code{org-link-from-user-regexp}.}.
+lives in the same directory where your Org file lives@footnote{If you move entries or Org files from one directory to
+another, you may want to configure @code{org-attach-id-dir} to contain
+an absolute path.}.
 
 When attachments are made using @code{org-attach} a default tag @samp{ATTACH} is
 added to the node that gets the attachments.
@@ -10538,6 +10543,12 @@ in the original buffer, but the agenda is not resorted.  Use the
 @kindex S-DOWN
 @findex org-agenda-priority-down
 Decrease the priority of the current item.
+
+@item @kbd{C-c C-x e} or short @kbd{e} (@code{org-agenda-set-effort})
+@kindex e
+@kindex C-c C-x e
+@findex org-agenda-set-effort
+Set the effort property for the current item.
 
 @item @kbd{C-c C-z} or short @kbd{z} (@code{org-agenda-add-note})
 @kindex z
