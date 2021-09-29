@@ -3537,7 +3537,7 @@ the link.  Such a function will be called with the tag as the only
 argument.
 
 With the above setting, you could link to a specific bug with
-=[[bugzilla:129]]=, search the web for =OrgMode= with =[[google:OrgMode]]=,
+=[[bugzilla:129]]=, search the web for =OrgMode= with =[[duckduckgo:OrgMode]]=,
 show the map location of the Free Software Foundation =[[gmap:51
 Franklin Street, Boston]]= or of Carsten office =[[omap:Science Park 904,
 Amsterdam, The Netherlands]]= and find out what the Org author is doing
@@ -3549,7 +3549,7 @@ can define them in the file with
 #+cindex: @samp{LINK}, keyword
 #+begin_example
 ,#+LINK: bugzilla  http://10.1.2.9/bugzilla/show_bug.cgi?id=
-,#+LINK: google    http://www.google.com/search?q=%s
+,#+LINK: duckduckgo https://duckduckgo.com/?q=%s
 #+end_example
 
 In-buffer completion (see [[*Completion]]) can be used after =[= to
@@ -5987,15 +5987,17 @@ various inputs are interpreted, the items filled in by Org mode are in
 | =2012-w04-5=   | \rArr{} Same as above                           |
 
 Furthermore you can specify a relative date by giving, as the /first/
-thing in the input: a plus/minus sign, a number and a letter---=d=,
-=w=, =m= or =y=---to indicate change in days, weeks, months, or
-years.  With a single plus or minus, the date is always relative to
-today.  With a double plus or minus, it is relative to the default
-date.  If instead of a single letter, you use the abbreviation of day
-name, the date is the Nth such day, e.g.:
+thing in the input: a plus/minus sign, a number and a letter---=h=,
+=d=, =w=, =m= or =y=---to indicate a change in hours, days, weeks,
+months, or years.  With =h= the date is relative to the current time,
+with the other letters and a single plus or minus, the date is
+relative to today at 00:00.  With a double plus or minus, it is
+relative to the default date.  If instead of a single letter, you use
+the abbreviation of day name, the date is the Nth such day, e.g.:
 
 | =+0=    | \rArr{} today                       |
 | =.=     | \rArr{} today                       |
+| =+2h=   | \rArr{} two hours from now          |
 | =+4d=   | \rArr{} four days from today        |
 | =+4=    | \rArr{} same as +4d                 |
 | =+2w=   | \rArr{} two weeks from today        |
@@ -21268,7 +21270,7 @@ that are mentioned in the manual.  For a more complete list, use
 
 This manual is for Org version {{{version}}}.
 
-Copyright \copy 2004--2020 Free Software Foundation, Inc.
+Copyright \copy 2004--2021 Free Software Foundation, Inc.
 
 #+begin_quote
 Permission is granted to copy, distribute and/or modify this document
