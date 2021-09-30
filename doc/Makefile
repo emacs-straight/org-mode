@@ -9,7 +9,7 @@ all:		$(ORG_MAKE_DOC)
 
 info:		org orgguide
 
-html:		org.html
+html:		org.html orgguide.html
 
 pdf:		org.pdf orgguide.pdf
 
@@ -28,9 +28,9 @@ guide::		orgguide.texi org-version.inc
 endif
 
 org.texi orgguide.texi:	org-manual.org org-guide.org
-	$(BATCH) \
-	  --eval '(add-to-list '"'"'load-path "../lisp")' \
-	  --eval '(load "../mk/org-fixup.el")' \
+	$(BATCH) 				      \
+	  --eval '(add-to-list `load-path "../lisp")' \
+	  --eval '(load "../mk/org-fixup.el")' 	      \
 	  --eval '(org-make-manuals)'
 
 org-version.inc:	org.texi
@@ -48,16 +48,17 @@ org-version.tex:	orgcard.tex
 
 install:	org orgguide
 	if [ ! -d $(DESTDIR)$(infodir) ]; then $(MKDIR) $(DESTDIR)$(infodir); else true; fi ;
-	$(CP) org $(DESTDIR)$(infodir)
-	$(CP) orgguide $(DESTDIR)$(infodir)
-	$(INSTALL_INFO) --infodir=$(DESTDIR)$(infodir) org
-	$(INSTALL_INFO) --infodir=$(DESTDIR)$(infodir) orgguide
+	$(CP) org.info $(DESTDIR)$(infodir)
+	$(CP) orgguide.info $(DESTDIR)$(infodir)
+	$(INSTALL_INFO) --infodir=$(DESTDIR)$(infodir) org.info
+	$(INSTALL_INFO) --infodir=$(DESTDIR)$(infodir) orgguide.info
 
 clean:
-	$(RM) org orgguide *.pdf *.html *_letter.tex org-version.inc \
-	      org-version.tex *.aux *.cp *.cps *.dvi *.fn *.fns *.ky *.kys \
-              *.pg *.pgs *.toc *.tp *.tps *.vr *.vrs *.log *.html *.ps
+	$(RM) *.pdf *.html *.info *_letter.tex org-version.inc org-version.tex \
+	      *.aux *.cp *.cps *.dvi *.fn *.fns *.ky *.kys *.pg *.pgs *.toc \
+              *.tp *.tps *.vr *.vrs *.log *.ps
 cleanall:	clean
+	$(RM) org.texi orgguide.texi
 	$(RMR) guide manual
 
 clean-install:
@@ -68,7 +69,7 @@ clean-install:
 .SUFFIXES:	.texi .tex .txt _letter.tex
 
 %:		%.texi org-version.inc
-	$(MAKEINFO) --no-split $< -o $@
+	$(MAKEINFO) --no-split $< -o $@.info
 
 # the following two lines work around a bug in some versions of texi2dvi
 %.pdf:		LC_ALL=C
@@ -88,8 +89,8 @@ ifneq ($(SERVERMK),)
 endif
 
 %_letter.tex:	%.tex
-	$(BATCH) \
-	  --eval '(add-to-list '"'"'load-path "../lisp")' \
-	  --eval '(load "org-compat.el")' \
-	  --eval '(load "../mk/org-fixup.el")' \
+	$(BATCH) 				      \
+	  --eval '(add-to-list `load-path "../lisp")' \
+	  --eval '(load "org-compat.el")' 	      \
+	  --eval '(load "../mk/org-fixup.el")' 	      \
 	  --eval '(org-make-letterformat "$(<F)" "$(@F)")'

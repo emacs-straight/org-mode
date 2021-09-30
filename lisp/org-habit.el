@@ -1,6 +1,6 @@
 ;;; org-habit.el --- The habit tracking code for Org -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2009-2020 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2021 Free Software Foundation, Inc.
 
 ;; Author: John Wiegley <johnw at gnu dot org>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -90,7 +90,7 @@ It will be green even if it was done after the deadline."
   :type 'boolean)
 
 (defcustom org-habit-scheduled-past-days nil
-"Value to use instead of `org-scheduled-past-days', for habits only.
+  "Value to use instead of `org-scheduled-past-days', for habits only.
 
 If nil, `org-scheduled-past-days' is used.
 
