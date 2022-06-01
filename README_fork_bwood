@@ -1,0 +1,68 @@
+-*- mode: org; fill-column:70 -*-
+* Modifications
+** step-headers-off
+When using =.doom.d/bdw/clocktable-flat.el= I need a way to disable step headers in the csv export. Forking org was the best solution I found.
+*** Other solutions
+**** el-patch
+This might work. ([[https://www.reddit.com/r/emacs/comments/bhlxmd/where_is_the_proper_way_of_rewriting_or_replacing/eluo8zm/?utm_source=share&utm_medium=web2x&context=3][Reddit thread]].) But not straightforward to me and I'm not sure if it offers advantages... Revisit?
+**** advice/defadvice (doesnt' meet requirements)
+I believe you can only add code that runs before or after a function.  I needed to modify the function.
+* Installation in Doom Emacs
+** packages.el
+[[https://github.com/doomemacs/doomemacs/blob/develop/docs/getting_started.org#changing-a-recipe-for-an-included-package][Instructions on overriding recipes]].
+
+#+begin_example
+(package! org-mode
+  :recipe (:host github
+           :repo "bwood/org-mode"
+           :branch "9.6"
+           :build t
+           :pre-build
+           (with-temp-file "org-version.el"
+             (let ((version
+                    (with-temp-buffer
+                      (insert-file-contents (doom-path "lisp/org.el") nil 0 1024)
+                      (if (re-search-forward "^;; Version: \\([^\n-]+\\)" nil t)
+                          (match-string-no-properties 1)
+                        "Unknown"))))
+               (insert (format "(defun org-release () %S)\n" version)
+                       (format "(defun org-git-version (&rest _) \"%s-??-%s\")\n"
+                               version (cdr (doom-call-process "git" "rev-parse" "--short" "HEAD")))
+                       "(provide 'org-version)\n")))))
+#+end_example
+
+
+Doom installs =org= as a "language." See =lang: org= in init.el. Org-mode needs build customizations for doom.  Everything after =:branch= in the recipe above comes from the [[https://github.com/doomemacs/doomemacs/blob/develop/modules/lang/org/packages.el#L17-L29][org recipe]] in Doom's core packages.el.  We need to copy this exact =:pre-build= code to our packages.el for =doom sync -u= to work.
+
+I figured this out from [[https://github.com/doomemacs/doomemacs/issues/5721#issuecomment-974824939][this hlissner comment]].
+
+* Procedure to update this when you want a newer version of org-mode
+Could probably be refined, but for now:
+
+1. Need to know what version of org-mode is in use by the Doom version to which you've just updated.
+   1. Comment out our custom org-recipe above and update Doom.
+   2. When Doom is updated, =M-x org-version= then =C-h e= to find it in *Messages*:
+      #+begin_example
+      Org mode version 9.6 (9.6-??-3eda41c @ /Users/bwood/.emacs.d/.local/straight/build-27.2/org-mode/)
+      #+end_example
+      =3eda41c= is the sha we need later. (Maybe there's an easier way to find this SHA -- could we use the pin sha in the above-linked recipe?)
+2. Checkout main branch in this repo.
+   1. If you don't have an upstream remote configured add one with =git remote add  git@github-bwood.com:emacs-straight/org-mode.git=
+3. Each of our "releases" is a branch.  E.g. the current release branch is 9.6.  If we are going to 9.7, make a new 9.7 branch off the 9.6 branch then:
+   #+begin_example
+   git pull upstream
+   git reset --hard 3eda41c
+   #+end_example
+4. Apply our patches
+   #+begin_example
+   ✔ ~/code/lisp/org-mode [9.6 L|●1]
+   14:52 $ patch -p1 < patches/step-headers-off.patch
+   patching file lisp/org-clock.el
+   Hunk #1 succeeded at 2826 (offset 7 lines).
+   Hunk #2 succeeded at 2856 (offset 7 lines).
+   #+end_example
+   (If these don't apply, figure out what's changed in org-mode.)
+5. Commit the patched files to your new branch and push them up to its remote.
+
+* Restart emacs after syncing org-mode
+After =doom sync -u= do a complete restart of emacs, not just a =doom/reload=.  I think this is needed because the updated org-mode function is called by [[https://github.com/bwood/doom.d/blob/main/bdw/clocktable-flat.el][bdw/clocktable-flat.el]].
