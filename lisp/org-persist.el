@@ -161,7 +161,7 @@
 (declare-function org-at-heading-p "org" (&optional invisible-not-ok))
 
 
-(defconst org-persist--storage-version "2.5"
+(defconst org-persist--storage-version "2.7"
   "Persistent storage layout version.")
 
 (defgroup org-persist nil
@@ -189,7 +189,7 @@
 (defcustom org-persist-remote-files 100
   "Whether to keep persistent data for remote files.
 
-When this variable is nil, never save persitent data associated with
+When this variable is nil, never save persistent data associated with
 remote files.  When t, always keep the data.  When
 `check-existence', contact remote server containing the file and only
 keep the data when the file exists on the server.  When a number, keep
@@ -593,7 +593,8 @@ COLLECTION is the plist holding data collection."
         (mapc (lambda (collection) (org-persist--add-to-index collection 'hash)) org-persist--index)
       (setq org-persist--index nil)
       (when (file-exists-p org-persist-directory)
-        (dolist (file (directory-files org-persist-directory 'absolute "^[^.][^.]"))
+        (dolist (file (directory-files org-persist-directory 'absolute
+                                       "\\`[^.][^.]"))
           (if (file-directory-p file)
               (delete-directory file t)
             (delete-file file))))
@@ -855,9 +856,16 @@ When IGNORE-RETURN is non-nil, just return t on success without calling
       (setq associated (org-persist--normalize-associated (get-file-buffer (plist-get associated :file)))))
     (let ((collection (org-persist--get-collection container associated)))
       (setf collection (plist-put collection :associated associated))
-      (unless (seq-find (lambda (v)
-                          (run-hook-with-args-until-success 'org-persist-before-write-hook v associated))
-                        (plist-get collection :container))
+      (unless (or
+               ;; Prevent data leakage from encrypted files.
+               ;; We do it in somewhat paranoid manner and do not
+               ;; allow anything related to encrypted files to be
+               ;; written.
+               (and (plist-get associated :file)
+                    (string-match-p epa-file-name-regexp (plist-get associated :file)))
+               (seq-find (lambda (v)
+                           (run-hook-with-args-until-success 'org-persist-before-write-hook v associated))
+                         (plist-get collection :container)))
         (when (or (file-exists-p org-persist-directory) (org-persist--save-index))
           (let ((file (org-file-name-concat org-persist-directory (plist-get collection :persist-file)))
                 (data (mapcar (lambda (c) (cons c (org-persist-write:generic c collection)))
