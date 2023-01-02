@@ -1,6 +1,6 @@
 ;;; org-element.el --- Parser for Org Syntax         -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2022 Free Software Foundation, Inc.
+;; Copyright (C) 2012-2023 Free Software Foundation, Inc.
 
 ;; Author: Nicolas Goaziou <n.goaziou at gmail dot com>
 ;; Keywords: outlines, hypermedia, calendar, wp
@@ -5299,7 +5299,7 @@ indentation removed from its contents."
 ;; mechanism is robust enough to preserve total order among elements
 ;; even when the tree is only partially synchronized.
 ;;
-;; The cache code debuggin is fairly complex because cache request
+;; The cache code debugging is fairly complex because cache request
 ;; state is often hard to reproduce.  An extensive diagnostics
 ;; functionality is built into the cache code to assist hunting bugs.
 ;; See `org-element--cache-self-verify', `org-element--cache-self-verify-frequency',
@@ -7272,18 +7272,18 @@ Each element indicates the latest `org-element--cache-change-tic' when
 change did not contain gaps.")
 
 ;;;###autoload
-(defun org-element-cache-reset (&optional all no-persistance)
+(defun org-element-cache-reset (&optional all no-persistence)
   "Reset cache in current buffer.
 When optional argument ALL is non-nil, reset cache in all Org
 buffers.
-When optional argument NO-PERSISTANCE is non-nil, do not try to update
+When optional argument NO-PERSISTENCE is non-nil, do not try to update
 the cache persistence in the buffer."
   (interactive "P")
   (dolist (buffer (if all (buffer-list) (list (current-buffer))))
     (org-with-base-buffer buffer
       (when (and org-element-use-cache (derived-mode-p 'org-mode))
         ;; Only persist cache in file buffers.
-        (when (and (buffer-file-name) (not no-persistance))
+        (when (and (buffer-file-name) (not no-persistence))
           (when (not org-element-cache-persistent)
             (org-persist-unregister 'org-element--headline-cache (current-buffer))
             (org-persist-unregister 'org-element--cache (current-buffer)))
