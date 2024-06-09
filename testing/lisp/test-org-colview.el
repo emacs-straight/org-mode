@@ -26,47 +26,130 @@
 (require 'org-duration)
 (require 'org-inlinetask)
 
+(ert-deftest test-org-colview/uncompile-format ()
+  "Test `org-columns-uncompile-format' specifications."
+  ;; With minimum data, one element
+  (should
+   (equal "%ITEM"
+          (org-columns-uncompile-format '(("ITEM" "ITEM" nil nil nil)))))
+  ;; With minimum data, two element
+  (should
+   (equal "%ITEM %TODO"
+          (org-columns-uncompile-format
+           `(("ITEM" "ITEM" nil nil nil) ("TODO" "TODO" nil nil nil)))))
+  ;; Read width
+  (should
+   (equal "%10ITEM"
+          (org-columns-uncompile-format `(("ITEM" "ITEM" 10 nil nil)))))
+  ;; Read title
+  (should
+   (equal "%ITEM(some title)"
+          (org-columns-uncompile-format `(("ITEM" "some title" nil nil nil)))))
+  ;; Read operator
+  (should
+   (equal "%ITEM{+}"
+          (org-columns-uncompile-format `(("ITEM" "ITEM" nil "+" nil)))))
+  ;; Read operator printf
+  (should
+   (equal "%ITEM{+;%.1f}"
+          (org-columns-uncompile-format  `(("ITEM" "ITEM" nil "+" "%.1f"))))))
+
+(ert-deftest test-org-colview/compile-format ()
+  "Test `org-columns-compile-format' specifications."
+  ;; With minimum data, one element
+  (should
+   (equal `(("ITEM" "ITEM" nil nil nil))
+          (org-columns-compile-format
+           "%ITEM")))
+  ;; With minimum data, two element
+  (should
+   (equal `(("ITEM" "ITEM" nil nil nil) ("TODO" "TODO" nil nil nil))
+          (org-columns-compile-format
+           "%ITEM %TODO")))
+  ;; Read width
+  (should
+   (equal `(("ITEM" "ITEM" 10 nil nil))
+          (org-columns-compile-format
+           "%10ITEM")))
+  ;; Upcase property name
+  (should
+   (equal `(("ITEM" "item" nil nil nil))
+          (org-columns-compile-format
+           "%item")))
+  ;; Read title
+  (should
+   (equal `(("ITEM" "some title" nil nil nil))
+          (org-columns-compile-format
+           "%ITEM(some title)")))
+  ;; Read operator
+  (should
+   (equal `(("ITEM" "ITEM" nil "+" nil))
+          (org-columns-compile-format
+           "%ITEM{+}")))
+  ;; Read operator printf
+  (should
+   (equal `(("ITEM" "ITEM" nil "+" "%.1f"))
+          (org-columns-compile-format
+           "%ITEM{+;%.1f}"))))
+
+(ert-deftest test-org-colview/substring-below-width ()
+  "Test `org-columns--truncate-below-width'."
+  (cl-flet ((check (string width expect)
+              (string= expect (org-columns--truncate-below-width
+                               string width))))
+    (if (= (char-width ?…) 2)
+        (progn (should (check "12…" 3 "12"))
+               (should (check "1…2" 1 "1"))
+               (should (check "1…2" 2 "1"))
+               (should (check "1…2" 3 "1…"))
+               (should (check "……………………" 7 "………")))
+      (progn (should (check "12…" 4 "12…"))
+             (should (check "1…2" 1 "1"))
+             (should (check "1…2" 2 "1…"))
+             (should (check "1…2" 3 "1…2"))
+             (should (check "……………………" 7 "…………………"))))))
+
 (ert-deftest test-org-colview/get-format ()
   "Test `org-columns-get-format' specifications."
   ;; Without any clue, use `org-columns-default-format'.
   (should
    (equal "%A"
 	  (org-test-with-temp-text "* H"
-	    (let ((org-columns-default-format "%A"))
-	      (org-columns-get-format)))))
+	                           (let ((org-columns-default-format "%A"))
+	                             (org-columns-get-format)))))
   ;; If COLUMNS keyword is set, use it.
   (should
    (equal "%B"
 	  (org-test-with-temp-text "#+COLUMNS: %B\n* H"
-	    (let ((org-columns-default-format "%A"))
-	      (org-columns-get-format)))))
+	                           (let ((org-columns-default-format "%A"))
+	                             (org-columns-get-format)))))
   (should
    (equal "%B"
 	  (org-test-with-temp-text "#+columns: %B\n* H"
-	    (let ((org-columns-default-format "%A"))
-	      (org-columns-get-format)))))
+	                           (let ((org-columns-default-format "%A"))
+	                             (org-columns-get-format)))))
   (should
    (equal "%B"
 	  (org-test-with-temp-text "* H\n#+COLUMNS: %B"
-	    (let ((org-columns-default-format "%A"))
-	      (org-columns-get-format)))))
+	                           (let ((org-columns-default-format "%A"))
+	                             (org-columns-get-format)))))
   ;; When :COLUMNS: property is set somewhere in the tree, use it over
   ;; the previous ways.
   (should
    (equal
     "%C"
     (org-test-with-temp-text
-	"#+COLUMNS: %B\n* H\n:PROPERTIES:\n:COLUMNS: %C\n:END:\n** S\n<point>"
-      (let ((org-columns-default-format "%A"))
-	(org-columns-get-format)))))
+     "#+COLUMNS: %B\n* H\n:PROPERTIES:\n:COLUMNS: %C\n:END:\n** S\n<point>"
+     (let ((org-columns-default-format "%A"))
+       (org-columns-get-format)))))
   ;; When optional argument is provided, prefer it.
   (should
    (equal
     "%D"
     (org-test-with-temp-text
-	"#+COLUMNS: %B\n* H\n:PROPERTIES:\n:COLUMNS: %C\n:END:\n** S\n<point>"
-      (let ((org-columns-default-format "%A"))
-	(org-columns-get-format "%D"))))))
+     "#+COLUMNS: %B\n* H\n:PROPERTIES:\n:COLUMNS: %C\n:END:\n** S\n<point>"
+     (let ((org-columns-default-format "%A"))
+       (org-columns-get-format "%D"))))))
 
 (ert-deftest test-org-colview/columns-scope ()
   "Test `org-columns' scope."
@@ -160,7 +243,7 @@
 	      (org-columns))
 	    (org-trim (get-char-property (point) 'display)))))
   (should
-   (equal "1234… |"
+   (equal (if (= 1 (char-width ?…)) "1234… |" "123… |")
 	  (org-test-with-temp-text "* H\n:PROPERTIES:\n:P: 123456\n:END:"
 	    (let ((org-columns-default-format "%5P")
 		  (org-columns-ellipses "…"))
@@ -1010,6 +1093,73 @@
 	    (list (get-char-property 1 'org-columns-value-modified)
 		  (get-char-property 2 'org-columns-value-modified))))))
 
+(ert-deftest test-org-colview/columns-move-row-down ()
+  "Test `org-columns-move-row-down' specifications."
+  (should
+   (equal "* H
+** B
+** A
+"
+          (org-test-with-temp-text "* H
+** A
+** B
+"
+            (let ((org-columns-default-format "%ITEM")) (org-columns)
+                 (next-line 1)
+                 (org-columns-move-row-down)
+                 (buffer-substring-no-properties (point-min) (point-max)))))))
+
+(ert-deftest test-org-colview/columns-move-row-up ()
+  "Test `org-columns-move-row-up' specifications."
+  (should
+   (equal "* H
+** B
+** A
+"
+          (org-test-with-temp-text "* H
+** A
+** B
+"
+            (let ((org-columns-default-format "%ITEM")) (org-columns)
+                 (next-line 2)
+                 (org-columns-move-row-up)
+                 (buffer-substring-no-properties (point-min) (point-max)))))))
+
+(ert-deftest test-org-colview/columns--move-row-stay-at-the-same-column ()
+  "After function call 'org-columns--move-row' point should stay at the same column."
+  ;; `current-column' did not return _visual_ column prior to Emacs 29.
+  (skip-unless (version<= "29" emacs-version))
+  (should
+   (equal 35
+          (org-test-with-temp-text "* H
+** A
+** B
+"
+            (org-columns)
+            (next-line 1)
+            (forward-char 2)
+            (org-columns--move-row)
+            (current-column)))))
+
+(ert-deftest test-org-colview/columns-move-row-down-with-subheading ()
+  "Test `org-columns-move-row-up' specifications with subheading."
+  (should
+   (equal "* H
+** B
+** A
+*** A1
+"
+
+                    (org-test-with-temp-text "* H
+** A
+*** A1
+** B
+"
+          (let ((org-columns-default-format "%ITEM")) (org-columns)
+               (next-line 1)
+               (org-columns-move-row-down)
+               (buffer-substring-no-properties (point-min) (point-max)))))))
+
 (ert-deftest test-org-colview/columns-move-left ()
   "Test `org-columns-move-left' specifications."
   ;; Error when trying to move the left-most column.
@@ -1248,6 +1398,13 @@
 
 ;;; Dynamic block
 
+(defun test-org-colview/dblock-formatter (ipos table params)
+  "User-defined columnview dblock formatting function."
+  (goto-char ipos)
+  (insert-before-markers "Hello columnview!" "\n")
+  (insert-before-markers (format "table has %d rows" (length table)) "\n")
+  (insert-before-markers (format "there are %d parameters" (/ (length params) 2))))
+
 (ert-deftest test-org-colview/dblock ()
   "Test the column view table."
   (should
@@ -1271,6 +1428,19 @@
     (org-test-with-temp-text
         "* H\n:PROPERTIES:\n:A: 1\n:END:\n<point>#+BEGIN: columnview\n#+END:"
       (let ((org-columns-default-format "%ITEM %A")) (org-update-dblock))
+      (buffer-substring-no-properties (point) (point-max)))))
+  ;; Test column widths.
+  (should
+   (equal
+    "#+BEGIN: columnview
+| <5>  |
+| ITEM |
+|------|
+| H    |
+#+END:"
+    (org-test-with-temp-text
+        "* H\n<point>#+BEGIN: columnview\n#+END:"
+      (let ((org-columns-default-format "%5ITEM")) (org-update-dblock))
       (buffer-substring-no-properties (point) (point-max)))))
   ;; Properties are case insensitive.
   (should
@@ -1540,6 +1710,31 @@ SCHEDULED: <2020-05-11 Mon> DEADLINE: <2020-05-14 Thu>
      (let ((org-columns-default-format
 	    "%ITEM %DEADLINE(d) %SCHEDULED(s) %TIMESTAMP(t)"))
        (org-update-dblock))
+     (buffer-substring-no-properties (point) (point-max)))))
+  ;; custom formatting function
+  (should
+   (equal
+    "#+BEGIN: columnview :formatter test-org-colview/dblock-formatter
+Hello columnview!
+table has 3 rows
+there are 4 parameters
+#+END:"
+    (org-test-with-temp-text
+     "* H\n<point>#+BEGIN: columnview :formatter test-org-colview/dblock-formatter\n#+END:"
+     (let ((org-columns-default-format "%ITEM"))
+       (org-update-dblock))
+     (buffer-substring-no-properties (point) (point-max)))))
+  ;; test headline linkification
+  (should
+   (equal
+    "#+BEGIN: columnview :link t
+| ITEM |
+|------|
+| [[*H][H]]    |
+#+END:"
+    (org-test-with-temp-text
+     "* H\n<point>#+BEGIN: columnview :link t\n#+END:"
+     (let ((org-columns-default-format "%ITEM")) (org-update-dblock))
      (buffer-substring-no-properties (point) (point-max))))))
 
 (provide 'test-org-colview)

@@ -89,35 +89,43 @@ the buffer."
     ;; Remove clocktable.
     (delete-region (point) (search-forward "#+END:\n"))))
 
-(ert-deftest test-org-clok/org-clock-timestamps-change ()
+(ert-deftest test-org-clock/org-clock-timestamps-change ()
   "Test `org-clock-timestamps-change' specifications."
-  (should
-   (equal
-    "CLOCK: [2023-02-19 Sun 21:30]--[2023-02-19 Sun 23:35] =>  2:05"
-    (org-test-with-temp-text
-        "CLOCK: [2023-02-19 Sun 2<point>2:30]--[2023-02-20 Mon 00:35] =>  2:05"
-      (org-clock-timestamps-change 'down 1)
-      (buffer-string))))
-  (should
-   (equal
-    "CLOCK: [2023-02-20 Mon 00:00]--[2023-02-20 Mon 00:40] =>  0:40"
-    (org-test-with-temp-text
-        "CLOCK: [2023-02-19 Sun 23:<point>55]--[2023-02-20 Mon 00:35] =>  0:40"
-      (org-clock-timestamps-change 'up 1)
-      (buffer-string))))
-  (should
-   (equal
-    "CLOCK: [2023-02-20 Mon 00:30]--[2023-02-20 Mon 01:35] =>  1:05"
-    (org-test-with-temp-text
-        "CLOCK: [2023-02-19 Sun 2<point>3:30]--[2023-02-20 Mon 00:35] =>  1:05"
-      (org-clock-timestamps-change 'up 1)
-      (buffer-string)))))
+  (let ((sun (org-test-get-day-name "Sun"))
+        (mon (org-test-get-day-name "Mon")))
+    (should
+     (equal
+      (format "CLOCK: [2023-02-19 %s 21:30]--[2023-02-19 %s 23:35] =>  2:05"
+              sun sun)
+      (org-test-with-temp-text
+          "CLOCK: [2023-02-19 Sun 2<point>2:30]--[2023-02-20 Mon 00:35] =>  2:05"
+        (org-clock-timestamps-change 'down 1)
+        (buffer-string))))
+    (should
+     (equal
+      (format "CLOCK: [2023-02-20 %s 00:00]--[2023-02-20 %s 00:40] =>  0:40"
+              mon mon)
+      (org-test-with-temp-text
+          "CLOCK: [2023-02-19 Sun 23:<point>55]--[2023-02-20 Mon 00:35] =>  0:40"
+        (org-clock-timestamps-change 'up 1)
+        (buffer-string))))
+    (should
+     (equal
+      (format "CLOCK: [2023-02-20 %s 00:30]--[2023-02-20 %s 01:35] =>  1:05"
+              mon mon)
+      (org-test-with-temp-text
+          "CLOCK: [2023-02-19 Sun 2<point>3:30]--[2023-02-20 Mon 00:35] =>  1:05"
+        (org-clock-timestamps-change 'up 1)
+        (buffer-string))))))
 
-(ert-deftest test-org-clok/org-clock-update-time-maybe ()
+(ert-deftest test-org-clock/org-clock-update-time-maybe ()
   "Test `org-clock-update-time-maybe' specifications."
   (should
    (equal
-    "CLOCK: [2023-04-29 Sat 00:00]--[2023-05-04 Thu 01:00] => 121:00"
+    (format
+     "CLOCK: [2023-04-29 %s 00:00]--[2023-05-04 %s 01:00] => 121:00"
+     (org-test-get-day-name "Sat")
+     (org-test-get-day-name "Thu"))
     (org-test-with-temp-text
         "CLOCK: [2023-04-29 Sat 00:00]--[2023-05-04 Thu 01:00]"
       (should (org-clock-update-time-maybe))
@@ -313,19 +321,20 @@ the buffer."
 
 (ert-deftest test-org-clock/clock-drawer-dwim ()
   "Test DWIM update of days for clocks in logbook drawers."
-  (should (equal "* Foo
+  (let ((thu (org-test-get-day-name "Thu")))
+    (should (equal (format "* Foo
 :LOGBOOK:
-CLOCK: [2022-11-03 Thu 06:00]--[2022-11-03 Thu 06:01] =>  0:01
+CLOCK: [2022-11-03 %s 06:00]--[2022-11-03 %s 06:01] =>  0:01
 :END:
-"
-         (org-test-with-temp-text
-             "* Foo
+" thu thu)
+                   (org-test-with-temp-text
+                       "* Foo
 :LOGBOOK:
 <point>CLOCK: [2022-11-03 ??? 06:00]--[2022-11-03 ??? 06:01] =>  0:01
 :END:
 "
-           (org-ctrl-c-ctrl-c)
-           (buffer-string)))))
+                     (org-ctrl-c-ctrl-c)
+                     (buffer-string))))))
 
 
 ;;; Clocktable
@@ -822,21 +831,6 @@ CLOCK: [2016-12-27 Wed 13:09]--[2016-12-28 Wed 15:09] => 26:00
 :A: 1
 :END:
 CLOCK: [2016-12-27 Wed 13:09]--[2016-12-28 Wed 15:09] => 26:00"
-      (test-org-clock-clocktable-contents ":properties (\"A\")"))))
-  ;; Handle missing properties.
-  (should
-   (equal
-    "| A | Headline     | Time    |
-|---+--------------+---------|
-|   | *Total time* | *26:00* |
-|---+--------------+---------|
-| 1 | Foo          | 26:00   |"
-    (org-test-with-temp-text
-        "* Foo
-:PROPERTIES:
-:A: 1
-:END:
-CLOCK: [2016-12-27 Wed 13:09]--[2016-12-28 Wed 15:09] => 26:00"
       (test-org-clock-clocktable-contents ":properties (\"A\")")))))
 
 (ert-deftest test-org-clock/clocktable/tcolumns ()
@@ -1297,8 +1291,8 @@ CLOCK: [2012-03-29 Thu 16:00]--[2012-03-29 Thu 17:00] =>  1:00"
 
 \"Elements that are added to [the mode line] should normally end
 in a space (to ensure that consecutive 'global-mode-string'
-elements display properly)\" per Emacs manual, Section 24.4.4
-Variables Used in the Mode Line."
+elements display properly)\" per the Info node `(elisp)Mode Line
+Variables'."
   ;; Test the variant without effort.
   (should
    (equal
@@ -1324,6 +1318,58 @@ Variables Used in the Mode Line."
                      (org-clock-get-clock-string)
                      "<after> ")
         (org-clock-out))))))
+
+;;; Helpers
+
+(ert-deftest test-org-clock/special-range ()
+  "Test `org-clock-special-range'."
+  (let* ((cases
+          '((("2023-04-23 Sun" "2023-04-24 Mon" "2023-04-25 Tue" "2023-04-26 Wed"
+              "2023-04-27 Thu" "2023-04-28 Fri" "2023-04-29 Sat")
+             thisweek 0
+             "2023-04-23 Sun" "2023-04-30 Sun")
+            (("2023-04-24 Mon" "2023-04-25 Tue" "2023-04-26 Wed"
+              "2023-04-27 Thu" "2023-04-28 Fri" "2023-04-29 Sat" "2023-04-30 Sun")
+             thisweek 1
+             "2023-04-24 Mon" "2023-05-01 Mon")
+            (("2023-04-24 Mon" "2023-04-25 Tue" "2023-04-26 Wed"
+              "2023-04-27 Thu" "2023-04-28 Fri" "2023-04-29 Sat" "2023-04-30 Sun")
+             thisweek nil ; Copy of 1.
+             "2023-04-24 Mon" "2023-05-01 Mon")
+            (("2023-04-22 Sat"
+              "2023-04-23 Sun" "2023-04-24 Mon" "2023-04-25 Tue" "2023-04-26 Wed"
+              "2023-04-27 Thu" "2023-04-28 Fri")
+             thisweek 6
+             "2023-04-22 Sat" "2023-04-29 Sat")
+            (("2023-04-23 Sun" "2023-04-24 Mon" "2023-04-25 Tue" "2023-04-26 Wed"
+              "2023-04-27 Thu" "2023-04-28 Fri" "2023-04-29 Sat")
+             thisweek 7 ; Copy of 0.
+             "2023-04-23 Sun" "2023-04-30 Sun")))
+         (failed
+          (delq
+           nil
+           (mapcar (lambda (params)
+                     (pcase-let ((`(,days ,key ,wstart ,begin ,end) params))
+                       (delq
+                        nil
+                        (mapcar (lambda (today)
+                                  (let* ((ts-today (org-time-string-to-time today))
+                                         (range (org-clock-special-range
+                                                 key ts-today nil wstart nil))
+                                         (ts-begin (nth 0 range))
+                                         (ts-end (nth 1 range))
+                                         (expected-begin (org-time-string-to-time begin))
+                                         (expected-end (org-time-string-to-time end)))
+                                    (unless (and (equal ts-begin expected-begin)
+                                                 (equal ts-end expected-end))
+                                      (format "%s..%s != %s..%s %s %s :wstart %s"
+                                              begin end
+                                              (format-time-string "%F" ts-begin)
+                                              (format-time-string "%F" ts-end)
+                                              today key wstart))))
+                                days))))
+                   cases))))
+    (should-not failed)))
 
 (provide 'test-org-clock)
 ;;; test-org-clock.el end here

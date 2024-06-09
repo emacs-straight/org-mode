@@ -404,7 +404,21 @@ at the beginning of a line."
       "src_emacs-lisp{(+ 1 2)}\n{{{results(=3=)}}}"
       (org-test-with-temp-text "src_emacs-lisp{(+ 1 2)}\n{{{results(=2=)}}}"
 	(let ((org-babel-inline-result-wrap "=%s=")) (org-babel-execute-maybe))
-	(buffer-string))))))
+	(buffer-string)))))
+  ;; Handle inline src blocks inside parsed affiliated keyword.
+  (should
+   (equal
+    "#+caption: src_elisp{1} {{{results(=1=)}}}\n#+begin_src emacs-lisp\n1\n#+end_src"
+    (org-test-with-temp-text "#+caption: <point>src_elisp{1}\n#+begin_src emacs-lisp\n1\n#+end_src"
+      (let ((org-babel-inline-result-wrap "=%s=")) (org-babel-execute-maybe))
+      (buffer-string))))
+  ;; Handle inline src blocks inside heading title.
+  (should
+   (equal
+    "* Heading src_elisp{1} {{{results(=1=)}}}"
+    (org-test-with-temp-text "* Heading <point>src_elisp{1}"
+      (let ((org-babel-inline-result-wrap "=%s=")) (org-babel-execute-maybe))
+      (buffer-string)))))
 
 (ert-deftest test-ob/inline-src_blk-default-results-replace-line-2 ()
   ;; src_ at bol line 2...
@@ -2530,6 +2544,289 @@ abc
      (cl-letf (((symbol-function 'display-warning)
 		(lambda (&rest _) (error "No warnings should occur"))))
        (org-babel-import-elisp-from-file (buffer-file-name))))))
+
+(ert-deftest test-ob/org-babel-read ()
+  "Test `org-babel-read' specifications."
+  (dolist (inhibit '(t nil))
+    ;; A number
+    (should (equal 1 (org-babel-read "1" inhibit)))
+    (should (equal -1 (org-babel-read "-1" inhibit)))
+    (should (equal 1.2 (org-babel-read "1.2" inhibit)))
+    ;; Allow whitespace
+    (should (equal 1 (org-babel-read " 1 " inhibit)))
+    (should (equal 1 (org-babel-read " 1\n" inhibit)))
+    ;; Not a number
+    (should-not (equal 1 (org-babel-read "1foo" inhibit)))
+    ;; Empty string
+    (should (equal "" (org-babel-read "" inhibit)))
+    (should (equal " " (org-babel-read " " inhibit)))
+    ;; Elisp function call
+    (should
+     (equal (if inhibit
+                ;; Verbatim string, with spaces
+                "(+ 1 2) "
+              ;; Result of evaluation
+              3)
+            (org-babel-read "(+ 1 2) " inhibit)))
+    ;; Elisp function call must start from (
+    (should-not (equal 3 (org-babel-read " (+ 1 2)" nil)))
+    (should
+     (equal (if inhibit
+                "'(1 2)"
+              ;; Result of evaluation
+              '(1 2))
+            (org-babel-read "'(1 2)" inhibit)))
+    ;; `(...)
+    (should
+     (equal (if inhibit
+                "`(1 ,(+ 1 2))"
+              ;; Result of evaluation
+              '(1 3))
+            (org-babel-read "`(1 ,(+ 1 2))" inhibit)))
+    ;; [...]
+    (should
+     (equal (if inhibit
+                "[1 2 (foo)]"
+              ;; Result of evaluation
+              [1 2 (foo)])
+            (org-babel-read "[1 2 (foo)]" inhibit)))
+    ;; Special case: *this* literal is evaluated
+    (defvar *this* nil)
+    (let ((*this* 100))
+      (should
+       (equal
+        (if inhibit "*this*" 100)
+        (org-babel-read "*this*" inhibit))))
+    ;; Special case: data inside quotes
+    (should (equal "foo" (org-babel-read " \"foo\" " inhibit)))
+    (should (equal "foo" (org-babel-read " \"foo\"\n" inhibit)))
+    (should (equal "foo with\" inside" (org-babel-read " \"foo with\\\" inside\" " inhibit)))
+    (should (equal "abc\nsdf" (org-babel-read "\"abc\nsdf\"" inhibit)))
+    (should (equal "foo" (org-babel-read "\"foo\"" inhibit)))
+    (should (equal "\"foo\"(\"bar\"" (org-babel-read "\"foo\"(\"bar\"" inhibit)))
+    ;; Unpaired quotes
+    (should (equal "\"foo\"\"bar\"" (org-babel-read "\"foo\"\"bar\"" inhibit)))
+    ;; Recover from `read' parsing errors.
+    (org-babel-read "\"Quoted closing quote:\\\"" inhibit)))
+
+(ert-deftest test-ob/demarcate-block-split-duplication ()
+  "Test duplication of language, body, switches, and headers in splitting."
+  (let ((caption "#+caption: caption.")
+        (regexp (rx "#+caption: caption."))
+        (org-adapt-indentation nil))
+    (org-test-with-temp-text (format "
+%s
+#+header: :var edge=\"also duplicated\"
+#+header: :wrap \"src any-spanish -n\"
+#+name: Nobody
+#+begin_src any-english -i -n :var here=\"duplicated\" :wrap \"src any-english -n\"
+
+above split
+<point>
+below split
+
+#+end_src
+do not org-indent-block text here
+" caption)
+      (let ((wrap-val "src any-spanish -n") above below avars bvars)
+        (org-babel-demarcate-block)
+        (goto-char (point-min))
+        (org-babel-next-src-block) ;; upper source block
+        (setq above (org-babel-get-src-block-info))
+        (setq avars (org-babel--get-vars (nth 2 above)))
+        (org-babel-next-src-block) ;; lower source block
+        (setq below (org-babel-get-src-block-info))
+        (setq bvars (org-babel--get-vars (nth 2 below)))
+        ;; duplicated multi-line header arguments:
+        (should (string= "also duplicated" (cdr (assq 'edge avars))))
+        (should (string= "also duplicated" (cdr (assq 'edge bvars))))
+        (should (string= wrap-val (cdr (assq :wrap (nth 2 above)))))
+        (should (string= wrap-val (cdr (assq :wrap (nth 2 below)))))
+        ;; duplicated language, other header arguments, and switches:
+        (should (string= "any-english" (nth 0 above)))
+        (should (string= "any-english" (nth 0 below)))
+        (should (string= "above split" (org-trim (nth 1 above))))
+        (should (string= "below split" (org-trim (nth 1 below))))
+        (should (string= "duplicated" (cdr (assq 'here avars))))
+        (should (string= "duplicated" (cdr (assq 'here bvars))))
+        (should (string= "-i -n" (nth 3 above)))
+        (should (string= "-i -n" (nth 3 below)))
+        ;; non-duplication of name and caption, which is not in above/below.
+        (should (string= "Nobody" (nth 4 above)))
+        (should-not (string= "" (nth 4 below)))
+        (goto-char (point-min))
+        (should (re-search-forward regexp))
+        (should-not (re-search-forward regexp nil 'noerror))))))
+
+(ert-deftest test-ob/demarcate-block-split-prefix-point ()
+  "Test prefix argument point splitting."
+  (let ((org-adapt-indentation t)
+        (org-edit-src-content-indentation 2)
+        (org-src-preserve-indentation nil)
+        (ok-col 11)
+        (stars "^\\*\\*\\*\\*\\*\\*\\*\\*\\*\\*"))
+    (org-test-with-temp-text "
+********** 10 stars with point between two lines
+           #+begin_src emacs-lisp
+             ;; to upper block
+             <point>
+             ;; to lower block
+           #+end_src
+"
+      (org-babel-demarcate-block 'a-prefix-arg)
+      (goto-char (point-min))
+      (dolist (regexp `(,stars
+                        "#\\+beg" ";; to upper block" "#\\+end"
+                        ,stars
+                        "#\\+beg" ";; to lower block" "#\\+end"))
+        (should (re-search-forward regexp))
+        (goto-char (match-beginning 0))
+        (cond ((string= regexp stars)
+               (should (= 0 (current-column))))
+              ((string-prefix-p ";;" regexp)
+               (should (= (+ ok-col org-edit-src-content-indentation)
+                          (current-column))))
+              (t (should (= ok-col (current-column)))))))))
+
+(ert-deftest test-ob/demarcate-block-split-prefix-region ()
+  "Test prefix argument region splitting."
+  (let ((org-adapt-indentation t)
+        (org-edit-src-content-indentation 2)
+        (org-src-preserve-indentation nil)
+        (ok-col 11)
+        (stars "^\\*\\*\\*\\*\\*\\*\\*\\*\\*\\*")
+        (parts '("to upper block" "mark those words as region" "to lower block")))
+    (org-test-with-temp-text (format "
+********** 10 stars with region between two lines
+           #+header: :var b=\"also seen\"
+           #+begin_src any-language -i -n :var a=\"seen\"
+             %s
+             <point>%s
+             %s
+           #+end_src
+" (nth 0 parts) (nth 1 parts) (nth 2 parts))
+      (let ((n 0) info vars)
+        (transient-mark-mode 1)
+        (push-mark (point) t t)
+        (search-forward (nth 1 parts))
+        (org-babel-demarcate-block 'a-prefix-argument)
+        (goto-char (point-min))
+        (while (< n (length parts))
+          (org-babel-next-src-block)
+          (setq info (org-babel-get-src-block-info))
+          (setq vars (org-babel--get-vars (nth 2 info)))
+          (should (string= "any-language" (nth 0 info)))
+          (should (string= (nth n parts) (org-trim (nth 1 info))))
+          (should (string= "seen" (cdr (assq 'a vars))))
+          (should (string= "also seen" (cdr (assq 'b vars))))
+          (should (string= "-i -n" (nth 3 info)))
+          (cl-incf n)))
+      (goto-char (point-min))
+      (dolist (regexp `(,stars
+                        "#\\+beg" ,(nth 0 parts) "#\\+end"
+                        ,stars
+                        "#\\+beg" ,(nth 1 parts) "#\\+end"
+                        ,stars
+                        "#\\+beg" ,(nth 2 parts) "#\\+end"))
+        (should (re-search-forward regexp))
+        (goto-char (match-beginning 0))
+        (cond ((string= regexp stars)
+               (should (= 0 (current-column))))
+              ((memq regexp parts)
+               (should (= (+ ok-col org-edit-src-content-indentation)
+                          (current-column))))
+              (t (should (= ok-col (current-column)))))))))
+
+(ert-deftest test-ob/demarcate-block-split-user-errors ()
+  "Test for `user-error's in splitting"
+  (let ((org-adapt-indentation t)
+        (org-edit-src-content-indentation 2)
+        (org-src-preserve-indentation))
+    (let* ((caption "#+caption: caption.")
+           (within-body ";; within-body")
+           (below-block "# below block")
+           (template  "
+%s%s
+#+begin_src emacs-lisp
+
+  %s
+
+#+end_src
+
+%s%s
+"))
+      ;; Test point at caption.
+      (org-test-with-temp-text
+          (format template "<point>" caption within-body below-block "")
+        (should-error (org-babel-demarcate-block) :type 'user-error))
+      ;; Test region from below the block (mark) to within the body (point).
+      (org-test-with-temp-text
+          (format template "" caption within-body below-block "<point>")
+        ;; Set mark.
+        (transient-mark-mode 1)
+        (push-mark (point) t t)
+        ;; Set point.
+        (should (search-backward within-body nil 'noerror))
+        (goto-char (match-beginning 0))
+        (should-error (org-babel-demarcate-block) :type 'user-error)))))
+
+(ert-deftest test-ob/demarcate-block-wrap-point ()
+  "Test wrapping point in blank lines below a source block."
+  (org-test-with-temp-text "
+#+begin_src any-language -i -n :var here=\"not duplicated\"
+to upper block
+#+end_src
+<point>
+"
+    (let (info vars)
+      (org-babel-demarcate-block)
+      (goto-char (point-min))
+      (org-babel-next-src-block)
+      (setq info (org-babel-get-src-block-info))  ;; upper source block info
+      (setq vars (org-babel--get-vars (nth 2 info)))
+      (should (string= "any-language" (nth 0 info)))
+      (should (string= "to upper block" (org-trim (nth 1 info))))
+      (should (string= "not duplicated" (cdr (assq 'here vars))))
+      (should (string= "-i -n" (nth 3 info)))
+      (org-babel-next-src-block)
+      (setq info (org-babel-get-src-block-info)) ;; lower source block info
+      (setq vars (org-babel--get-vars (nth 2 info)))
+      (should (string= "any-language" (nth 0 info)))
+      (should (string= "" (org-trim (nth 1 info))))
+      (should-not vars)
+      (should (string= "" (nth 3 info))))))
+
+(ert-deftest test-ob/demarcate-block-wrap-region ()
+  "Test wrapping region in blank lines below a source block."
+  (let ((region-text "mark this line as region leaving point in blank lines"))
+    (org-test-with-temp-text (format "
+#+begin_src any-language -i -n :var here=\"not duplicated\"
+to upper block
+#+end_src
+<point>
+%s
+" region-text)
+      (let (info vars)
+        (transient-mark-mode 1)
+        (push-mark (point) t t)
+        (search-forward region-text)
+        (exchange-point-and-mark)
+        (org-babel-demarcate-block)
+        (goto-char (point-min))
+        (org-babel-next-src-block)
+        (setq info (org-babel-get-src-block-info))  ;; upper source block info
+        (setq vars (org-babel--get-vars (nth 2 info)))
+        (should (string= "any-language" (nth 0 info)))
+        (should (string= "to upper block" (org-trim (nth 1 info))))
+        (should (string= "not duplicated" (cdr (assq 'here vars))))
+        (should (string= "-i -n" (nth 3 info)))
+        (org-babel-next-src-block)
+        (setq info (org-babel-get-src-block-info)) ;; lower source block info
+        (setq vars (org-babel--get-vars (nth 2 info)))
+        (should (string= "any-language" (nth 0 info)))
+        (should (string= region-text (org-trim (nth 1 info))))
+        (should-not vars)
+        (should (string= "" (nth 3 info)))))))
 
 (provide 'test-ob)
 

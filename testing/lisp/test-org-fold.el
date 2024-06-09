@@ -1,4 +1,4 @@
-;;; test-org.el --- tests for org.el  -*- lexical-binding: t; -*-
+;;; test-org-fold.el --- tests for org-fold.el  -*- lexical-binding: t; -*-
 
 ;; Authors: Ihor Radchenko
 
@@ -418,7 +418,8 @@ Contents
 *** <point>c"
      (org-set-visibility-according-to-property)
      (not (invisible-p (point)))))
-  ;; When VISIBILITY properties are nested, ignore inner ones.
+  ;; When VISIBILITY properties are nested, do not alter parent
+  ;; visibility unless necessary.
   (should
    (org-test-with-temp-text
        "
@@ -431,7 +432,20 @@ Contents
 :VISIBILITY: folded
 :END:"
      (org-set-visibility-according-to-property)
-     (invisible-p (point)))))
+     (invisible-p (point))))
+  (should
+   (org-test-with-temp-text
+       "
+* A
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
+** <point>B
+:PROPERTIES:
+:VISIBILITY: content
+:END:"
+     (org-set-visibility-according-to-property)
+     (not (invisible-p (point))))))
 
 (ert-deftest test-org-fold/visibility-show-branches ()
   "Test visibility of inline archived subtrees."
@@ -469,6 +483,19 @@ Text here"
       (should (org-invisible-p))
       (goto-char 1)
       (org-delete-char 1)
+      (run-hooks 'post-command-hook)
+      (re-search-forward "Text")
+      (should-not (org-invisible-p)))
+    (org-test-with-temp-text
+        "<point>* Heading 1
+Text here"
+      (org-overview)
+      (re-search-forward "Text")
+      (should (org-invisible-p))
+      (goto-char 1)
+      (let ((last-command-event ?a))
+        (org-self-insert-command 1))
+      (run-hooks 'post-command-hook)
       (re-search-forward "Text")
       (should-not (org-invisible-p)))
     (org-test-with-temp-text
@@ -483,6 +510,7 @@ Text here"
       (should (org-invisible-p))
       (re-search-backward ":PROPERTIES:")
       (delete-char 1)
+      (run-hooks 'post-command-hook)
       (re-search-forward "ID")
       (should-not (org-invisible-p)))
     (org-test-with-temp-text
@@ -497,6 +525,7 @@ Text here"
       (should (org-invisible-p))
       (re-search-forward ":END:")
       (delete-char -1)
+      (run-hooks 'post-command-hook)
       (re-search-backward "ID")
       (should-not (org-invisible-p)))
     (org-test-with-temp-text
@@ -510,6 +539,7 @@ Text here"
       (re-search-forward "end")
       (should (org-invisible-p))
       (delete-char -1)
+      (run-hooks 'post-command-hook)
       (re-search-backward "2")
       (should-not (org-invisible-p)))))
 
@@ -664,6 +694,7 @@ Unfolded Paragraph.
 
 (ert-deftest test-org-fold/org-fold-display-inline-images ()
   "Test inline images displaying when cycling."
+  (skip-unless (not noninteractive))
   (let* ((org-cycle-inline-images-display t)
          (images-dir (expand-file-name "examples/images/" org-test-dir))
          (org-logo-image (expand-file-name "Org mode logo mono-color.png" images-dir)))
@@ -685,11 +716,18 @@ Unfolded Paragraph.
       (org-show-subtree)
       (org-fold-subtree t)
       (run-hook-with-args 'org-cycle-hook 'folded)
-      (should (null org-inline-image-overlays))
-      (should (null (overlays-in (point-min) (point-max))))
-      (org-show-subtree)
       (should-not org-inline-image-overlays)
-      (should-not (overlays-in (point-min) (point-max))))))
+      (should-not
+       (cl-every
+        (lambda (ov) (overlay-get ov 'org-image-overlay))
+        (overlays-in (point-min) (point-max))))
+      (org-show-subtree)
+      (run-hook-with-args 'org-cycle-hook 'subtree)
+      (should org-inline-image-overlays)
+      (should
+       (cl-every
+        (lambda (ov) (overlay-get ov 'org-image-overlay))
+        (overlays-in (point-min) (point-max)))))))
 
 (provide 'test-org-fold)
 

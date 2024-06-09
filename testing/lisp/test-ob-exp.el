@@ -205,14 +205,14 @@ Here is one at the end of a line. {{{results(=2=)}}}
 
 (ert-deftest ob-exp/exports-inline-code ()
   (should
-   (equal "src_emacs-lisp[]{(+ 1 1)}"
+   (equal "src_emacs-lisp[ :exports code]{(+ 1 1)}"
 	  (org-test-with-temp-text "src_emacs-lisp[:exports code]{(+ 1 1)}"
 	    (let ((org-babel-inline-result-wrap "=%s=")
 		  (org-export-use-babel t))
 	      (org-babel-exp-process-buffer))
 	    (buffer-string))))
   (should
-   (equal "src_emacs-lisp[]{(+ 1 1)}"
+   (equal "src_emacs-lisp[ :exports code]{(+ 1 1)}"
 	  (org-test-with-temp-text "src_emacs-lisp[ :exports code ]{(+ 1 1)}"
 	    (let ((org-babel-inline-result-wrap "=%s=")
 		  (org-export-use-babel t))
@@ -220,14 +220,14 @@ Here is one at the end of a line. {{{results(=2=)}}}
 	    (buffer-string))))
   ;; Do not escape characters in inline source blocks.
   (should
-   (equal "src_c[]{*a}"
+   (equal "src_c[ :exports code]{*a}"
 	  (org-test-with-temp-text "src_c[ :exports code ]{*a}"
 	    (let ((org-babel-inline-result-wrap "=%s=")
 		  (org-export-use-babel t))
 	      (org-babel-exp-process-buffer))
 	    (buffer-string))))
   (should
-   (equal "src_emacs-lisp[]{(+ 1 1)} {{{results(=2=)}}}"
+   (equal "src_emacs-lisp[ :exports both]{(+ 1 1)} {{{results(=2=)}}}"
 	  (org-test-with-temp-text "src_emacs-lisp[:exports both]{(+ 1 1)}"
 	    (let ((org-babel-inline-result-wrap "=%s=")
 		  (org-export-use-babel t))
@@ -265,7 +265,7 @@ Here is one at the end of a line. {{{results(=2=)}}}
      (regexp-quote "Here is one in the middle src_sh[]{echo 1} of a line.
 Here is one at the end of a line. src_sh[]{echo 2}
 src_sh[]{echo 3} Here is one at the beginning of a line.
-Here is one that is also evaluated: src_sh[]{echo 4} {{{results(=4=)}}}")
+Here is one that is also evaluated: src_sh[ :exports both]{echo 4} {{{results(=4=)}}}")
      nil t)
     (org-test-at-id "cd54fc88-1b6b-45b6-8511-4d8fa7fc8076"
       (org-narrow-to-subtree)
@@ -301,7 +301,7 @@ be evaluated."
 (ert-deftest ob-exp/exports-inline-code-double-eval-exports-both ()
   (let ((org-export-use-babel t))
     (should
-     (string-match (concat "\\`src_emacs-lisp\\(?:\\[]\\)?{(\\+ 1 1)} "
+     (string-match (concat "\\`src_emacs-lisp\\(?:\\[.+?]\\)?{(\\+ 1 1)} "
 			   "{{{results(src_emacs-lisp\\[ :exports code\\]{2})}}}$")
 		   (org-test-with-temp-text
 		       (concat "src_emacs-lisp[:exports both :results code "
@@ -403,7 +403,7 @@ be evaluated."
 : 2
 
 #+NAME: src1
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :exports both
 \(+ 1 1)
 #+end_src"
       (org-test-with-temp-text
@@ -430,7 +430,7 @@ be evaluated."
   "Test exporting a source block with a flag."
   (should
    (string-match
-    "\\`#\\+BEGIN_SRC emacs-lisp -some-flag$"
+    "\\`#\\+BEGIN_SRC emacs-lisp :flags -some-flag$"
     (org-test-with-temp-text
 	"#+BEGIN_SRC emacs-lisp :flags -some-flag\n\(+ 1 1)\n#+END_SRC"
       (org-babel-exp-process-buffer)
@@ -570,7 +570,7 @@ src_emacs-lisp{(+ 1 1)}"
 (ert-deftest ob-export/body-with-coderef ()
   "Test exporting a code block with coderefs."
   (should
-   (equal "#+begin_src emacs-lisp\n0 (ref:foo)\n#+end_src"
+   (equal "#+begin_src emacs-lisp :exports code\n0 (ref:foo)\n#+end_src"
 	  (org-test-with-temp-text
 	      "#+BEGIN_SRC emacs-lisp :exports code\n0 (ref:foo)\n#+END_SRC"
 	    (let ((org-export-use-babel t)
@@ -579,7 +579,7 @@ src_emacs-lisp{(+ 1 1)}"
 	    (buffer-string))))
   (should
    (equal
-    "#+begin_src emacs-lisp -l \"r:%s\"\n1 r:foo\n#+end_src"
+    "#+begin_src emacs-lisp -l \"r:%s\" -lisp :exports code\n1 r:foo\n#+end_src"
     (org-test-with-temp-text
 	"#+BEGIN_SRC emacs-lisp -l \"r:%s\" -lisp :exports code\n1 r:foo\n#+END_SRC"
       (let ((org-export-use-babel t))

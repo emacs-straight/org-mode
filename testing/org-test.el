@@ -387,35 +387,34 @@ Tramp related features.  We mostly follow
 (defun org-test-load ()
   "Load up the Org test suite."
   (interactive)
-  (setq org-id-locations-file
-        (expand-file-name ".test-org-id-locations" org-test-dir))
-  (cl-flet ((rld (base)
-	         ;; Recursively load all files, if files throw errors
-	         ;; then silently ignore the error and continue to the
-	         ;; next file.  This allows files to error out if
-	         ;; required executables aren't available.
-	         (mapc
-	          (lambda (path)
-		    (if (file-directory-p path)
-		        (rld path)
-		      (condition-case nil
-		          (when (string-match "\\`[A-Za-z].*\\.el\\'"
-					      (file-name-nondirectory path))
-                            (let ((feature-name
-                                   (intern
-                                    (file-name-base
-                                     (file-name-nondirectory path)))))
-			      (require feature-name path)))
-		        (missing-test-dependency
-		         (let ((name (intern
-				      (concat "org-missing-dependency/"
-					      (file-name-nondirectory
-					       (file-name-sans-extension path))))))
-			   (eval `(ert-deftest ,name ()
-                                    (skip-unless nil) ;; Make it prominent.
-				    :expected-result :failed (should nil))))))))
-	          (directory-files base 'full
-			           "\\`\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*\\.el\\'"))))
+  (cl-flet
+      ((rld (base)
+	 ;; Recursively load all files, if files throw errors
+	 ;; then silently ignore the error and continue to the
+	 ;; next file.  This allows files to error out if
+	 ;; required executables aren't available.
+	 (mapc
+	  (lambda (path)
+	    (if (file-directory-p path)
+		(rld path)
+	      (condition-case nil
+		  (when (string-match "\\`[A-Za-z].*\\.el\\'"
+				      (file-name-nondirectory path))
+                    (let ((feature-name
+                           (intern
+                            (file-name-base
+                             (file-name-nondirectory path)))))
+		      (require feature-name path)))
+		(missing-test-dependency
+		 (let ((name (intern
+			      (concat "org-missing-dependency/"
+				      (file-name-nondirectory
+				       (file-name-sans-extension path))))))
+		   (eval `(ert-deftest ,name ()
+                            (skip-unless nil) ;; Make it prominent.
+			    :expected-result :failed (should nil))))))))
+	  (directory-files base 'full
+			   "\\`\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*\\.el\\'"))))
     (rld (expand-file-name "lisp" org-test-dir))))
 
 (defun org-test-current-defun ()
@@ -447,6 +446,8 @@ Tramp related features.  We mostly follow
       (when (buffer-live-p b) (kill-buffer b)))))
 
 (defun org-test-update-id-locations ()
+  (setq org-id-locations-file
+        (expand-file-name ".test-org-id-locations" org-test-dir))
   (org-id-update-id-locations
    (directory-files
     org-test-example-dir 'full
@@ -546,6 +547,60 @@ TIME can be a non-nil Lisp time value, or a string specifying a date and time."
                   (setq messages (cons message messages)))))
        ,@body)
      (nreverse messages)))
+
+(defconst org-test-day-of-weeks-seconds
+  [302400                               ; Sun
+   388800                               ; Mon
+   475200                               ; Tue
+   561600                               ; Wed
+   648000                               ; Thu
+   734400                               ; Fri
+   820800]                              ; Sat
+  "Epoch seconds for generating days of week strings.
+Starts at Sunday, ends at Saturday.")
+
+(defconst org-test-day-of-weeks-abbrev
+  (apply #'vector
+         (seq-map (lambda (s) (format-time-string "%a" s t))
+                  org-test-day-of-weeks-seconds))
+  "Vector of abbreviated names of days of week.
+See `org-test-day-of-weeks-seconds'.")
+
+(defconst org-test-day-of-weeks-full
+  (apply #'vector
+         (seq-map (lambda (s) (format-time-string "%A" s t))
+                  org-test-day-of-weeks-seconds))
+  "Vector of full names for days of week.
+See `org-test-day-of-weeks-seconds'.")
+
+(defun org-test-get-day-name (day &optional full)
+  "Return string containing locale-specific DAY abbrev.
+DAY Should be Mon, Tue, ...
+When FULL is non-nil, return the full name like Monday, Tuesday, ..."
+  (aref
+   (if full org-test-day-of-weeks-full
+     org-test-day-of-weeks-abbrev)
+   (pcase day
+     ((or "Sun" "Sunday") 0)
+     ((or "Mon" "Monday") 1)
+     ((or "Tue" "Tuesday") 2)
+     ((or "Wed" "Wednesday") 3)
+     ((or "Thu" "Thursday") 4)
+     ((or "Fri" "Friday") 5)
+     ((or "Sat" "Saturday") 6)
+     (_ (error "Unknown day of week: %s" day)))))
+
+(defmacro org-test-with-exported-text (backend source &rest body)
+  "Run BODY in export buffer for SOURCE string via BACKEND."
+  (declare (indent 2))
+  `(org-test-with-temp-text ,source
+     (let ((export-buffer (generate-new-buffer "Org temporary export")))
+       (unwind-protect
+           (progn
+             (org-export-to-buffer ,backend export-buffer)
+             (with-current-buffer export-buffer
+               ,@body))
+         (kill-buffer export-buffer)))))
 
 (provide 'org-test)
 

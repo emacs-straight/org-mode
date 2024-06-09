@@ -39,5 +39,67 @@
         (goto-char (point-min))
         (should (search-forward "#### Footnotes"))))))
 
+(ert-deftest ox-md/headline-style ()
+  "Test `org-md-headline-style' being honored."
+  (dolist (org-md-headline-style '(atx setext mixed))
+    (let ((export-buffer "*Test MD Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-test-with-temp-text "#+options: toc:nil h:10
+* level 1
+** level 2
+*** level 3
+**** level 4
+***** level 5
+****** level 6
+******* level 7
+"
+        (org-export-to-buffer 'md export-buffer)
+        (with-current-buffer export-buffer
+          (goto-char (point-min))
+          (pcase org-md-headline-style
+            (`atx
+             (should (search-forward "# level 1"))
+             (should (search-forward "## level 2"))
+             (should (search-forward "### level 3"))
+             (should (search-forward "#### level 4"))
+             (should (search-forward "##### level 5"))
+             (should (search-forward "###### level 6"))
+             (should (search-forward "1.  level 7")))
+            (`setext
+             (should (search-forward "level 1\n======="))
+             (should (search-forward "level 2\n------"))
+             (should (search-forward "1.  level 3"))
+             (should (search-forward "1.  level 4"))
+             (should (search-forward "1.  level 5"))
+             (should (search-forward "1.  level 6"))
+             (should (search-forward "1.  level 7")))
+            (`mixed
+             (should (search-forward "level 1\n======="))
+             (should (search-forward "level 2\n------"))
+             (should (search-forward "### level 3"))
+             (should (search-forward "#### level 4"))
+             (should (search-forward "##### level 5"))
+             (should (search-forward "###### level 6"))
+             (should (search-forward "1.  level 7")))))))))
+
+(ert-deftest ox-md/item ()
+  "Test `org-md-item'."
+  ;; Align items at column 4.
+  ;; Columns >=100 not aligned.
+  (org-test-with-temp-text
+      (mapconcat
+       #'identity
+       (cl-loop for n from 1 to 105
+                collect (format "%d. item" n))
+       "\n")
+    (let ((export-buffer "*Test MD Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'md export-buffer)
+      (with-current-buffer export-buffer
+        (goto-char (point-min))
+        (should (search-forward "1.  item"))
+        (should (search-forward "10. item"))
+        (should (search-forward "101. item"))))))
+
 (provide 'test-ox-md)
 ;;; test-ox-md.el ends here

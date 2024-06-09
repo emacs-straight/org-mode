@@ -1,4 +1,4 @@
-;;; test-ox-html.el --- Tests for ox-html.el
+;;; test-ox-html.el --- Tests for ox-html.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022  Rudolf Adamkovič
 
@@ -813,6 +813,188 @@ $x$"
              (org-export-to-buffer 'html export-buffer
                nil nil nil nil nil
                #'html-mode))))))))
+
+
+;;; Rendering checkboxes
+
+(ert-deftest ox-html/checkbox-ascii ()
+  "Test ascii checkbox rendering"
+  (skip-unless (libxml-available-p))
+  (should
+   (equal
+    `(ul ((class . "org-ul"))
+         (li ((class . "off"))
+             (code nil ,(format "[%c]" (char-from-name "NO-BREAK SPACE"))) " not yet")
+         (li ((class . "on"))
+             (code nil "[X]") " I am done")
+         (li ((class . "trans"))
+             (code nil "[-]") " unclear"))
+    (org-test-with-temp-text "
+- [ ] not yet
+- [X] I am done
+- [-] unclear
+"
+      (let ((export-buffer "*Test HTML Export*")
+            (org-export-show-temporary-export-buffer nil))
+        (org-export-to-buffer 'html export-buffer
+          nil nil nil t nil)
+        (with-current-buffer export-buffer
+          (libxml-parse-xml-region (point-min) (point-max))))))))
+
+(ert-deftest ox-html/checkbox-html ()
+  "Test HTML checkbox rendering"
+  (skip-unless (libxml-available-p))
+  (should
+   (equal
+    '(ul ((class . "org-ul"))
+         (li ((class . "off"))
+             (input ((type . "checkbox"))) " not yet")
+         (li ((class . "on"))
+             (input ((type . "checkbox") (checked . "checked"))) " I am done")
+         (li ((class . "trans"))
+             (input ((type . "checkbox"))) " unclear"))
+    (org-test-with-temp-text "
+- [ ] not yet
+- [X] I am done
+- [-] unclear
+"
+      (let ((export-buffer "*Test HTML Export*")
+            (org-export-show-temporary-export-buffer nil))
+        (org-export-to-buffer 'html export-buffer
+          nil nil nil t '(:html-checkbox-type html))
+        (with-current-buffer export-buffer
+          (libxml-parse-xml-region (point-min) (point-max))))))))
+
+(ert-deftest ox-html/checkbox-unicode ()
+  "Test HTML checkbox rendering"
+  (skip-unless (libxml-available-p))
+  (should
+   (equal
+    '(ul ((class . "org-ul"))
+         (li ((class . "off")) "☐ not yet")
+         (li ((class . "on")) "☑ I am done")
+         (li ((class . "trans")) "☐ unclear"))
+    (org-test-with-temp-text "
+- [ ] not yet
+- [X] I am done
+- [-] unclear
+"
+      (let ((export-buffer "*Test HTML Export*")
+            (org-export-show-temporary-export-buffer nil))
+        (org-export-to-buffer 'html export-buffer
+          nil nil nil t '(:html-checkbox-type unicode))
+        (with-current-buffer export-buffer
+          (libxml-parse-xml-region (point-min) (point-max))))))))
+
+
+
+;;; Postamble Format
+
+(ert-deftest ox-html/postamble-default ()
+  "Test default postamble"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil nil)
+      (with-current-buffer export-buffer
+        (should (= 1 (how-many "Validate")))
+        (should (= 1 (how-many "Created: ")))))))
+
+
+(ert-deftest ox-html/postamble-custom ()
+  "Test custom postamble"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble "Foobar"))
+      (with-current-buffer export-buffer
+        (should (= 0 (how-many "Validate")))
+        (should (= 0 (how-many "Created: ")))
+        (should (= 1 (how-many "Foobar")))))))
+
+(ert-deftest ox-html/postamble-custom-format ()
+  "Test a html-postamble option (not -format) containing a format string"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble "Author=%a"
+                          :author "Madame Orange"))
+      (with-current-buffer export-buffer
+        (should (= 0 (how-many "Validate")))
+        (should (= 0 (how-many "Created: ")))
+        (should (= 1 (how-many "Author=Madame Orange")))))))
+
+(ert-deftest ox-html/postamble-none ()
+  "Test no postamble"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble nil))
+      (with-current-buffer export-buffer
+        (should (= 0 (how-many "Validate")))
+        (should (= 0 (how-many "Created: ")))))))
+
+(ert-deftest ox-html/postamble-format-wrong-config ()
+  "Test a html-postamble-format option, with incomplete config.
+
+This option is only picked up when html-postamble is set to
+T. This test leaves it unset, which means it is set to 'auto,
+which will make ox-html skip the html-postamble-format option
+entirely."
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble-format (("en" "Foobar"))))
+      (with-current-buffer export-buffer
+        (should (= 1 (how-many "Validate")))
+        (should (= 1 (how-many "Created: ")))
+        (should (= 0 (how-many "Foobar")))))))
+
+(ert-deftest ox-html/postamble-format-proper-config ()
+  "Test a html-postamble-format option which is just a string"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble-format (("en" "Foobar"))
+                          :html-postamble t))
+      (with-current-buffer export-buffer
+        (should (= 0 (how-many "Validate")))
+        (should (= 0 (how-many "Created: ")))
+        (should (= 1 (how-many "Foobar")))))))
+
+(ert-deftest ox-html/postamble-format-conflict ()
+  "Test conflicting postamble and postamble-format configs"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble-format "The format string"
+                          :html-postamble "Regular postamble"))
+      (with-current-buffer export-buffer
+        (should (= 0 (how-many "Validate")))
+        (should (= 0 (how-many "Created: ")))
+        (should (= 0 (how-many "The format string")))
+        (should (= 1 (how-many "Regular postamble")))))))
+
+(ert-deftest ox-html/postamble-format-author ()
+  "Test a html-postamble-format option containing the author"
+  (org-test-with-temp-text "Test, hi"
+    (let ((export-buffer "*Test HTML Export*")
+          (org-export-show-temporary-export-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil nil '(:html-postamble-format (("en" "Author=%a"))
+                          :html-postamble t
+                          :author "Monsieur Oeuf"))
+      (with-current-buffer export-buffer
+        (should (= 0 (how-many "Validate")))
+        (should (= 0 (how-many "Created: ")))
+        (should (= 1 (how-many "Author=Monsieur Oeuf")))))))
 
 (provide 'test-ox-html)
 ;;; test-ox-html.el ends here

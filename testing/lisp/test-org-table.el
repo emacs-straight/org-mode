@@ -938,7 +938,7 @@ See also URL `https://orgmode.org/worg/org-tutorials/org-lookups.html'."
   ;; For Lisp formula
   (should (equal "\"0\"" (org-table-make-reference "0" nil nil t)))
   (should (equal "\"z\"" (org-table-make-reference "z" nil nil t)))
-  (should (equal "" (org-table-make-reference "" nil nil t)))
+  (should (equal "\"\"" (org-table-make-reference "" nil nil t)))
   (should (equal "\"0\" \"1\"" (org-table-make-reference '("0" "1") nil nil t)))
   (should (equal "\"z\" \"1\"" (org-table-make-reference '("z" "1") nil nil t)))
   (should (equal "\"1\"" (org-table-make-reference '("" "1") nil nil t)))
@@ -965,7 +965,7 @@ See also URL `https://orgmode.org/worg/org-tutorials/org-lookups.html'."
   ;; For Lisp formula
   (should (equal "0" (org-table-make-reference "0" nil t t)))
   (should (equal "0" (org-table-make-reference "z" nil t t)))
-  (should (equal "" (org-table-make-reference "" nil t t)))
+  (should (equal "0" (org-table-make-reference "" nil t t)))
   (should (equal "0 1" (org-table-make-reference '("0" "1") nil t t)))
   (should (equal "0 1" (org-table-make-reference '("z" "1") nil t t)))
   (should (equal "1" (org-table-make-reference '("" "1") nil t t)))
@@ -1633,11 +1633,11 @@ See also `test-org-table/copy-field'."
 (ert-deftest test-org-table/to-latex ()
   "Test `orgtbl-to-latex' specifications."
   (should
-   (equal "\\begin{tabular}{l}\na\\\\[0pt]\n\\end{tabular}"
+   (equal "\\begin{tabular}{l}\na\\\\\n\\end{tabular}"
 	  (orgtbl-to-latex (org-table-to-lisp "| a |") nil)))
   ;; Test :environment parameter.
   (should
-   (equal "\\begin{tabularx}{l}\na\\\\[0pt]\n\\end{tabularx}"
+   (equal "\\begin{tabularx}{l}\na\\\\\n\\end{tabularx}"
 	  (orgtbl-to-latex (org-table-to-lisp "| a |")
 			   '(:environment "tabularx"))))
   ;; Test :booktabs parameter.
@@ -1646,7 +1646,7 @@ See also `test-org-table/copy-field'."
     "\\toprule" (orgtbl-to-latex (org-table-to-lisp "| a |") '(:booktabs t))))
   ;; Handle LaTeX snippets.
   (should
-   (equal "\\begin{tabular}{l}\n\\(x\\)\\\\[0pt]\n\\end{tabular}"
+   (equal "\\begin{tabular}{l}\n\\(x\\)\\\\\n\\end{tabular}"
 	  (orgtbl-to-latex (org-table-to-lisp "| $x$ |") nil)))
   ;; Test pseudo objects and :raw parameter.
   (should
@@ -1849,7 +1849,21 @@ See also `test-org-table/copy-field'."
   (should
    (org-test-with-temp-text "|-<point>--|---------|\n|---|---|-----|"
      (org-table-align)
-     t)))
+     t))
+  ;; Adjust table width.
+  (should
+   (equal
+    (let ((org-link-descriptive t))
+      (org-test-with-temp-text "
+| a        | b |
+|----------+---|
+| [[c][c]] | d |<point>"
+        (org-table-align)
+        (buffer-string)))
+    "
+| a | b |
+|---+---|
+| [[c][c]] | d |")))
 
 (ert-deftest test-org-table/align-buffer-tables ()
   "Align all tables when updating buffer."
@@ -2233,8 +2247,8 @@ See also `test-org-table/copy-field'."
       (org-table-calc-current-TBLFM)
       (buffer-string)))))
 
-(ert-deftest test-org-table/time-stamps ()
-  "Test time-stamps handling."
+(ert-deftest test-org-table/timestamps ()
+  "Test timestamps handling."
   ;; Standard test.
   (should
    (string-match-p
@@ -2243,7 +2257,7 @@ See also `test-org-table/copy-field'."
 	"| <2016-07-07 Sun> | <2016-07-08 Fri> |   |\n<point>#+TBLFM: $3=$2-$1"
       (org-table-calc-current-TBLFM)
       (buffer-string))))
-  ;; Handle locale specific time-stamps.
+  ;; Handle locale specific timestamps.
   (should
    (string-match-p
     "| 1 |"
@@ -3369,9 +3383,10 @@ See also `test-org-table/copy-field'."
 	    (org-table-get-field 3 " foo ")
 	    (buffer-string))))
   (should
-   (equal " 4 "
+   (equal " foo "
 	  (org-test-with-temp-text "| 1 | 2 |\n<point>| 3 | 4 |"
-	    (org-table-get-field 2))))
+	    (org-table-get-field 2 " foo ")
+            (org-table-get-field 2))))
   ;; An empty REPLACE string clears the field.
   (should
    (equal "| |"

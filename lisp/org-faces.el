@@ -3,7 +3,7 @@
 ;; Copyright (C) 2004-2024 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten.dominik@gmail.com>
-;; Keywords: outlines, hypermedia, calendar, wp
+;; Keywords: outlines, hypermedia, calendar, text
 ;; URL: https://orgmode.org
 ;;
 ;; This file is part of GNU Emacs.
@@ -389,6 +389,10 @@ changes."
   "Face used for tables."
   :group 'org-faces)
 
+(defface org-table-row '((t :inherit org-table))
+  "Face used to fontify whole table rows (including newlines and indentation)."
+  :group 'org-faces)
+
 (defface org-table-header '((t :inherit org-table
 			       :background "LightGray"
 			       :foreground "Black"))
@@ -658,6 +662,10 @@ month and 365.24 days for a year)."
 
 (defface org-agenda-diary '((t :inherit default))
   "Face used for agenda entries that come from the Emacs diary."
+  :group 'org-faces)
+
+(defface org-agenda-calendar-daterange '((t :inherit default))
+  "Face used to show entries with a date range in the agenda."
   :group 'org-faces)
 
 (defface org-agenda-calendar-event '((t :inherit default))

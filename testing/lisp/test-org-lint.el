@@ -397,14 +397,12 @@ This is not a node property
    (org-test-with-temp-text "Text[fn:1]\n[fn:1] Definition"
      (org-lint '(unreferenced-footnote-definition)))))
 
-(ert-deftest test-org-lint/colon-in-name ()
-  "Test `org-lint-colon-in-name' checker."
+(ert-deftest test-org-lint/mismatched-planning-repeaters ()
+  "Test `org-lint-mismatched-planning-repeaters' checker."
   (should
-   (org-test-with-temp-text "#+name: tab:name\n| a |"
-     (org-lint '(colon-in-name))))
-  (should-not
-   (org-test-with-temp-text "#+name: name\n| a |"
-     (org-lint '(colon-in-name)))))
+   (org-test-with-temp-text "* H
+DEADLINE: <2023-03-26 Sun +2w> SCHEDULED: <2023-03-26 Sun +1w>"
+     (org-lint '(mismatched-planning-repeaters)))))
 
 (ert-deftest test-org-lint/misplaced-planning-info ()
   "Test `org-lint-misplaced-planning-info' checker."

@@ -53,7 +53,7 @@ BTEST_POST  =
               # -L <path-to>/ert      # needed for Emacs23, Emacs24 has ert built in
               # -L <path-to>/ess      # needed for running R tests
               # -L <path-to>/htmlize  # need at least version 1.34 for source code formatting
-BTEST_OB_LANGUAGES = awk C fortran maxima lilypond octave perl python java
+BTEST_OB_LANGUAGES = awk C fortran maxima lilypond octave perl python java sqlite eshell calc
               # R                     # requires ESS to be installed and configured
               # ruby                  # requires inf-ruby to be installed and configured
 # extra packages to require for testing
@@ -69,13 +69,13 @@ REPRO_ARGS ?=
 ##----------------------------------------------------------------------
 
 # How to run tests
-req-ob-lang = --eval '(require '"'"'ob-$(ob-lang))'
+req-ob-lang = --eval '(require `ob-$(ob-lang))'
 lst-ob-lang = ($(ob-lang) . t)
-req-extra   = --eval '(require '"'"'$(req))'
+req-extra   = --eval '(require `$(req))'
 BTEST_RE   ?= \\(org\\|ob\\|ox\\)
 BTEST_LOAD  = \
-	--eval '(add-to-list '"'"'load-path (concat default-directory "lisp"))' \
-	--eval '(add-to-list '"'"'load-path (concat default-directory "testing"))'
+	--eval '(add-to-list `load-path (concat default-directory "lisp"))' \
+	--eval '(add-to-list `load-path (concat default-directory "testing"))'
 BTEST_INIT  = $(BTEST_PRE) $(BTEST_LOAD) $(BTEST_POST)
 
 BTEST = $(BATCH) $(BTEST_INIT) \
@@ -124,7 +124,7 @@ BATCH	= $(EMACSQ) -batch \
 
 # Emacs must be started in toplevel directory
 BATCHO	= $(BATCH) \
-	  --eval '(add-to-list '"'"'load-path "./lisp")'
+	  --eval '(add-to-list `load-path "./lisp")'
 
 # How to generate local.mk
 MAKE_LOCAL_MK = $(BATCHO) \
@@ -134,7 +134,7 @@ MAKE_LOCAL_MK = $(BATCHO) \
 
 # Emacs must be started in lisp directory
 BATCHL	= $(BATCH) \
-	  --eval '(add-to-list '"'"'load-path ".")'
+	  --eval '(add-to-list `load-path ".")'
 
 # How to generate org-loaddefs.el
 MAKE_ORG_INSTALL = $(BATCHL) \
@@ -155,6 +155,10 @@ ELCDIR	= $(BATCHL) \
 # How to byte-compile a single file
 ELC	= $(BATCHL) \
 	  --eval '(batch-byte-compile)'
+
+# How to native-compile a single file
+ELN	= $(BATCHL) \
+	  --eval '(batch-native-compile)'
 
 # How to make a pdf file from a texinfo file
 TEXI2PDF = texi2pdf --batch --clean --expand
@@ -199,9 +203,10 @@ SUDO	= sudo
 INSTALL_INFO = install-info
 
 # target method for 'compile'
-ORGCM	= dirall
+ORGCM	= single
 # ORGCM	= dirall #   1x slowdown compared to default compilation method
 # ORGCM	= single #   4x one Emacs process per compilation
+# ORGCM	= native #   4x one Emacs process per native compilation
 # ORGCM	= source #   5x ditto, but remove compiled file immediately
 # ORGCM	= slint1 #   3x possibly elicit more warnings
 # ORGCM	= slint2 #   7x possibly elicit even more warnings

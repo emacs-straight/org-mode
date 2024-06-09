@@ -26,8 +26,8 @@
 (require 'org-inlinetask)
 
 (defun org-test-default-backend ()
-  "Return a default export back-end.
-This back-end simply returns parsed data as Org syntax."
+  "Return a default export backend.
+This backend simply returns parsed data as Org syntax."
   (org-export-create-backend
    :transcoders
    (mapcar (lambda (type)
@@ -181,7 +181,7 @@ num:2 <:active")))
 	  (eq (plist-get options :section-numbers) 2)
 	  (eq (plist-get options :with-timestamps) 'active)
 	  (equal (plist-get options :with-drawers) '("TEST")))))
-  ;; Test back-end specific values.
+  ;; Test backend specific values.
   (should
    (equal
     (org-export--parse-option-keyword
@@ -214,18 +214,18 @@ num:2 <:active")))
   ;; Test `space' behaviour.
   (should
    (equal
-    (let ((back-end (org-export-create-backend
+    (let ((backend (org-export-create-backend
 		     :options '((:keyword "KEYWORD" nil nil space)))))
       (org-test-with-temp-text "#+KEYWORD: With\n#+KEYWORD: spaces"
-	(org-export--get-inbuffer-options back-end)))
+	(org-export--get-inbuffer-options backend)))
     '(:keyword "With spaces")))
   ;; Test `newline' behaviour.
   (should
    (equal
-    (let ((back-end (org-export-create-backend
+    (let ((backend (org-export-create-backend
 		     :options '((:keyword "KEYWORD" nil nil newline)))))
       (org-test-with-temp-text "#+KEYWORD: With\n#+KEYWORD: two lines"
-	(org-export--get-inbuffer-options back-end)))
+	(org-export--get-inbuffer-options backend)))
     '(:keyword "With\ntwo lines")))
   ;; Test `split' behaviour.
   (should
@@ -445,12 +445,12 @@ Paragraph"
                 (should (= 1 (org-export-get-ordinal table info)))
                 (should (= 2 (org-export-get-ordinal table info '(section))))
                 (should (= 1 (org-export-get-ordinal table info nil #'org-ascii--has-caption-p)))
-                (should (= 1 (org-export-get-ordinal table info nil from-third))))
+                (should-not (org-export-get-ordinal table info nil from-third)))
                ("Should be Table 2"
                 (should (= 2 (org-export-get-ordinal table info)))
                 (should (= 3 (org-export-get-ordinal table info '(section))))
                 (should (= 2 (org-export-get-ordinal table info nil #'org-ascii--has-caption-p)))
-                (should (= 1 (org-export-get-ordinal table info nil from-third))))
+                (should-not (org-export-get-ordinal table info nil from-third)))
                ("Should be Table 3"
                 (should (= 3 (org-export-get-ordinal table info)))
                 (should (= 4 (org-export-get-ordinal table info '(section))))
@@ -1498,6 +1498,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
       (let ((buffer (find-file-noselect includer t)))
 	(unwind-protect
 	    (with-current-buffer buffer
+              (org-mode)
 	      (org-export-expand-include-keyword)
 	      (org-trim (buffer-string)))
 	  (when (buffer-live-p buffer)
@@ -1520,6 +1521,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
       (let ((buffer (find-file-noselect includer t)))
 	(unwind-protect
 	    (with-current-buffer buffer
+              (org-mode)
 	      (org-export-expand-include-keyword)
 	      (org-trim (buffer-string)))
 	  (when (buffer-live-p buffer)
@@ -1542,6 +1544,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
       (let ((buffer (find-file-noselect includer t)))
 	(unwind-protect
 	    (with-current-buffer buffer
+              (org-mode)
 	      (org-export-expand-include-keyword)
 	      (org-trim (buffer-string)))
 	  (when (buffer-live-p buffer)
@@ -1564,6 +1567,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
       (let ((buffer (find-file-noselect includer t)))
 	(unwind-protect
 	    (with-current-buffer buffer
+              (org-mode)
 	      (org-export-expand-include-keyword)
 	      (org-trim (buffer-string)))
 	  (when (buffer-live-p buffer)
@@ -1586,6 +1590,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
       (let ((buffer (find-file-noselect includer t)))
 	(unwind-protect
 	    (with-current-buffer buffer
+              (org-mode)
 	      (org-export-expand-include-keyword)
 	      (org-trim (buffer-string)))
 	  (when (buffer-live-p buffer)
@@ -1608,6 +1613,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
       (let ((buffer (find-file-noselect includer t)))
 	(unwind-protect
 	    (with-current-buffer buffer
+              (org-mode)
 	      (org-export-expand-include-keyword)
 	      (org-trim (buffer-string)))
 	  (when (buffer-live-p buffer)
@@ -1628,6 +1634,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
      (let ((buffer (find-file-noselect includer t)))
        (unwind-protect
 	   (with-current-buffer buffer
+             (org-mode)
 	     (org-export-expand-include-keyword)
 	     (org-trim (buffer-string)))
 	 (when (buffer-live-p buffer)
@@ -1756,7 +1763,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	     '((lambda (backend)
 		 (while (re-search-forward "{{{" nil t)
 		   (let ((object (org-element-context)))
-		     (when (eq (org-element-type object) 'macro)
+		     (when (org-element-type-p object 'macro)
 		       (delete-region
 			(org-element-property :begin object)
 			(org-element-property :end object)))))))))
@@ -1853,10 +1860,10 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 
 
 
-;;; Back-End Tools
+;;; Backend Tools
 
 (ert-deftest test-org-export/define-backend ()
-  "Test back-end definition and accessors."
+  "Test backend definition and accessors."
   ;; Translate table.
   (should
    (equal '((headline . my-headline-test))
@@ -1890,7 +1897,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 
 (ert-deftest test-org-export/define-derived-backend ()
   "Test `org-export-define-derived-backend' specifications."
-  ;; Error when parent back-end is not defined.
+  ;; Error when parent backend is not defined.
   (should-error
    (let (org-export-registered-backends)
      (org-export-define-derived-backend 'test 'parent)))
@@ -1956,7 +1963,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 
 (ert-deftest test-org-export/get-all-transcoders ()
   "Test `org-export-get-all-transcoders' specifications."
-  ;; Return nil when back-end cannot be found.
+  ;; Return nil when backend cannot be found.
   (should-not (org-export-get-all-transcoders nil))
   ;; Same as `org-export-transcoders' if no parent.
   (should
@@ -1981,7 +1988,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	    (org-export-get-all-transcoders
 	     (org-export-create-backend
 	      :parent 'b2 :transcoders '((paragraph . ignore)))))))
-  ;; Back-end transcoders overrule inherited ones.
+  ;; Backend transcoders overrule inherited ones.
   (should
    (eq 'b
        (let (org-export-registered-backends)
@@ -1993,7 +2000,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 
 (ert-deftest test-org-export/get-all-options ()
   "Test `org-export-get-all-options' specifications."
-  ;; Return nil when back-end cannot be found.
+  ;; Return nil when backend cannot be found.
   (should-not (org-export-get-all-options nil))
   ;; Same as `org-export-options' if no parent.
   (should
@@ -2018,7 +2025,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	    (org-export-get-all-options
 	     (org-export-create-backend
 	      :parent 'b2 :options '((:key3 value3)))))))
-  ;; Back-end options overrule inherited ones.
+  ;; Backend options overrule inherited ones.
   (should
    (eq 'b
        (let (org-export-registered-backends)
@@ -2030,7 +2037,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 
 (ert-deftest test-org-export/get-all-filters ()
   "Test `org-export-get-all-filters' specifications."
-  ;; Return nil when back-end cannot be found.
+  ;; Return nil when backend cannot be found.
   (should-not (org-export-get-all-filters nil))
   ;; Same as `org-export-filters' if no parent.
   (should
@@ -2059,7 +2066,7 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	    (org-export-get-all-filters
 	     (org-export-create-backend
 	      :parent 'b2 :filters '((:filter-paragraph . ignore)))))))
-  ;; Back-end filters overrule inherited ones.
+  ;; Backend filters overrule inherited ones.
   (should
    (eq 'b
        (let (org-export-registered-backends)
@@ -2071,9 +2078,9 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 
 (ert-deftest test-org-export/with-backend ()
   "Test `org-export-with-backend' definition."
-  ;; Error when calling an undefined back-end
+  ;; Error when calling an undefined backend
   (should-error (org-export-with-backend nil "Test"))
-  ;; Error when called back-end doesn't have an appropriate
+  ;; Error when called backend doesn't have an appropriate
   ;; transcoder.
   (should-error
    (org-export-with-backend
@@ -2095,11 +2102,11 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	   (org-export-create-backend
 	    :transcoders '((plain-text . (lambda (text info) "Success"))))
 	   "Test")))
-  ;; Provide correct back-end if transcoder needs to use recursive
+  ;; Provide correct backend if transcoder needs to use recursive
   ;; calls.
   (should
    (equal "Success\n"
-	  (let ((test-back-end
+	  (let ((test-backend
 		 (org-export-create-backend
 		  :transcoders
 		  (list (cons 'headline
@@ -2115,13 +2122,13 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	      (list (cons 'headline
 			  (lambda (headline contents info)
 			    (org-export-with-backend
-			     test-back-end headline contents info))))))))))
+			     test-backend headline contents info))))))))))
 
 (ert-deftest test-org-export/data-with-backend ()
   "Test `org-export-data-with-backend' specifications."
-  ;; Error when calling an undefined back-end.
+  ;; Error when calling an undefined backend.
   (should-error (org-export-data-with-backend nil "nil" nil))
-  ;; Otherwise, export data recursively, using correct back-end.
+  ;; Otherwise, export data recursively, using correct backend.
   (should
    (equal
     "Success!"
@@ -2254,8 +2261,8 @@ Para2"
 	(should (equal (org-export-as backend) "AB\n")))))
   ;; Ignored export snippets do not remove any blank.
   (should
-   (equal "begin  end\n"
-	  (org-test-with-parsed-data "begin @@test:A@@ end"
+   (equal "begin end\n"
+	  (org-test-with-parsed-data "begin@@test:A@@ end"
 	    (org-export-data-with-backend
 	     tree
 	     (org-export-create-backend
@@ -2362,7 +2369,7 @@ Para2"
 	  :transcoders
 	  `(,(cons 'footnote-reference
 		   (lambda (f _c i)
-		     (when (org-element-lineage f '(drawer))
+		     (when (org-element-lineage f 'drawer)
 		       (push (org-export-footnote-first-reference-p f i nil)
 			     result))
 		     ""))
@@ -2383,7 +2390,7 @@ Para2"
 	  :transcoders
 	  `(,(cons 'footnote-reference
 		   (lambda (f _c i)
-		     (when (org-element-lineage f '(drawer))
+		     (when (org-element-lineage f 'drawer)
 		       (push (org-export-footnote-first-reference-p f i nil t)
 			     result))
 		     ""))
@@ -3107,7 +3114,7 @@ Para2"
 	  (link . (lambda (l c i)
 		    (or (org-export-custom-protocol-maybe l c 'no-test i)
 			"failure")))))))))
-  ;; Ignore anonymous back-ends.
+  ;; Ignore anonymous backends.
   (should-not
    (string-match
     "success"
@@ -3333,6 +3340,12 @@ Paragraph[fn:1][fn:2][fn:lbl3:C<<target>>][[test]][[target]]
        info t)))
   (should
    (org-test-with-parsed-data "* Head [100%]\n[[Head]]"
+     (org-element-map tree 'link
+       (lambda (link) (org-export-resolve-fuzzy-link link info))
+       info t)))
+  ;; Case is not significant when matching headings and radio targets.
+  (should
+   (org-test-with-parsed-data "* Head line\n[[head line]]"
      (org-element-map tree 'link
        (lambda (link) (org-export-resolve-fuzzy-link link info))
        info t))))
@@ -3835,7 +3848,7 @@ Another text. (ref:text)
      (let ((headline (org-element-map tree 'headline #'identity nil t)))
        (equal (org-export-get-reference headline info)
 	      (org-export-get-reference headline info)))))
-  ;; References get through local export back-ends.
+  ;; References get through local export backends.
   (should
    (org-test-with-parsed-data "* Headline"
      (let ((headline (org-element-map tree 'headline #'identity nil t))
@@ -3891,7 +3904,7 @@ Another text. (ref:text)
 		(element '(pseudo-element (:post-blank 1) "contents"))
 		(paragraph '(paragraph nil "paragraph"))
 		(data '(org-data nil)))
-	    (org-element-adopt-elements data element paragraph)
+	    (org-element-adopt data element paragraph)
 	    (org-export-data-with-backend data backend nil)))))
 
 (ert-deftest test-org-export/pseudo-objects ()
@@ -3907,7 +3920,7 @@ Another text. (ref:text)
 			    (plain-text . (lambda (c _i) c)))))
 		(object '(pseudo-object (:post-blank 1) "x"))
 		(paragraph '(paragraph nil)))
-	    (org-element-adopt-elements paragraph "begin " object "end")
+	    (org-element-adopt paragraph "begin " object "end")
 	    (org-export-data-with-backend paragraph backend nil)))))
 
 
@@ -4121,9 +4134,9 @@ This test does not cover listings and custom environments."
   ;; Opening quotes: at the beginning of a paragraph.
   (should
    (equal
-    '("&ldquo;begin")
+    '("&ldquo;begin&rdquo;")
     (let ((org-export-default-language "en"))
-      (org-test-with-parsed-data "\"begin"
+      (org-test-with-parsed-data "\"begin\""
 	(org-element-map tree 'plain-text
 	  (lambda (s) (org-export-activate-smart-quotes s :html info))
 	  info)))))
@@ -4216,6 +4229,14 @@ This test does not cover listings and custom environments."
 	      (org-element-map tree 'plain-text
 		(lambda (s) (org-export-activate-smart-quotes s :html info))
 		info)))))
+  ;; Smart quotes when object has multiple secondary strings.
+  (should
+   (equal '(" &ldquo;prefix&rdquo; " " &ldquo;suffix&rdquo;")
+	  (let ((org-export-default-language "en"))
+	    (org-test-with-parsed-data "[cite:; \"prefix\" @key \"suffix\";]"
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :html info))
+		info)))))
   ;; Smart quotes in document keywords.
   (should
    (equal '("&ldquo;" "&rdquo;")
@@ -4246,6 +4267,39 @@ This test does not cover listings and custom environments."
 	    (org-test-with-parsed-data "*\"foo\"*"
 	      (org-element-map tree 'plain-text
 		(lambda (s) (org-export-activate-smart-quotes s :html info))
+		info nil nil t)))))
+  ;; Unmatched quotes.
+  (should
+   (equal '("\\guillemotleft{}my friends' party and the students' papers\\guillemotright{} \\guillemotleft{}``mothers''\\guillemotright{}")
+	  (let ((org-export-default-language "es"))
+	    (org-test-with-parsed-data
+                "\"my friends' party and the students' papers\" \"'mothers'\""
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :latex info))
+		info nil nil t)))))
+  (should
+   (equal '("\"'mothers'")
+	  (let ((org-export-default-language "es"))
+	    (org-test-with-parsed-data
+                "\"'mothers'"
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :latex info))
+		info nil nil t)))))
+  (should
+   (equal '("\"'mothers " "end'")
+	  (let ((org-export-default-language "es"))
+	    (org-test-with-parsed-data
+                "\"'mothers =verbatim= end'"
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :latex info))
+		info nil nil t)))))
+  (should
+   (equal '("\\guillemotleft{}να 'ρθώ το βράδυ\\guillemotright{}")
+	  (let ((org-export-default-language "el"))
+	    (org-test-with-parsed-data
+                "\"να 'ρθώ το βράδυ\""
+	      (org-element-map tree 'plain-text
+		(lambda (s) (org-export-activate-smart-quotes s :latex info))
 		info nil nil t))))))
 
 

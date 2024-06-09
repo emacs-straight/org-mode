@@ -26,14 +26,8 @@
         (file-name-directory
          (or load-file-name (buffer-file-name)))))
 
-(ert-deftest ob-lilypond/assert ()
-  (should t))
-
 (ert-deftest ob-lilypond/feature-provision ()
   (should (featurep 'ob-lilypond)))
-
-(ert-deftest ob-lilypond/check-lilypond-alias ()
-  (should (fboundp 'lilypond-mode)))
 
 (ert-deftest ob-lilypond/org-babel-tangle-lang-exts ()
   (let ((found nil)
@@ -49,19 +43,24 @@
   :type 'error)
 
 (ert-deftest ob-lilypond/ly-compile-lilyfile ()
-  (should (equal
-           `(,org-babel-lilypond-ly-command    ;program
-             nil                        ;infile
-             "*lilypond*"               ;buffer
-             t                          ;display
-             ,(if org-babel-lilypond-gen-png  "--png"  "") ;&rest...
-             ,(if org-babel-lilypond-gen-html "--html" "")
-             ,(if org-babel-lilypond-gen-pdf "--pdf" "")
-             ,(if org-babel-lilypond-use-eps  "-dbackend=eps" "")
-             ,(if org-babel-lilypond-gen-svg  "-dbackend=svg" "")
-             "--output=test-file"
-             "test-file.ly")
-           (org-babel-lilypond-compile-lilyfile "test-file.ly" t))))
+  (cl-letf (((symbol-function 'call-process) 'list)
+            (org-babel-lilypond-gen-png nil)
+            (org-babel-lilypond-gen-html nil)
+            (org-babel-lilypond-use-eps nil)
+            (org-babel-lilypond-gen-svg nil))
+    (should (equal
+             `(,org-babel-lilypond-ly-command    ;program
+               nil                        ;infile
+               "*lilypond*"               ;buffer
+               display
+               ,@(when org-babel-lilypond-gen-png  '("--png")) ;&rest...
+               ,@(when org-babel-lilypond-gen-html '("--html"))
+               ,@(when org-babel-lilypond-gen-pdf '("--pdf"))
+               ,@(when org-babel-lilypond-use-eps  '("-dbackend=eps"))
+               ,@(when org-babel-lilypond-gen-svg  '("-dbackend=svg"))
+               "--output=test-file"
+               "test-file.ly")
+             (org-babel-lilypond-compile-lilyfile "test-file.ly")))))
 
 (ert-deftest ob-lilypond/ly-compile-post-tangle ()
   (should (boundp 'org-babel-lilypond-compile-post-tangle)))
