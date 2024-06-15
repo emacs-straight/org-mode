@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.3
+;; Version: 9.7.4
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -8738,7 +8738,7 @@ there is one, return it."
 	   (save-window-excursion
              ;; We have no direct control over how
              ;; `with-output-to-temp-buffer' displays the buffer.  Try
-             ;; to gain more space, makign sure that only the Org
+             ;; to gain more space, making sure that only the Org
              ;; buffer and the *Select link* buffer are displayed for
              ;; the duration of selection.
 	     (ignore-errors (delete-other-windows))
@@ -10041,7 +10041,7 @@ where CURRENT-TODO-KEYWORD belongs over on in another sequence."
 			  org-todo-key-alist))))
          field-number ; current todo keyword column in the completion buffer.
          todo-binding-spec todo-keyword todo-char input-char)
-    ;; Display todo selection dialogue, read the user input, and return.
+    ;; Display todo selection dialog, read the user input, and return.
     (save-excursion
       (save-window-excursion
         ;; Select todo keyword list buffer, and display it unless EXPERT-INTERFACE.
@@ -12224,7 +12224,7 @@ Returns the new tags string, or nil to not change the current settings."
     (move-overlay org-tags-overlay ov-start ov-end)
     ;; Highlight tags overlay in Org buffer.
     (org-set-current-tags-overlay current-tags ov-prefix)
-    ;; Display tag selection dialogue, read the user input, and return.
+    ;; Display tag selection dialog, read the user input, and return.
     (save-excursion
       (save-window-excursion
         ;; Select tag list buffer, and display it unless EXPERT-INTERFACE.
@@ -12239,7 +12239,7 @@ Returns the new tags string, or nil to not change the current settings."
         ;; Insert current tags.
 	(org-fast-tag-insert "Inherited" inherited-tags inherited-face "\n")
 	(org-fast-tag-insert "Current" current-tags current-face "\n\n")
-        ;; Display whether next change exits selection dialogue.
+        ;; Display whether next change exits selection dialog.
 	(org-fast-tag-show-exit exit-after-next)
         ;; Show tags, tag groups, and bindings in a grid.
         ;; Each tag in the grid occupies FIELD-WIDTH characters.
@@ -16981,10 +16981,11 @@ buffer boundaries with possible narrowing."
      (t nil))))
 
 (defun org-image--align (link)
-  "Determine the alignment of the image link.
+  "Determine the alignment of the image LINK.
+LINK is a link object.
 
 In decreasing order of priority, this is controlled:
-- Per image by the value of `:center' or ``:align' in the
+- Per image by the value of `:center' or `:align' in the
 affiliated keyword `#+attr_org'.
 - By the `#+attr_html' or `#+attr_latex` keywords with valid
   `:center' or `:align' values.
@@ -16998,15 +16999,16 @@ will cause it to be right-aligned.  A value of \"left\" or nil
 implies no special alignment."
   (let ((par (org-element-lineage link 'paragraph)))
     ;; Only align when image is not surrounded by paragraph text:
-    (when (and (= (org-element-begin link)
+    (when (and par ; when image is not in paragraph, but in table/headline/etc, do not align
+               (= (org-element-begin link)
                   (save-excursion
                     (goto-char (org-element-contents-begin par))
                     (skip-chars-forward "\t ")
                     (point)))           ;account for leading space
                                         ;before link
                (<= (- (org-element-contents-end par)
-                      (org-element-end link))
-                   1))                  ;account for trailing newline
+                     (org-element-end link))
+                  1))                  ;account for trailing newline
                                         ;at end of paragraph
       (save-match-data
         ;; Look for a valid ":center t" or ":align left|center|right"
@@ -20749,7 +20751,7 @@ it has a `diary' type."
     (yank-media-handler "image/.*" #'org--image-yank-media-handler)
     ;; Looks like different DEs go for different handler names,
     ;; https://larsee.com/blog/2019/05/clipboard-files/.
-    (yank-media-handler "x/special-\\(?:gnome\|KDE\|mate\\)-files"
+    (yank-media-handler "x/special-\\(?:gnome\\|KDE\\|mate\\)-files"
                         #'org--copied-files-yank-media-handler))
   (when (boundp 'x-dnd-direct-save-function)
     (setq-local x-dnd-direct-save-function #'org--dnd-xds-function)))
@@ -20871,11 +20873,25 @@ When nil, use `org-attach-method'."
 (defvar org-attach-method)
 
 (defun org--dnd-rmc (prompt choices)
+  "Display a menu or dialog and select with PROMPT among CHOICES.
+PROMPT is the prompt string.  CHOICES is a list of choices.  Each
+choice is a list of (key description value).  VALUE from the selected
+choice is returned."
   (if (null (and
              ;; Emacs <=28 does not have `use-dialog-box-p'.
              (fboundp 'use-dialog-box-p)
              (use-dialog-box-p)))
-      (caddr (read-multiple-choice prompt choices))
+      (progn
+        (setq choices
+              (mapcar
+               (pcase-lambda (`(,key ,message ,val))
+                 ;; `read-multiple-choice' expects VAL to be a long
+                 ;; description of the choice - string or nil.  Move VAL
+                 ;; further, so that it is not seen by the extended
+                 ;; help in `read-multiple-choice'.
+                 (list key message nil val))
+               choices))
+        (nth 3 (read-multiple-choice prompt choices)))
     (setq choices
           (mapcar
            (pcase-lambda (`(_key ,message ,val))
@@ -20939,15 +20955,18 @@ SEPARATOR is the string to insert after each link."
                    ('private (or org-yank-dnd-default-attach-method
                                  org-attach-method)))))
     (if separatep
-        (funcall
-         (pcase method
-           ('cp #'copy-file)
-           ('mv #'rename-file)
-           ('ln #'add-name-to-file)
-           ('lns #'make-symbolic-link))
-         filename
-         (expand-file-name (file-name-nondirectory filename)
-                           org-yank-image-save-method))
+        (progn
+          (unless (file-directory-p org-yank-image-save-method)
+            (make-directory org-yank-image-save-method t))
+          (funcall
+           (pcase method
+             ('cp #'copy-file)
+             ('mv #'rename-file)
+             ('ln #'add-name-to-file)
+             ('lns #'make-symbolic-link))
+           filename
+           (expand-file-name (file-name-nondirectory filename)
+                             org-yank-image-save-method)))
       (org-attach-attach filename nil method))
     (insert
      (org-link-make-string
@@ -20965,7 +20984,7 @@ SEPARATOR is the string to insert after each link."
   "The method to use for dropped file.")
 (defun org--dnd-xds-function (need-name filename)
   "Handle file with FILENAME dropped via XDS protocol.
-When NEED-NAME is t, FILNAME is the base name of the file to be
+When NEED-NAME is t, FILENAME is the base name of the file to be
 saved.
 When NEED-NAME is nil, the drop is complete."
   (if need-name

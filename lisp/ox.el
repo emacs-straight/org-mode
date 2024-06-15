@@ -185,7 +185,7 @@ All these properties should be backend agnostic.  Backend
 specific properties are set through `org-export-define-backend'.
 Properties redefined there have precedence over these.")
 
-(defconst org-export-filters-alist
+(defvar org-export-filters-alist
   '((:filter-body . org-export-filter-body-functions)
     (:filter-bold . org-export-filter-bold-functions)
     (:filter-babel-call . org-export-filter-babel-call-functions)
@@ -1398,8 +1398,7 @@ external parameters overriding Org default settings, but still
 inferior to file-local settings."
   ;; First install #+BIND variables since these must be set before
   ;; global options are read.
-  (dolist (pair (org-export--list-bound-variables))
-    (set (make-local-variable (car pair)) (nth 1 pair)))
+  (org-export--set-variables (org-export--list-bound-variables))
   ;; Get and prioritize export options...
   (org-combine-plists
    ;; ... from global variables...
@@ -2585,7 +2584,7 @@ Return the updated communication channel."
 (defun org-export--set-variables (variable-alist)
   "Set buffer-local variables according to VARIABLE-ALIST in current buffer."
   (pcase-dolist (`(,var . ,val) variable-alist)
-    (set (make-local-variable var) val)))
+    (set (make-local-variable var) (car val))))
 
 (cl-defun org-export-copy-buffer (&key to-buffer drop-visibility
                                        drop-narrowing drop-contents
@@ -6254,7 +6253,7 @@ them."
      ("no" :default "Illustrasjon")
      ("nb" :default "Illustrasjon")
      ("nn" :default "Illustrasjon")
-     ("pl" :default "Obrazek") ; alternativly "Rysunek"
+     ("pl" :default "Obrazek") ; alternatively "Rysunek"
      ("pt_BR" :default "Figura")
      ("ro" :default "Imaginea")
      ("ru" :html "&#1056;&#1080;&#1089;&#1091;&#1085;&#1086;&#1082;" :utf-8 "Рисунок")
@@ -6277,7 +6276,7 @@ them."
      ("no" :default "Illustrasjon %d")
      ("nb" :default "Illustrasjon %d")
      ("nn" :default "Illustrasjon %d")
-     ("pl" :default "Obrazek %d") ; alternativly "Rysunek %d"
+     ("pl" :default "Obrazek %d") ; alternatively "Rysunek %d"
      ("pt_BR" :default "Figura %d:")
      ("ro" :default "Imaginea %d:")
      ("ru" :html "&#1056;&#1080;&#1089;. %d.:" :utf-8 "Рис. %d.:")
@@ -6438,7 +6437,7 @@ them."
      ("nl" :default "Zie figuur %s"
       :html "Zie figuur&nbsp;%s" :latex "Zie figuur~%s")
      ("nn" :default "Sjå figur %s")
-     ("pl" :default "Patrz obrazek %s") ; alternativly "Patrz rysunek %s"
+     ("pl" :default "Patrz obrazek %s") ; alternatively "Patrz rysunek %s"
      ("pt_BR" :default "Veja a figura %s")
      ("ro" :default "Vezi figura %s")
      ("sl" :default "Glej sliko %s")
@@ -6672,7 +6671,7 @@ and `org-export-to-file' for more specialized functions."
   (with-temp-message "Initializing asynchronous export process"
     (let ((copy-fun (org-element--generate-copy-script (current-buffer)))
           (temp-file (make-temp-file "org-export-process")))
-      (let ((coding-system-for-write 'utf-8-emacs-unix))
+      (let ((coding-system-for-write 'emacs-internal))
         (write-region
          ;; Null characters (from variable values) are inserted
          ;; within the file.  As a consequence, coding system for

@@ -416,7 +416,7 @@ FORMAT and ARGS are passed to `message'."
 (defun org-persist--read-elisp-file (&optional buffer-or-file)
   "Read elisp data from BUFFER-OR-FILE or current buffer."
   (let (;; UTF-8 is explicitly used in `org-persist--write-elisp-file'.
-        (coding-system-for-read 'utf-8)
+        (coding-system-for-read 'emacs-internal)
         (buffer-or-file (or buffer-or-file (current-buffer))))
     (with-temp-buffer
       (if (bufferp buffer-or-file)
@@ -452,7 +452,7 @@ FORMAT and ARGS are passed to `message'."
   "Write elisp DATA to FILE."
   ;; Fsync slightly reduces the chance of an incomplete filesystem
   ;; write, however on modern hardware its effectiveness is
-  ;; questionable and it is insufficient to garantee complete writes.
+  ;; questionable and it is insufficient to guarantee complete writes.
   ;; Coupled with the significant performance hit if writing many
   ;; small files, it simply does not make sense to use fsync here,
   ;; particularly as cache corruption is only a minor inconvenience.
@@ -464,7 +464,7 @@ FORMAT and ARGS are passed to `message'."
   (let ((write-region-inhibit-fsync t)
         ;; We set UTF-8 here and in `org-persist--read-elisp-file'
         ;; to avoid the overhead from `find-auto-coding'.
-        (coding-system-for-write 'utf-8)
+        (coding-system-for-write 'emacs-internal)
         (print-circle (not no-circular))
         print-level
         print-length
