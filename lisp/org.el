@@ -9,7 +9,7 @@
 ;; URL: https://orgmode.org
 ;; Package-Requires: ((emacs "26.1"))
 
-;; Version: 9.7.4
+;; Version: 9.7.5
 
 ;; This file is part of GNU Emacs.
 ;;
@@ -4541,6 +4541,7 @@ directory."
 			     ;; Fake Org mode: `org-element-at-point'
 			     ;; doesn't need full set-up.
 			     (let ((major-mode 'org-mode))
+                               (setq-local tab-width 8)
 			       (setq alist
 				     (org--collect-keywords-1
 				      keywords unique directory
@@ -15434,7 +15435,7 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
 (defun org-modify-ts-extra (ts-string pos nincrements increment-step)
   "Change the lead-time/repeat fields at POS in timestamp string TS-STRING.
 POS is the position in the timestamp string to be changed.
-NINCREMENTS is the number of incremenets/decrements.
+NINCREMENTS is the number of increments/decrements.
 
 INCREMENT-STEP is step used for a single increment when POS in on
 minutes.  Before incrementing minutes, they are rounded to

@@ -2861,7 +2861,7 @@ file's directory then expand relative links.
 
 If the optional TYPE is passed as `attachment' and the path is a
 descendant of the DEFAULT-DIRECTORY, the generated link will be
-specified as an an \"attachment:\" style link."
+specified as an \"attachment:\" style link."
   (when (stringp result)
     (let* ((result-file-name (expand-file-name result))
            (base-file-name (buffer-file-name (buffer-base-buffer)))
@@ -2959,9 +2959,9 @@ used as a string to be appended to #+begin_example line."
       (goto-char body-start)
       (insert body))))
 
-(defun org-babel-merge-params (&rest plists)
-  "Combine all parameter association lists in PLISTS.
-Later elements of PLISTS override the values of previous elements.
+(defun org-babel-merge-params (&rest alists)
+  "Combine all parameter association lists in ALISTS.
+Later elements of ALISTS override the values of previous elements.
 This takes into account some special considerations for certain
 parameters when merging lists."
   (let* ((results-exclusive-groups
@@ -2990,8 +2990,8 @@ parameters when merging lists."
 	 ;; Some keywords accept multiple values.  We need to treat
 	 ;; them specially.
 	 vars results exports)
-    (dolist (plist plists)
-      (dolist (pair plist)
+    (dolist (alist alists)
+      (dolist (pair alist)
 	(pcase pair
 	  (`(:var . ,value)
 	   (let ((name (cond
