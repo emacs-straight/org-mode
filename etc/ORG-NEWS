@@ -724,6 +724,12 @@ Previously, ox-man ignored =#+DATE:= keyword even when
 and specified in the =footer-middle= argument of =.TH= macro (see ~man
 7 man~).
 
+*** ox-man: Support specifying =:release= and =:header= in =#+MAN_CLASS_OPTIONS:= in addition to =:section-id=
+
+The newly added =:release= and =:header= options of =#+MAN_CLASS_OPTIONS=
+are respectively mapped to the =footer-inside= and =header-middle=
+arguments of the =.TH= macro (see ~man 7 groff_man~).
+
 *** ~org-timer-done-hook~ is now run before the timer is stopped
 
 Previously, ~org-timer-countdown-timer~ and ~org-timer-start-time~
