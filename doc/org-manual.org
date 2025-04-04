@@ -19653,10 +19653,48 @@ to source file(s).
 
 - {{{var(FILENAME)}}} ::
 
-  Export the code block to source file whose file name is derived from
-  any string passed to the =tangle= header argument.  Org derives the
-  file name as being relative to the directory of the Org file's
-  location.  Example: =:tangle FILENAME=.
+  Export the code block to source file(s) whose file name(s) are
+  derived from the value passed to the =tangle= header argument.  Org
+  derives the file names as being relative to the directory of the Org
+  file's location, or relative to the directory specified by the
+  =tangle-directory= header argument if provided.
+
+  The FILENAME can take several forms:
+  - A single file name (string) ::
+
+    Example: =:tangle script.py=.
+
+  - A list of file names ::
+
+    Tangle the block to multiple files.  Example: =:tangle
+    '("src/main.py" "src/utils.py")=.
+
+  - A variable or function call ::
+
+    Evaluate to get the target file name(s).  Example: =:tangle
+    'tangle-targets= or =:tangle (get-tangle-targets)=.
+
+  When both =:tangle-directory= and multiple =:tangle= files are
+  specified, the block is tangled to all combinations of directories
+  and files.
+
+  Example:
+  #+begin_example
+  ,#+begin_src emacs-lisp :tangle '("config.el" "backup.el") :tangle-directory '("~/.config" "/backup")
+  (message "Tangling to multiple targets specified by :tangle and :tangle-directory")
+  ,#+end_src
+  #+end_example
+
+  This tangles the block to four files:
+  - ~/.config/config.el
+  - ~/.config/backup.el
+  - /backup/config.el
+  - /backup/backup.el
+
+#+cindex: @samp{tangle-directory}, header argument
+The =tangle-directory= header argument specifies one or more base
+directories for relative tangle file paths. This works similarly to
+=tangle= and accepts the same types of values.
 
 #+cindex: comment trees
 Additionally, code blocks inside commented subtrees (see [[*Comment

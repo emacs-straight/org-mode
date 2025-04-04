@@ -579,6 +579,14 @@ another block
         (set-buffer-modified-p nil))
       (kill-buffer buffer))))
 
+(defun ob-tangle/tangle-targets ()
+  "Return tangle targets for testing."
+  '("relative.el" "/tmp/absolute.el"))
+
+(defvar ob-tangle/tangle-targets
+  '("relative.el" "/tmp/absolute.el")
+  "Tangle targets variable for testing.")
+
 (ert-deftest ob-tangle/collect-blocks ()
   "Test block collection into groups for tangling."
   (org-test-with-temp-text-in-file "" ; filled below, it depends on temp file name
@@ -628,6 +636,18 @@ another block
 \"H1: no language and inherited :tangle relative.el in properties\"
 #+end_src
 
+#+begin_src emacs-lisp :tangle '(\"relative.el\" \"/tmp/absolute.el\")
+\"H1: :tangle relative.el and /tmp/absolute.el\"
+#+end_src
+
+#+begin_src emacs-lisp :tangle 'ob-tangle/tangle-targets
+\"H1: :tangle relative.el and /tmp/absolute.el\"
+#+end_src
+
+#+begin_src emacs-lisp :tangle (ob-tangle/tangle-targets)
+\"H1: :tangle relative.el and /tmp/absolute.el\"
+#+end_src
+
 * H2 without :tangle in properties
 
 #+begin_src emacs-lisp
@@ -664,7 +684,19 @@ another block
 
 #+begin_src
 \"H2: without language and thus without :tangle\"
-#+end_src"
+#+end_src
+
+* H3 with :tangle-directory
+
+#+begin_src emacs-lisp :tangle-directory /tmp/a :tangle '(\"foo.el\" \"bar.el\") :mkdirp yes
+\"H3: :tangle /tmp/foo.el and /tmp/bar.el\"
+#+end_src
+
+#+begin_src emacs-lisp :tangle-directory '(\"/tmp/a\" \"/tmp/b\") :tangle '(\"foo.el\" \"bar.el\") :mkdirp yes
+\"H3: :tangle /tmp/a/foo.el, /tmp/a/bar.el, /tmp/b/foo.el and /tmp/b/bar.el\"
+#+end_src
+
+"
                     `((?a . ,el-file-abs)
                       (?r . ,el-file-rel))))
       ;; We check the collected blocks to tangle by counting equal
@@ -687,10 +719,15 @@ another block
                                               ;; From `org-babel-tangle-collect-blocks'.
                                               collected-blocks)))))
         (should (equal (funcall normalize-expected-targets-alist
-                                `(("/tmp/absolute.el" . 4)
-                                  ("relative.el" . 6)
+                                `(("/tmp/absolute.el" . 7)
+                                  ("/tmp/a/foo.el" . 2)
+                                  ("/tmp/a/bar.el" . 2)
+                                  ("/tmp/b/foo.el" . 1)
+                                  ("/tmp/b/bar.el" . 1)
+                                  ("relative.el" . 8)
                                   ;; file name differs between tests
-                                  (,el-file-abs . 4)))
+                                  (,el-file-abs . 4)
+                                  ))
                        (funcall count-blocks-in-target-files
                                 (org-babel-tangle-collect-blocks))))
         ;; Simulate TARGET-FILE to test as `org-babel-tangle' and
@@ -702,12 +739,16 @@ another block
                 (list (cons :tangle el-file-abs)))))
           (should (equal
                    (funcall normalize-expected-targets-alist
-                            `(("/tmp/absolute.el" . 4)
-                              ("relative.el" . 6)
+                            `(("/tmp/absolute.el" . 7)
+                              ("/tmp/a/foo.el" . 2)
+                              ("/tmp/a/bar.el" . 2)
+                              ("/tmp/b/foo.el" . 1)
+                              ("/tmp/b/bar.el" . 1)
+                              ("relative.el" . 8)
                               ;; Default :tangle header now also
                               ;; points to the file name derived from the name of
-                              ;; the Org file, so 6 blocks should go there.
-                              (,el-file-abs . 6)))
+                              ;; the Org file, so 5 blocks should go there.
+                              (,el-file-abs . 5)))
                    (funcall count-blocks-in-target-files
                             (org-babel-tangle-collect-blocks)))))))))
 
