@@ -940,11 +940,16 @@ depends on, if any."
 	      (const :tag "C  s5          Export buffer to s5 presentations" s5)
 	      (const :tag "C  taskjuggler Export buffer to TaskJuggler format" taskjuggler)))
 
-(eval-after-load 'ox
-  '(dolist (backend org-export-backends)
-     (condition-case-unless-debug nil (require (intern (format "ox-%s" backend)))
-       (error (message "Problems while trying to load export backend `%s'"
-		       backend)))))
+(defun org-load-export-backends ()
+  "Load all the export backends from `org-export-backends'."
+  (unless (featurep 'ox)
+    (require 'ox)
+    (dolist (backend org-export-backends)
+      (condition-case-unless-debug nil (require (intern (format "ox-%s" backend)))
+        (error (message "Problems while trying to load export backend `%s'"
+		        backend))))))
+
+(eval-after-load 'ox '(org-load-export-backends))
 
 (defcustom org-support-shift-select nil
   "Non-nil means make shift-cursor commands select text when possible.

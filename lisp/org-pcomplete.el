@@ -37,6 +37,7 @@
 (require 'org-compat)
 (require 'pcomplete)
 
+(declare-function org-load-export-backends "org" ())
 (declare-function org-babel-combine-header-arg-lists "ob-core" (original &rest others))
 (declare-function org-babel-get-src-block-info "ob-core" (&optional no-eval datum))
 (declare-function org-before-first-heading-p "org" ())
@@ -318,6 +319,7 @@ When completing for #+STARTUP, for example, this function returns
 
 (defun pcomplete/org-mode/file-option/options ()
   "Complete arguments for the #+OPTIONS file option."
+  (org-load-export-backends)
   (while (pcomplete-here
 	  (pcomplete-uniquify-list
 	   (append
