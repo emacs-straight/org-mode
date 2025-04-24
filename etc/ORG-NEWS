@@ -215,6 +215,17 @@ take the date as an argument, and generate a list of pairs for
 types of datetrees (e.g. for lunar calendars, academic calendars,
 retail 4-4-5 calendars, etc).
 
+*** New font handling in LaTeX exports
+
+The packages imported to handle fonts when producing PDF documents
+through LaTeX when using ~lualatex~ or ~xetex~ as your LaTeX compiler.
+
+- The ~amsmath~ package has been replaced by ~unicode-math~:
+  ~unicode-math~ is a full replacement for ~amsmath~ and most users
+  will not need to change anything. However, there is a small chance
+  of smaller typographical differences or even broken exports due to
+  issues in ~unicode-math~.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
