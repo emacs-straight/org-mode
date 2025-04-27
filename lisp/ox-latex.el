@@ -1808,9 +1808,8 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
           (re-search-forward "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" nil t)
         (let ((script (aref char-script-table
                             (string-to-char (match-string 1)))))
-          (add-to-list 'scripts (prin1-to-string script)))))
+          (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
     scripts))
-
 ;;
 ;;
 (defun org-latex--remove-packages (pkg-alist info)
