@@ -1790,7 +1790,29 @@ Return the new header."
 		  languages
 		  ""))
 	 t t header 0)))))
+;;
+;;
+(defun org-latex--get-doc-scripts ()
+  "This function gets the char-scripts used in the current buffer.
+Returns a list of strings with the char-scripts.
 
+TODO: Ignore commented out test
+
+Initial version proposed by Juan Manuel Macías in
+https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
+"
+  (let ((scripts))
+    (save-excursion
+      (goto-char (point-min))
+      (while
+          (re-search-forward "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" nil t)
+        (let ((script (aref char-script-table
+                            (string-to-char (match-string 1)))))
+          (add-to-list 'scripts (prin1-to-string script)))))
+    scripts))
+
+;;
+;;
 (defun org-latex--remove-packages (pkg-alist info)
   "Remove packages based on the current LaTeX compiler.
 

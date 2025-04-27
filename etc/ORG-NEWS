@@ -458,6 +458,14 @@ When CHILDREN contains ~nil~ elements, they are skipped.  This way,
 
 will yield expected results rather than assigning literal ~nil~ as a child.
 
+*** New function ~org-latex--get-doc-scripts~
+
+This function returns a list of all the char-scripts used in the
+current buffer as strings.
+
+Adapted from the [[https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/][discussion in the mailing list]] about fallbacks for
+non-latin scripts.
+
 ** Removed or renamed functions and variables
 
 *** ~org-cycle-display-inline-images~ is renamed to ~org-cycle-display-link-previews~
