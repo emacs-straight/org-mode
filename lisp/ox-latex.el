@@ -1551,6 +1551,36 @@ property to `toc'"
   :type 'boolean
   :safe #'booleanp)
 
+(defcustom org-latex-lualatex-font-config
+  '(("main". (:font "TeX Gyre Termes"
+                    :fallback (("emoji" . "Noto Color Emoji:mode=harf")
+                               ("han"   . "Noto Serif CJK JP:")
+                               ("kana"  . "Noto Serif CJK JP:"))))
+    ("sans" . (:font "TeX Gyre Heros"
+                     :fallback (("emoji" . "Noto Color Emoji:mode=harf")
+                                ("han"   . "Noto Sans CJK JP:")
+                                ("kana"  . "Noto Sans CJK JP:"))))
+    ("math" . (:font "TeX Gyre Termes Math"))
+    ("mono" . (:font "TeX Gyre Cursor"
+                     :features "Color=blue,Scale=MatchLowercase")))
+  "This alist holds the font dictionaries for PDF export.
+Each element is defined as
+(`font-name' . `font-plist')
+ where `font-name' is the name in \\set...font{}
+ and `font-plist' is a plist. The keys for this plist are
+  `:font':     system font name (mandatory)
+  `:features': string or list of strings with font features.
+               A potential fallback will be appended.
+               CAVEAT: features may be overwritten by fallback.
+  `:fallback': an alist of (`script' . `mapping') to map scripts in the buffer
+               to their fallback font (optional).
+
+Place your customization in your Emacs initialisation or in .dir-locals.el"
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type 'alist
+)
+
 
 ;;; Internal Functions
 
@@ -1790,13 +1820,14 @@ Return the new header."
 		  languages
 		  ""))
 	 t t header 0)))))
+
 ;;
 ;;
 (defun org-latex--get-doc-scripts ()
   "This function gets the char-scripts used in the current buffer.
 Returns a list of strings with the char-scripts.
 
-TODO: Ignore commented out test
+TODO: Ignore text in comments
 
 Initial version proposed by Juan Manuel Macías in
 https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
@@ -1810,6 +1841,74 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
                             (string-to-char (match-string 1)))))
           (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
     scripts))
+
+(defun org-latex--lualatex-export-fontdef ()
+  "Return the font prelude for the current buffer as a string"
+  (let ((doc-scripts (org-latex--get-doc-scripts))
+        (fallback-alist)) ;; an alist (font_name . fallback-name)
+    (message "Fonts detected: %s" doc-scripts)
+    (with-temp-buffer
+      ;; add all fonts with fallback to fallbacl-alist
+      (dolist (fconfig org-latex-lualatex-font-config)
+        (when-let* ((fname (car fconfig))
+                    (config-plist (cdr fconfig))
+                    (fallback (plist-get config-plist :fallback)))
+          (push (cons fname (concat "fallback_" fname)) fallback-alist)))
+      ;; (message "fallback-alist ==> %s" fallback-alist)
+      (when fallback-alist ;; if there are fonts with fallbacks
+        (let ((directlua nil)) ;; Did we write the beginning of this block?
+          ;; create the directlua header
+          (dolist (fallback fallback-alist)
+            ;; (message "fallback ===> %s" fallback)
+            (when-let*
+                ((fbf-fname (car fallback))
+                 (fbf-name (cdr fallback))
+                 (fbf-plist (alist-get fbf-fname org-latex-lualatex-font-config nil nil #'string=))
+                 (fbf-flist (plist-get fbf-plist :fallback)))
+              ;; collect all falbacks for scripts that are present in the doc
+              (let ((fallback-flist
+                     (cl-loop for fpair in fbf-flist
+                              ;; check (car fpair) is in document scripts
+                              ;; and the fallback is not already in the result
+                              when (and (member-ignore-case (car fpair) doc-scripts)
+                                        (null (member-ignore-case (cdr fpair) fresult)))
+                              collect (cdr fpair) into fresult
+                              finally return fresult)))
+                ;; (message "fallback-flist ==> %s" fallback-flist)
+                (when fallback-flist
+                  (unless directlua ;; add the heading before the first lua block
+                    (insert "\\directlua{\n")
+                    (setq directlua t))
+                  ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
+                  ;;                                            :test #'string=))
+                  (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
+                  ;; Here we get the font fallbacks list
+                  (dolist (fname fallback-flist)
+                    ;; TODO; when (car fpair) in document charsets
+                    (insert (format "  \"%s\",\n" fname)))
+                  (insert " })\n")))))
+          (when directlua ;; if we have found any lua fallbacks, close the lua block
+            (insert "}\n"))))
+      ;; (message "fallbacks: %s" fallback-alist)
+      (dolist (fpair org-latex-lualatex-font-config)
+        (when-let* ((ffamily (car fpair))
+                    (fplist  (cdr fpair))
+                    (ffont (plist-get fplist :font)))
+          (insert (format "\\set%sfont{%s}" ffamily ffont))
+          ;; add the extra features
+          (let ((ffeatures (plist-get fplist :features)))
+            (when (stringp ffeatures)
+              (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
+            ;; (message "--> ffeatures: %s" ffeatures)
+            (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
+                        (fallback-spec (format "RawFeature={fallback=%s}" fallback-fn)))
+              (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
+            ;; (message "ffeatures %s" ffeatures)
+            (when ffeatures
+              (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
+          (insert "\n")))
+      (buffer-string))))
+
 ;;
 ;;
 (defun org-latex--remove-packages (pkg-alist info)

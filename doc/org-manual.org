@@ -12064,7 +12064,7 @@ text.  Markers always start with =fn:=.  For example:
 #+begin_example
 The Org website[fn:1] now looks a lot better than it used to.
 ...
-[fn:50] The link is: https://orgmode.org
+[fn:51] The link is: https://orgmode.org
 #+end_example
 
 Org mode extends the number-based syntax to /named/ footnotes and
@@ -14959,6 +14959,101 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :UNNUMBERED: notoc
 :END:
 #+end_example
+
+*** Controlling the font configuration for LuaLaTeX
+#+cindex: LuaLaTeX font configuration
+
+When using ~lualatex~ as your =LATEX_COMPILER=, you can control the
+fonts used in the PDF and make sure that all characters can be read in
+the resulting PDF file.
+
+You can customise ~org-latex-lualatex-font-config~ to map your
+document's fonts to the fonts used in the document. To familiarise
+yourself with fonts and options, read the
+[[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
+package manual]] Part II. This variable can also be set in a
+~.dir-locals.el~ file placed in the same directory as your ~org~ file.
+
+~org-latex-lualatex-font-config~ maps the font name used in the
+~\set...font{}~ commands defined by the ~fontspec~ package with the
+font name and optional font features.
+
+For example, in the default configuration, the ~math~ font is mapped
+to the system font ~TeX Gyre Termes Math~ using the *mandatory*
+property ~:font~:
+
+#+BEGIN_SRC elisp :results output :exports both
+    ("math" . (:font "TeX Gyre Termes Math"))
+#+END_SRC
+#+RESULTS:
+
+When generating the font prelude for ~lualatex~, the resulting command
+will be:
+
+#+BEGIN_SRC latex
+\setmathfont{TeX Gyre Termes Math}
+#+END_SRC
+
+If you need extra features for your font, you will need to add them
+with the property ~:features~. Again, taking the example of the
+default configuration, the ~mono~ font is defined as:
+
+#+BEGIN_SRC elisp
+    ("mono" . (:font "TeX Gyre Cursor"
+                     :features "Color=blue,Scale=MatchLowercase"))
+#+END_SRC
+
+This is translated as:
+
+#+BEGIN_SRC latex
+\setmonofont{Noto Sans Mono}[Color=blue,Scale=MatchLowercase]
+#+END_SRC
+
+The ~:features~ can be a string or a list of strings to improve
+readability. An equivalent configuration using a list of strings would
+be:
+
+#+BEGIN_SRC elisp
+    ("mono" . (:font "TeX Gyre Cursor"
+                     :features ("Color=blue"
+                                "Scale=MatchLowercase")))
+#+END_SRC
+
+You can also add fallback fonts for specific font names for specific
+character scripts. These are detected by Emacs when exporting to
+LuaLaTeX and auxiliary Lua code is generated when a fallback for a
+script present in the code is detected.
+
+The property ~:fallback~ is used for this purpose. This property links
+to an associative list that maps the script names with their fallback
+configuration. Taking the default value of
+~org-latex-lualatex-font-config~ as an example, the =main= font is
+configured as:
+
+#+BEGIN_SRC elisp
+("main". (:font "TeX Gyre Termes"
+                    :fallback (("emoji" . "Noto Color Emoji:mode=harf")
+                               ("han"   . "Noto Serif CJK JP:")
+                               ("kana"  . "Noto Serif CJK JP:"))))
+#+END_SRC
+
+If Emacs detects characters belonging to the ~emoji~ character set, it
+will include the following fallback definition for the =main= font[fn:49]:
+
+#+BEGIN_SRC latex
+\directlua{
+ luaotfload.add_fallback ("fallback_main",{
+  "Noto Color Emoji:mode=harf",
+ })
+}
+#+END_SRC
+
+and use it when defining the main font as:
+
+#+BEGIN_SRC latex
+\setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
+#+END_SRC
+
 
 ** Markdown Export
 :PROPERTIES:
@@ -18870,7 +18965,7 @@ block, collects the results, and inserts them in the buffer.
 
 #+cindex: @samp{CALL}, keyword
 #+vindex: org-babel-inline-result-wrap
-By calling a named code block[fn:49] from an Org mode buffer or
+By calling a named code block[fn:50] from an Org mode buffer or
 a table.  Org can call the named code blocks from the current Org mode
 buffer or from the "Library of Babel" (see [[*Library of Babel]]).
 
@@ -19078,7 +19173,7 @@ they are mutually exclusive.
 
 - =value= ::
 
-  Default for most Babel libraries[fn:49].  Functional mode.  Org
+  Default for most Babel libraries[fn:50].  Functional mode.  Org
   gets the value by wrapping the code in a function definition in the
   language of the source block.  That is why when using =:results
   value=, code should execute like a function and return a value.  For
@@ -19942,7 +20037,7 @@ the second code block is expanded as
 #+end_example
 
 Note that noweb expansion does not automatically carry over =:var=
-header arguments[fn:50].
+header arguments[fn:51].
 
 You may also include the contents of multiple blocks sharing a common
 =noweb-ref= header argument, which can be set at the file, subtree,
@@ -20484,7 +20579,7 @@ in the desired amount with hard spaces and hiding leading stars.
 To display the buffer in the indented view, activate Org Indent minor
 mode, using {{{kbd(M-x org-indent-mode)}}}.  Text lines that are not
 headlines are prefixed with virtual spaces to vertically align with
-the headline text[fn:51].
+the headline text[fn:52].
 
 #+vindex: org-indent-indentation-per-level
 To make more horizontal space, the headlines are shifted by two
@@ -20512,7 +20607,7 @@ use =STARTUP= keyword as follows:
 
 It is possible to use hard spaces to achieve the indentation instead,
 if the bare ASCII file should have the indented look also outside
-Emacs[fn:52].  With Org's support, you have to indent all lines to
+Emacs[fn:53].  With Org's support, you have to indent all lines to
 line up with the outline headers.  You would use these settings[fn::
 ~org-adapt-indentation~ can also be set to ='headline-data=, in which
 case only data lines below the headline will be indented.]:
@@ -21680,7 +21775,7 @@ Tags]]) only for those set in these variables.
 
 #+vindex: org-mobile-directory
 The mobile application needs access to a file directory on
-a server[fn:53] to interact with Emacs.  Pass its location through
+a server[fn:54] to interact with Emacs.  Pass its location through
 the ~org-mobile-directory~ variable.  If you can mount that directory
 locally just set the variable to point to that directory:
 
@@ -21724,7 +21819,7 @@ Symbolic links in ~org-directory~ need to have the same name as their
 targets.].
 
 Push creates a special Org file =agendas.org= with custom agenda views
-defined by the user[fn:54].
+defined by the user[fn:55].
 
 Finally, Org writes the file =index.org=, containing links to other
 files.  The mobile application reads this file first from the server
@@ -22198,7 +22293,7 @@ of these strategies:
 To wrap a source table in LaTeX, use the =comment= environment
 provided by =comment.sty=[fn:: https://www.ctan.org/pkg/comment].  To
 activate it, put ~\usepackage{comment}~ in the document header.
-Orgtbl mode inserts a radio table skeleton[fn:55] with the command
+Orgtbl mode inserts a radio table skeleton[fn:56] with the command
 {{{kbd(M-x orgtbl-insert-radio-table)}}}, which prompts for a table
 name.  For example, if =salesfigures= is the name, the template
 inserts:
@@ -22218,7 +22313,7 @@ The line =#+ORGTBL: SEND= tells Orgtbl mode to use the function
 ~orgtbl-to-latex~ to convert the table to LaTeX format, then insert
 the table at the target (receive) location named =salesfigures=.  Now
 the table is ready for data entry.  It can even use spreadsheet
-features[fn:56]:
+features[fn:57]:
 
 #+begin_example
 % BEGIN RECEIVE ORGTBL salesfigures
@@ -23643,11 +23738,15 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 for different files.  However, "smart" LaTeX compilation systems, such
 as latexmk, can select the correct bibliography compiler.
 
-[fn:49] Actually, the constructs =call_<name>()= and =src_<lang>{}=
+[fn:49] Any font in ~org-latex-lualatex-font-config~ which includes a
+fallback for the =emoji= character set will produce equivalent code
+inside the =\directlua{}= code block.
+
+[fn:50] Actually, the constructs =call_<name>()= and =src_<lang>{}=
 are not evaluated when they appear in a keyword (see [[*Summary of
 In-Buffer Settings]]).
 
-[fn:50] In the following example, attempting to evaluate
+[fn:51] In the following example, attempting to evaluate
 the second code block will give an error, because the variables
 defined in the first code block will not be defined in the second
 block.
@@ -23675,29 +23774,29 @@ values.
 ,#+END_SRC
 #+end_example
 
-[fn:51] Org Indent mode also sets ~wrap-prefix~ correctly for
+[fn:52] Org Indent mode also sets ~wrap-prefix~ correctly for
 indenting and wrapping long lines of headlines or text.  This minor
 mode also handles Visual Line mode and directly applied settings
 through ~word-wrap~.
 
-[fn:52] This works, but requires extra effort.  Org Indent mode is
+[fn:53] This works, but requires extra effort.  Org Indent mode is
 more convenient for most applications.
 
-[fn:53] For a server to host files, consider using a WebDAV server,
+[fn:54] For a server to host files, consider using a WebDAV server,
 such as [[https://nextcloud.com][Nextcloud]].  Additional help is at this [[https://orgmode.org/worg/org-faq.html#mobileorg_webdav][FAQ entry]].
 
-[fn:54] While creating the agendas, Org mode forces =ID= properties
+[fn:55] While creating the agendas, Org mode forces =ID= properties
 on all referenced entries, so that these entries can be uniquely
 identified if Org Mobile flags them for further action.  To avoid
 setting properties configure the variable
 ~org-mobile-force-id-on-agenda-items~ to ~nil~.  Org mode then relies
 on outline paths, assuming they are unique.
 
-[fn:55] By default this works only for LaTeX, HTML, and Texinfo.
+[fn:56] By default this works only for LaTeX, HTML, and Texinfo.
 Configure the variable ~orgtbl-radio-table-templates~ to install
 templates for other modes.
 
-[fn:56] If the =TBLFM= keyword contains an odd number of dollar
+[fn:57] If the =TBLFM= keyword contains an odd number of dollar
 characters, this may cause problems with Font Lock in LaTeX mode.  As
 shown in the example you can fix this by adding an extra line inside
 the =comment= environment that is used to balance the dollar
