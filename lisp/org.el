@@ -224,6 +224,7 @@ Stars are put in group 1 and the trimmed body in group 2.")
 (declare-function org-timer-stop "org-timer" ())
 (declare-function org-toggle-archive-tag "org-archive" (&optional find-done))
 (declare-function org-update-radio-target-regexp "ol" ())
+(declare-function org-latex-lualatex-fontspec-to-string "ox-latex" ())
 
 (defvar org-agenda-buffer-name)
 (defvar org-element-paragraph-separate)
@@ -3492,6 +3493,7 @@ images at the same place."
 (defcustom org-format-latex-header "\\documentclass{article}
 \\usepackage[usenames]{color}
 \[DEFAULT-PACKAGES]
+\[FONTSPEC]
 \[PACKAGES]
 \\pagestyle{empty}             % do not remove
 % The settings below are copied from fullpage.sty
@@ -16641,6 +16643,7 @@ In the template, the following place holders will be recognized:
 
  [DEFAULT-PACKAGES]      \\usepackage statements for DEF-PKG
  [NO-DEFAULT-PACKAGES]   do not include DEF-PKG
+ [FONTSPEC]              font specification for lualatex
  [PACKAGES]              \\usepackage statements for PKG
  [NO-PACKAGES]           do not include PKG
  [EXTRA]                 the string EXTRA
@@ -16658,6 +16661,13 @@ SNIPPETS-P indicates if this is run to create snippet images for HTML."
 		      "" (org-latex-packages-to-string def-pkg snippets-p t))
 	      tpl (replace-match rpl t t tpl))
       (when def-pkg (setq end (org-latex-packages-to-string def-pkg snippets-p))))
+
+    (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
+	(setq rpl (org-latex-lualatex-fontspec-to-string)
+	      tpl (replace-match rpl t t tpl))
+      ;; In this case, we add the fontspec
+      (setq end
+	    (concat end "\n" (org-latex-lualatex-fontspec-to-string))))
 
     (if (string-match "\\[\\(NO-\\)?PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not pkg))

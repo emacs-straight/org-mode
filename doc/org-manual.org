@@ -14960,7 +14960,19 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :END:
 #+end_example
 
-*** Controlling the font configuration for LuaLaTeX
+*** Controlling the font configuration for LaTeX
+
+The LaTeX templates in =org= have been enriched by a new keyword,
+=[FONTSPEC]=, which act as a placeholder for font specification
+code. This feature is currently supported for LuaLaTeX only.
+(c.f. [[#lualatex-fontspec][below]]). An empty string will be
+generated for other LaTeX compilers
+
+
+**** Controlling the font configuration for LuaLaTeX
+:custom_id: lualatex-fontspec
+:END:
+
 #+cindex: LuaLaTeX font configuration
 
 When using ~lualatex~ as your =LATEX_COMPILER=, you can control the

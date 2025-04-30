@@ -148,6 +148,7 @@
 ;;   fromemail=true,
 ;;   fromphone=true\]\{scrlttr2\}
 ;;   \[DEFAULT-PACKAGES]
+;;   \[FONTSPEC]
 ;;   \[PACKAGES]
 ;;   \[EXTRA]"))
 ;;

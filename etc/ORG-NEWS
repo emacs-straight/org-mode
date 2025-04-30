@@ -218,7 +218,8 @@ retail 4-4-5 calendars, etc).
 *** New font handling in LaTeX exports
 
 The packages imported to handle fonts when producing PDF documents
-through LaTeX when using ~lualatex~ or ~xetex~ as your LaTeX compiler.
+through LaTeX when using ~lualatex~ or ~xetex~ as your LaTeX compiler
+have changed:
 
 - The ~amsmath~ package has been replaced by ~unicode-math~:
   ~unicode-math~ is a full replacement for ~amsmath~ and most users
@@ -226,9 +227,12 @@ through LaTeX when using ~lualatex~ or ~xetex~ as your LaTeX compiler.
   of smaller typographical differences or even broken exports due to
   issues in ~unicode-math~.
 
-A new way of controlling fonts when exporting to ~lualatex~ has been
-added. Read more [[#sec:lualatex-font-config][below]] in the description of the new custom variable
-~org-latex-lualatex-font-config~.
+Additionally, a new way of controlling fonts when exporting to
+~lualatex~ has been added. An new entry (=[FONTSPEC]=) has been added
+to the LaTeX templates, which is replaced by a font specification
+block using the =fontspec= package which is created based on the new
+custom variable ~org-latex-lualatex-font-config~ when generating the
+LaTeX code. Read more [[#sec:lualatex-font-config][below]] in the description of this variable.
 
 ** New and changed options
 
@@ -377,7 +381,7 @@ separator does not appear in completion candidates.
 This variable contains the font configuration when exporting to
 latex or beamer is using lualatex as the LaTeX compiler. It allows to
 map the different font families (main, sans, etc.) to fonts installed
-in the system and provide fallbacks for scripts that are not supported
+in the system and provides fallbacks for scripts that are not supported
 by them.
 
 ** New functions and changes in function arguments

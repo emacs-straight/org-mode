@@ -477,6 +477,7 @@ macro-like placeholders.
 
  [DEFAULT-PACKAGES]      \\usepackage statements for default packages
  [NO-DEFAULT-PACKAGES]   do not include any of the default packages
+ [FONTSPEC]              font specification when exporting to lualatex
  [PACKAGES]              \\usepackage statements for packages
  [NO-PACKAGES]           do not include the packages
  [EXTRA]                 the stuff from #+LATEX_HEADER(_EXTRA)
@@ -490,7 +491,8 @@ So a header like
   \\providecommand{\\alert}[1]{\\textbf{#1}}
   [PACKAGES]
 
-will omit the default packages, and will include the
+will omit the default packages and the font specification if you are
+exporting to lualatex, and will include the
 #+LATEX_HEADER and #+LATEX_HEADER_EXTRA lines, then have a call
 to \\providecommand, and then place \\usepackage commands based
 on the content of `org-latex-packages-alist'.
@@ -1561,7 +1563,7 @@ property to `toc'"
                                 ("han"   . "Noto Sans CJK JP:")
                                 ("kana"  . "Noto Sans CJK JP:"))))
     ("math" . (:font "TeX Gyre Termes Math"))
-    ("mono" . (:font "TeX Gyre Cursor"
+    ("mono" . (:font "Noto Sans Mono"
                      :features "Color=blue,Scale=MatchLowercase")))
   "This alist holds the font dictionaries for PDF export.
 Each element is defined as
@@ -1842,72 +1844,74 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
           (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
     scripts))
 
-(defun org-latex--lualatex-export-fontdef ()
+(defun org-latex-lualatex-fontspec-to-string ()
   "Return the font prelude for the current buffer as a string"
-  (let ((doc-scripts (org-latex--get-doc-scripts))
-        (fallback-alist)) ;; an alist (font_name . fallback-name)
-    (message "Fonts detected: %s" doc-scripts)
-    (with-temp-buffer
-      ;; add all fonts with fallback to fallbacl-alist
-      (dolist (fconfig org-latex-lualatex-font-config)
-        (when-let* ((fname (car fconfig))
-                    (config-plist (cdr fconfig))
-                    (fallback (plist-get config-plist :fallback)))
-          (push (cons fname (concat "fallback_" fname)) fallback-alist)))
-      ;; (message "fallback-alist ==> %s" fallback-alist)
-      (when fallback-alist ;; if there are fonts with fallbacks
-        (let ((directlua nil)) ;; Did we write the beginning of this block?
-          ;; create the directlua header
-          (dolist (fallback fallback-alist)
-            ;; (message "fallback ===> %s" fallback)
-            (when-let*
-                ((fbf-fname (car fallback))
-                 (fbf-name (cdr fallback))
-                 (fbf-plist (alist-get fbf-fname org-latex-lualatex-font-config nil nil #'string=))
-                 (fbf-flist (plist-get fbf-plist :fallback)))
-              ;; collect all falbacks for scripts that are present in the doc
-              (let ((fallback-flist
-                     (cl-loop for fpair in fbf-flist
-                              ;; check (car fpair) is in document scripts
-                              ;; and the fallback is not already in the result
-                              when (and (member-ignore-case (car fpair) doc-scripts)
-                                        (null (member-ignore-case (cdr fpair) fresult)))
-                              collect (cdr fpair) into fresult
-                              finally return fresult)))
-                ;; (message "fallback-flist ==> %s" fallback-flist)
-                (when fallback-flist
-                  (unless directlua ;; add the heading before the first lua block
-                    (insert "\\directlua{\n")
-                    (setq directlua t))
-                  ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
-                  ;;                                            :test #'string=))
-                  (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
-                  ;; Here we get the font fallbacks list
-                  (dolist (fname fallback-flist)
-                    ;; TODO; when (car fpair) in document charsets
-                    (insert (format "  \"%s\",\n" fname)))
-                  (insert " })\n")))))
-          (when directlua ;; if we have found any lua fallbacks, close the lua block
-            (insert "}\n"))))
-      ;; (message "fallbacks: %s" fallback-alist)
-      (dolist (fpair org-latex-lualatex-font-config)
-        (when-let* ((ffamily (car fpair))
-                    (fplist  (cdr fpair))
-                    (ffont (plist-get fplist :font)))
-          (insert (format "\\set%sfont{%s}" ffamily ffont))
-          ;; add the extra features
-          (let ((ffeatures (plist-get fplist :features)))
-            (when (stringp ffeatures)
-              (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
-            ;; (message "--> ffeatures: %s" ffeatures)
-            (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
-                        (fallback-spec (format "RawFeature={fallback=%s}" fallback-fn)))
-              (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
-            ;; (message "ffeatures %s" ffeatures)
-            (when ffeatures
-              (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
-          (insert "\n")))
-      (buffer-string))))
+  (if (string= org-latex-compiler "lualatex")
+      (let ((doc-scripts (org-latex--get-doc-scripts))
+            (fallback-alist)) ;; an alist (font_name . fallback-name)
+        (message "Fonts detected: %s" doc-scripts)
+        (with-temp-buffer
+          ;; add all fonts with fallback to fallback-alist
+          (dolist (fconfig org-latex-lualatex-font-config)
+            (when-let* ((fname (car fconfig))
+                        (config-plist (cdr fconfig))
+                        (fallback (plist-get config-plist :fallback)))
+              (push (cons fname (concat "fallback_" fname)) fallback-alist)))
+          ;; (message "fallback-alist ==> %s" fallback-alist)
+          (when fallback-alist ;; if there are fonts with fallbacks
+            (let ((directlua nil)) ;; Did we write the beginning of this block?
+              ;; create the directlua header
+              (dolist (fallback fallback-alist)
+                ;; (message "fallback ===> %s" fallback)
+                (when-let*
+                    ((fbf-fname (car fallback))
+                     (fbf-name (cdr fallback))
+                     (fbf-plist (alist-get fbf-fname org-latex-lualatex-font-config nil nil #'string=))
+                     (fbf-flist (plist-get fbf-plist :fallback)))
+                  ;; collect all falbacks for scripts that are present in the doc
+                  (let ((fallback-flist
+                         (cl-loop for fpair in fbf-flist
+                                  ;; check (car fpair) is in document scripts
+                                  ;; and the fallback is not already in the result
+                                  when (and (member-ignore-case (car fpair) doc-scripts)
+                                            (null (member-ignore-case (cdr fpair) fresult)))
+                                  collect (cdr fpair) into fresult
+                                  finally return fresult)))
+                    ;; (message "fallback-flist ==> %s" fallback-flist)
+                    (when fallback-flist
+                      (unless directlua ;; add the heading before the first lua block
+                        (insert "\\directlua{\n")
+                        (setq directlua t))
+                      ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
+                      ;;                                            :test #'string=))
+                      (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
+                      ;; Here we get the font fallbacks list
+                      (dolist (fname fallback-flist)
+                        ;; TODO; when (car fpair) in document charsets
+                        (insert (format "  \"%s\",\n" fname)))
+                      (insert " })\n")))))
+              (when directlua ;; if we have found any lua fallbacks, close the lua block
+                (insert "}\n"))))
+          ;; (message "fallbacks: %s" fallback-alist)
+          (dolist (fpair org-latex-lualatex-font-config)
+            (when-let* ((ffamily (car fpair))
+                        (fplist  (cdr fpair))
+                        (ffont (plist-get fplist :font)))
+              (insert (format "\\set%sfont{%s}" ffamily ffont))
+              ;; add the extra features
+              (let ((ffeatures (plist-get fplist :features)))
+                (when (stringp ffeatures)
+                  (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
+                ;; (message "--> ffeatures: %s" ffeatures)
+                (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
+                            (fallback-spec (format "RawFeature={fallback=%s}" fallback-fn)))
+                  (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
+                ;; (message "ffeatures %s" ffeatures)
+                (when ffeatures
+                  (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
+              (insert "\n")))
+          (buffer-string)))
+    "")) ;; for the other org-latex-compilers
 
 ;;
 ;;
