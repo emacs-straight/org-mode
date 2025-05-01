@@ -16637,7 +16637,7 @@ a HTML file."
 	  (delete-file (concat texfilebase e))))
       image-output-file)))
 
-(defun org-splice-latex-header (tpl def-pkg pkg snippets-p &optional extra)
+(defun org-splice-latex-header (tpl def-pkg pkg fspec snippets-p &optional extra)
   "Fill a LaTeX header template TPL.
 In the template, the following place holders will be recognized:
 
@@ -16663,11 +16663,11 @@ SNIPPETS-P indicates if this is run to create snippet images for HTML."
       (when def-pkg (setq end (org-latex-packages-to-string def-pkg snippets-p))))
 
     (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
-	(setq rpl (org-latex-lualatex-fontspec-to-string)
-	      tpl (replace-match rpl t t tpl))
+	(setq ;; rpl fspec
+	      tpl (replace-match fspec t t tpl))
       ;; In this case, we add the fontspec
       (setq end
-	    (concat end "\n" (org-latex-lualatex-fontspec-to-string))))
+	    (concat end "\n" fspec)))
 
     (if (string-match "\\[\\(NO-\\)?PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not pkg))

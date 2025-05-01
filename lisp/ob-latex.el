@@ -40,7 +40,8 @@
 (declare-function org-create-formula-image "org" (string tofile options buffer &optional type))
 (declare-function org-latex-compile "ox-latex" (texfile &optional snippet))
 (declare-function org-latex-guess-inputenc "ox-latex" (header))
-(declare-function org-splice-latex-header "org" (tpl def-pkg pkg snippets-p &optional extra))
+(declare-function org-latex-lualatex-fontspec-to-string "ox-latex" (compiler))
+(declare-function org-splice-latex-header "org" (tpl def-pkg pkg fspec snippets-p &optional extra))
 (declare-function org-at-heading-p "org" (&optional _))
 (declare-function org-back-to-heading "org" (&optional invisible-ok))
 (declare-function org-next-visible-heading "org" (arg))
@@ -279,6 +280,7 @@ This function is called by `org-babel-execute-src-block'."
                (org-latex--remove-packages
 	        org-latex-packages-alist
                 (list :latex-compiler org-latex-compiler))
+               (org-latex-lualatex-fontspec-to-string (list :latex-compiler org-latex-compiler))
 	       nil))
 	     (if fit "\n\\usepackage[active, tightpage]{preview}\n" "")
 	     (if border (format "\\setlength{\\PreviewBorder}{%s}" border) "")

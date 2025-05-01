@@ -483,6 +483,20 @@ current buffer as strings.
 Adapted from the [[https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/][discussion in the mailing list]] about fallbacks for
 non-latin scripts.
 
+*** New function ~org-latex-lualatex-fontspec-to-string~
+
+~org-latex-lualatex-fontspec-to-string~ returns the font specification
+depending on the intended LaTeX compiler. It requires a string with
+the intended compiler as an argument.
+
+Currently, it returns an empty string if the intended compiler is
+~pdflatex~.
+
+*** Added mandatory parameter ~fspec~ to ~org-splice-latex-header~
+
+~org-splice-latex-header~ now expects the fontspec as a string after
+the package list. This string will replace \[FSPEC] in the template.
+
 ** Removed or renamed functions and variables
 
 *** ~org-cycle-display-inline-images~ is renamed to ~org-cycle-display-link-previews~
