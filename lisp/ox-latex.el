@@ -1848,11 +1848,13 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
   "Return the font prelude for the current buffer as a string"
   (if (string= org-latex-compiler "lualatex")
       (let ((doc-scripts (org-latex--get-doc-scripts))
+            (current-lualatex-font-config org-latex-lualatex-font-config)
             (fallback-alist)) ;; an alist (font_name . fallback-name)
-        (message "Fonts detected: %s" doc-scripts)
         (with-temp-buffer
+          (message "Fonts detected: %s" doc-scripts)
+          (message "Font config: %s" current-lualatex-font-config)
           ;; add all fonts with fallback to fallback-alist
-          (dolist (fconfig org-latex-lualatex-font-config)
+          (dolist (fconfig current-lualatex-font-config)
             (when-let* ((fname (car fconfig))
                         (config-plist (cdr fconfig))
                         (fallback (plist-get config-plist :fallback)))
@@ -1866,7 +1868,7 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
                 (when-let*
                     ((fbf-fname (car fallback))
                      (fbf-name (cdr fallback))
-                     (fbf-plist (alist-get fbf-fname org-latex-lualatex-font-config nil nil #'string=))
+                     (fbf-plist (alist-get fbf-fname current-lualatex-font-config nil nil #'string=))
                      (fbf-flist (plist-get fbf-plist :fallback)))
                   ;; collect all falbacks for scripts that are present in the doc
                   (let ((fallback-flist
@@ -1893,7 +1895,7 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
               (when directlua ;; if we have found any lua fallbacks, close the lua block
                 (insert "}\n"))))
           ;; (message "fallbacks: %s" fallback-alist)
-          (dolist (fpair org-latex-lualatex-font-config)
+          (dolist (fpair current-lualatex-font-config)
             (when-let* ((ffamily (car fpair))
                         (fplist  (cdr fpair))
                         (ffont (plist-get fplist :font)))
