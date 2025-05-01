@@ -3535,9 +3535,9 @@ header, or they will be appended."
 	  (default-value var)))
 
 (defcustom org-latex-default-packages-alist
-  '(;; fontspec and unicode-math for lualatex and xetex
-    (""     "fontspec"  t ("lualatex" "xetex"))
-    (""     "unicode-math"   t ("lualatex" "xetex"))
+  '(;; fontspec and unicode-math for lualatex and xelatex
+    (""     "fontspec"  t ("lualatex" "xelatex"))
+    (""     "unicode-math"   t ("lualatex" "xelatex"))
     ;; inputenc, fontenc and are for pdflatex only
     ("AUTO" "inputenc"  t ("pdflatex"))
     ("T1"   "fontenc"   t ("pdflatex"))
