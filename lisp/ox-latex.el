@@ -1581,6 +1581,7 @@ Place your customization in your Emacs initialisation or in .dir-locals.el"
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type 'alist
+  :safe #'listp
 )
 
 
