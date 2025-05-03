@@ -384,6 +384,10 @@ map the different font families (main, sans, etc.) to fonts installed
 in the system and provides fallbacks for scripts that are not supported
 by them.
 
+The variable should be set to ~nil~ to generate an empty configuration
+for the =fontspec= package (for example, when you want to use the
+default fonts defined in a template when exporting to =beamer=).
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.

@@ -14970,9 +14970,10 @@ generated for other LaTeX compilers
 
 
 **** Controlling the font configuration for LuaLaTeX
+:PROPERTIES:
 :custom_id: lualatex-fontspec
+:description: Using org-latex-fontspec-config
 :END:
-
 #+cindex: LuaLaTeX font configuration
 
 When using ~lualatex~ as your =LATEX_COMPILER=, you can control the
@@ -14986,8 +14987,14 @@ yourself with fonts and options, read the
 package manual]] Part II. This variable can also be set in a
 ~.dir-locals.el~ file placed in the same directory as your ~org~ file.
 
+When you are using =pdflatex= but do not want or need any specific
+configuration for the ~fontspec~ package, set
+~org-latex-lualatex-font-config~ to ~nil~. This may be the case when
+exporting to =beamer=, when you want to use the fonts used by the
+template.
+
 ~org-latex-lualatex-font-config~ maps the font name used in the
-~\set...font{}~ commands defined by the ~fontspec~ package with the
+=\set...font{}= commands defined by the =fontspec= package with the
 font name and optional font features.
 
 For example, in the default configuration, the ~math~ font is mapped
@@ -14995,7 +15002,7 @@ to the system font ~TeX Gyre Termes Math~ using the *mandatory*
 property ~:font~:
 
 #+BEGIN_SRC elisp :results output :exports both
-    ("math" . (:font "TeX Gyre Termes Math"))
+    ("math" :font "TeX Gyre Termes Math")
 #+END_SRC
 #+RESULTS:
 
@@ -15011,8 +15018,8 @@ with the property ~:features~. Again, taking the example of the
 default configuration, the ~mono~ font is defined as:
 
 #+BEGIN_SRC elisp
-    ("mono" . (:font "TeX Gyre Cursor"
-                     :features "Color=blue,Scale=MatchLowercase"))
+    ("mono" :font "TeX Gyre Cursor"
+            :features "Color=blue,Scale=MatchLowercase")
 #+END_SRC
 
 This is translated as:
@@ -15026,9 +15033,9 @@ readability. An equivalent configuration using a list of strings would
 be:
 
 #+BEGIN_SRC elisp
-    ("mono" . (:font "TeX Gyre Cursor"
-                     :features ("Color=blue"
-                                "Scale=MatchLowercase")))
+    ("mono" :font "TeX Gyre Cursor"
+            :features ("Color=blue"
+                       "Scale=MatchLowercase"))
 #+END_SRC
 
 You can also add fallback fonts for specific font names for specific
@@ -15043,10 +15050,10 @@ configuration. Taking the default value of
 configured as:
 
 #+BEGIN_SRC elisp
-("main". (:font "TeX Gyre Termes"
-                    :fallback (("emoji" . "Noto Color Emoji:mode=harf")
-                               ("han"   . "Noto Serif CJK JP:")
-                               ("kana"  . "Noto Serif CJK JP:"))))
+("main" :font "TeX Gyre Termes"
+        :fallback (("emoji" . "Noto Color Emoji:mode=harf")
+                   ("han"   . "Noto Serif CJK JP:")
+                   ("kana"  . "Noto Serif CJK JP:")))
 #+END_SRC
 
 If Emacs detects characters belonging to the ~emoji~ character set, it

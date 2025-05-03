@@ -1553,6 +1553,11 @@ property to `toc'"
   :type 'boolean
   :safe #'booleanp)
 
+(defun list-or-null-p (object)
+  "Return non-nil when `object' is a list or nil"
+  (or (null object)
+      (listp object)))
+
 (defcustom org-latex-lualatex-font-config
   '(("main". (:font "TeX Gyre Termes"
                     :fallback (("emoji" . "Noto Color Emoji:mode=harf")
@@ -1580,8 +1585,9 @@ Each element is defined as
 Place your customization in your Emacs initialisation or in .dir-locals.el"
   :group 'org-export-latex
   :package-version '(Org . "9.8")
-  :type 'alist
-  :safe #'listp
+  :type '(choice (const :tag "No template" nil)
+		 (alist :tag "fontspec config"))
+  :safe #'list-or-null-p
 )
 
 
@@ -1852,9 +1858,12 @@ Arguments:
 
 Returns the font specification based on the current buffer's
 `org-latex-lualatex-font-config' and the scripts detected in it
-for lualatex or xelatex or an empty string for pdflatex."
+for lualatex or xelatex or
+an empty string whe the intended compiler is pdflatex or
+`org-latex-lualatex-font-config' is `nil'."
   ;; (message "[FSPEC] Intended compiler: %s" compiler)
-  (if (string= compiler "pdflatex")
+  (if (or (string= compiler "pdflatex")
+          (null org-latex-lualatex-font-config))
       ""
     ;; else lualatex or xelatex
     (let ((doc-scripts (org-latex--get-doc-scripts))
