@@ -1558,7 +1558,10 @@ property to `toc'"
   (or (null object)
       (listp object)))
 
-(defcustom org-latex-lualatex-font-config
+(defvaralias 'org-latex-lualatex-font-config 'org-latex-fontspec-config
+  "Just in case someone is already using this. Facilitate migration.")
+
+(defcustom org-latex-fontspec-config
   '(("main". (:font "TeX Gyre Termes"
                     :fallback (("emoji" . "Noto Color Emoji:mode=harf")
                                ("han"   . "Noto Serif CJK JP:")
@@ -1570,7 +1573,7 @@ property to `toc'"
     ("math" . (:font "TeX Gyre Termes Math"))
     ("mono" . (:font "Noto Sans Mono"
                      :features "Color=blue,Scale=MatchLowercase")))
-  "This alist holds the font dictionaries for PDF export.
+  "This variable stores the configuration for the fontspec package.
 Each element is defined as
 (`font-name' . `font-plist')
  where `font-name' is the name in \\set...font{}
@@ -1582,13 +1585,14 @@ Each element is defined as
   `:fallback': an alist of (`script' . `mapping') to map scripts in the buffer
                to their fallback font (optional).
 
+Set this variable to `nil' to generate no configuration.
+
 Place your customization in your Emacs initialisation or in .dir-locals.el"
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No template" nil)
 		 (alist :tag "fontspec config"))
-  :safe #'list-or-null-p
-)
+  :safe #'list-or-null-p)
 
 
 ;;; Internal Functions
@@ -1857,23 +1861,23 @@ Arguments:
   `compiler': a string with the intended LaTeX compiler.
 
 Returns the font specification based on the current buffer's
-`org-latex-lualatex-font-config' and the scripts detected in it
+`org-latex-fontspec-config' and the scripts detected in it
 for lualatex or xelatex or
 an empty string whe the intended compiler is pdflatex or
-`org-latex-lualatex-font-config' is `nil'."
+`org-latex-fontspec-config' is `nil'."
   ;; (message "[FSPEC] Intended compiler: %s" compiler)
   (if (or (string= compiler "pdflatex")
-          (null org-latex-lualatex-font-config))
+          (null org-latex-fontspec-config))
       ""
     ;; else lualatex or xelatex
     (let ((doc-scripts (org-latex--get-doc-scripts))
-          (current-lualatex-font-config org-latex-lualatex-font-config)
+          (current-fontspec-config org-latex-fontspec-config)
           (fallback-alist)) ;; an alist (font_name . fallback-name)
       ;; (message "Fonts detected: %s" doc-scripts)
-      ;; (message "Font config: %s" current-lualatex-font-config)
+      ;; (message "Font config: %s" current-fontspec-config)
       (with-temp-buffer
         ;; add all fonts with fallback to fallback-alist
-        (dolist (fconfig current-lualatex-font-config)
+        (dolist (fconfig current-fontspec-config)
           (when-let* ((fname (car fconfig))
                       (config-plist (cdr fconfig))
                       (fallback (plist-get config-plist :fallback)))
@@ -1887,7 +1891,7 @@ an empty string whe the intended compiler is pdflatex or
               (when-let*
                   ((fbf-fname (car fallback))
                    (fbf-name (cdr fallback))
-                   (fbf-plist (alist-get fbf-fname current-lualatex-font-config nil nil #'string=))
+                   (fbf-plist (alist-get fbf-fname current-fontspec-config nil nil #'string=))
                    (fbf-flist (plist-get fbf-plist :fallback)))
                 ;; collect all falbacks for scripts that are present in the doc
                 (let ((fallback-flist
@@ -1914,7 +1918,7 @@ an empty string whe the intended compiler is pdflatex or
             (when directlua ;; if we have found any lua fallbacks, close the lua block
               (insert "}\n"))))
         ;; (message "fallbacks: %s" fallback-alist)
-        (dolist (fpair current-lualatex-font-config)
+        (dolist (fpair current-fontspec-config)
           (when-let* ((ffamily (car fpair))
                       (fplist  (cdr fpair))
                       (ffont (plist-get fplist :font)))

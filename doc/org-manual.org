@@ -14976,24 +14976,25 @@ generated for other LaTeX compilers
 :END:
 #+cindex: LuaLaTeX font configuration
 
-When using ~lualatex~ as your =LATEX_COMPILER=, you can control the
-fonts used in the PDF and make sure that all characters can be read in
-the resulting PDF file.
+When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
+control the fonts used in the PDF and make sure that all characters
+can be read in the resulting PDF file. This feature is *not* available
+if you use ~pdflatex~.
 
-You can customise ~org-latex-lualatex-font-config~ to map your
+Org mode uses the variable ~org-latex-fontspec-config~ to map your
 document's fonts to the fonts used in the document. To familiarise
 yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
-package manual]] Part II. This variable can also be set in a
-~.dir-locals.el~ file placed in the same directory as your ~org~ file.
+package manual]] Part II. This variable be set in your Emacs
+initialisation code, in the file local variables or in the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][directory
+local variable file]] ~.dir-locals.el~ .
 
-When you are using =pdflatex= but do not want or need any specific
-configuration for the ~fontspec~ package, set
-~org-latex-lualatex-font-config~ to ~nil~. This may be the case when
-exporting to =beamer=, when you want to use the fonts used by the
-template.
+If do not want or need any specific configuration for the ~fontspec~
+package, set ~org-latex-fontspec-config~ to ~nil~. This may be the
+case when exporting to =beamer=, when you want to use the fonts used
+by the template.
 
-~org-latex-lualatex-font-config~ maps the font name used in the
+~org-latex-fontspec-config~ maps the font name used in the
 =\set...font{}= commands defined by the =fontspec= package with the
 font name and optional font features.
 
@@ -15041,13 +15042,14 @@ be:
 You can also add fallback fonts for specific font names for specific
 character scripts. These are detected by Emacs when exporting to
 LuaLaTeX and auxiliary Lua code is generated when a fallback for a
-script present in the code is detected.
+script present in the code is detected. This is not needed when using
+XeLaTeX and font specific management packages like ~xeCKJ~ or
+~xpinyin~.
 
-The property ~:fallback~ is used for this purpose. This property links
-to an associative list that maps the script names with their fallback
-configuration. Taking the default value of
-~org-latex-lualatex-font-config~ as an example, the =main= font is
-configured as:
+The property ~:fallback~ is used for this purpose. It links to an
+associative list that maps the script names with their fallback
+configuration. Taking the default value of ~org-latex-fontspec-config~
+as an example, the =main= font is configured as:
 
 #+BEGIN_SRC elisp
 ("main" :font "TeX Gyre Termes"
@@ -15067,12 +15069,13 @@ will include the following fallback definition for the =main= font[fn:49]:
 }
 #+END_SRC
 
-and use it when defining the main font as:
 
 #+BEGIN_SRC latex
 \setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
 #+END_SRC
 
+When you specify ~:features~ for a font, the fallback is appended as
+another feature to the font definition.
 
 ** Markdown Export
 :PROPERTIES:
@@ -23757,7 +23760,7 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 for different files.  However, "smart" LaTeX compilation systems, such
 as latexmk, can select the correct bibliography compiler.
 
-[fn:49] Any font in ~org-latex-lualatex-font-config~ which includes a
+[fn:49] Any font in ~org-latex-fontspec-config~ which includes a
 fallback for the =emoji= character set will produce equivalent code
 inside the =\directlua{}= code block.
 

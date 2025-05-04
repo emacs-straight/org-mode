@@ -231,7 +231,7 @@ Additionally, a new way of controlling fonts when exporting to
 ~lualatex~ has been added. An new entry (=[FONTSPEC]=) has been added
 to the LaTeX templates, which is replaced by a font specification
 block using the =fontspec= package which is created based on the new
-custom variable ~org-latex-lualatex-font-config~ when generating the
+custom variable ~org-latex-fontspec-config~ when generating the
 LaTeX code. Read more [[#sec:lualatex-font-config][below]] in the description of this variable.
 
 ** New and changed options
@@ -374,19 +374,22 @@ This option makes ~org-cite~'s ~basic~ insert processor use
 It can also be set to dynamically compute ~crm-separator~ so that the
 separator does not appear in completion candidates.
 
-*** New option ~org-latex-lualatex-font-config~
+*** New option ~org-latex-fontspec-config~
 :PROPERTIES:
 :CUSTOM_ID: sec:lualatex-font-config
 :END:
-This variable contains the font configuration when exporting to
-latex or beamer is using lualatex as the LaTeX compiler. It allows to
-map the different font families (main, sans, etc.) to fonts installed
-in the system and provides fallbacks for scripts that are not supported
-by them.
+This variable contains the font configuration when exporting to latex
+or beamer is using lualatex or xelatex as the LaTeX compiler. It
+allows to map the different font families (main, sans, etc.) to fonts
+installed in the system. When using lualatex, it provides fallbacks
+for scripts that are not supported by the fonts specified by the user.
 
 The variable should be set to ~nil~ to generate an empty configuration
 for the =fontspec= package (for example, when you want to use the
 default fonts defined in a template when exporting to =beamer=).
+
+This variable is aliased as ~org-latex-lualatex-font-config~ for very
+early adopters. It is advised to migrate and use the new name ASAP.
 
 ** New functions and changes in function arguments
 
