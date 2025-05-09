@@ -123,6 +123,7 @@
 (defvar org-property-end-re)
 (defvar org-special-properties)
 (defvar org-window-config-before-follow-link)
+(defvar org-tag-invalid-char-re)
 
 (declare-function org-back-to-heading "org" (&optional invisible-ok))
 (declare-function org-entry-get "org" (pom property &optional inherit literal-nil))
@@ -749,7 +750,7 @@ entry at point."
 			 (funcall
 			  togtag
 			  (replace-regexp-in-string
-			   "[^[:alnum:]_@#%]" ""
+			   org-tag-invalid-char-re ""
 			   (replace-regexp-in-string "[ \t]+" "_" kw))))
 		     (org-bibtex-put (car pair) (cdr pair) insert-raw)))
 	(_ (org-bibtex-put (car pair) (cdr pair) insert-raw))))

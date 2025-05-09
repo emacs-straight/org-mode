@@ -1412,7 +1412,7 @@ Throw `:org-element-deferred-retry' signal at the end."
                      (skip-chars-forward " \t"))))
 	     (title-start (point))
 	     (tags (when (re-search-forward
-			  "\\(:[[:alnum:]_@#%:]+:\\)[ \t]*$"
+                          org-tag-group-enclosed-re
 			  (line-end-position)
 			  'move)
 		     (goto-char (match-beginning 0))
