@@ -14960,13 +14960,13 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :END:
 #+end_example
 
-*** Controlling the font configuration for LaTeX
+*** Controlling the font configuration for LuaLaTeX and XeLaTeX
 
 The LaTeX templates in =org= have been enriched by a new keyword,
 =[FONTSPEC]=, which act as a placeholder for font specification
-code. This feature is currently supported for LuaLaTeX only.
-(c.f. [[#lualatex-fontspec][below]]). An empty string will be
-generated for other LaTeX compilers
+code.  This feature is currently supported for LuaLaTeX and XeLaTex.
+(c.f. [[#lualatex-fontspec][below]]). An  empty string will be
+generated for PDFLaTeX.
 
 
 **** Controlling the font configuration for LuaLaTeX
@@ -14978,29 +14978,29 @@ generated for other LaTeX compilers
 
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF and make sure that all characters
-can be read in the resulting PDF file. This feature is *not* available
+can be read in the resulting PDF file.  This feature is *not* available
 if you use ~pdflatex~.
 
 Org mode uses the variable ~org-latex-fontspec-config~ to map your
 document's fonts to the fonts used in the document. To familiarise
 yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
-package manual]] Part II. This variable be set in your Emacs
+package manual]] Part II.  This variable be set in your Emacs
 initialisation code, in the file local variables or in the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][directory
 local variable file]] ~.dir-locals.el~ .
 
 If do not want or need any specific configuration for the ~fontspec~
-package, set ~org-latex-fontspec-config~ to ~nil~. This may be the
-case when exporting to =beamer=, when you want to use the fonts used
-by the template.
+package, set ~org-latex-fontspec-config~ to ~nil~.  This is the
+default value.  This is normally the se when exporting to =beamer=,
+where you most probably want to use the fonts defined in the template.
 
 ~org-latex-fontspec-config~ maps the font name used in the
 =\set...font{}= commands defined by the =fontspec= package with the
 font name and optional font features.
 
-For example, in the default configuration, the ~math~ font is mapped
-to the system font ~TeX Gyre Termes Math~ using the *mandatory*
-property ~:font~:
+For example, if you want to map the ~math~ font to the system font
+~TeX Gyre Termes Math~, you should use the *mandatory* property
+~:font~ as in:
 
 #+BEGIN_SRC elisp :results output :exports both
     ("math" :font "TeX Gyre Termes Math")
@@ -15015,23 +15015,23 @@ will be:
 #+END_SRC
 
 If you need extra features for your font, you will need to add them
-with the property ~:features~. Again, taking the example of the
-default configuration, the ~mono~ font is defined as:
+with the property ~:features~.  For example, you could define the
+~mono~ font as:
 
 #+BEGIN_SRC elisp
     ("mono" :font "TeX Gyre Cursor"
-            :features "Color=blue,Scale=MatchLowercase")
+            :features "Scale=MatchLowercase")
 #+END_SRC
 
 This is translated as:
 
 #+BEGIN_SRC latex
-\setmonofont{Noto Sans Mono}[Color=blue,Scale=MatchLowercase]
+\setmonofont{Noto Sans Mono}[Scale=MatchLowercase]
 #+END_SRC
 
 The ~:features~ can be a string or a list of strings to improve
-readability. An equivalent configuration using a list of strings would
-be:
+readability.  For example, to make the ~mono~ font appear in blue and
+scaled, you could specify it as
 
 #+BEGIN_SRC elisp
     ("mono" :font "TeX Gyre Cursor"
@@ -15039,17 +15039,21 @@ be:
                        "Scale=MatchLowercase"))
 #+END_SRC
 
-You can also add fallback fonts for specific font names for specific
-character scripts. These are detected by Emacs when exporting to
-LuaLaTeX and auxiliary Lua code is generated when a fallback for a
-script present in the code is detected. This is not needed when using
-XeLaTeX and font specific management packages like ~xeCKJ~ or
-~xpinyin~.
+or as:
 
-The property ~:fallback~ is used for this purpose. It links to an
-associative list that maps the script names with their fallback
-configuration. Taking the default value of ~org-latex-fontspec-config~
-as an example, the =main= font is configured as:
+#+BEGIN_SRC elisp
+    ("mono" :font "TeX Gyre Cursor"
+            :features "Color=blue,Scale=MatchLowercase")
+#+END_SRC
+
+You can also add fallback fonts for specific font names for specific
+character scripts.  These are detected by Emacs during the export
+process.
+
+Use the property ~:fallback~ for this purpose.  It links to an
+associative list that maps the script names as detected by Emacs with
+their fallback configuration.  For example, if you configure the
+=main= font as:
 
 #+BEGIN_SRC elisp
 ("main" :font "TeX Gyre Termes"
@@ -15058,7 +15062,7 @@ as an example, the =main= font is configured as:
                    ("kana"  . "Noto Serif CJK JP:")))
 #+END_SRC
 
-If Emacs detects characters belonging to the ~emoji~ character set, it
+if Emacs detects characters belonging to the ~emoji~ character set, it
 will include the following fallback definition for the =main= font[fn:49]:
 
 #+BEGIN_SRC latex
@@ -15069,6 +15073,7 @@ will include the following fallback definition for the =main= font[fn:49]:
 }
 #+END_SRC
 
+and, then, generate the following font specification for =main=.
 
 #+BEGIN_SRC latex
 \setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
@@ -15076,6 +15081,26 @@ will include the following fallback definition for the =main= font[fn:49]:
 
 When you specify ~:features~ for a font, the fallback is appended as
 another feature to the font definition.
+
+*Notes*
+- You may use any font name used in the ~\set..font{}~ command by the
+  ~fontspec~ package.  For example, when using XeLaTeX, you can
+  compose Chinese, Japanese or Korean test using the ~xeCJK~ and
+  ~xpinyin~ packages.  These packages define the ~\\setCKJmainfont{}~,
+  ~\\setCJKsansfont{}~ and ~\\setCJKmonofnt{}~ commands.  Use the
+  ~CJKmain~, ~CJKsans~ and ~CJK mono~ definitions in your documents to
+  customise them:
+  #+BEGIN_SRC elisp :results none :exports code
+((org-mode .
+  ((org-latex-fontspec-config .
+    (("main" :font "Noto Serif")
+     ("sans" :font "Noto Sans")
+     ("mono" :font "Noto Sans Mono")
+     ("CJKmain" :font "Noto Serif CJK SC")
+     ("CJKsans" :font "Noto Sans CJK SC")
+     ("CJKmono" :font "Noto Sans Mono CJK SC"))))))
+  #+END_SRC
+
 
 ** Markdown Export
 :PROPERTIES:

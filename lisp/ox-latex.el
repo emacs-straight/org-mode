@@ -1561,22 +1561,13 @@ property to `toc'"
 (defvaralias 'org-latex-lualatex-font-config 'org-latex-fontspec-config
   "Just in case someone is already using this. Facilitate migration.")
 
-(defcustom org-latex-fontspec-config
-  '(("main". (:font "TeX Gyre Termes"
-                    :fallback (("emoji" . "Noto Color Emoji:mode=harf")
-                               ("han"   . "Noto Serif CJK JP:")
-                               ("kana"  . "Noto Serif CJK JP:"))))
-    ("sans" . (:font "TeX Gyre Heros"
-                     :fallback (("emoji" . "Noto Color Emoji:mode=harf")
-                                ("han"   . "Noto Sans CJK JP:")
-                                ("kana"  . "Noto Sans CJK JP:"))))
-    ("math" . (:font "TeX Gyre Termes Math"))
-    ("mono" . (:font "Noto Sans Mono"
-                     :features "Color=blue,Scale=MatchLowercase")))
+(defcustom org-latex-fontspec-config nil
   "This variable stores the configuration for the fontspec package.
+By default, this variable is set to `nil' to generate no configuration.
+
 Each element is defined as
 (`font-name' . `font-plist')
- where `font-name' is the name in \\set...font{}
+ where `font-name' is the name in `\\set...font{}'
  and `font-plist' is a plist. The keys for this plist are
   `:font':     system font name (mandatory)
   `:features': string or list of strings with font features.
@@ -1584,8 +1575,6 @@ Each element is defined as
                CAVEAT: features may be overwritten by fallback.
   `:fallback': an alist of (`script' . `mapping') to map scripts in the buffer
                to their fallback font (optional).
-
-Set this variable to `nil' to generate no configuration.
 
 Place your customization in your Emacs initialisation or in .dir-locals.el"
   :group 'org-export-latex
