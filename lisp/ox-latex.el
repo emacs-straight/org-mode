@@ -1844,7 +1844,7 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
           (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
     scripts))
 
-(defun org-latex-lualatex-fontspec-to-string (compiler)
+(defun org-latex-fontspec-to-string (compiler)
   "Return the font prelude for the current buffer as a string.
 Arguments:
   `compiler': a string with the intended LaTeX compiler.
@@ -2157,7 +2157,7 @@ specified in `org-latex-default-packages-alist' or
 	 class-template
 	 (org-latex--remove-packages org-latex-default-packages-alist info)
 	 (org-latex--remove-packages org-latex-packages-alist info)
-         (org-latex-lualatex-fontspec-to-string (or (plist-get info :latex-compiler) org-latex-compiler))
+         (org-latex-fontspec-to-string (or (plist-get info :latex-compiler) org-latex-compiler))
 	 snippet?
 	 (mapconcat #'org-element-normalize-string
 		    (list (plist-get info :latex-header)
