@@ -1861,6 +1861,7 @@ an empty string whe the intended compiler is pdflatex or
     ;; else lualatex or xelatex
     (let ((doc-scripts (org-latex--get-doc-scripts))
           (current-fontspec-config org-latex-fontspec-config)
+          (directlua nil) ;; Did we write the \\directlua{} block?
           (fallback-alist)) ;; an alist (font_name . fallback-name)
       ;; (message "Fonts detected: %s" doc-scripts)
       ;; (message "Font config: %s" current-fontspec-config)
@@ -1873,7 +1874,6 @@ an empty string whe the intended compiler is pdflatex or
             (push (cons fname (concat "fallback_" fname)) fallback-alist)))
         ;; (message "fallback-alist ==> %s" fallback-alist)
         (when fallback-alist ;; if there are fonts with fallbacks
-          (let ((directlua nil)) ;; Did we write the beginning of this block?
             ;; create the directlua header
             (dolist (fallback fallback-alist)
               ;; (message "fallback ===> %s" fallback)
@@ -1905,7 +1905,7 @@ an empty string whe the intended compiler is pdflatex or
                       (insert (format "  \"%s\",\n" fname)))
                     (insert " })\n")))))
             (when directlua ;; if we have found any lua fallbacks, close the lua block
-              (insert "}\n"))))
+              (insert "}\n")))
         ;; (message "fallbacks: %s" fallback-alist)
         (dolist (fpair current-fontspec-config)
           (when-let* ((ffamily (car fpair))
@@ -1918,7 +1918,7 @@ an empty string whe the intended compiler is pdflatex or
                 (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
               ;; (message "--> ffeatures: %s" ffeatures)
               (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
-                          (fallback-spec (format "RawFeature={fallback=%s}" fallback-fn)))
+                          (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-fn))))
                 (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
               ;; (message "ffeatures %s" ffeatures)
               (when ffeatures
