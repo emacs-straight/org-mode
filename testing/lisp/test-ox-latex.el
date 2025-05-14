@@ -272,5 +272,69 @@ is suppressed
       (should (search-forward "}
 \\addcontentsline{toc}{section}{Section 3}")))))
 
+(ert-deftest test-ox-latex/lualatex-fontspec-nodirectlua ()
+  "Test that directlua block is not created
+when no fallbacks in fontspec configuration"
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-fontspec-config '(("main" :font "FreeSans"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text.
+"
+     ;; (message "--> %s" (buffer-string))
+     (goto-char (point-min))
+     (should-not (search-forward "\\directlua" nil t))
+     (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-directlua ()
+  "Test that directlua block is created"
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-fontspec-config '(("main"
+                                      :font "FreeSans"
+                                      :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text with emoji: 👍
+"
+     ;; (message "--> %s" (buffer-string))
+     (goto-char (point-min))
+     (should (search-forward "\\directlua" nil t))
+     (should (search-forward "Noto Color Emoji" nil t))
+     (should (search-forward "\\setmainfont{FreeSans}[RawFeature={fallback=fallback_main}]" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-noemoji ()
+  "Test that directlua block is not created because it is not needed
+no emojis detected"
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-fontspec-config '(("main"
+                                      :font "FreeSans"
+                                      :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text without emojis.
+"
+     ;; (message "--> %s" (buffer-string))
+     (goto-char (point-min))
+     (should-not (search-forward "\\directlua" nil t))
+     (goto-char (point-min))
+     (should-not (search-forward "Noto Color Emoji" nil t))
+     (goto-char (point-min))
+     (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
+
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here
