@@ -1583,6 +1583,31 @@ Place your customization in your Emacs initialisation or in .dir-locals.el"
 		 (alist :tag "fontspec config"))
   :safe #'list-or-null-p)
 
+(defcustom org-latex-polyglossia-font-config nil
+  "This variable store the font specifications for polyglossia.
+By defauly, this varibale is set to `nil' to generate no configuration.
+
+It is an associative list, where each element is defined as
+(`language' . `lang-plist')
+where
+`language' is the language name as a string (e.g. \"english\") and
+`lang-plist' is the language plist, with the following keys:
+ `:font': a string with the system font name, mandatory
+ `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
+ `:extras': a string for extra parameters (e.g.\"[Script=Hebrew]\")
+            Note: the spec must include square brackets
+Each line will be translated into a new font family definition.
+For example:
+  (\"hebrew\"  :font \"FreeMono\" :variant \"tt\" :extras \"[Script=Hebrew]\")
+will eventually result in
+  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{FreeMono}
+"
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No polyglossia font config" nil)
+		 (alist :tag "polyglossia font config"))
+  :safe #'list-or-null-p)
+
 
 ;;; Internal Functions
 
@@ -1765,6 +1790,28 @@ Return the new header."
 				      header t)
 	  header)))))
 
+(defun org-latex--polyglossia-fonts (lang-list)
+  "Return the block specifying the fonts for the language list
+`lang-list' based on `org-latex-polyglossia-font-config'"
+  ;;
+  ;; If org-latex-polyglossia-fonts is nil
+  ;; the cl-loop returns an empty string
+  ;;
+  (let ((result))
+    (message "polyglossia font config is:\n%s" org-latex-polyglossia-font-config)
+    (message "applied for %s" lang-list)
+    (setq result
+          (cl-loop for (lang . props) in org-latex-polyglossia-font-config
+                   if (member lang lang-list)
+                   concat (format "\\newfontfamily{\\%sfont%s}%s{%s}\n"
+                                  lang
+                                  (or (plist-get props :variant) "")
+                                  ;; TODO: get extras from org-latex-language-list above
+                                  (or (plist-get props :extras) "")
+                                  (plist-get props :font))))
+    (message "Will result in --> %s" result)
+    result))
+
 (defun org-latex-guess-polyglossia-language (header info)
   "Set the Polyglossia language according to the LANGUAGE keyword.
 
@@ -1800,7 +1847,11 @@ Return the new header."
 				   "AUTO" language options t)
 				  ",[ \t]*"))))))
 	     (main-language-set
-	      (string-match-p "\\\\setmainlanguage{.*?}" header)))
+	      (string-match-p "\\\\setmainlanguage{.*?}" header))
+             ;; collect the language names used in \setmainlanguage{}
+             ;; and \setotherlanguage{} in `lang-collector' to add the
+             ;; font specifications.
+             (lang-collector))
 	(replace-match
 	 (concat "\\usepackage{polyglossia}\n"
 		 (mapconcat
@@ -1812,15 +1863,20 @@ Return the new header."
 			   (l (if (equal l language)
 				  polyglossia-lang
 				l)))
-		      (format (if main-language-set (format "\\setotherlanguage{%s}\n" l)
-				(setq main-language-set t)
-				"\\setmainlanguage%s{%s}\n")
-			      (if polyglossia-variant
-				  (format "[variant=%s]" polyglossia-variant)
-				"")
-			      l)))
+                      (progn
+                        (message "add %s to lang-collector" l)
+                        (cl-pushnew l lang-collector :test #'equal)
+		        (format (if main-language-set (format "\\setotherlanguage{%s}\n" l)
+			          (setq main-language-set t)
+			          "\\setmainlanguage%s{%s}\n")
+			        (if polyglossia-variant
+			            (format "[variant=%s]" polyglossia-variant)
+			          "")
+			        l))
+                      ))
 		  languages
-		  ""))
+		  "")
+                 (org-latex--polyglossia-fonts lang-collector))
 	 t t header 0)))))
 
 ;;
@@ -1841,7 +1897,7 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
           (re-search-forward "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" nil t)
         (let ((script (aref char-script-table
                             (string-to-char (match-string 1)))))
-          (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
+          (cl-pushnew (prin1-to-string script) scripts :test #'equal))))
     scripts))
 
 (defun org-latex-fontspec-to-string (compiler)
@@ -1897,7 +1953,7 @@ an empty string whe the intended compiler is pdflatex or
                       (insert "\\directlua{\n")
                       (setq directlua t))
                     ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
-                    ;;                                            :test #'string=))
+                    ;;                                            :test #'equal))
                     (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
                     ;; Here we get the font fallbacks list
                     (dolist (fname fallback-flist)

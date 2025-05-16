@@ -14389,6 +14389,10 @@ This would produce in LaTeX (with the actual =polyglossia= syntax):
 \setotherlanguage{french}
 #+end_example
 
+If you use =polyglossia=, you can control the fonts used in the PDF
+document with the local variable ~org-latex-polyglossia-font-config~.
+#+vindex: org-latex-polyglossia-font-config
+
 *** Quoting LaTeX code
 :PROPERTIES:
 :DESCRIPTION: Incorporating literal @LaTeX{} code.
