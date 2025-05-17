@@ -1594,6 +1594,7 @@ where
 `lang-plist' is the language plist, with the following keys:
  `:font': a string with the system font name, mandatory
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
+ `:tag': a string will substitute the language in {\\<languaage>font<variant>}
  `:extras': a string for extra parameters (e.g.\"[Script=Hebrew]\")
             Note: the spec must include square brackets
 Each line will be translated into a new font family definition.
@@ -1804,7 +1805,7 @@ Return the new header."
           (cl-loop for (lang . props) in org-latex-polyglossia-font-config
                    if (member lang lang-list)
                    concat (format "\\newfontfamily{\\%sfont%s}%s{%s}\n"
-                                  lang
+                                  (or (plist-get props :tag) lang)
                                   (or (plist-get props :variant) "")
                                   ;; TODO: get extras from org-latex-language-list above
                                   (or (plist-get props :extras) "")
@@ -1865,6 +1866,7 @@ Return the new header."
 				l)))
                       (progn
                         (message "add %s to lang-collector" l)
+                        ;; TODO - don't add if font with tag already exists
                         (cl-pushnew l lang-collector :test #'equal)
 		        (format (if main-language-set (format "\\setotherlanguage{%s}\n" l)
 			          (setq main-language-set t)
