@@ -1919,6 +1919,7 @@ an empty string whe the intended compiler is pdflatex or
     ;; else lualatex or xelatex
     (let ((doc-scripts (org-latex--get-doc-scripts))
           (current-fontspec-config org-latex-fontspec-config)
+          (cjk-packages nil) ;; will be need the packages to support CJK fonts?
           (directlua nil) ;; Did we write the \\directlua{} block?
           (fallback-alist)) ;; an alist (font_name . fallback-name)
       ;; (message "Fonts detected: %s" doc-scripts)
@@ -1969,6 +1970,7 @@ an empty string whe the intended compiler is pdflatex or
           (when-let* ((ffamily (car fpair))
                       (fplist  (cdr fpair))
                       (ffont (plist-get fplist :font)))
+            (setq cjk-packages (or cjk-packages (string-match-p "^CJK" ffamily)))
             (insert (format "\\set%sfont{%s}" ffamily ffont))
             ;; add the extra features
             (let ((ffeatures (plist-get fplist :features)))
@@ -1982,6 +1984,10 @@ an empty string whe the intended compiler is pdflatex or
               (when ffeatures
                 (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
             (insert "\n")))
+        ;; If the CJK font families have been included
+        (when (and cjk-packages (equal compiler "xelatex"))
+          (goto-char (point-min))
+          (insert "\\usepackage[CJKspace]{xeCJK}\n\\usepackage{xpinyin}\n"))
         (buffer-string)))))
 
 ;;
