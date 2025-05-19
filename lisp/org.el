@@ -449,7 +449,16 @@ This one does not require the space after the date, so it can be used
 on a string that terminates immediately after the date.")
 
 (defconst org-ts-regexp1 "\\(\\([0-9]\\{4\\}\\)-\\([0-9]\\{2\\}\\)-\\([0-9]\\{2\\}\\)\\(?: *\\([^]+0-9>\r\n -]+\\)\\)?\\( \\([0-9]\\{1,2\\}\\):\\([0-9]\\{2\\}\\)\\)?\\)"
-  "Regular expression matching time strings for analysis.")
+  "Regular expression matching time strings for analysis.
+This regular expression provides the following groups:
+  1:   everything (required for embedding)
+   2:  year
+   3:  month
+   4:  day
+   5:  weekday name (optional)
+   6:  time part (optional)
+    7: hour
+    8: minute")
 
 (defconst org-ts-regexp2 (concat "<" org-ts-regexp1 "[^>\n]\\{0,16\\}>")
   "Regular expression matching time stamps, with groups.")
@@ -480,6 +489,13 @@ The time stamps may be either active or inactive.")
   "Regular expression for specifying repeated events.
 After a match, group 1 contains the repeat expression.")
 
+;; The weekday name "%a" is considered semi-optional in these formats,
+;; see https://list.orgmode.org/87fricxatw.fsf@localhost/.  It is
+;; "optional" because the `org-timestamp-*' functions work alright on
+;; weekday-less timestamps in paragraphs when one omits the "%a".  But
+;; it is only "semi"-optional since Org cannot process properly
+;; timestamps in CLOCK, DEADLINE, and SCHEDULED lines when one omits
+;; the "%a".
 (defvaralias 'org-time-stamp-formats 'org-timestamp-formats)
 (defconst org-timestamp-formats '("%Y-%m-%d %a" . "%Y-%m-%d %a %H:%M")
   "Formats for `format-time-string' which are used for time stamps.
@@ -4341,7 +4357,7 @@ related expressions."
 		  '("ARCHIVE" "CATEGORY" "COLUMNS" "PRIORITIES"))))
       ;; Startup options.  Get this early since it does change
       ;; behavior for other options (e.g., tags).
-      (let ((startup (cl-mapcan (lambda (value) (split-string value))
+      (let ((startup (cl-mapcan #'split-string
 				(cdr (assoc "STARTUP" alist)))))
 	(dolist (option startup)
 	  (pcase (assoc-string option org-startup-options t)
@@ -5499,7 +5515,7 @@ by a #."
   :group 'org-appearance)
 
 (defun org-fontify-meta-lines-and-blocks (limit)
-  (condition-case-unless-debug nil
+  (condition-case nil
       (org-fontify-meta-lines-and-blocks-1 limit)
     (error (message "Org mode fontification error in %S at %d"
 		    (current-buffer)
@@ -12896,7 +12912,7 @@ variables is set."
 	  (cond
 	   (increment
 	    (unless allowed (user-error "Allowed effort values are not set"))
-	    (or (cl-caadr (member (list current) allowed))
+            (or (caadr (member (list current) allowed))
 		(user-error "Unknown value %S among allowed values" current)))
 	   (value
 	    (if (stringp value) value
@@ -15475,9 +15491,13 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
 	(looking-at org-ts-regexp3)
 	(goto-char
 	 (pcase origin-cat
-	   ;; `day' category ends before `hour' if any, or at the end
-	   ;; of the day name.
-	   (`day (min (or (match-beginning 7) (1- (match-end 5))) origin))
+	   ;; `day' category ends at the end of the weekday name if
+	   ;; any (group 5), or before `hour' if any (group 7), or at
+	   ;; the end of the timestamp (group 1).
+	   (`day (min (cond ((match-end 5) (1- (match-end 5)))
+                            ((match-beginning 7))
+                            (t (1- (match-end 1))))
+                      origin))
 	   (`hour (min (match-end 7) origin))
 	   (`minute (min (1- (match-end 8)) origin))
 	   ((pred integerp) (min (1- (match-end 0)) origin))
@@ -16538,8 +16558,15 @@ This uses  `org-latex-to-html-convert-command', which see."
 The function assumes that the display has the same pixel width in
 the horizontal and vertical directions."
   (if (display-graphic-p)
-      (round (/ (display-pixel-height)
-		(/ (display-mm-height) 25.4)))
+      (seq-max
+       (mapcar
+        (lambda (attr-list)
+          ;; Compute the DPI for a given display ATTR-LIST
+          (let* ((height-mm   (nth 1 (alist-get 'mm-size attr-list)))
+                 (height-px   (nth 3 (alist-get 'geometry attr-list)))
+                 (scale       (alist-get 'scale-factor attr-list 1.0)))
+            (round (/ (/ height-px scale) (/ height-mm 25.4)))))
+        (display-monitor-attributes-list)))
     (error "Attempt to calculate the dpi of a non-graphic display")))
 
 (defun org-create-formula-image
@@ -20639,6 +20666,8 @@ URLS is a list of file URL."
       (org--dnd-local-file-handler u action sep))))
 
 (put 'org--dnd-multi-local-file-handler 'dnd-multiple-handler t)
+
+(declare-function dnd-open-local-file "dnd" (uri action))
 
 (defun org--dnd-local-file-handler (url action &optional separator)
   "Handle file URL as per ACTION.

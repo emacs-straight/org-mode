@@ -534,10 +534,10 @@ t           Allow export of math snippets."
   :safe (lambda (x) (memq x '(t nil verbatim))))
 
 (defcustom org-export-headline-levels 3
-  "The last level which is still exported as a headline.
+  "This level and its ancestors will be exported as a headline.
 
-Inferior levels will usually produce itemize or enumerate lists
-when exported, but backend behavior may differ.
+Descendants of this level will usually produce itemized or
+enumerated lists when exported, but backend behavior may differ.
 
 This option can also be set with the OPTIONS keyword,
 e.g. \"H:2\"."
@@ -1594,7 +1594,7 @@ Assume buffer is in Org mode.  Narrowing, if any, is ignored."
 		      (newline
 		       (mapconcat #'identity values "\n"))
 		      (split
-		       (cl-mapcan (lambda (v) (split-string v)) values))
+                       (cl-mapcan #'split-string values))
 		      ((t)
 		       (org-last values))
 		      (otherwise
@@ -7352,14 +7352,14 @@ back to standard interface."
 			     (lambda (sub-entry)
 			       (cl-incf index)
 			       (format
-				(if (zerop (mod index 2)) "    [%s] %-26s"
+				(if (cl-evenp index) "    [%s] %-26s"
 				  "[%s] %s\n")
 				(funcall fontify-key
 					 (char-to-string (car sub-entry))
 					 top-key)
 				(nth 1 sub-entry)))
 			     sub-menu "")
-			    (when (zerop (mod index 2)) "\n"))))))))
+			    (when (cl-evenp index) "\n"))))))))
 		entries ""))
 	     ;; Publishing menu is hard-coded.
 	     (format "\n[%s] Publish

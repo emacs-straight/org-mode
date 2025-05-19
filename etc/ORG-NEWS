@@ -390,6 +390,11 @@ default fonts defined in a template when exporting to =beamer=).
 
 This variable is aliased as ~org-latex-lualatex-font-config~ for very
 early adopters. It is advised to migrate and use the new name ASAP.
+*** New Option ~org-md-link-org-files-as-md~
+
+This option makes it possible to disable mapping of linked org files
+to markdown during export to Markdown. This is analogous to how
+~org-html-link-org-files-as-html~ works in export to HTML.
 
 ** New functions and changes in function arguments
 
@@ -482,14 +487,6 @@ When CHILDREN contains ~nil~ elements, they are skipped.  This way,
 
 will yield expected results rather than assigning literal ~nil~ as a child.
 
-*** New function ~org-latex--get-doc-scripts~
-
-This function returns a list of all the char-scripts used in the
-current buffer as strings.
-
-Adapted from the [[https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/][discussion in the mailing list]] about fallbacks for
-non-latin scripts.
-
 *** New function ~org-latex-lualatex-fontspec-to-string~
 
 ~org-latex-lualatex-fontspec-to-string~ returns the font specification
@@ -503,6 +500,14 @@ Currently, it returns an empty string if the intended compiler is
 
 ~org-splice-latex-header~ now expects the fontspec as a string after
 the package list. This string will replace \[FSPEC] in the template.
+*** ~org-clock-get-clock-string~ now takes an optional ~max-length~ argument
+
+When a ~max-length~ is passed to ~org-clock-get-clock-string~, it will first
+attempt to truncate the headline and add an ellipsis in order to make the entire
+clock string fit under the length limit. If the length limit is too small to
+accommodate even a single character of the headline, after accounting for spaces
+and the surrounding parentheses, it will omit the headline entirely and just
+show as much of the clock as fits under the limit.
 
 ** Removed or renamed functions and variables
 
@@ -530,6 +535,15 @@ capture ~:tree-type~ options]], the internal variable
 undocumented helper function ~org-datetree-insert-line~.
 
 ** Miscellaneous
+*** HTML export wraps ~<code>~ around all the exported src blocks
+
+HTML export always uses ~<pre>~ tag around exported src blocks.
+In addition, previously, HTML export used ~<code>~ tag around src
+blocks when ~org-html-klipsify-src~ is non-nil.
+
+Now, both ~<pre>~ and ~<code>~ tags are *always* wrapped around the
+export src blocks.
+
 *** ~org-element-org-data-parser~ now returns syntax node with ~:pre-blank~ property
 
 Previously, parsing ~org-data~ syntax node did not record information
@@ -6236,7 +6250,7 @@ the end of the string.
 
 *** Function ~org-info-export~ changes.
 
-HTML links created from certain info links now point to =gnu.org= URL's rather
+HTML links created from certain info links now point to =gnu.org= URLs rather
 than just to local files. For example info links such as =info:emacs#List
 Buffers= used to be converted to HTML links like this:
 

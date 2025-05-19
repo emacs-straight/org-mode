@@ -187,6 +187,7 @@ target       Specification of where the captured item should be placed.
              become children of this node, other types will be added to the
              table or list in the body of this node.
 
+             <file-spec>
              Most target specifications contain a file name.  If that file
              name is the empty string, it defaults to `org-default-notes-file'.
              A file can also be given as a variable or as a function called
@@ -195,37 +196,35 @@ target       Specification of where the captured item should be placed.
 
              Valid values are:
 
-             (file \"path/to/file\")
+             (file <file-spec>)
                  Text will be placed at the beginning or end of that file
 
              (id \"id of existing Org entry\")
                  File as child of this entry, or in the body of the entry
 
-             (file+headline \"path/to/file\" \"node headline\")
-             (file+headline \"path/to/file\" function-returning-string)
-             (file+headline \"path/to/file\" symbol-containing-string)
+             (file+headline <file-spec> \"node headline\")
+             (file+headline <file-spec> function-returning-string)
+             (file+headline <file-spec> symbol-containing-string)
                  Fast configuration if the target heading is unique in the file
 
-             (file+olp \"path/to/file\" \"Level 1 heading\" \"Level 2\" ...)
-             (file+olp \"path/to/file\" function-returning-list-of-strings)
-             (file+olp \"path/to/file\" symbol-containing-list-of-strings)
+             (file+olp <file-spec> \"Level 1 heading\" \"Level 2\" ...)
+             (file+olp <file-spec> function-returning-list-of-strings)
+             (file+olp <file-spec> symbol-containing-list-of-strings)
                  For non-unique headings, the full outline path is safer
 
-             (file+regexp  \"path/to/file\" \"regexp to find location\")
+             (file+regexp  <file-spec> \"regexp to find location\")
                  File to the entry matching regexp
 
-             (file+olp+datetree \"path/to/file\" \"Level 1 heading\" ...)
-             (file+olp+datetree
-               \"path/to/file\" function-returning-list-of-strings)
-             (file+olp+datetree
-               \"path/to/file\" symbol-containing-list-of-strings)
+             (file+olp+datetree <file-spec> \"Level 1 heading\" ...)
+             (file+olp+datetree <file-spec> function-returning-list-of-strings)
+             (file+olp+datetree <file-spec> symbol-containing-list-of-strings)
                  Will create a heading in a date tree for today's date.
                  If no heading is given, the tree will be on top level.
                  To prompt for date instead of using TODAY, use the
                  :time-prompt property.  To create a week-tree, use the
                  :tree-type property.
 
-             (file+function \"path/to/file\" function-finding-location)
+             (file+function <file-spec> function-finding-location)
                  A function to find the right location in the file
 
              (clock)
@@ -824,7 +823,7 @@ captured item after finalizing."
   (when (and org-capture-clock-was-started
 	     (equal org-clock-marker org-capture-clock-was-started))
     ;; Looks like the clock we started is still running.
-    (if org-capture-clock-keep
+    (if (and org-capture-clock-keep (not org-note-abort))
 	;; User may have completed clocked heading from the template.
 	;; Refresh clock mode line.
 	(org-clock-update-mode-line t)
@@ -1145,7 +1144,7 @@ Store them in the capture property list."
                     (org-encode-time
                      (apply #'list
                             0 0 org-extend-today-until
-                            (cl-cdddr (decode-time prompt-time))))))
+                            (cdddr (decode-time prompt-time))))))
 		 (time-to-days prompt-time)))
 	      (t
 	       ;; Current date, possibly corrected for late night
@@ -2022,7 +2021,7 @@ placeholder to check."
     (goto-char (match-beginning 0))
     (let ((n (abs (skip-chars-backward "\\\\"))))
       (delete-char (/ (1+ n) 2))
-      (= (% n 2) 1))))
+      (cl-oddp n))))
 
 (defun org-capture-expand-embedded-elisp (&optional mark)
   "Evaluate embedded elisp %(sexp) and replace with the result.

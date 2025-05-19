@@ -622,7 +622,7 @@ or file-path, (:inode inode), (:hash hash), or or (:key key).
 MISC, if non-nil will be appended to the collection.  It must be a plist."
   (unless (and (listp container) (listp (car container)))
     (setq container (list container)))
-  (when (and misc (or (not (listp misc)) (= 1 (% (length misc) 2))))
+  (when (and misc (or (not (listp misc)) (cl-oddp (length misc))))
     (error "org-persist: Not a plist: %S" misc))
   (or (org-persist--find-index
        `( :container ,(org-persist--normalize-container container)
@@ -959,14 +959,17 @@ Otherwise, return t."
     (when disk-index
       (setq org-persist--index combined-index
             org-persist--index-age
-            (file-attribute-modification-time (file-attributes index-file))))))
+            (file-attribute-modification-time (file-attributes index-file)))
+      ;; Store newly added entries in the index hash.
+      (mapc (lambda (collection) (org-persist--add-to-index collection 'hash))
+            org-persist--index))))
 
 (defun org-persist--merge-index (base other)
   "Attempt to merge new index items in OTHER into BASE.
 Items with different details are considered too difficult, and skipped."
   (if other
       (if (not base) other
-        (let ((new (cl-set-difference other base :test #'equal))
+        (let ((new (cl-set-difference other base :test #'org-persist--find-index))
               (base-files (mapcar (lambda (s) (plist-get s :persist-file)) base))
               (combined (reverse base)))
           (dolist (item (nreverse new))
