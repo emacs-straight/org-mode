@@ -3491,9 +3491,9 @@ images at the same place."
 	    t))))))
 
 (defcustom org-format-latex-header "\\documentclass{article}
+\[FONTSPEC]
 \\usepackage[usenames]{color}
 \[DEFAULT-PACKAGES]
-\[FONTSPEC]
 \[PACKAGES]
 \\pagestyle{empty}             % do not remove
 % The settings below are copied from fullpage.sty
@@ -3536,8 +3536,9 @@ header, or they will be appended."
 
 (defcustom org-latex-default-packages-alist
   '(;; fontspec and unicode-math for lualatex and xelatex
-    (""     "fontspec"  t ("lualatex" "xelatex"))
-    (""     "unicode-math"   t ("lualatex" "xelatex"))
+    ;; Will be included in FONTSPEC
+    ;; (""     "fontspec"  t ("lualatex" "xelatex"))
+    ;; (""     "unicode-math"   t ("lualatex" "xelatex"))
     ;; inputenc, fontenc and are for pdflatex only
     ("AUTO" "inputenc"  t ("pdflatex"))
     ("T1"   "fontenc"   t ("pdflatex"))
@@ -16641,9 +16642,9 @@ a HTML file."
   "Fill a LaTeX header template TPL.
 In the template, the following place holders will be recognized:
 
+ [FONTSPEC]              font specification for lualatex
  [DEFAULT-PACKAGES]      \\usepackage statements for DEF-PKG
  [NO-DEFAULT-PACKAGES]   do not include DEF-PKG
- [FONTSPEC]              font specification for lualatex
  [PACKAGES]              \\usepackage statements for PKG
  [NO-PACKAGES]           do not include PKG
  [EXTRA]                 the string EXTRA
@@ -16656,19 +16657,19 @@ DEF-PKG and PKG are assumed to be alists of options/packagename lists.
 EXTRA is a string.
 SNIPPETS-P indicates if this is run to create snippet images for HTML."
   (let (rpl (end ""))
-    (if (string-match "^[ \t]*\\[\\(NO-\\)?DEFAULT-PACKAGES\\][ \t]*\n?" tpl)
-	(setq rpl (if (or (match-end 1) (not def-pkg))
-		      "" (org-latex-packages-to-string def-pkg snippets-p t))
-	      tpl (replace-match rpl t t tpl))
-      (when def-pkg (setq end (org-latex-packages-to-string def-pkg snippets-p))))
-
+    (message "Template:\n%s" tpl)
+    (message "FONTSPEC replacement is '%s'" fspec)
     (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
 	(setq ;; rpl fspec
 	      tpl (replace-match fspec t t tpl))
       ;; In this case, we add the fontspec
       (setq end
 	    (concat end "\n" fspec)))
-
+    (if (string-match "^[ \t]*\\[\\(NO-\\)?DEFAULT-PACKAGES\\][ \t]*\n?" tpl)
+	(setq rpl (if (or (match-end 1) (not def-pkg))
+		      "" (org-latex-packages-to-string def-pkg snippets-p t))
+	      tpl (replace-match rpl t t tpl))
+      (when def-pkg (setq end (org-latex-packages-to-string def-pkg snippets-p))))
     (if (string-match "\\[\\(NO-\\)?PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not pkg))
 		      "" (org-latex-packages-to-string pkg snippets-p t))

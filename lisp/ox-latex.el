@@ -425,21 +425,30 @@ to \"\\autoref{%s}\" or \"\\cref{%s}\" for example."
 
 (defcustom org-latex-classes
   '(("article"
-     "\\documentclass[11pt]{article}"
+     "\\documentclass[11pt]{article}
+[FONTSPEC]
+[DEFAULT-PACKAGES]
+[PACKAGES]"
      ("\\section{%s}" . "\\section*{%s}")
      ("\\subsection{%s}" . "\\subsection*{%s}")
      ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
      ("\\paragraph{%s}" . "\\paragraph*{%s}")
      ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
     ("report"
-     "\\documentclass[11pt]{report}"
+     "\\documentclass[11pt]{report}
+[FONTSPEC]
+[DEFAULT-PACKAGES]
+[PACKAGES]"
      ("\\part{%s}" . "\\part*{%s}")
      ("\\chapter{%s}" . "\\chapter*{%s}")
      ("\\section{%s}" . "\\section*{%s}")
      ("\\subsection{%s}" . "\\subsection*{%s}")
      ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
     ("book"
-     "\\documentclass[11pt]{book}"
+     "\\documentclass[11pt]{book}
+[FONTSPEC]
+[DEFAULT-PACKAGES]
+[PACKAGES]"
      ("\\part{%s}" . "\\part*{%s}")
      ("\\chapter{%s}" . "\\chapter*{%s}")
      ("\\section{%s}" . "\\section*{%s}")
@@ -475,9 +484,9 @@ is built up, or if you want to exclude one of these building
 blocks for a particular class, you can use the following
 macro-like placeholders.
 
+ [FONTSPEC]              font specification when exporting to lualatex
  [DEFAULT-PACKAGES]      \\usepackage statements for default packages
  [NO-DEFAULT-PACKAGES]   do not include any of the default packages
- [FONTSPEC]              font specification when exporting to lualatex
  [PACKAGES]              \\usepackage statements for packages
  [NO-PACKAGES]           do not include the packages
  [EXTRA]                 the stuff from #+LATEX_HEADER(_EXTRA)
@@ -1913,7 +1922,6 @@ Returns the font specification based on the current buffer's
 for lualatex or xelatex or
 an empty string whe the intended compiler is pdflatex or
 `org-latex-fontspec-config' is `nil'."
-  ;; (message "[FSPEC] Intended compiler: %s" compiler)
   (if (or (string= compiler "pdflatex")
           (null org-latex-fontspec-config))
       ""
@@ -1923,8 +1931,12 @@ an empty string whe the intended compiler is pdflatex or
           (cjk-packages nil) ;; will be need the packages to support CJK fonts?
           (directlua nil) ;; Did we write the \\directlua{} block?
           (fallback-alist)) ;; an alist (font_name . fallback-name)
+      (message "[FONTSPEC] Intended compiler: %s" compiler)
       ;; (message "Font config: %s" current-fontspec-config)
       (with-temp-buffer
+        (goto-char (point-min))
+        (insert "\\usepackage{fontspec}\n")
+        (insert "\\usepackage{unicode-math}\n")
         ;; add all fonts with fallback to fallback-alist
         (dolist (fconfig current-fontspec-config)
           (when-let* ((fname (car fconfig))
@@ -1986,7 +1998,9 @@ an empty string whe the intended compiler is pdflatex or
             (insert "\n")))
         ;; If the CJK font families have been included
         (when (and cjk-packages (equal compiler "xelatex"))
+          (message "Adding the CJK packages")
           (goto-char (point-min))
+          (forward-line 2)
           (insert "\\usepackage[CJKspace]{xeCJK}\n\\usepackage{xpinyin}\n"))
         (buffer-string)))))
 
