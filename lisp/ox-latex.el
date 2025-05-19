@@ -1900,6 +1900,7 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
         (let ((script (aref char-script-table
                             (string-to-char (match-string 1)))))
           (cl-pushnew (prin1-to-string script) scripts :test #'equal))))
+    (message "=> Scripts used in document: %s" scripts)
     scripts))
 
 (defun org-latex-fontspec-to-string (compiler)
@@ -1922,7 +1923,6 @@ an empty string whe the intended compiler is pdflatex or
           (cjk-packages nil) ;; will be need the packages to support CJK fonts?
           (directlua nil) ;; Did we write the \\directlua{} block?
           (fallback-alist)) ;; an alist (font_name . fallback-name)
-      ;; (message "Fonts detected: %s" doc-scripts)
       ;; (message "Font config: %s" current-fontspec-config)
       (with-temp-buffer
         ;; add all fonts with fallback to fallback-alist
