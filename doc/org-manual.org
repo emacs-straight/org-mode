@@ -14205,17 +14205,19 @@ general options (see [[*Export Settings]]).
 
   In order to be effective, the =babel= or =polyglossia=
   packages---according to the LaTeX compiler used---must be loaded
-  with the appropriate language as argument.  This can be accomplished
-  by modifying the ~org-latex-packages-alist~ variable, e.g., with the
-  following snippet (note that =polyglossia= does not work with
-  pdfLaTeX):
+  with the appropriate language as argument.
 
-  #+begin_src emacs-lisp
-  (add-to-list 'org-latex-packages-alist
-               '("AUTO" "babel" t ("pdflatex" "xelatex" "lualatex")))
-  (add-to-list 'org-latex-packages-alist
-               '("AUTO" "polyglossia" t ("xelatex" "lualatex")))
-  #+end_src
+  # This can be accomplished
+  # by modifying the ~org-latex-packages-alist~ variable, e.g., with the
+  # following snippet (note that =polyglossia= does not work with
+  # pdfLaTeX):
+
+  # #+begin_src emacs-lisp
+  # (add-to-list 'org-latex-packages-alist
+  #              '("AUTO" "babel" t ("pdflatex" "xelatex" "lualatex")))
+  # (add-to-list 'org-latex-packages-alist
+  #              '("AUTO" "polyglossia" t ("xelatex" "lualatex")))
+  # #+end_src
 
 - =LATEX_CLASS= ::
 
@@ -14250,6 +14252,14 @@ general options (see [[*Export Settings]]).
   Arbitrary lines to add to the document's preamble, before the
   hyperref settings.  See ~org-latex-classes~ for adjusting the
   structure and order of the LaTeX headers.
+
+- =LATEX_POLYGLOSSIA_LANGS= ::
+
+  #+cindex: @samp{LATEX_POLYGLOSSIA_LANGS}, keyword
+  #+vindex: org-latex-polyglossia-languages
+  The languages present in a document. When using the =xelatex= or
+  =lualatex= compilers to produce the PDF, the backend will load the
+  =polyglossia= package when this variable is not ~nil.
 
 - =KEYWORDS= ::
 
@@ -14371,15 +14381,16 @@ the =\babelprovide= command:
 ,#+LATEX_HEADER: \babelprovide[import, main]{AUTO}
 #+end_example
 
-=Polyglossia=, for this procedure to be effective, must be loaded
-using the same =babel= classic syntax (but note that /this is not/
-the actual polyglossia syntax).  For example, suppose a document
-declares Polytonic Greek as the primary language, and French as the
-secondary language.  In this case, it would be expressed as:
+=Polyglossia= is controlled by the ~org-latex-polyglossia-languages~
+variable. It uses the same =babel= classic syntax (but note that /this
+is not/ the actual polyglossia syntax), with =AUTO= denoting the main
+language.  For example, suppose a document declares Polytonic Greek as
+the primary language, and French as the secondary language.
+#+vindex: org-latex-polyglossia-languages
 
 #+begin_example
 ,#+LANGUAGE: el-polyton
-,#+LATEX_HEADER: \usepackage[french,AUTO]{polyglossia}
+,#+LATEX_POLYGLOSSIA_LANGS: french,AUTO
 #+end_example
 
 This would produce in LaTeX (with the actual =polyglossia= syntax):

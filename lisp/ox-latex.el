@@ -170,6 +170,7 @@
     (:latex-title-command nil nil org-latex-title-command)
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
+    (:latex-polyglossia-languages "LATEX_POLYGLOSSIA_LANGS" nil org-latex-polyglossia-languages)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1618,6 +1619,16 @@ will eventually result in
 		 (alist :tag "polyglossia font config"))
   :safe #'list-or-null-p)
 
+(defcustom org-latex-polyglossia-languages nil
+  "A string with the polyglossia languages.
+This is an alternative to adding the package in the LaTeX header"
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No polyglossia languages" nil)
+		 (string :tag "polyglossia language list"))
+  :safe #'string-or-null-p)
+
+
 
 ;;; Internal Functions
 
@@ -1912,7 +1923,7 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
     (message "=> Scripts used in document: %s" scripts)
     scripts))
 
-(defun org-latex-fontspec-to-string (compiler)
+(defun org-latex-fontspec-to-string (compiler polyglossia-langs)
   "Return the font prelude for the current buffer as a string.
 Arguments:
   `compiler': a string with the intended LaTeX compiler.
@@ -1922,8 +1933,10 @@ Returns the font specification based on the current buffer's
 for lualatex or xelatex or
 an empty string whe the intended compiler is pdflatex or
 `org-latex-fontspec-config' is `nil'."
+  (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
   (if (or (string= compiler "pdflatex")
-          (null org-latex-fontspec-config))
+          (and (null org-latex-fontspec-config)
+               (null polyglossia-langs)))
       ""
     ;; else lualatex or xelatex
     (let ((doc-scripts (org-latex--get-doc-scripts))
@@ -1935,8 +1948,13 @@ an empty string whe the intended compiler is pdflatex or
       ;; (message "Font config: %s" current-fontspec-config)
       (with-temp-buffer
         (goto-char (point-min))
-        (insert "\\usepackage{fontspec}\n")
-        (insert "\\usepackage{unicode-math}\n")
+        ;;
+        ;; If we intend to use polyglossia, we can put it here.
+        ;; It will automatically load, among others, fontspec
+        (insert (if polyglossia-langs
+                    (format "\\usepackage[%s]{polyglossia}" polyglossia-langs)
+                  "\\usepackage{fontspec}"))
+        (insert "\n\\usepackage{unicode-math}\n")
         ;; add all fonts with fallback to fallback-alist
         (dolist (fconfig current-fontspec-config)
           (when-let* ((fname (car fconfig))
@@ -2235,7 +2253,10 @@ specified in `org-latex-default-packages-alist' or
 	 class-template
 	 (org-latex--remove-packages org-latex-default-packages-alist info)
 	 (org-latex--remove-packages org-latex-packages-alist info)
-         (org-latex-fontspec-to-string (or (plist-get info :latex-compiler) org-latex-compiler))
+         (org-latex-fontspec-to-string (or (plist-get info :latex-compiler)
+                                           org-latex-compiler)
+                                       (or (plist-get info :latex-polyglossia-languages)
+                                           org-latex-polyglossia-languages))
 	 snippet?
 	 (mapconcat #'org-element-normalize-string
 		    (list (plist-get info :latex-header)

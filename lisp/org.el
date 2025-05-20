@@ -224,7 +224,7 @@ Stars are put in group 1 and the trimmed body in group 2.")
 (declare-function org-timer-stop "org-timer" ())
 (declare-function org-toggle-archive-tag "org-archive" (&optional find-done))
 (declare-function org-update-radio-target-regexp "ol" ())
-;; (declare-function org-latex-fontspec-to-string "ox-latex" ())
+;; (declare-function org-latex-fontspec-to-string "ox-latex" (compiler polyglossia-langs))
 
 (defvar org-agenda-buffer-name)
 (defvar org-element-paragraph-separate)

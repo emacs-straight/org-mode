@@ -218,7 +218,7 @@ retail 4-4-5 calendars, etc).
 *** New font handling in LaTeX exports
 
 The packages imported to handle fonts when producing PDF documents
-through LaTeX when using ~lualatex~ or ~xetex~ as your LaTeX compiler
+through LaTeX when using ~lualatex~ or ~xelatex~ as your LaTeX compiler
 have changed:
 
 - The ~amsmath~ package has been replaced by ~unicode-math~:
@@ -233,6 +233,13 @@ to the LaTeX templates, which is replaced by a font specification
 block using the =fontspec= package which is created based on the new
 custom variable ~org-latex-fontspec-config~ when generating the
 LaTeX code. Read more [[#sec:lualatex-font-config][below]] in the description of this variable.
+
+*** New option ~#+LATEX_POLYGLOSSIA_LANGS~
+
+The new option ~#+LATEX_POLYGLOSSIA_LANGS~ controls the languages
+activated when using the ~polyglossia~ package in the LaTeX export
+backend for ~lualatex~ and ~xelatex~. This option controls the
+variable ~org-latex-polyglossia-languages~.
 
 ** New and changed options
 
@@ -395,6 +402,13 @@ early adopters. It is advised to migrate and use the new name ASAP.
 This option makes it possible to disable mapping of linked org files
 to markdown during export to Markdown. This is analogous to how
 ~org-html-link-org-files-as-html~ works in export to HTML.
+
+*** New option ~org-latex-ployglossia-fonts~
+
+This option holds a comma separated list of languages used to define
+the main and other languages after the ~polyglossia~ package has been
+loaded.  =AUTO= denotes the main language of the document and will be
+derived from the ~#+LANGUAGE:~ option in the document.
 
 ** New functions and changes in function arguments
 
