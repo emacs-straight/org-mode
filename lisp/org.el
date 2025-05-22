@@ -3507,10 +3507,7 @@ images at the same place."
 	    t))))))
 
 (defcustom org-format-latex-header "\\documentclass{article}
-\[FONTSPEC]
 \\usepackage[usenames]{color}
-\[DEFAULT-PACKAGES]
-\[PACKAGES]
 \\pagestyle{empty}             % do not remove
 % The settings below are copied from fullpage.sty
 \\setlength{\\textwidth}{\\paperwidth}
@@ -16685,18 +16682,19 @@ EXTRA is a string.
 SNIPPETS-P indicates if this is run to create snippet images for HTML."
   (let (rpl (end ""))
     (message "Template:\n%s" tpl)
-    (message "FONTSPEC replacement is '%s'" fspec)
     (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
-	(setq ;; rpl fspec
-	      tpl (replace-match fspec t t tpl))
-      ;; In this case, we add the fontspec
-      (setq end
-	    (concat end "\n" fspec)))
+        ;; (message "FONTSPEC replacement is '%s'" fspec)
+        ;; replace with the fontspec wherever it is
+        (setq tpl (replace-match fspec t t tpl))
+      ;; else add the fontspec at the beginning of `end'
+      (setq end (concat fspec "\n")))
     (if (string-match "^[ \t]*\\[\\(NO-\\)?DEFAULT-PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not def-pkg))
 		      "" (org-latex-packages-to-string def-pkg snippets-p t))
 	      tpl (replace-match rpl t t tpl))
-      (when def-pkg (setq end (org-latex-packages-to-string def-pkg snippets-p))))
+      ;; else append to the fontspec
+      (when def-pkg (setq end (concat end "\n"
+                               (org-latex-packages-to-string def-pkg snippets-p)))))
     (if (string-match "\\[\\(NO-\\)?PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not pkg))
 		      "" (org-latex-packages-to-string pkg snippets-p t))

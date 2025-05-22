@@ -426,30 +426,21 @@ to \"\\autoref{%s}\" or \"\\cref{%s}\" for example."
 
 (defcustom org-latex-classes
   '(("article"
-     "\\documentclass[11pt]{article}
-[FONTSPEC]
-[DEFAULT-PACKAGES]
-[PACKAGES]"
+     "\\documentclass[11pt]{article}"
      ("\\section{%s}" . "\\section*{%s}")
      ("\\subsection{%s}" . "\\subsection*{%s}")
      ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
      ("\\paragraph{%s}" . "\\paragraph*{%s}")
      ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
     ("report"
-     "\\documentclass[11pt]{report}
-[FONTSPEC]
-[DEFAULT-PACKAGES]
-[PACKAGES]"
+     "\\documentclass[11pt]{report}"
      ("\\part{%s}" . "\\part*{%s}")
      ("\\chapter{%s}" . "\\chapter*{%s}")
      ("\\section{%s}" . "\\section*{%s}")
      ("\\subsection{%s}" . "\\subsection*{%s}")
      ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
     ("book"
-     "\\documentclass[11pt]{book}
-[FONTSPEC]
-[DEFAULT-PACKAGES]
-[PACKAGES]"
+     "\\documentclass[11pt]{book}"
      ("\\part{%s}" . "\\part*{%s}")
      ("\\chapter{%s}" . "\\chapter*{%s}")
      ("\\section{%s}" . "\\section*{%s}")
@@ -1568,9 +1559,6 @@ property to `toc'"
   (or (null object)
       (listp object)))
 
-(defvaralias 'org-latex-lualatex-font-config 'org-latex-fontspec-config
-  "Just in case someone is already using this. Facilitate migration.")
-
 (defcustom org-latex-fontspec-config nil
   "This variable stores the configuration for the fontspec package.
 By default, this variable is set to `nil' to generate no configuration.
@@ -1595,7 +1583,7 @@ Place your customization in your Emacs initialisation or in .dir-locals.el"
 
 (defcustom org-latex-polyglossia-font-config nil
   "This variable store the font specifications for polyglossia.
-By defauly, this varibale is set to `nil' to generate no configuration.
+By defauly, this variable is set to `nil' to generate no configuration.
 
 It is an associative list, where each element is defined as
 (`language' . `lang-plist')
@@ -1627,7 +1615,6 @@ This is an alternative to adding the package in the LaTeX header"
   :type '(choice (const :tag "No polyglossia languages" nil)
 		 (string :tag "polyglossia language list"))
   :safe #'string-or-null-p)
-
 
 
 ;;; Internal Functions
@@ -1934,6 +1921,7 @@ for lualatex or xelatex or
 an empty string whe the intended compiler is pdflatex or
 `org-latex-fontspec-config' is `nil'."
   (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
+  (message "FONTSPEC: Font config: %s" org-latex-fontspec-config)
   (if (or (string= compiler "pdflatex")
           (and (null org-latex-fontspec-config)
                (null polyglossia-langs)))
@@ -1944,8 +1932,7 @@ an empty string whe the intended compiler is pdflatex or
           (cjk-packages nil) ;; will be need the packages to support CJK fonts?
           (directlua nil) ;; Did we write the \\directlua{} block?
           (fallback-alist)) ;; an alist (font_name . fallback-name)
-      (message "[FONTSPEC] Intended compiler: %s" compiler)
-      ;; (message "Font config: %s" current-fontspec-config)
+      (message "FONTSPEC: Intended compiler: %s" compiler)
       (with-temp-buffer
         (goto-char (point-min))
         ;;
@@ -2245,6 +2232,7 @@ specified in `org-latex-default-packages-alist' or
 			"^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
 			class-options header t nil 1))))
 	      (user-error "Unknown LaTeX class `%s'" class))))
+    (message "org-latex-make-preamble from %s" template)
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-inputenc
