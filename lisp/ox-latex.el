@@ -1592,14 +1592,24 @@ where
 `lang-plist' is the language plist, with the following keys:
  `:font': a string with the system font name, mandatory
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
- `:tag': a string will substitute the language in {\\<languaage>font<variant>}
+ `:tag': a string will substitute the language in the font definition.
  `:extras': a string for extra parameters (e.g.\"[Script=Hebrew]\")
             Note: the spec must include square brackets
+
 Each line will be translated into a new font family definition.
+
 For example:
-  (\"hebrew\"  :font \"FreeMono\" :variant \"tt\" :extras \"[Script=Hebrew]\")
+         (\"hindi\"  :font \"Noto Serif Devanagari\"
+          :tag \"devanagari\"
+          :extras \"[Script=Devanagari]\")
 will eventually result in
-  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{FreeMono}
+  \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}
+in the exported LaTeX code; and
+         (\"hebrew\" :variant \"tt\"
+          :extras \"[Script=Hebrew]\" :font \"Noto Mono Hebrew\")
+in
+  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
+
 "
   :group 'org-export-latex
   :package-version '(Org . "9.8")
