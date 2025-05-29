@@ -1939,6 +1939,7 @@ an empty string whe the intended compiler is pdflatex or
     ;; else lualatex or xelatex
     (let ((doc-scripts (org-latex--get-doc-scripts))
           (current-fontspec-config org-latex-fontspec-config)
+          (unicode-math-spec nil) ;; TODO add unicode-math features to config
           (cjk-packages nil) ;; will be need the packages to support CJK fonts?
           (directlua nil) ;; Did we write the \\directlua{} block?
           (fallback-alist)) ;; an alist (font_name . fallback-name)
@@ -1951,7 +1952,9 @@ an empty string whe the intended compiler is pdflatex or
         (insert (if polyglossia-langs
                     (format "\\usepackage[%s]{polyglossia}" polyglossia-langs)
                   "\\usepackage{fontspec}"))
-        (insert "\n\\usepackage{unicode-math}\n")
+        (insert (format "\n\\usepackage%s{unicode-math}\n"
+                        (if unicode-math-spec (concat"[" unicode-math-spec "]")
+                          "")))
         ;; add all fonts with fallback to fallback-alist
         (dolist (fconfig current-fontspec-config)
           (when-let* ((fname (car fconfig))
