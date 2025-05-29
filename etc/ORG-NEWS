@@ -277,6 +277,12 @@ ditaa version of at least 0.11.0.
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
 
+*** ~org-html-style-default~ now highlights =#+begin_src c= (lowecase) blocks
+
+The default value have been changed, adding ~pre.src-c:before {
+content: 'C'; }~ (lowercase =c=) that parallels ~pre.src-C:before {
+content: 'C'; }~ (uppercase =C=).
+
 *** New context available to save in archived headings
 
 ~org-archive-save-context-info~ can now contain ~olid~ symbol to save
