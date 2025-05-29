@@ -15129,29 +15129,37 @@ another feature to the font definition.
 :END:
 #+cindex: polyglossia font configuration
 
-If you use the =polyglossia= package in multi-lingual documents, font
-usage will be controlled by ~org-latex-polyglossia-font-config~. Its
-default value is ~nil~, meaning that no extra font configurations are
-generated. =polyglossia= controls fonts on a per-language, per-script
-basis. For example, using the =FreeMono= script for Hebrew script in
-mono-spaced passages, is achieved with the following definition in
-LaTeX:
+If you use the =polyglossia= package in multi-lingual documents, it
+will load for you the =fontspec= package. Any general settings that
+depend on the variable ~org-latex-fontspec-config~ described
+[[#lualatex-fontspec][above]] still apply. In addition, settings
+specific to the =polyglossia= package are controlled by
+~org-latex-polyglossia-font-config~. Its default value is ~nil~,
+meaning that no extra =polyglossia=-related font configurations are
+generated.
+
+When non-~nil~, ~org-latex-polyglossia-font-config~ contains a list of
+definitions for the different fonts you need in your PDF output.
+Each definition is a property list (~plist~).
+
+=polyglossia= controls fonts on a per-language, per-script basis. For
+example, using the =FreeMono= script for Hebrew script in mono-spaced
+passages is achieved with the following definition in LaTeX:
 
 #+BEGIN_SRC LaTeX :results none :exports code
   \newfontfamily{\hebrewfonttt}[Script=Hebrew]{FreeMono}
 #+END_SRC
 
-The variable ~org-latex-polyglossia-font-config~ contains a list of
-definitions for the different fonts you need in your PDF output.
-Each definition is a property list (~plist~). To generate the
-definition for the monospaced Hebrew font above, you will need to add
+To include the definition for the monospaced Hebrew font above in
+~org-latex-polyglossia-font-config~, you will need to add the following
 
 #+BEGIN_SRC emacs-lisp :results none :exports code
   ("hebrew"  :font "FreeMono" :variant "tt" :extras "[Script=Hebrew]")
 #+END_SRC
 
-to ~org-latex-polyglossia-font-config~. The properties you can define
-are:
+to it.
+
+The properties you can define are:
 
 1. =:font=: a string with the system font name. This property is mandatory.
 2. =:variant=: a string for the font variant (e.g. "=sf=", "=tt=", etc.).
