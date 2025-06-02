@@ -1935,12 +1935,11 @@ an empty string whe the intended compiler is pdflatex or
         (polyglossia-langs
          (or (plist-get info :latex-polyglossia-languages) org-latex-polyglossia-languages))
         (current-fontspec-config org-latex-fontspec-config)
-        (unicode-math-spec nil)) ;; TODO add unicode-math features to config
+        (latex-babel-langs nil)
+        (unicode-math-options nil)) ;; TODO add unicode-math features to config
     (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
     (message "FONTSPEC: Font config: %s" current-fontspec-config)
-    (if (or (string= compiler "pdflatex")
-            (and (null current-fontspec-config)
-                 (null polyglossia-langs)))
+    (if (string= compiler "pdflatex")
         ""
       ;; else lualatex or xelatex
       (let ((doc-scripts (org-latex--get-doc-scripts)) ;; get scripts from current buffer
@@ -1956,12 +1955,18 @@ an empty string whe the intended compiler is pdflatex or
           ;; They will automatically load, among others, fontspec
           ;; If none are selected, then use fontspec directly
           ;;
-          (insert (if polyglossia-langs
-                      (format "\\usepackage[%s]{polyglossia}" polyglossia-langs)
-                    "\\usepackage{fontspec}"))
+          (insert (cond (latex-babel-langs
+                          (format "\\usepackage[%s]{babel}" latex-babel-langs))
+                         (polyglossia-langs
+                          (format "\\usepackage[%s]{polyglossia}" polyglossia-langs))
+                         (t "\\usepackage{fontspec}")))
           (insert (format "\n\\usepackage%s{unicode-math}\n"
-                          (if unicode-math-spec (concat"[" unicode-math-spec "]")
+                          (if unicode-math-options (concat"[" unicode-math-options "]")
                             "")))
+          ;; TODO: check how to handle babel
+          ;; TODO: if we choose polyglossia,
+          ;;       do we need fallbacks or
+          ;;       should we warn if fallbacks are defined for polyglossia
           ;; add all fonts with fallback to fallback-alist
           (dolist (fconfig current-fontspec-config)
             (when-let* ((fname (car fconfig))
@@ -2022,6 +2027,7 @@ an empty string whe the intended compiler is pdflatex or
                   (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
               (insert "\n")))
           ;; If the CJK font families have been included
+          ;; Check for polyglossia and/or babel and warn?
           (when (and cjk-packages (equal compiler "xelatex"))
             (message "Adding the CJK packages")
             (goto-char (point-min))
