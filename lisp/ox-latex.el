@@ -1920,6 +1920,32 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
     (message "=> Scripts used in document: %s" scripts)
     scripts))
 
+(defun org-latex--mk-options (opts)
+  "Return opts enclosed in square brackets if non-nil or empty string."
+  (if opts (format "[%s]" opts) ""))
+
+(defun org-latex--pdflatex-fontconfig (info)
+  "This function returns a string with the font configuration
+prelude for pdflatex.
+
+Placeholder: currently returns an empty string."
+  "")
+
+(defun org-latex--lualatex-babel-config (latex-babel-langs info)
+  "This function returns a string with the prelude part for
+babel on lualatex/xelatex.
+"
+  (let ((compiler (or (plist-get info :latex-compiler) org-latex-compiler))
+        (unicode-math-options nil))
+    (with-temp-buffer
+      (goto-char (point-min))
+      (insert "\\usepackage{fontspec}\n")
+      (insert (format "\\usepackage[%s]{babel}\n" latex-babel-langs))
+
+      (insert (format "\\usepackage%s{unicode-math}\n"
+                      (org-latex--mk-options unicode-math-options)))
+      (buffer-string))))
+
 (defun org-latex-fontspec-to-string (info)
   "Return the font prelude for the current buffer as a string.
 Arguments:
@@ -1932,108 +1958,108 @@ an empty string whe the intended compiler is pdflatex or
 `org-latex-fontspec-config' is `nil'."
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
+        (current-fontspec-config org-latex-fontspec-config)
         (polyglossia-langs
          (or (plist-get info :latex-polyglossia-languages) org-latex-polyglossia-languages))
-        (current-fontspec-config org-latex-fontspec-config)
-        (latex-babel-langs nil)
-        (unicode-math-options nil)) ;; TODO add unicode-math features to config
+        (latex-babel-langs nil))
     (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
     (message "FONTSPEC: Font config: %s" current-fontspec-config)
-    (if (string= compiler "pdflatex")
-        ""
-      ;; else lualatex or xelatex
-      (let ((doc-scripts (org-latex--get-doc-scripts)) ;; get scripts from current buffer
-            (cjk-packages nil) ;; will be need the packages to support CJK fonts?
-            (directlua nil)    ;; Did we write the \\directlua{} block?
-            (fallback-alist))  ;; an alist (font_name . fallback-name)
-        (message "FONTSPEC: Intended compiler: %s" compiler)
-        (with-temp-buffer
-          (goto-char (point-min))
-          ;;
-          ;; If we intend to use polyglossia, we can put it here.
-          ;; Same for babel on lua/xelatex
-          ;; They will automatically load, among others, fontspec
-          ;; If none are selected, then use fontspec directly
-          ;;
-          (insert (cond (latex-babel-langs
-                          (format "\\usepackage[%s]{babel}" latex-babel-langs))
-                         (polyglossia-langs
-                          (format "\\usepackage[%s]{polyglossia}" polyglossia-langs))
-                         (t "\\usepackage{fontspec}")))
-          (insert (format "\n\\usepackage%s{unicode-math}\n"
-                          (if unicode-math-options (concat"[" unicode-math-options "]")
-                            "")))
-          ;; TODO: check how to handle babel
-          ;; TODO: if we choose polyglossia,
-          ;;       do we need fallbacks or
-          ;;       should we warn if fallbacks are defined for polyglossia
-          ;; add all fonts with fallback to fallback-alist
-          (dolist (fconfig current-fontspec-config)
-            (when-let* ((fname (car fconfig))
-                        (config-plist (cdr fconfig))
-                        (fallback (plist-get config-plist :fallback)))
-              (push (cons fname (concat "fallback_" fname)) fallback-alist)))
-          ;; (message "fallback-alist ==> %s" fallback-alist)
-          (when fallback-alist ;; if there are fonts with fallbacks
-            ;; create the directlua header
-            (dolist (fallback fallback-alist)
-              ;; (message "fallback ===> %s" fallback)
-              (when-let*
-                  ((fbf-fname (car fallback))
-                   (fbf-name (cdr fallback))
-                   (fbf-plist (alist-get fbf-fname current-fontspec-config nil nil #'string=))
-                   (fbf-flist (plist-get fbf-plist :fallback)))
-                ;; collect all falbacks for scripts that are present in the doc
-                (let ((fallback-flist
-                       (cl-loop for fpair in fbf-flist
-                                ;; check (car fpair) is in document scripts
-                                ;; and the fallback is not already in the result
-                                when (and (member-ignore-case (car fpair) doc-scripts)
-                                          (null (member-ignore-case (cdr fpair) fresult)))
-                                collect (cdr fpair) into fresult
-                                finally return fresult)))
-                  ;; (message "fallback-flist ==> %s" fallback-flist)
-                  (when fallback-flist
-                    (unless directlua ;; add the heading before the first lua block
-                      (insert "\\directlua{\n")
-                      (setq directlua t))
-                    ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
-                    ;;                                            :test #'equal))
-                    (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
-                    ;; Here we get the font fallbacks list
-                    (dolist (fname fallback-flist)
-                      ;; TODO; when (car fpair) in document charsets
-                      (insert (format "  \"%s\",\n" fname)))
-                    (insert " })\n")))))
-            (when directlua ;; if we have found any lua fallbacks, close the lua block
-              (insert "}\n")))
-          ;; (message "fallbacks: %s" fallback-alist)
-          (dolist (fpair current-fontspec-config)
-            (when-let* ((ffamily (car fpair))
-                        (fplist  (cdr fpair))
-                        (ffont (plist-get fplist :font)))
-              (setq cjk-packages (or cjk-packages (string-match-p "^CJK" ffamily)))
-              (insert (format "\\set%sfont{%s}" ffamily ffont))
-              ;; add the extra features
-              (let ((ffeatures (plist-get fplist :features)))
-                (when (stringp ffeatures)
-                  (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
-                ;; (message "--> ffeatures: %s" ffeatures)
-                (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
-                            (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-fn))))
-                  (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
-                ;; (message "ffeatures %s" ffeatures)
-                (when ffeatures
-                  (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
-              (insert "\n")))
-          ;; If the CJK font families have been included
-          ;; Check for polyglossia and/or babel and warn?
-          (when (and cjk-packages (equal compiler "xelatex"))
-            (message "Adding the CJK packages")
-            (goto-char (point-min))
-            (forward-line 2)
-            (insert "\\usepackage[CJKspace]{xeCJK}\n\\usepackage{xpinyin}\n"))
-          (buffer-string))))))
+    (cond ((string= compiler "pdflatex")
+           (org-latex--pdflatex-fontconfig info))
+          (latex-babel-langs
+           (org-latex--lualatex-babel-config latex-babel-langs info))
+          (t ;; else lualatex or xelatex with fontspec or polyglossia
+           (let ((doc-scripts (org-latex--get-doc-scripts)) ;; get scripts from current buffer
+                 (unicode-math-options nil)                 ;; TODO add unicode-math features to config
+                 (cjk-packages nil) ;; will be need the packages to support CJK fonts?
+                 (directlua nil)    ;; Did we write the \\directlua{} block?
+                 (fallback-alist))  ;; an alist (font_name . fallback-name)
+             (message "FONTSPEC: Intended compiler: %s" compiler)
+             (with-temp-buffer
+               (goto-char (point-min))
+               ;;
+               ;; If we intend to use polyglossia, we can put it here.
+               ;; Same for babel on lua/xelatex
+               ;; They will automatically load, among others, fontspec
+               ;; If none are selected, then use fontspec directly
+               ;;
+               (insert (cond (polyglossia-langs
+                              ;; polyglossia imports fontspec automatically
+                              (format "\\usepackage[%s]{polyglossia}\n" polyglossia-langs))
+                             (t "\\usepackage{fontspec}\n")))
+               (insert (format "\\usepackage%s{unicode-math}\n"
+                               (org-latex--mk-options unicode-math-options)))
+               ;; TODO: if we choose polyglossia,
+               ;;       do we need fallbacks or
+               ;;       should we warn if fallbacks are defined for polyglossia
+               ;; add all fonts with fallback to fallback-alist
+               (dolist (fconfig current-fontspec-config)
+                 (when-let* ((fname (car fconfig))
+                             (config-plist (cdr fconfig))
+                             (fallback (plist-get config-plist :fallback)))
+                   (push (cons fname (concat "fallback_" fname)) fallback-alist)))
+               ;; (message "fallback-alist ==> %s" fallback-alist)
+               (when fallback-alist ;; if there are fonts with fallbacks
+                 ;; create the directlua header
+                 (dolist (fallback fallback-alist)
+                   ;; (message "fallback ===> %s" fallback)
+                   (when-let*
+                       ((fbf-fname (car fallback))
+                        (fbf-name (cdr fallback))
+                        (fbf-plist (alist-get fbf-fname current-fontspec-config nil nil #'string=))
+                        (fbf-flist (plist-get fbf-plist :fallback)))
+                     ;; collect all falbacks for scripts that are present in the doc
+                     (let ((fallback-flist
+                            (cl-loop for fpair in fbf-flist
+                                     ;; check (car fpair) is in document scripts
+                                     ;; and the fallback is not already in the result
+                                     when (and (member-ignore-case (car fpair) doc-scripts)
+                                               (null (member-ignore-case (cdr fpair) fresult)))
+                                     collect (cdr fpair) into fresult
+                                     finally return fresult)))
+                       ;; (message "fallback-flist ==> %s" fallback-flist)
+                       (when fallback-flist
+                         (unless directlua ;; add the heading before the first lua block
+                           (insert "\\directlua{\n")
+                           (setq directlua t))
+                         ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
+                         ;;                                            :test #'equal))
+                         (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
+                         ;; Here we get the font fallbacks list
+                         (dolist (fname fallback-flist)
+                           ;; TODO; when (car fpair) in document charsets
+                           (insert (format "  \"%s\",\n" fname)))
+                         (insert " })\n")))))
+                 (when directlua ;; if we have found any lua fallbacks, close the lua block
+                   (insert "}\n")))
+               ;; (message "fallbacks: %s" fallback-alist)
+               (dolist (fpair current-fontspec-config)
+                 (when-let* ((ffamily (car fpair))
+                             (fplist  (cdr fpair))
+                             (ffont (plist-get fplist :font)))
+                   (setq cjk-packages (or cjk-packages (string-match-p "^CJK" ffamily)))
+                   (insert (format "\\set%sfont{%s}" ffamily ffont))
+                   ;; add the extra features
+                   (let ((ffeatures (plist-get fplist :features)))
+                     (when (stringp ffeatures)
+                       (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
+                     ;; (message "--> ffeatures: %s" ffeatures)
+                     (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
+                                 (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-fn))))
+                       (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
+                     ;; (message "ffeatures %s" ffeatures)
+                     (when ffeatures
+                       (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
+                   (insert "\n")))
+               ;; If the CJK font families have been included
+               ;; Check for polyglossia and/or babel and warn?
+               (when (and cjk-packages (equal compiler "xelatex"))
+                 (message "Adding the CJK packages")
+                 (goto-char (point-min))
+                 (forward-line 2)
+                 ;; TODO: what about xpinyin??
+                 (insert "\\usepackage[CJKspace]{xeCJK}\n"))
+               (buffer-string)))))))
 
 ;;
 ;;
