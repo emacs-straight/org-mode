@@ -1931,19 +1931,30 @@ prelude for pdflatex.
 Placeholder: currently returns an empty string."
   "")
 
-(defun org-latex--lualatex-babel-config (latex-babel-langs info)
+(defun org-latex--lualatex-babel-config (info)
   "This function returns a string with the prelude part for
 babel on lualatex/xelatex.
 "
   (let ((compiler (or (plist-get info :latex-compiler) org-latex-compiler))
-        (unicode-math-options nil))
+        (babel-font-config nil)     ;; TODO: define org-latex-babel-fontspec
+        (latex-babel-langs nil)     ;; TODO: define document option for this
+        (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       (goto-char (point-min))
       (insert "\\usepackage{fontspec}\n")
       (insert (format "\\usepackage[%s]{babel}\n" latex-babel-langs))
-
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
+      (cl-loop for babel-fontspec in babel-font-config
+               do (let* ((props "[Language=Default]")
+                         (langu (car babel-fontspec))
+                         (lang  (org-latex--mk-options (unless (equal langu "AUTO") langu)))
+                         (babel-fontlist (cdr babel-fontspec))
+                         (font-list (plist-get babel-fontlist :fonts)))
+                    (cl-loop for fontspec in font-list
+                             do (let* ((script (car fontspec))
+                                       (font   (cdr fontspec)))
+                                  (insert (format "\\babelfont%s{%s}%s{%s}\n" lang script props font))))))
       (buffer-string))))
 
 (defun org-latex-fontspec-to-string (info)
@@ -1961,13 +1972,13 @@ an empty string whe the intended compiler is pdflatex or
         (current-fontspec-config org-latex-fontspec-config)
         (polyglossia-langs
          (or (plist-get info :latex-polyglossia-languages) org-latex-polyglossia-languages))
-        (latex-babel-langs nil))
+        (latex-babel-langs nil)) ;; TODO: define option dor this
     (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
     (message "FONTSPEC: Font config: %s" current-fontspec-config)
     (cond ((string= compiler "pdflatex")
            (org-latex--pdflatex-fontconfig info))
           (latex-babel-langs
-           (org-latex--lualatex-babel-config latex-babel-langs info))
+           (org-latex--lualatex-babel-config info))
           (t ;; else lualatex or xelatex with fontspec or polyglossia
            (let ((doc-scripts (org-latex--get-doc-scripts)) ;; get scripts from current buffer
                  (unicode-math-options nil)                 ;; TODO add unicode-math features to config
