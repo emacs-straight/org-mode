@@ -241,6 +241,11 @@ activated when using the ~polyglossia~ package in the LaTeX export
 backend for ~lualatex~ and ~xelatex~. This option controls the
 variable ~org-latex-polyglossia-languages~.
 
+*** New variable ~org-latex-babel-fontspec~
+
+This variable controls the fonts used in the LaTeX export when the
+~babel~ package is used in multilingual documents.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,

@@ -14989,7 +14989,10 @@ generated LaTeX output.
 
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the =fontspec=. Remember that
-=polyglossia= or =babel= load =fontspec=.
+=polyglossia= will load =fontspec= automatically.
+
+Org mode will load =fontspec= for =babel=. However, font configuration
+will use a different mechanism described [[#babel-fontconfig][below]].
 
 **** Controlling the configuration of the =fontspec= package
 :PROPERTIES:
@@ -15168,6 +15171,61 @@ The properties you can define are:
 4. =:extras=: a string for extra parameters, which must be embedded in
    square brackets.
 
+**** Controlling font configuration when using the =babel= package
+:PROPERTIES:
+:custom_id: babel-fontconfig
+:description: Using org-latex-babel-fontspec
+:END:
+#+cindex: babel font configuration
+
+Org mode will control the fonts used for multilingual documents when
+using the =babel= package with the ~org-latex-babel-fontspec~
+variable.  By default, this variable is ~nil~, meaning that no extra
+font configuration will be generated.
+
+To generate a babel font configuration, this variable needs to hold a
+property list array mapping babel language names to the fonts used
+when exporting to babel.  Each entry maps a language name to a
+~:fonts~ property.  Use ~"AUTO"~ as the language name for the fonts
+used by the default language.
+
+The ~:fonts~ property list has the form of an associative list, where
+each element has the form:
+
+#+begin_example
+(SCRIPT . FONT)
+#+end_example
+
+~SCRIPT~ is one of the script codes:
+- ~"rm"~ for the roman (serif) font
+- ~"sf"~ for the sans serif font
+- ~"tt"~ for the teletype (monospaced) font.
+
+and ~FONT~ is the system font name.
+
+For example, for a document with text in Latin and Arabic script,
+where the main language uses a Latin script, this variable could have
+the following value:
+
+#+BEGIN_SRC elisp :results none :exports code
+'(("AUTO" :fonts (("rm" . "Noto Serif")
+                  ("sf" . "Noto Sans")
+	                ("tt" . "Noto Mono")))
+  ("arabic" :fonts (("rm" . "Noto Naskh Arabic")
+                    ("sf" . "Noto Kufi Arabic"))))
+#+END_SRC
+
+provided the necessary fonts from the *Noto* family are installed in
+your system. This setting will produce the following code in the LaTeX
+export header:
+
+#+BEGIN_SRC latex :results none :exports code
+\babelfont{rm}[Language=Default]{Noto Serif}
+\babelfont{sf}[Language=Default]{Noto Sans}
+\babelfont{tt}[Language=Default]{Noto Mono}
+\babelfont[arabic]{rm}[Language=Default]{Noto Naskh Arabic}
+\babelfont[arabic]{sf}[Language=Default]{Noto Kufi Arabic}
+#+END_SRC
 
 
 ** Markdown Export

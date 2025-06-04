@@ -1626,6 +1626,23 @@ This is an alternative to adding the package in the LaTeX header"
 		 (string :tag "polyglossia language list"))
   :safe #'string-or-null-p)
 
+(defcustom org-latex-babel-fontspec nil
+  "A property list array to map babel language names to the fonts
+used when exporting to babel.  Each entry maps a string with the
+language name to a `:fonts' property list.  Use \"AUTO\" for the
+fonts used by the default language.
+
+Each element in the `:fonts' property list has the form
+(SCRIPT . FONT).  SCRIPT is one of the script codes:
+\"rm\" for the roman (serif) font
+\"sf\" for the sans serif font
+\"tt\" for the teletype (monospaced) font."
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No babel font config" nil)
+		 (alist :tag "babel font configuration"))
+  :safe #'list-or-null-p)
+
 
 ;;; Internal Functions
 
@@ -1936,7 +1953,7 @@ Placeholder: currently returns an empty string."
 babel on lualatex/xelatex.
 "
   (let ((compiler (or (plist-get info :latex-compiler) org-latex-compiler))
-        (babel-font-config nil)     ;; TODO: define org-latex-babel-fontspec
+        (doc-babel-fontspec org-latex-babel-fontspec)
         (latex-babel-langs nil)     ;; TODO: define document option for this
         (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
@@ -1945,7 +1962,7 @@ babel on lualatex/xelatex.
       (insert (format "\\usepackage[%s]{babel}\n" latex-babel-langs))
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
-      (cl-loop for babel-fontspec in babel-font-config
+      (cl-loop for babel-fontspec in doc-babel-fontspec
                do (let* ((props "[Language=Default]")
                          (langu (car babel-fontspec))
                          (lang  (org-latex--mk-options (unless (equal langu "AUTO") langu)))
