@@ -171,6 +171,7 @@
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
     (:latex-polyglossia-languages "LATEX_POLYGLOSSIA_LANGS" nil org-latex-polyglossia-languages)
+    (:latex-babel-languages "LATEX_BABEL_LANGS" nil org-latex-babel-languages)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1643,6 +1644,15 @@ Each element in the `:fonts' property list has the form
 		 (alist :tag "babel font configuration"))
   :safe #'list-or-null-p)
 
+(defcustom org-latex-babel-languages nil
+  "A string with the babel languages.
+This is an alternative to adding the package in the LaTeX header"
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No babel languages" nil)
+		 (string :tag "babel language list"))
+  :safe #'string-or-null-p)
+
 
 ;;; Internal Functions
 
@@ -1813,17 +1823,13 @@ Return the new header."
 		      t nil header 1)))))
     ;; If `\babelprovide[args]{AUTO}' is present, AUTO is
     ;; replaced by LANGUAGE.
-    (if (not (string-match "\\\\babelprovide\\[.*\\]{\\(.+\\)}" header))
+    (if (not (string-match "\\\\babelprovide\\[.*\\]{AUTO}" header))
 	header
-      (let ((prov (match-string 1 header)))
-	(if (equal "AUTO" prov)
-	    (replace-regexp-in-string (format
-				       "\\(\\\\babelprovide\\[.*\\]\\)\\({\\)%s}" prov)
-				      (format "\\1\\2%s}"
-					      (if language-ini-alt language-ini-alt
-                                                (or language language-ini-only)))
-				      header t)
-	  header)))))
+      (replace-regexp-in-string "\\(\\\\babelprovide\\[.*\\]\\)\\({\\)AUTO}"
+				(format "\\1\\2%s}"
+					(if language-ini-alt language-ini-alt
+                                          (or language language-ini-only)))
+				header t))))
 
 (defun org-latex--polyglossia-fonts (lang-list)
   "Return the block specifying the fonts for the language list
@@ -1951,15 +1957,29 @@ Placeholder: currently returns an empty string."
 (defun org-latex--lualatex-babel-config (info)
   "This function returns a string with the prelude part for
 babel on lualatex/xelatex.
-"
-  (let ((compiler (or (plist-get info :latex-compiler) org-latex-compiler))
+
+Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
+#+LATEX_BABEL_LANGUAGES: over `org-latex-babel-languages'"
+
+  (let ((compiler
+         (or (plist-get info :latex-compiler) org-latex-compiler))
+        (main-lang (plist-get info :language))
         (doc-babel-fontspec org-latex-babel-fontspec)
-        (latex-babel-langs nil)     ;; TODO: define document option for this
+        (latex-babel-langs
+         (or (plist-get info :latex-babel-languages) org-latex-babel-languages))
         (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       (goto-char (point-min))
+      ;; TODO: do we really need fontspec??
       (insert "\\usepackage{fontspec}\n")
-      (insert (format "\\usepackage[%s]{babel}\n" latex-babel-langs))
+      (insert (format "\\usepackage{babel}\n"))
+      ;; Rely on `\\babelprovide' processing provided by
+      ;; `org-latex-guess-babel-language'
+      (cl-loop for bab-lang in (split-string latex-babel-langs ",")
+               do (let* ((opt "import"))
+                    (when (equal bab-lang "AUTO")
+                      (setq opt "import,main"))
+                    (insert (format "\\babelprovide[%s]{%s}\n" opt bab-lang))))
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
       (cl-loop for babel-fontspec in doc-babel-fontspec
@@ -1972,7 +1992,8 @@ babel on lualatex/xelatex.
                              do (let* ((script (car fontspec))
                                        (font   (cdr fontspec)))
                                   (insert (format "\\babelfont%s{%s}%s{%s}\n" lang script props font))))))
-      (buffer-string))))
+      ;; remove the last newline
+      (substring-no-properties (buffer-string) 0 -1))))
 
 (defun org-latex-fontspec-to-string (info)
   "Return the font prelude for the current buffer as a string.
@@ -1989,8 +2010,10 @@ an empty string whe the intended compiler is pdflatex or
         (current-fontspec-config org-latex-fontspec-config)
         (polyglossia-langs
          (or (plist-get info :latex-polyglossia-languages) org-latex-polyglossia-languages))
-        (latex-babel-langs nil)) ;; TODO: define option dor this
+        (latex-babel-langs
+         (or (plist-get info :latex-babel-languages) org-latex-babel-languages)))
     (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
+    (message "FONTSPEC: org-latex-babel-languages: %s" latex-babel-langs)
     (message "FONTSPEC: Font config: %s" current-fontspec-config)
     (cond ((string= compiler "pdflatex")
            (org-latex--pdflatex-fontconfig info))

@@ -234,24 +234,12 @@ block using the =fontspec= package which is created based on the new
 custom variable ~org-latex-fontspec-config~ when generating the
 LaTeX code. Read more [[#sec:lualatex-font-config][below]] in the description of this variable.
 
-*** New option ~#+LATEX_POLYGLOSSIA_LANGS~
-
-The new option ~#+LATEX_POLYGLOSSIA_LANGS~ controls the languages
-activated when using the ~polyglossia~ package in the LaTeX export
-backend for ~lualatex~ and ~xelatex~. This option controls the
-variable ~org-latex-polyglossia-languages~.
-
-*** New variable ~org-latex-babel-fontspec~
-
-This variable controls the fonts used in the LaTeX export when the
-~babel~ package is used in multilingual documents.
 
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
-
 *** New context available to save in archived headings
 
 ~org-archive-save-context-info~ can now contain ~olid~ symbol to save
@@ -408,12 +396,33 @@ This option makes it possible to disable mapping of linked org files
 to markdown during export to Markdown. This is analogous to how
 ~org-html-link-org-files-as-html~ works in export to HTML.
 
-*** New option ~org-latex-ployglossia-fonts~
+*** New option ~org-latex-ployglossia-font-config~
 
 This option holds a comma separated list of languages used to define
 the main and other languages after the ~polyglossia~ package has been
 loaded.  =AUTO= denotes the main language of the document and will be
 derived from the ~#+LANGUAGE:~ option in the document.
+
+*** New option ~#+LATEX_BABEL_LANGS~
+
+The new option ~#+LATEX_BABEL_LANGS~ controls the languages
+activated when using the ~babel~ package in the LaTeX export
+backend for ~lualatex~ and ~xelatex~.  This option sets the
+variable ~org-latex-babel-languages~.  It replaces the need to
+include the ~babel~ package in the ~#+LATEX_HEADER:~.
+
+*** New variable ~org-latex-babel-fontspec~
+
+This variable controls the fonts used in the LaTeX export when the
+~babel~ package is used in multilingual documents.
+
+*** New option ~#+LATEX_POLYGLOSSIA_LANGS~
+
+The new option ~#+LATEX_POLYGLOSSIA_LANGS~ controls the languages
+activated when using the ~polyglossia~ package in the LaTeX export
+backend for ~lualatex~ and ~xelatex~.  This option sets the
+variable ~org-latex-polyglossia-languages~.  It replaces the need to
+include the ~polyglossia~ package in the ~#+LATEX_HEADER:~.
 
 ** New functions and changes in function arguments
 
