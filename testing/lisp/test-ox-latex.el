@@ -336,5 +336,30 @@ A random text without emojis.
      (goto-char (point-min))
      (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
 
+(ert-deftest test-ox-latex/lualatex-babel-langs ()
+  "Test that directlua block is not created because it is not needed
+no emojis detected"
+  (let ((org-latex-compiler "lualatex"))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: de
+#+LATEX_BABEL_LANGS: AUTO,greek
+
+* Einleitung
+
+Irgend etwas.
+"
+     ;; (message "--> %s" (buffer-string))
+     (goto-char (point-min))
+     (should (search-forward "\\usepackage{fontspec}" nil t))
+     (should (search-forward "\\usepackage{babel}" nil t))
+     (save-excursion
+       (should  (search-forward "\\babelprovide[import,main]{german}" nil t)))
+     (save-excursion
+       (should (search-forward "\\babelprovide[import]{greek}" nil t))))))
+
+
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

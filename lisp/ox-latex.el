@@ -1821,15 +1821,15 @@ Return the new header."
 				       (t (append options (list language))))
 				 ", ")
 		      t nil header 1)))))
-    ;; If `\babelprovide[args]{AUTO}' is present, AUTO is
-    ;; replaced by LANGUAGE.
-    (if (not (string-match "\\\\babelprovide\\[.*\\]{AUTO}" header))
-	header
-      (replace-regexp-in-string "\\(\\\\babelprovide\\[.*\\]\\)\\({\\)AUTO}"
-				(format "\\1\\2%s}"
-					(if language-ini-alt language-ini-alt
-                                          (or language language-ini-only)))
-				header t))))
+    ;; If `\babelprovide[args]{AUTO}' is present, AUTO is replaced by LANGUAGE.
+    ;; Remarks:
+    ;; 1. `replace-regexp-in-string' returns the string if not matching
+    ;; 2. placing AUTO as a subexpression in REGEXP
+    ;;    allows us to replace it using the SUBEXP parameter.
+    (replace-regexp-in-string "\\(\\\\babelprovide\\[.*\\]{\\)\\(AUTO\\)\\(}\\)"
+			      (if language-ini-alt language-ini-alt
+                                (or language language-ini-only))
+			      header t t 2)));;)
 
 (defun org-latex--polyglossia-fonts (lang-list)
   "Return the block specifying the fonts for the language list
