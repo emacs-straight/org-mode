@@ -1776,6 +1776,30 @@ Return the new header, as a string."
       (replace-regexp-in-string "\\\\usepackage\\[\\(AUTO\\)\\]{inputenc}"
 				cs header t nil 1))))
 
+(defun org-latex--get-babel-lang (lang default-lang)
+  (when (equal lang "AUTO")
+    (setq lang default-lang))
+  (if-let* ((lang-alist (assoc lang org-latex-language-alist))
+            (lang-plist (cdr lang-alist)))
+      ;; (message "?? %s -> %s" lang lang-alist)
+      (let ((babel-lang (plist-get lang-plist :babel))
+            (babel-ini-only (plist-get lang-plist :babel-ini-only))
+            (babel-ini-alt (plist-get lang-plist :babel-ini-alt)))
+        (if babel-ini-alt babel-ini-alt
+          (or babel-lang babel-ini-only)))
+    lang))
+
+(defun org-latex--babel-langlist (s default-lang)
+  "Tranform comma-separated language list S
+to a comma-separated *babel* language list.
+Replace \"AUTO\" with DEFAULT-LANG."
+  (save-match-data
+    (let* ((lang-list (split-string s ",")))
+      (setq lang-list (mapcar #'(lambda (s)
+                                  (org-latex--get-babel-lang (string-trim s) default-lang))
+                              lang-list))
+      (mapconcat #'identity (delete-dups lang-list) ","))))
+
 (defun org-latex-guess-babel-language (header info)
   "Set Babel's language according to LANGUAGE keyword.
 
@@ -1796,40 +1820,29 @@ Return the new header."
   (let* ((language-code (plist-get info :language))
 	 (plist (cdr
 		 (assoc language-code org-latex-language-alist)))
-	 (language (plist-get plist :babel))
 	 (language-ini-only (plist-get plist :babel-ini-only))
-         (language-ini-alt (plist-get plist :babel-ini-alt))
-	 ;; If no language is set, or Babel package is not loaded, or
-	 ;; LANGUAGE keyword value is a language served by Babel
+	 ;; If no language is set, or
+         ;; the LANGUAGE keyword value is a language served by Babel
 	 ;; exclusively through ini files, return HEADER as-is.
 	 (header (if (or language-ini-only
-			 (not (stringp language-code))
-			 (not (string-match "\\\\usepackage\\[\\(.*\\)\\]{babel}" header)))
+			 (not (stringp language-code)))
 		     header
-		   (let ((options (save-match-data
-				    (org-split-string (match-string 1 header) ",[ \t]*"))))
-		     ;; If LANGUAGE is already loaded, return header
-		     ;; without AUTO.  Otherwise, replace AUTO with language or
-		     ;; append language if AUTO is not present.  Languages that are
-		     ;; served in Babel exclusively through ini files are not added
-		     ;; to the babel argument, and must be loaded using
-		     ;; `\babelprovide'.
-		     (replace-match
-		      (mapconcat (lambda (option) (if (equal "AUTO" option) language option))
-				 (cond ((member language options) (delete "AUTO" options))
-				       ((member "AUTO" options) options)
-				       (t (append options (list language))))
-				 ", ")
-		      t nil header 1)))))
-    ;; If `\babelprovide[args]{AUTO}' is present, AUTO is replaced by LANGUAGE.
+                   ;; If babel is loaded, process the language list
+                   (replace-regexp-in-string "\\(\\\\usepackage\\[\\)\\(.[^]]+\\)\\(\\]{babel}\\)"
+                                             #'(lambda (x)
+                                                 (let ((langs (match-string 2 x)))
+                                                   (org-latex--babel-langlist langs language-code)))
+		                             header t t 2))))
+    ;; Replace language names for all `\babelprovide[]{}'
+    ;; If AUTO is present, it is replaced by #+LANGUAGE: definition
     ;; Remarks:
-    ;; 1. `replace-regexp-in-string' returns the string if not matching
-    ;; 2. placing AUTO as a subexpression in REGEXP
-    ;;    allows us to replace it using the SUBEXP parameter.
-    (replace-regexp-in-string "\\(\\\\babelprovide\\[.*\\]{\\)\\(AUTO\\)\\(}\\)"
-			      (if language-ini-alt language-ini-alt
-                                (or language language-ini-only))
-			      header t t 2)));;)
+    ;; 1. `replace-regexp-in-string' returns the input string if no matches are found
+    ;; 2. placing the function returns the babel language name for each name supplied
+    ;; 3. `replace-regexp-in-string' allows us to replace the lang only using the SUBEXP parameter.
+    (replace-regexp-in-string "\\(\\\\babelprovide\\[.*\\]{\\)\\([^}]+\\)\\(}\\)"
+                              (lambda (x)
+                                (org-latex--get-babel-lang (match-string 2 x) language-code))
+			      header t t 2)))
 
 (defun org-latex--polyglossia-fonts (lang-list)
   "Return the block specifying the fonts for the language list
