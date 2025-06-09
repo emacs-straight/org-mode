@@ -1594,20 +1594,19 @@ where
  `:font': a string with the system font name, mandatory
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
  `:tag': a string will substitute the language in the font definition.
- `:extras': a string for extra parameters (e.g.\"[Script=Hebrew]\")
-            Note: the spec must include square brackets
+ `:props': a string for extra properties (e.g.\"Script=Hebrew\")
 
 Each line will be translated into a new font family definition.
 
 For example:
          (\"hindi\"  :font \"Noto Serif Devanagari\"
           :tag \"devanagari\"
-          :extras \"[Script=Devanagari]\")
+          :props \"Script=Devanagari\")
 will eventually result in
   \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}
 in the exported LaTeX code; and
          (\"hebrew\" :variant \"tt\"
-          :extras \"[Script=Hebrew]\" :font \"Noto Mono Hebrew\")
+          :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
 in
   \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
 
@@ -2011,18 +2010,18 @@ polyglossia (in lualatex/xelatex"
                                 lang))
                 (setq lang-type "other")))
      ;; Get fontspec fonts
-     (cl-loop for font in fontspec-config do
-              (let ((ftype (car font))
-                    (fname (plist-get (cdr font) :font)))
+     (cl-loop for (ftype . props) in fontspec-config do
+              (let ((fname (plist-get props :font)))
                 (insert (format "\n\\set%sfont{%s}" ftype fname))))
      ;; Get polyglossia specifics
-     (cl-loop for font in polyglossia-font-config do
-              (let ((ffamily (car font))
-                    (fname (plist-get (cdr font) :font))
-                    (fprop (plist-get (cdr font) :props)))
-                (insert (format "\n\\newfontfamily\\%sfont{%s}%s"
-                                ffamily fname
-                                (org-latex--mk-options fprop)))))
+     (cl-loop for (lang . props) in polyglossia-font-config
+              do
+              (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
+                              (or (plist-get props :tag) lang)
+                              (or (plist-get props :variant) "")
+                              (org-latex--mk-options
+                               (plist-get props :props))
+                              (plist-get props :font))))
      (buffer-string))))
 
 (defun org-latex--lualatex-babel-config (info)
