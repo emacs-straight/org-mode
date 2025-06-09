@@ -1971,7 +1971,9 @@ Placeholder: currently returns an empty string."
 (defun org-latex--lualatex-polyglossia-config (info)
   "Retirn a string with the prelude part for
 polyglossia (in lualatex/xelatex"
-  (let* ((main-lang (plist-get info :language))
+  (let* ((compiler (or (plist-get info :compiler)
+                       org-latex-compiler))
+         (main-lang (plist-get info :language))
          (polyglossia-langs
           (or (plist-get info :latex-polyglossia-languages)
               org-latex-polyglossia-languages))
@@ -1981,6 +1983,8 @@ polyglossia (in lualatex/xelatex"
          ;; These change inside `with-temp-buffer'
          (fontspec-config org-latex-fontspec-config)
          (polyglossia-font-config org-latex-polyglossia-font-config))
+    (when (equal compiler "pdflatex")
+        (warn "polyglossia isn't supported by pdflatex!"))
     (setq polyglossia-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
                                                       main-lang
                                                        polyglossia-langs
