@@ -15131,6 +15131,7 @@ another feature to the font definition.
 :description: Using org-latex-polyglossia-font-config
 :END:
 #+cindex: polyglossia font configuration
+#+vindex: org-latex-polyglossia-font-config
 
 If you use the =polyglossia= package in multi-lingual documents, it
 will load for you the =fontspec= package. Any general settings that
@@ -15157,19 +15158,21 @@ To include the definition for the monospaced Hebrew font above in
 ~org-latex-polyglossia-font-config~, you will need to add the following
 
 #+BEGIN_SRC emacs-lisp :results none :exports code
-  ("hebrew"  :font "FreeMono" :variant "tt" :extras "[Script=Hebrew]")
+  ("hebrew"  :font "FreeMono" :variant "tt" :props "Script=Hebrew")
 #+END_SRC
 
 to it.
 
 The properties you can define are:
 
-1. =:font=: a string with the system font name. This property is mandatory.
+1. =:font=: a string with the system font name. This property is *mandatory*.
 2. =:variant=: a string for the font variant (e.g. "=sf=", "=tt=", etc.).
 3. =:tag=: a string that will used to define the language name in the
-   font family.
-4. =:extras=: a string for extra parameters, which must be embedded in
-   square brackets.
+   font family.  For example, the language may be ="hindi"= but the
+   name for the font family ="devanagari"=. In this case, the latter
+   can be indicated with a =:tag=,
+4. =:props=: a string for extra properties. The square bracket are not
+   needed, because they are added by Org.
 
 **** Controlling font configuration when using the =babel= package
 :PROPERTIES:
@@ -15177,6 +15180,7 @@ The properties you can define are:
 :description: Using org-latex-babel-fontspec
 :END:
 #+cindex: babel font configuration
+#+vindex: org-latex-babel-fontspec
 
 Org mode will control the fonts used for multilingual documents when
 using the =babel= package with the ~org-latex-babel-fontspec~
