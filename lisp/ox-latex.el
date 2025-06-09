@@ -1846,7 +1846,8 @@ Return the new header."
 
 (defun org-latex--polyglossia-fonts (lang-list)
   "Return the block specifying the fonts for the language list
-`lang-list' based on `org-latex-polyglossia-font-config'"
+`lang-list' based on `org-latex-polyglossia-font-config'
+OBSOLETE"
   ;;
   ;; If org-latex-polyglossia-fonts is nil
   ;; the cl-loop returns an empty string
@@ -1880,7 +1881,8 @@ replaced with the language of the document or
 `org-export-default-language'.  Note, the language is really set
 using \setdefaultlanguage and not as an option to the package.
 
-Return the new header."
+Return the new header.
+OBSOLETE"
   (let* ((language (plist-get info :language)))
     ;; If no language is set or Polyglossia is not loaded, return
     ;; HEADER as-is.
@@ -1967,6 +1969,62 @@ prelude for pdflatex.
 Placeholder: currently returns an empty string."
   "")
 
+(defun org-latex--lualatex-polyglossia-config (info)
+  "Retirn a string with the prelude part for
+polyglossia (in lualatex/xelatex"
+  (let* ((main-lang (plist-get info :language))
+         (polyglossia-langs
+          (or (plist-get info :latex-polyglossia-languages)
+              org-latex-polyglossia-languages))
+         (unicode-math-options nil) ;; TODO
+         (lang-type "main")
+         (polyglossia-list nil) ;; to store the splitted polyglossia-langs
+         ;; These change inside `with-temp-buffer'
+         (fontspec-config org-latex-fontspec-config)
+         (polyglossia-font-config org-latex-polyglossia-font-config))
+    (setq polyglossia-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
+                                                      main-lang
+                                                       polyglossia-langs
+                                                       t t 2))
+    (setq polyglossia-list (seq-uniq
+                            (mapcar #'string-trim
+                                    (string-split polyglossia-langs ","))))
+   (with-temp-buffer
+     (goto-char (point-min))
+     (insert "\\usepackage{fontspec}\n")
+     (insert "\\usepackage{polyglossia}\n")
+     (insert (format "\\usepackage%s{unicode-math}" (org-latex--mk-options unicode-math-options)))
+     ;; Insert newline at the beginning to avoid too many empty lines in the export
+     (cl-loop for lang in polyglossia-list do
+              ;; No BCP-47 support (yet)
+              ;; Translate to polyglossia language
+              (let* ((lang-list (assoc lang org-latex-language-alist))
+                     (lang-plist (cdr lang-list))
+                     (lang (plist-get lang-plist :polyglossia))
+                     (lang-variant (plist-get lang-plist :polyglossia-variant)))
+                ;; Include variant when defined in org-latex-language-alist
+                (when lang-variant
+                  (setq lang-variant (concat "variant=" lang-variant)))
+                (insert (format "\n\\set%slanguage%s{%s}"
+                                lang-type
+                                (org-latex--mk-options lang-variant)
+                                lang))
+                (setq lang-type "other")))
+     ;; Get fontspec fonts
+     (cl-loop for font in fontspec-config do
+              (let ((ftype (car font))
+                    (fname (plist-get (cdr font) :font)))
+                (insert (format "\n\\set%sfont{%s}" ftype fname))))
+     ;; Get polyglossia specifics
+     (cl-loop for font in polyglossia-font-config do
+              (let ((ffamily (car font))
+                    (fname (plist-get (cdr font) :font))
+                    (fprop (plist-get (cdr font) :props)))
+                (insert (format "\n\\newfontfamily\\%sfont{%s}%s"
+                                ffamily fname
+                                (org-latex--mk-options fprop)))))
+     (buffer-string))))
+
 (defun org-latex--lualatex-babel-config (info)
   "This function returns a string with the prelude part for
 babel on lualatex/xelatex.
@@ -2032,7 +2090,9 @@ an empty string whe the intended compiler is pdflatex or
            (org-latex--pdflatex-fontconfig info))
           (latex-babel-langs
            (org-latex--lualatex-babel-config info))
-          (t ;; else lualatex or xelatex with fontspec or polyglossia
+          (polyglossia-langs
+           (org-latex--lualatex-polyglossia-config info))
+          (t ;; else lualatex or xelatex with fontspec
            (let ((doc-scripts (org-latex--get-doc-scripts)) ;; get scripts from current buffer
                  (unicode-math-options nil)                 ;; TODO add unicode-math features to config
                  (cjk-packages nil) ;; will be need the packages to support CJK fonts?
@@ -2047,10 +2107,7 @@ an empty string whe the intended compiler is pdflatex or
                ;; They will automatically load, among others, fontspec
                ;; If none are selected, then use fontspec directly
                ;;
-               (insert (cond (polyglossia-langs
-                              ;; polyglossia imports fontspec automatically
-                              (format "\\usepackage[%s]{polyglossia}\n" polyglossia-langs))
-                             (t "\\usepackage{fontspec}\n")))
+               (insert "\\usepackage{fontspec}\n")
                (insert (format "\\usepackage%s{unicode-math}\n"
                                (org-latex--mk-options unicode-math-options)))
                ;; TODO: if we choose polyglossia,
@@ -2124,7 +2181,6 @@ an empty string whe the intended compiler is pdflatex or
                  ;; TODO: what about xpinyin??
                  (insert "\\usepackage[CJKspace]{xeCJK}\n"))
                (buffer-string)))))))
-
 ;;
 ;;
 (defun org-latex--remove-packages (pkg-alist info)
@@ -2349,7 +2405,7 @@ specified in `org-latex-default-packages-alist' or
 			class-options header t nil 1))))
 	      (user-error "Unknown LaTeX class `%s'" class))))
     (message "org-latex-make-preamble from %s" template)
-    (org-latex-guess-polyglossia-language
+    ;; (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-inputenc
        (org-element-normalize-string
@@ -2365,7 +2421,8 @@ specified in `org-latex-default-packages-alist' or
 			       (plist-get info :latex-header-extra)))
 		    ""))))
       info)
-     info)))
+     ;; info)
+  ))
 
 (defun org-latex-template (contents info)
   "Return complete document string after LaTeX conversion.
