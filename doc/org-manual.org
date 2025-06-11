@@ -14241,24 +14241,26 @@ general options (see [[*Export Settings]]).
   hyperref settings.  See ~org-latex-classes~ for adjusting the
   structure and order of the LaTeX headers.
 
-- =LATEX_POLYGLOSSIA_LANGS= ::
+- =LATEX_MULTI_LANG= ::
 
-  #+cindex: @samp{LATEX_POLYGLOSSIA_LANGS}, keyword
-  #+vindex: org-latex-polyglossia-languages
-  The languages present in a document. When using the =xelatex= or
-  =lualatex= compilers to produce the PDF, the backend will load the
-  =polyglossia= package when this variable is not ~nil~ and set the
-  main language with the =LANGUAGE= option and the secondary languages
-  indicated by this option.
+  #+cindex: @samp{LATEX_MULTI_LANG}, keyword
+  #+vindex: org-latex-multi-lang-driver
+  #+vindex: org-export-default-language
 
+  The LaTeX package handling multi-lingual features.
+  Possible values are ~polyglossia~, ~babel~ or ~nil~.
+  Uses the =LANGUAGE= option to determine the main and secondary languages.
+
+  Possible values for
   For example:
   #+BEGIN_SRC org :results none :exports code
-,#+LANGUAGE: fr
-,#+LATEX_POLYGLOSSIA_LANGS: de,es,AUTO
+,#+LANGUAGE: fr,de,es
+,#+LATEX_MULTI_LANG: polyglossia
   #+END_SRC
-  would set the main language of the document (i.e. header, figure,
-  table names) and typesetting options to French and indicate that
-  there are passages in German and Spanish.
+  would set the multi-language handling to use polyglossia on a
+  document, where the main language (i.e. header, figure, table names)
+  and typesetting options use French and indicate that there are
+  passages in German and Spanish.
 
 - =KEYWORDS= ::
 
@@ -14353,43 +14355,23 @@ A sample Org file with the above headers:
 
 #+cindex: @samp{LANGUAGE}, keyword
 #+vindex: org-export-default-language
-LaTeX packages =babel= or =polyglossia= can also be loaded in a
-document.  The "AUTO" string will be replaced in both cases by the
-appropriate value for the =LANGUAGE= keyword, if present in the
-document, or by the value of ~org-export-default-language~.  Let's see
-some examples in one or another case.
 
-=Babel= accepts the classic syntax and (in addition) the new syntax
-with the =\babelprovide= command to load the languages using the new
-=INI= files procedure.  Keep in mind that there are a number of
-languages that are only served in babel using =INI= files, so they
-cannot be declared using the classic syntax, but only using the
-=\babelprovide= command (see
-https://mirrors.ctan.org/macros/latex/required/babel/base/babel.pdf).
-Valid usage examples could be:
+The LaTeX export backend can handle multiple languages with the LateX
+packages =babel= or =polyglossia=. It will use the =LANGUAGE= keyword,
+if present in the document or the value of
+~org-export-default-language~ to determine the languages used in a
+document. If this value is a comma-separated list of languages, it
+will assume the first one to be the main language in the list.
 
-#+begin_example
-,#+LATEX_HEADER: \usepackage[french,italian,AUTO]{babel}
-#+end_example
 
-where "AUTO" is the main language.  But it can also be loaded using
-the =\babelprovide= command:
-
-#+begin_example
-,#+LATEX_HEADER: \usepackage[french,italian]{babel}
-,#+LATEX_HEADER: \babelprovide[import, main]{AUTO}
-#+end_example
-
-=Polyglossia= is controlled by the ~org-latex-polyglossia-languages~
-variable. It uses the same =babel= classic syntax (but note that /this
-is not/ the actual polyglossia syntax), with =AUTO= denoting the main
-language.  For example, suppose a document declares Polytonic Greek as
-the primary language, and French as the secondary language.
+For example, suppose a document declares Polytonic Greek as
+the primary language, and French as the secondary language using the
+=polyglossia= package to handle document languages:
 #+vindex: org-latex-polyglossia-languages
 
 #+begin_example
-,#+LANGUAGE: el-polyton
-,#+LATEX_POLYGLOSSIA_LANGS: french,AUTO
+,#+LANGUAGE: el-polyton,fr
+,#+LATEX_MULTI_LANG: polyglossia
 #+end_example
 
 This would produce in LaTeX (with the actual =polyglossia= syntax):
@@ -14404,6 +14386,10 @@ If you use =polyglossia=, you can control the fonts used for different
 languages in the PDF output with the variable
 ~org-latex-polyglossia-font-config~.
 #+vindex: org-latex-polyglossia-font-config
+
+If you use =babel=, you can control the fonts used for different
+languages in the PDF output with the variable
+~org-latex-babel-font-config~.
 
 *** Quoting LaTeX code
 :PROPERTIES:

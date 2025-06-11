@@ -170,8 +170,7 @@
     (:latex-title-command nil nil org-latex-title-command)
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
-    (:latex-polyglossia-languages "LATEX_POLYGLOSSIA_LANGS" nil org-latex-polyglossia-languages)
-    (:latex-babel-languages "LATEX_BABEL_LANGS" nil org-latex-babel-languages)
+    (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang-driver)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -505,7 +504,7 @@ AUTO will automatically be replaced with a coding system derived
 from `buffer-file-coding-system'.  See also the variable
 `org-latex-inputenc-alist' for a way to influence this mechanism.
 
-Likewise, if your header contains \"\\usepackage[AUTO]{babel}\"
+OBSOLETE: Likewise, if your header contains \"\\usepackage[AUTO]{babel}\"
 or \"\\usepackage[AUTO]{polyglossia}\", AUTO will be replaced
 with the language related to the language code specified by
 `org-export-default-language'.  Note that constructions such as
@@ -1555,6 +1554,18 @@ property to `toc'"
   :type 'boolean
   :safe #'booleanp)
 
+(defcustom org-latex-multi-lang-driver nil
+  "The multi-lingual support package used by the LaTeX backend.
+
+Possible values are \"polyglossia\",\"babel\" or `nil'.
+`nil' means no language support is needed."
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "Babel" "babel")
+		 (const :tag "Polyglossia" "polyglossia")
+		 (const :tag "None" nil))
+  :safe #'string-or-null-p)
+
 (defun list-or-null-p (object)
   "Return non-nil when `object' is a list or nil"
   (or (null object)
@@ -1629,8 +1640,7 @@ This is an alternative to adding the package in the LaTeX header"
 (defcustom org-latex-babel-fontspec nil
   "A property list array to map babel language names to the fonts
 used when exporting to babel.  Each entry maps a string with the
-language name to a `:fonts' property list.  Use \"AUTO\" for the
-fonts used by the default language.
+language name to a `:fonts' property list.
 
 Each element in the `:fonts' property list has the form
 (SCRIPT . FONT).  SCRIPT is one of the script codes:
@@ -1973,22 +1983,15 @@ Placeholder: currently returns an empty string."
 polyglossia (in lualatex/xelatex"
   (let* ((compiler (or (plist-get info :compiler)
                        org-latex-compiler))
-         (main-lang (plist-get info :language))
-         (polyglossia-langs
-          (or (plist-get info :latex-polyglossia-languages)
-              org-latex-polyglossia-languages))
+         (polyglossia-langs (plist-get info :language))
          (unicode-math-options nil) ;; TODO
-         (lang-type "main")
          (polyglossia-list nil) ;; to store the splitted polyglossia-langs
+         (lang-type "main")
          ;; These change inside `with-temp-buffer'
          (fontspec-config org-latex-fontspec-config)
          (polyglossia-font-config org-latex-polyglossia-font-config))
     (when (equal compiler "pdflatex")
         (warn "polyglossia isn't supported by pdflatex!"))
-    (setq polyglossia-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
-                                                      main-lang
-                                                       polyglossia-langs
-                                                       t t 2))
     (setq polyglossia-list (seq-uniq
                             (mapcar #'string-trim
                                     (string-split polyglossia-langs ","))))
@@ -2037,16 +2040,16 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
 
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
-        (main-lang (plist-get info :language))
+        (latex-babel-langs (plist-get info :language))
         (doc-babel-fontspec org-latex-babel-fontspec)
-        (latex-babel-langs
-         (or (plist-get info :latex-babel-languages) org-latex-babel-languages))
+        ;; (latex-babel-langs
+        ;;  (or (plist-get info :latex-babel-languages) org-latex-babel-languages))
         (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
-      (setq latex-babel-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
-                                                        main-lang
-                                                        latex-babel-langs
-                                                        t t 2))
+      ;; (setq latex-babel-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
+      ;;                                                   main-lang
+      ;;                                                   latex-babel-langs
+      ;;                                                   t t 2))
       (goto-char (point-min))
       ;; TODO: do we really need fontspec??
       (insert "\\usepackage{fontspec}\n")
@@ -2166,29 +2169,19 @@ we are using neither bale nor polyglossia"
 
 (defun org-latex-fontspec-to-string (info)
   "Return the font prelude for the current buffer as a string.
-Arguments:
-  `compiler': a string with the intended LaTeX compiler.
 
-Returns the font specification based on the current buffer's
-`org-latex-fontspec-config' and the scripts detected in it
-for lualatex or xelatex or
-an empty string whe the intended compiler is pdflatex or
-`org-latex-fontspec-config' is `nil'."
+Dispatches to the different prelude generation routines depending
+on the current LaTeX compiler and language support backend.
+"
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
-        ;; (current-fontspec-config org-latex-fontspec-config)
-        (polyglossia-langs
-         (or (plist-get info :latex-polyglossia-languages) org-latex-polyglossia-languages))
-        (latex-babel-langs
-         (or (plist-get info :latex-babel-languages) org-latex-babel-languages)))
-    (message "FONTSPEC: org-latex-polyglossia-languages: %s" polyglossia-langs)
-    (message "FONTSPEC: org-latex-babel-languages: %s" latex-babel-langs)
-    ;; (message "FONTSPEC: Font config: %s" current-fontspec-config)
-    (cond ((string= compiler "pdflatex")
+        (driver
+         (or (plist-get info :latex-multi-lang) org-latex-multi-lang-driver)))
+    (cond ((equal compiler "pdflatex")
            (org-latex--pdflatex-fontconfig info))
-          (latex-babel-langs
+          ((equal driver "babel")
            (org-latex--lualatex-babel-config info))
-          (polyglossia-langs
+          ((equal driver "polyglossia")
            (org-latex--lualatex-polyglossia-config info))
           (t ;; else lualatex or xelatex with fontspec
            (org-latex--lualatex-fontspec-config info)))))
