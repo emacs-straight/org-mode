@@ -1812,8 +1812,8 @@ Replace \"AUTO\" with DEFAULT-LANG."
 (defun org-latex-guess-babel-language (header info)
   "Set Babel's language according to LANGUAGE keyword.
 
-HEADER is the LaTeX header string.  INFO is the plist used as
-a communication channel.
+HEADER is the LaTeX header string.
+INFO is the plist used as a communication channel.
 
 Insertion of guessed language only happens when Babel package has
 explicitly been loaded.  Then it is added to the rest of
@@ -1968,8 +1968,14 @@ https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
     scripts))
 
 (defun org-latex--mk-options (opts)
-  "Return opts enclosed in square brackets if non-nil or empty string."
-  (if opts (format "[%s]" opts) ""))
+  "Return empty string if OPTS is nil or a zero-length string.
+If OPTS is a non-empty string, enclose it in square brackets.
+If OPTS is a list of strings, trim each string in the list
+before concatenating to a comma separated list and
+returning the list enclosed in square brackets."
+  (cond ((null opts) "")
+        ((stringp opts) (if (length= opts 0 ) "" (format "[%s]" opts)))
+        (t (format "[%s]" (mapconcat #'string-trim opts ",")))))
 
 (defun org-latex--pdflatex-fontconfig (info)
   "This function returns a string with the font configuration
@@ -2063,7 +2069,7 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
                       (org-latex--mk-options unicode-math-options)))
       (message "babel-fontspec: %s" doc-babel-fontspec)
       (cl-loop for (lang . babel-fontlist) in doc-babel-fontspec
-               do (let* ((props)
+               do (let* ((props nil)
                          (font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . font) in font-list
                              do (insert (format "\n\\babelfont[%s]{%s}%s{%s}"
@@ -2105,6 +2111,14 @@ we are using neither bale nor polyglossia"
                     (fallback (plist-get config-plist :fallback)))
           (push (cons fname (concat "fallback_" fname)) fallback-alist)))
       ;; (message "fallback-alist ==> %s" fallback-alist)
+      ;; As suggested by Jacob S. Gordon <jacob.as.gordon@gmail.com>
+      ;; but with a twist
+      ;; Remove the fallback list if we are not using lualatex
+      ;; and warn the unsuspecting user.
+      (when fallback-alist
+        (unless (equal compiler "lualatex")
+          (setq fallback-alist nil)
+          (warn "Fallback fonts will only work with lualatex! Fix your fontspec configuration.")))
       (when fallback-alist ;; if there are fonts with fallbacks
         ;; create the directlua header
         (dolist (fallback fallback-alist)
@@ -2150,12 +2164,12 @@ we are using neither bale nor polyglossia"
             (when (stringp ffeatures)
               (setq ffeatures (list ffeatures))) ;; needs to be a list to concat a possible fallback
             ;; (message "--> ffeatures: %s" ffeatures)
-            (when-let* ((fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
+            (when-let* ((fallback-check fallback-alist) ;; don't do anything when no fallbacks
+                        (fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
                         (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-fn))))
-              (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
-            ;; (message "ffeatures %s" ffeatures)
-            (when ffeatures
-              (insert (format "[%s]" (mapconcat #'identity ffeatures ",")))))
+              (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec)))
+              ;; (message "ffeatures %s" ffeatures)
+              (insert (org-latex--mk-options ffeatures))))
           (insert "\n")))
       ;; If the CJK font families have been included
       ;; Check for polyglossia and/or babel and warn?
