@@ -276,6 +276,7 @@ is suppressed
   "Test that directlua block is not created
 when no fallbacks in fontspec configuration"
   (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang-driver t)
         (org-latex-fontspec-config '(("main" :font "FreeSans"))))
     (org-test-with-exported-text
      'latex
@@ -294,6 +295,7 @@ A random text.
 (ert-deftest test-ox-latex/lualatex-fontspec-directlua ()
   "Test that directlua block is created"
   (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang-driver t)
         (org-latex-fontspec-config '(("main"
                                       :font "FreeSans"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
@@ -316,6 +318,7 @@ A random text with emoji: 👍
   "Test that directlua block is not created because it is not needed
 no emojis detected"
   (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang-driver t)
         (org-latex-fontspec-config '(("main"
                                       :font "FreeSans"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
@@ -337,15 +340,18 @@ A random text without emojis.
      (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-babel-langs ()
-  "Test that directlua block is not created because it is not needed
-no emojis detected"
-  (let ((org-latex-compiler "lualatex"))
+  "Test that babel is handled correctly.
+In this test we set org-latex-multi-lang-driver to \"babel\"
+in the document header and test that the default can be overwritten
+"
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang-driver t))
     (org-test-with-exported-text
      'latex
      "#+TITLE: fontspec
 #+OPTIONS: toc:nil H:3 num:nil
-#+LANGUAGE: de
-#+LATEX_BABEL_LANGS: AUTO,greek
+#+LANGUAGE: de,greek
+#+LATEX_MULTI_LANG: babel
 
 * Einleitung
 

@@ -1557,14 +1557,18 @@ property to `toc'"
 (defcustom org-latex-multi-lang-driver nil
   "The multi-lingual support package used by the LaTeX backend.
 
-Possible values are \"polyglossia\",\"babel\" or `nil'.
-`nil' means no language support is needed."
+Possible values are \"polyglossia\",\"babel\" , `t' or `nil'.
+`t' activates new font/multi-lingual support,
+`nil' means legacy support for babel/polyglossia."
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "Babel" "babel")
 		 (const :tag "Polyglossia" "polyglossia")
+		 (const :tag "Activate new fontspec" t)
 		 (const :tag "None" nil))
-  :safe #'string-or-null-p)
+  :safe #'(lambda (obj)
+            "Return true if OBJ is a string or a boolean"
+            (or (stringp obj) (booleanp obj))))
 
 (defun list-or-null-p (object)
   "Return non-nil when `object' is a list or nil"
