@@ -1558,7 +1558,9 @@ property to `toc'"
   "The multi-lingual support package used by the LaTeX backend.
 
 Possible values are \"polyglossia\",\"babel\" , `t' or `nil'.
-`t' activates new font/multi-lingual support,
+\"polyglossia\" or \"babel\"  activates new implementations for
+                              either LaTeX package,
+`t'           activates new font/multi-lingual support,
 `nil' means legacy support for babel/polyglossia."
   :group 'org-export-latex
   :package-version '(Org . "9.8")

@@ -14247,11 +14247,14 @@ general options (see [[*Export Settings]]).
   #+vindex: org-latex-multi-lang-driver
   #+vindex: org-export-default-language
 
-  The LaTeX package handling multi-lingual features.
-  Possible values are ~polyglossia~, ~babel~ or ~nil~.
-  Uses the =LANGUAGE= option to determine the main and secondary languages.
+  The LaTeX package handling multi-lingual features.  Possible values
+  are ~"polyglossia"~, ~"babel"~, ~t~ or ~nil~.  When it is ~t~, the
+  new font control features are activated.  When it is either
+  ~"babel"~ or ~"polyglossia"~, the package is imported and the
+  =LANGUAGE= option is used to determine the main and secondary
+  languages. When it is ~nil~, the legacy treatment for multi-language
+  documents is activated.
 
-  Possible values for
   For example:
   #+BEGIN_SRC org :results none :exports code
 ,#+LANGUAGE: fr,de,es
@@ -15200,7 +15203,7 @@ the following value:
 #+BEGIN_SRC elisp :results none :exports code
 '(("AUTO" :fonts (("rm" . "Noto Serif")
                   ("sf" . "Noto Sans")
-	                ("tt" . "Noto Mono")))
+                  ("tt" . "Noto Mono")))
   ("arabic" :fonts (("rm" . "Noto Naskh Arabic")
                     ("sf" . "Noto Kufi Arabic"))))
 #+END_SRC
