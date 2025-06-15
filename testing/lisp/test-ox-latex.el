@@ -272,8 +272,8 @@ is suppressed
       (should (search-forward "}
 \\addcontentsline{toc}{section}{Section 3}")))))
 
-(ert-deftest test-ox-latex/lualatex-fontspec-nodirectlua ()
-  "Test that directlua block is not created
+(ert-deftest test-ox-latex/lualatex-fontspec-plain ()
+  "Test that neither defaultfontfeatures nor directlua block is not created
 when no fallbacks in fontspec configuration"
   (let ((org-latex-compiler "lualatex")
         (org-latex-multi-lang-driver t)
@@ -289,7 +289,31 @@ A random text.
 "
      ;; (message "--> %s" (buffer-string))
      (goto-char (point-min))
+     (should-not (search-forward "\\defaultfontfeatures{" nil t))
+     (goto-char (point-min))
      (should-not (search-forward "\\directlua" nil t))
+     (goto-char (point-min))
+     (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-features ()
+  "Test that defaultfontfeatures is generated
+when org-latex-fontspec-default-features are defined."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang-driver t)
+        (org-latex-fontspec-default-features '(("Numbers" . "OldStyle")))
+        (org-latex-fontspec-config '(("main" :font "FreeSans"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec-features
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text.
+"
+     (goto-char (point-min))
+     (should (search-forward "\\defaultfontfeatures{" nil t))
+     (should (search-forward "  Numbers=OldStyle" nil t))
      (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-directlua ()

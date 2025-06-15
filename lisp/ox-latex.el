@@ -1599,8 +1599,24 @@ Place your customization in your Emacs initialisation or in .dir-locals.el"
 		 (alist :tag "fontspec config"))
   :safe #'list-or-null-p)
 
+(defcustom org-latex-fontspec-default-features nil
+  "This variable stores the list of default features for the fontspec package.
+When `nil', no default features are assumed.
+Else it is an associative list of strings (FEATURE . VALUE) that is used to
+generate:
+
+\\defaultfontfeatures{FEATURE=VALUE,...}
+
+in the LaTeX header.
+"
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No template" nil)
+		 (alist :tag "Default font features"))
+  :safe #'list-or-null-p)
+
 (defcustom org-latex-polyglossia-font-config nil
-  "This variable store the font specifications for polyglossia.
+  "This variable stores the font specifications for polyglossia.
 By defauly, this variable is set to `nil' to generate no configuration.
 
 It is an associative list, where each element is defined as
@@ -2089,8 +2105,11 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
 we are using neither bale nor polyglossia"
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
+        ;; Copy these to temp variable... (with-temp-buffer) overwrites them
         (current-fontspec-config org-latex-fontspec-config)
-        (doc-scripts (org-latex--get-doc-scripts)) ;; get scripts from current buffer
+        (current-default-features org-latex-fontspec-default-features)
+        (doc-scripts (org-latex--get-doc-scripts))
+        ;;
         (unicode-math-options nil)                 ;; TODO add unicode-math features to config
         (cjk-packages nil) ;; will be need the packages to support CJK fonts?
         (directlua nil)    ;; Did we write the \\directlua{} block?
@@ -2107,6 +2126,16 @@ we are using neither bale nor polyglossia"
       (insert "\\usepackage{fontspec}\n")
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
+      ;;
+      ;; It there are font features, generate the declaration
+      ;;
+      (when current-default-features
+        (let ((def-feat-list
+               (cl-loop for (feat . val) in current-default-features
+                        collect (concat feat "=" val) into result
+                        finally return (mapconcat #'identity result ",\n  "))))
+        (insert (format "\\defaultfontfeatures{\n  %s\n}\n"
+                        def-feat-list))))
       ;; TODO: if we choose polyglossia,
       ;;       do we need fallbacks or
       ;;       should we warn if fallbacks are defined for polyglossia

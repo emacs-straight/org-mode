@@ -14989,6 +14989,8 @@ will use a different mechanism described [[#babel-fontconfig][below]].
 :description: Using org-latex-fontspec-config
 :END:
 #+cindex: fontspec configuration
+#+vindex: org-latex-fontspec-config
+#+vindex: org-latex-fontspec-default-features
 
 Org mode uses the variable ~org-latex-fontspec-config~ to map your
 document's fonts to the fonts used in the document. To familiarise
@@ -15110,6 +15112,28 @@ another feature to the font definition.
      ("CJKsans" :font "Noto Sans CJK SC")
      ("CJKmono" :font "Noto Sans Mono CJK SC"))))))
   #+END_SRC
+
+#+vindex: org-latex-fontspec-default-features
+Additionally, you can define common features for all fonts, using the
+~org-latex-fontspec-default-features~ variable. Its default value is
+`nil' meaning that no defaults are defined. If you need to default
+common features for all fonts, you can define them as an associative
+list of strings (FEATURE . VALUE) in this variable. For example:
+
+#+BEGIN_SRC elisp :results none :exports code :eval never
+(setq org-latex-fontspec-default-features
+      '(("Numbers". "OldStyle")))
+#+END_SRC
+
+or its equivalents as a file or directory local variable will generate
+the following LaTeX code in the file header:
+
+#+BEGIN_SRC latex
+\defaultfontfeatures{
+  Numbers=OldStyle
+}
+#+END_SRC
+If you need more features, add then to this list.
 
 # TODO: Subsection with the font configuration specific to
 # polyglossia.

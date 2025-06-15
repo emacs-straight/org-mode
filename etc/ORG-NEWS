@@ -424,6 +424,12 @@ backend for ~lualatex~ and ~xelatex~.  This option sets the
 variable ~org-latex-polyglossia-languages~.  It replaces the need to
 include the ~polyglossia~ package in the ~#+LATEX_HEADER:~.
 
+*** New option ~org-latex-fontspec-default-features~
+
+The new option ~org-latex-fontspec-default-features~ controls the
+generation of the ~\\defaultfontfeatures{}~ command for the ~fontspec~
+package.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
