@@ -1807,9 +1807,10 @@ Return the new header, as a string."
       (replace-regexp-in-string "\\\\usepackage\\[\\(AUTO\\)\\]{inputenc}"
 				cs header t nil 1))))
 
-(defun org-latex--get-babel-lang (lang default-lang)
+(defun org-latex--get-babel-lang (lang &optional default-lang)
   (when (equal lang "AUTO")
-    (setq lang default-lang))
+    (setq lang default-lang)
+    (unless lang (error "AUTO not supported as a babel language")))
   (if-let* ((lang-alist (assoc lang org-latex-language-alist))
             (lang-plist (cdr lang-alist)))
       ;; (message "?? %s -> %s" lang lang-alist)
@@ -2085,7 +2086,7 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
       (let ((opt "import,main"))
         (cl-loop for bab-lang in (split-string latex-babel-langs ",")
                  do
-                 (insert (format "\n\\babelprovide[%s]{%s}" opt bab-lang))
+                 (insert (format "\n\\babelprovide[%s]{%s}" opt (org-latex--get-babel-lang bab-lang)))
                  (setq opt "import")))
       (insert (format "\n\\usepackage%s{unicode-math}"
                       (org-latex--mk-options unicode-math-options)))
@@ -2095,7 +2096,7 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
                          (font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . font) in font-list
                              do (insert (format "\n\\babelfont[%s]{%s}%s{%s}"
-                                                lang script
+                                                (org-latex--get-babel-lang lang) script
                                                 (org-latex--mk-options props)
                                                 font)))))
       (buffer-string))))
@@ -2456,26 +2457,35 @@ specified in `org-latex-default-packages-alist' or
 		       (replace-regexp-in-string
 			"^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
 			class-options header t nil 1))))
-	      (user-error "Unknown LaTeX class `%s'" class))))
+	      (user-error "Unknown LaTeX class `%s'" class)))
+         (multi-lang-driver (or (plist-get info :latex-multi-lang)
+                                org-latex-multi-lang-driver)))
     (message "org-latex-make-preamble from %s" template)
-    ;; (org-latex-guess-polyglossia-language
-     (org-latex-guess-babel-language
-      (org-latex-guess-inputenc
-       (org-element-normalize-string
-	(org-splice-latex-header
-	 class-template
-	 (org-latex--remove-packages org-latex-default-packages-alist info)
-	 (org-latex--remove-packages org-latex-packages-alist info)
-         (org-latex-fontspec-to-string info)
-	 snippet?
-	 (mapconcat #'org-element-normalize-string
-		    (list (plist-get info :latex-header)
-			  (and (not snippet?)
-			       (plist-get info :latex-header-extra)))
-		    ""))))
-      info)
-     ;; info)
-  ))
+    ;;
+    ;; This is just a note for the integration of the new features with main
+    ;;
+    (let ((new-template
+           (org-latex-guess-inputenc ;; This is old, so maybe move this out (???)
+            (org-element-normalize-string
+	     (org-splice-latex-header
+	      class-template
+	      (org-latex--remove-packages org-latex-default-packages-alist info)
+	      (org-latex--remove-packages org-latex-packages-alist info)
+              (org-latex-fontspec-to-string info)
+	      snippet?
+	      (mapconcat #'org-element-normalize-string
+		         (list (plist-get info :latex-header)
+			       (and (not snippet?)
+			            (plist-get info :latex-header-extra)))
+		         ""))))))
+      (if multi-lang-driver
+          ;; Things are generated using the new drivers
+          new-template
+        ;; (org-latex-guess-polyglossia-language
+        (org-latex-guess-babel-language new-template info)
+        ;; info)
+        ))
+    ))
 
 (defun org-latex-template (contents info)
   "Return complete document string after LaTeX conversion.
