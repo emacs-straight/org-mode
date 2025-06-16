@@ -2065,15 +2065,14 @@ polyglossia (in lualatex/xelatex"
 babel on lualatex/xelatex.
 
 Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
-#+LATEX_BABEL_LANGUAGES: over `org-latex-babel-languages'"
+and #+LANGUAGE over `org-export-default-language'"
 
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
-        (latex-babel-langs (plist-get info :language))
+        (latex-babel-langs
+         (or (plist-get info :language) org-export-default-language))
         (doc-fontspec org-latex-fontspec-config)
         (doc-babel-fontspec org-latex-babel-fontspec)
-        ;; (latex-babel-langs
-        ;;  (or (plist-get info :latex-babel-languages) org-latex-babel-languages))
         (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       ;; (setq latex-babel-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
