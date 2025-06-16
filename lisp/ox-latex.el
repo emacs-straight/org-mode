@@ -2070,6 +2070,7 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
         (latex-babel-langs (plist-get info :language))
+        (doc-fontspec org-latex-fontspec-config)
         (doc-babel-fontspec org-latex-babel-fontspec)
         ;; (latex-babel-langs
         ;;  (or (plist-get info :latex-babel-languages) org-latex-babel-languages))
@@ -2099,6 +2100,13 @@ Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
                                                 (org-latex--get-babel-lang lang) script
                                                 (org-latex--mk-options props)
                                                 font)))))
+      ;; Last resort... use fontspec-config if no babel specific fonts are defined
+      ;; TODO: if fallbacks are accepted, call fontspec config instead earlier
+      (unless doc-babel-fontspec
+        (cl-loop for (fname . fprops) in doc-fontspec
+                 do (let ((font  (plist-get fprops :font))
+                          (feats (plist-get fprops :features)))
+                      (insert (format "\n\\set%sfont{%s}%s" fname font (org-latex--mk-options feats))))))
       (buffer-string))))
 
 (defun org-latex--lualatex-fontspec-config (info)
