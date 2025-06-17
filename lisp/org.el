@@ -3553,8 +3553,9 @@ header, or they will be appended."
     ;; (""     "fontspec"  t ("lualatex" "xelatex"))
     ;; (""     "unicode-math"   t ("lualatex" "xelatex"))
     ;; inputenc, fontenc and are for pdflatex only
-    ("AUTO" "inputenc"  t ("pdflatex"))
-    ("T1"   "fontenc"   t ("pdflatex"))
+    ;; Will be included by FONTSPEC
+    ;; ("AUTO" "inputenc"  t ("pdflatex"))
+    ;; ("T1"   "fontenc"   t ("pdflatex"))
     (""     "graphicx"  t)
     (""     "longtable" nil)
     (""     "wrapfig"   nil)

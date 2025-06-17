@@ -2000,12 +2000,68 @@ returning the list enclosed in square brackets."
         ((stringp opts) (if (length= opts 0 ) "" (format "[%s]" opts)))
         (t (format "[%s]" (mapconcat #'string-trim opts ",")))))
 
+(defun org-latex--pdflatex-encode (lang)
+  "A minimal font code translator.
+TODO: more languages and possible error conditions."
+  (let ((lang (string-trim lang)))
+    (cond ((equal lang "el") "LGR")
+          ((equal lang "ru") "T2A")
+          (t "T1"))))
+
+(defun org-latex--fontenc-options (langs)
+  "Get the encodings for the language list and create the options string
+for the fontenc package.
+
+We get the encodings, then remove duplicates and finally reverse the order,
+because the last encoding is used for the default language."
+  (let* ((lang-list (string-split langs "," t))
+         (enc-list (mapcar #'org-latex--pdflatex-encode lang-list)))
+    (org-latex--mk-options (reverse (seq-uniq enc-list)))))
+
+(defun org-latex--pdflatex-ldf (lang)
+  "This function returns the ldf code from the :babel property in
+`org-latex-language-alist'. Triggers an error for languages that cannot
+be supported with the ldf method."
+  (let ((result))
+    (if-let* ((lang-alist (assoc (string-trim lang) org-latex-language-alist))
+              (lang-plist (cdr lang-alist))
+              (babel-lang (plist-get lang-plist :babel)))
+        (setq result babel-lang))
+    (unless result
+      (error "No ldf method for pdflatex and LANG=%s" lang))
+    result))
+
+
+(defun org-latex--babel-ldf-list (langs)
+  "Return the list of long language names list.
+This is the recommended strategy for babel on pdflatex.
+
+Mark first one with main="
+  (org-latex--mk-options
+   (concat "main="
+           (mapconcat #'org-latex--pdflatex-ldf (split-string langs "," t) ","))))
+
 (defun org-latex--pdflatex-fontconfig (info)
   "This function returns a string with the font configuration
 prelude for pdflatex.
 
-Placeholder: currently returns an empty string."
-  "")
+pdflatex and babel play together, but we will only return a basic version,
+of the babel header, defining languages. Font definitions imply fontspec,
+and that cannot be used with pdf-latex.
+
+Using babel is only possible when you are sure that the ldf method can be used."
+  (let ((latex-langs
+         (or (plist-get info :language) org-export-default-language))
+        (driver
+         (or (plist-get info :latex-multi-lang) org-latex-multi-lang-driver)))
+    (with-temp-buffer
+      (goto-char (point-min))
+      (when driver
+        (insert "%% \\usepackage[utf8]{inputenc}\n")
+        (insert (format "\\usepackage%s{fontenc}\n" (org-latex--fontenc-options latex-langs)))
+        (when (equal driver "babel")
+          (insert (format "\n\\usepackage%s{babel}" (org-latex--babel-ldf-list latex-langs)))))
+      (buffer-string))))
 
 (defun org-latex--lualatex-polyglossia-config (info)
   "Retirn a string with the prelude part for
@@ -2081,7 +2137,7 @@ and #+LANGUAGE over `org-export-default-language'"
       ;;                                                   t t 2))
       (goto-char (point-min))
       ;; TODO: do we really need fontspec??
-      (insert "\\usepackage{fontspec}\n")
+      (insert "\\usepackage{fontspec}")
       (insert (format "\n\\usepackage{babel}"))
       (let ((opt "import,main"))
         (cl-loop for bab-lang in (split-string latex-babel-langs ",")
