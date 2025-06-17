@@ -16683,12 +16683,6 @@ EXTRA is a string.
 SNIPPETS-P indicates if this is run to create snippet images for HTML."
   (let (rpl (end ""))
     (message "Template:\n%s" tpl)
-    (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
-        ;; (message "FONTSPEC replacement is '%s'" fspec)
-        ;; replace with the fontspec wherever it is
-        (setq tpl (replace-match fspec t t tpl))
-      ;; else add the fontspec at the beginning of `end'
-      (setq end (concat fspec "\n")))
     (if (string-match "^[ \t]*\\[\\(NO-\\)?DEFAULT-PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not def-pkg))
 		      "" (org-latex-packages-to-string def-pkg snippets-p t))
@@ -16710,6 +16704,13 @@ SNIPPETS-P indicates if this is run to create snippet images for HTML."
 	      tpl (replace-match rpl t t tpl))
       (when (and extra (string-match "\\S-" extra))
 	(setq end (concat end "\n" extra))))
+    ;; Move after the packages to fix import issues with xelatex bidi and other packages
+    (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
+        ;; (message "FONTSPEC replacement is '%s'" fspec)
+        ;; replace with the fontspec wherever it is
+        (setq tpl (replace-match fspec t t tpl))
+      ;; else add the fontspec to `end'
+      (setq end (concat end "\n" fspec "\n")))
 
     (if (string-match "\\S-" end)
 	(concat tpl "\n" end)
