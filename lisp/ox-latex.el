@@ -2115,11 +2115,11 @@ polyglossia (in lualatex/xelatex"
      (cl-loop for (lang . props) in polyglossia-font-config
               do
               (let ((lang-tag lang))
-                (message "new font family: (%s . %s)" lang props)
+                ;; (message "new font family: (%s . %s)" lang props)
                 (if-let* ((lang-alist (assoc lang org-latex-language-alist))
                           (lang-plist (cdr lang-alist)))
                     (setq lang-tag (plist-get lang-plist :polyglossia)))
-                (message "poluglossia language name is %s" lang-tag)
+                ;; (message "polyglossia language name is %s" lang-tag)
                 (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
                                 (or (plist-get props :tag) lang-tag)
                                 (or (plist-get props :variant) "")
