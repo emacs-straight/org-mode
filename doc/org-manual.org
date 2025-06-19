@@ -6314,11 +6314,10 @@ format.
 
   #+kindex: C-u C-c .
   #+vindex: org-time-stamp-rounding-minutes
-  #+vindex: org-timestamp-rounding-minutes
   When called with a prefix argument, use the alternative format which
   contains date and time.  The default time can be rounded to
   multiples of 5 minutes.  See the option
-  ~org-timestamp-rounding-minutes~.
+  ~org-time-stamp-rounding-minutes~.
 
   #+kindex: C-u C-u C-c .
   With two prefix arguments, insert an active timestamp with the
@@ -12256,7 +12255,7 @@ further alter what is exported, and how.
   #+kindex: C-c C-e C-f
 
   Toggle force-publishing export.  Publish functions normally only
-  publish changed files (see [[**Triggering Publication]]).  Forced
+  publish changed files (see [[*Triggering Publication]]).  Forced
   publishing causes files to be published even if their timestamps do
   not indicate the file has been changed.
 
@@ -16930,6 +16929,12 @@ certain built-in types (see ~icalendar-export-sexp-enumerate-all~),
 are exported up to ~icalendar-export-sexp-enumeration-days~ into
 future.].
 
+#+vindex: org-agenda-default-appointment-duration
+If a timestamp contains a time, but doesn't have an explicit end time
+(i.e. time range), then by default the exported event will have a
+duration of 2 hours, but this can be overridden with
+~org-agenda-default-appointment-duration~.
+
 #+vindex: org-icalendar-include-todo
 The iCalendar export backend can also incorporate TODO entries based
 on the configuration of the ~org-icalendar-include-todo~ variable.
@@ -17009,12 +17014,12 @@ multi-line summary, location, or description using =<PROPERTY>+=
 syntax (see [[*Property Syntax]]):
 
 : * Meeting at location with multi-line address
-: <2024-01-08 Mon 14:20-15:00>
 : :PROPERTIES:
 : :LOCATION:  Someplace
 : :LOCATION+: Some Street 5
 : :LOCATION+: 12345 Small Town
 : :END:
+: <2024-01-08 Mon 14:20-15:00>
 
 #+vindex: org-icalendar-include-body
 When Org entries do not have =SUMMARY=, =DESCRIPTION=, =LOCATION= and
