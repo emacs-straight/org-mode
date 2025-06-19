@@ -263,7 +263,6 @@ This function is called by `org-babel-execute-src-block'."
 	  (with-temp-file tex-file
 	    (require 'ox-latex)
             (defvar org-latex-compiler)
-            (defvar org-latex-polyglossia-languages)
             (declare-function org-latex--remove-packages "ox-latex" (pkg-alist info))
 	    (insert
 	     (org-latex-guess-inputenc
@@ -281,8 +280,8 @@ This function is called by `org-babel-execute-src-block'."
                (org-latex--remove-packages
 	        org-latex-packages-alist
                 (list :latex-compiler org-latex-compiler))
-               (org-latex-fontspec-to-string (list :latex-compiler org-latex-compiler
-                                                   :latex-polyglossia-languages org-latex-polyglossia-languages))
+               (org-latex-fontspec-to-string
+                (list :latex-compiler org-latex-compiler))
 	       nil))
 	     (if fit "\n\\usepackage[active, tightpage]{preview}\n" "")
 	     (if border (format "\\setlength{\\PreviewBorder}{%s}" border) "")

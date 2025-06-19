@@ -1652,15 +1652,6 @@ in
 		 (alist :tag "polyglossia font config"))
   :safe #'list-or-null-p)
 
-(defcustom org-latex-polyglossia-languages nil
-  "A string with the polyglossia languages.
-This is an alternative to adding the package in the LaTeX header"
-  :group 'org-export-latex
-  :package-version '(Org . "9.8")
-  :type '(choice (const :tag "No polyglossia languages" nil)
-		 (string :tag "polyglossia language list"))
-  :safe #'string-or-null-p)
-
 (defcustom org-latex-babel-fontspec nil
   "A property list array to map babel language names to the fonts
 used when exporting to babel.  Each entry maps a string with the
