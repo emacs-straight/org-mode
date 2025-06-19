@@ -3550,18 +3550,18 @@ header, or they will be appended."
 (defcustom org-latex-default-packages-alist
   '(;; fontspec and unicode-math for lualatex and xelatex
     ;; Will be included in FONTSPEC
-    ;; (""     "fontspec"  t ("lualatex" "xelatex"))
-    ;; (""     "unicode-math"   t ("lualatex" "xelatex"))
+    (""     "fontspec"  t ("lualatex" "xelatex"))
+    (""     "unicode-math"   t ("lualatex" "xelatex"))
     ;; inputenc, fontenc and are for pdflatex only
     ;; Will be included by FONTSPEC
-    ;; ("AUTO" "inputenc"  t ("pdflatex"))
-    ;; ("T1"   "fontenc"   t ("pdflatex"))
+    ;; ("AUTO" "inputenc"  t ("pdflatex")) ;; https://tug.org/TUGboat/tb39-1/tb121ltnews28.pdf
+    ("T1"   "fontenc"   t ("pdflatex"))
     (""     "graphicx"  t)
     (""     "longtable" nil)
     (""     "wrapfig"   nil)
     (""     "rotating"  nil)
     ("normalem" "ulem"  t)
-    ;; amsmath and amssymb after inputenc/fontenc for pdflatex
+    ;; amsmath and amssymb after inputenc/fontenc for pdflatex ??
     (""     "amsmath"   t ("pdflatex"))
     (""     "amssymb"   t ("pdflatex"))
     (""     "capt-of"   nil)

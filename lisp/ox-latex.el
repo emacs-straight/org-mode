@@ -2304,6 +2304,16 @@ on the current LaTeX compiler and language support backend.
            (org-latex--lualatex-fontspec-config info)))))
 ;;
 ;;
+(defun keep-pkg (pkg use-driver)
+  "This function filters out the font management packages.
+Keep the package if we are in legacy mode or
+if it is not a font management package."
+  (let ((result
+         (or (null use-driver)
+             (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "unicode-math"))))))
+    (message "%% keep-pkg(%s %s --> %s" pkg use-driver result)
+    result))
+
 (defun org-latex--remove-packages (pkg-alist info)
   "Remove packages based on the current LaTeX compiler.
 
@@ -2315,13 +2325,15 @@ associated to the document, the package is removed.
 LaTeX compiler is defined in :latex-compiler INFO plist entry.
 
 Return new list of packages."
-  (let ((compiler (or (plist-get info :latex-compiler) "")))
+  (let ((compiler (or (plist-get info :latex-compiler) ""))
+        (driver   (plist-get info :latex-multi-lang)))
     (if (not (member-ignore-case compiler org-latex-compilers)) pkg-alist
       (cl-remove-if-not
        (lambda (package)
 	 (pcase package
 	   (`(,_ ,_ ,_ nil) t)
-	   (`(,_ ,_ ,_ ,compilers) (member-ignore-case compiler compilers))
+	   (`(,_ ,pkg ,_ ,compilers) (and (member-ignore-case compiler compilers)
+                                          (keep-pkg pkg driver)))
 	   (_ t)))
        pkg-alist))))
 
