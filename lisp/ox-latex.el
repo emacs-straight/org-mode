@@ -2293,7 +2293,8 @@ on the current LaTeX compiler and language support backend.
          (or (plist-get info :latex-compiler) org-latex-compiler))
         (driver
          (or (plist-get info :latex-multi-lang) org-latex-multi-lang-driver)))
-    (cond ((equal compiler "pdflatex")
+    (cond ((null driver) "")
+          ((equal compiler "pdflatex")
            (org-latex--pdflatex-fontconfig info))
           ((equal driver "babel")
            (org-latex--lualatex-babel-config info))
