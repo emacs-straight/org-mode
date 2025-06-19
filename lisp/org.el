@@ -16697,13 +16697,6 @@ SNIPPETS-P indicates if this is run to create snippet images for HTML."
       (when pkg (setq end
 		      (concat end "\n"
 			      (org-latex-packages-to-string pkg snippets-p)))))
-
-    (if (string-match "\\[\\(NO-\\)?EXTRA\\][ \t]*\n?" tpl)
-	(setq rpl (if (or (match-end 1) (not extra))
-		      "" (concat extra "\n"))
-	      tpl (replace-match rpl t t tpl))
-      (when (and extra (string-match "\\S-" extra))
-	(setq end (concat end "\n" extra))))
     ;; Move after the packages to fix import issues with xelatex bidi and other packages
     (if (string-match "\\[FONTSPEC\\][ \t]*\n?" tpl)
         ;; (message "FONTSPEC replacement is '%s'" fspec)
@@ -16711,6 +16704,13 @@ SNIPPETS-P indicates if this is run to create snippet images for HTML."
         (setq tpl (replace-match fspec t t tpl))
       ;; else add the fontspec to `end'
       (setq end (concat end "\n" fspec "\n")))
+    ;; And *then* the LATEX_HEADER
+    (if (string-match "\\[\\(NO-\\)?EXTRA\\][ \t]*\n?" tpl)
+	(setq rpl (if (or (match-end 1) (not extra))
+		      "" (concat extra "\n"))
+	      tpl (replace-match rpl t t tpl))
+      (when (and extra (string-match "\\S-" extra))
+	(setq end (concat end "\n" extra))))
 
     (if (string-match "\\S-" end)
 	(concat tpl "\n" end)
