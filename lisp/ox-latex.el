@@ -1800,36 +1800,11 @@ Return the new header, as a string."
       (replace-regexp-in-string "\\\\usepackage\\[\\(AUTO\\)\\]{inputenc}"
 				cs header t nil 1))))
 
-(defun org-latex--get-babel-lang (lang &optional default-lang)
-  (when (equal lang "AUTO")
-    (setq lang default-lang)
-    (unless lang (error "AUTO not supported as a babel language")))
-  (if-let* ((lang-alist (assoc lang org-latex-language-alist))
-            (lang-plist (cdr lang-alist)))
-      ;; (message "?? %s -> %s" lang lang-alist)
-      (let ((babel-lang (plist-get lang-plist :babel))
-            (babel-ini-only (plist-get lang-plist :babel-ini-only))
-            (babel-ini-alt (plist-get lang-plist :babel-ini-alt)))
-        (if babel-ini-alt babel-ini-alt
-          (or babel-lang babel-ini-only)))
-    lang))
-
-(defun org-latex--babel-langlist (s default-lang)
-  "Tranform comma-separated language list S
-to a comma-separated *babel* language list.
-Replace \"AUTO\" with DEFAULT-LANG."
-  (save-match-data
-    (let* ((lang-list (split-string s ",")))
-      (setq lang-list (mapcar #'(lambda (s)
-                                  (org-latex--get-babel-lang (string-trim s) default-lang))
-                              lang-list))
-      (mapconcat #'identity (delete-dups lang-list) ","))))
-
 (defun org-latex-guess-babel-language (header info)
   "Set Babel's language according to LANGUAGE keyword.
 
-HEADER is the LaTeX header string.
-INFO is the plist used as a communication channel.
+HEADER is the LaTeX header string.  INFO is the plist used as
+a communication channel.
 
 Insertion of guessed language only happens when Babel package has
 explicitly been loaded.  Then it is added to the rest of
@@ -1845,29 +1820,102 @@ Return the new header."
   (let* ((language-code (plist-get info :language))
 	 (plist (cdr
 		 (assoc language-code org-latex-language-alist)))
+	 (language (plist-get plist :babel))
 	 (language-ini-only (plist-get plist :babel-ini-only))
-	 ;; If no language is set, or
-         ;; the LANGUAGE keyword value is a language served by Babel
+         (language-ini-alt (plist-get plist :babel-ini-alt))
+	 ;; If no language is set, or Babel package is not loaded, or
+	 ;; LANGUAGE keyword value is a language served by Babel
 	 ;; exclusively through ini files, return HEADER as-is.
 	 (header (if (or language-ini-only
-			 (not (stringp language-code)))
+			 (not (stringp language-code))
+			 (not (string-match "\\\\usepackage\\[\\(.*\\)\\]{babel}" header)))
 		     header
-                   ;; If babel is loaded, process the language list
-                   (replace-regexp-in-string "\\(\\\\usepackage\\[\\)\\(.[^]]+\\)\\(\\]{babel}\\)"
-                                             #'(lambda (x)
-                                                 (let ((langs (match-string 2 x)))
-                                                   (org-latex--babel-langlist langs language-code)))
-		                             header t t 2))))
-    ;; Replace language names for all `\babelprovide[]{}'
-    ;; If AUTO is present, it is replaced by #+LANGUAGE: definition
-    ;; Remarks:
-    ;; 1. `replace-regexp-in-string' returns the input string if no matches are found
-    ;; 2. placing the function returns the babel language name for each name supplied
-    ;; 3. `replace-regexp-in-string' allows us to replace the lang only using the SUBEXP parameter.
-    (replace-regexp-in-string "\\(\\\\babelprovide\\[.*\\]{\\)\\([^}]+\\)\\(}\\)"
-                              (lambda (x)
-                                (org-latex--get-babel-lang (match-string 2 x) language-code))
-			      header t t 2)))
+		   (let ((options (save-match-data
+				    (org-split-string (match-string 1 header) ",[ \t]*"))))
+		     ;; If LANGUAGE is already loaded, return header
+		     ;; without AUTO.  Otherwise, replace AUTO with language or
+		     ;; append language if AUTO is not present.  Languages that are
+		     ;; served in Babel exclusively through ini files are not added
+		     ;; to the babel argument, and must be loaded using
+		     ;; `\babelprovide'.
+		     (replace-match
+		      (mapconcat (lambda (option) (if (equal "AUTO" option) language option))
+				 (cond ((member language options) (delete "AUTO" options))
+				       ((member "AUTO" options) options)
+				       (t (append options (list language))))
+				 ", ")
+		      t nil header 1)))))
+    ;; If `\babelprovide[args]{AUTO}' is present, AUTO is
+    ;; replaced by LANGUAGE.
+    (if (not (string-match "\\\\babelprovide\\[.*\\]{\\(.+\\)}" header))
+	header
+      (let ((prov (match-string 1 header)))
+	(if (equal "AUTO" prov)
+	    (replace-regexp-in-string (format
+				       "\\(\\\\babelprovide\\[.*\\]\\)\\({\\)%s}" prov)
+				      (format "\\1\\2%s}"
+					      (if language-ini-alt language-ini-alt
+                                                (or language language-ini-only)))
+				      header t)
+	  header)))))
+
+(defun org-latex-guess-polyglossia-language (header info)
+  "Set the Polyglossia language according to the LANGUAGE keyword.
+
+HEADER is the LaTeX header string.  INFO is the plist used as
+a communication channel.
+
+Insertion of guessed language only happens when the Polyglossia
+package has been explicitly loaded.
+
+The argument to Polyglossia may be \"AUTO\" which is then
+replaced with the language of the document or
+`org-export-default-language'.  Note, the language is really set
+using \setdefaultlanguage and not as an option to the package.
+
+Return the new header."
+  (let* ((language (plist-get info :language)))
+    ;; If no language is set or Polyglossia is not loaded, return
+    ;; HEADER as-is.
+    (if (or (not (stringp language))
+	    (not (string-match
+		  "\\\\usepackage\\(?:\\[\\([^]]+?\\)\\]\\){polyglossia}\n"
+		  header)))
+	header
+      (let* ((options (org-string-nw-p (match-string 1 header)))
+	     (languages (and options
+			     ;; Reverse as the last loaded language is
+			     ;; the main language.
+			     (nreverse
+			      (delete-dups
+			       (save-match-data
+				 (org-split-string
+				  (replace-regexp-in-string
+				   "AUTO" language options t)
+				  ",[ \t]*"))))))
+	     (main-language-set
+	      (string-match-p "\\\\setmainlanguage{.*?}" header)))
+	(replace-match
+	 (concat "\\usepackage{polyglossia}\n"
+		 (mapconcat
+		  (lambda (l)
+		    (let* ((plist (cdr
+				   (assoc language org-latex-language-alist)))
+			   (polyglossia-variant (plist-get plist :polyglossia-variant))
+			   (polyglossia-lang (plist-get plist :polyglossia))
+			   (l (if (equal l language)
+				  polyglossia-lang
+				l)))
+		      (format (if main-language-set (format "\\setotherlanguage{%s}\n" l)
+				(setq main-language-set t)
+				"\\setmainlanguage%s{%s}\n")
+			      (if polyglossia-variant
+				  (format "[variant=%s]" polyglossia-variant)
+				"")
+			      l)))
+		  languages
+		  ""))
+	 t t header 0)))))
 
 (defun org-latex--get-doc-scripts ()
   "This function gets the char-scripts used in the current buffer.
@@ -2024,6 +2072,20 @@ polyglossia (in lualatex/xelatex"
                                  (plist-get props :props))
                                 (plist-get props :font)))))
      (buffer-string))))
+
+(defun org-latex--get-babel-lang (lang &optional default-lang)
+  (when (equal lang "AUTO")
+    (setq lang default-lang)
+    (unless lang (error "AUTO not supported as a babel language")))
+  (if-let* ((lang-alist (assoc lang org-latex-language-alist))
+            (lang-plist (cdr lang-alist)))
+      ;; (message "?? %s -> %s" lang lang-alist)
+      (let ((babel-lang (plist-get lang-plist :babel))
+            (babel-ini-only (plist-get lang-plist :babel-ini-only))
+            (babel-ini-alt (plist-get lang-plist :babel-ini-alt)))
+        (if babel-ini-alt babel-ini-alt
+          (or babel-lang babel-ini-only)))
+    lang))
 
 (defun org-latex--lualatex-babel-config (info)
   "This function returns a string with the prelude part for
@@ -2466,9 +2528,11 @@ specified in `org-latex-default-packages-alist' or
       (if multi-lang-driver
           ;; Full headers are generated using the new drivers
           new-template
-        ;; Apply the "old" strategy of generating and then guessing
+        ;; Apply the "old" strategy of guessing on the generated template
         (org-latex-guess-inputenc
-         (org-latex-guess-babel-language new-template info))))))
+         (org-latex-guess-babel-language
+          (org-latex-guess-polyglossia-language new-template info)
+          info))))))
 
 (defun org-latex-template (contents info)
   "Return complete document string after LaTeX conversion.
