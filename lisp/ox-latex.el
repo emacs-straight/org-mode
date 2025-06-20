@@ -1869,100 +1869,6 @@ Return the new header."
                                 (org-latex--get-babel-lang (match-string 2 x) language-code))
 			      header t t 2)))
 
-(defun org-latex--polyglossia-fonts (lang-list)
-  "Return the block specifying the fonts for the language list
-`lang-list' based on `org-latex-polyglossia-font-config'
-OBSOLETE"
-  ;;
-  ;; If org-latex-polyglossia-fonts is nil
-  ;; the cl-loop returns an empty string
-  ;;
-  (let ((result))
-    (message "polyglossia font config is:\n%s" org-latex-polyglossia-font-config)
-    (message "applied for %s" lang-list)
-    (setq result
-          (cl-loop for (lang . props) in org-latex-polyglossia-font-config
-                   if (member lang lang-list)
-                   concat (format "\\newfontfamily{\\%sfont%s}%s{%s}\n"
-                                  (or (plist-get props :tag) lang)
-                                  (or (plist-get props :variant) "")
-                                  ;; TODO: get extras from org-latex-language-list above
-                                  (or (plist-get props :extras) "")
-                                  (plist-get props :font))))
-    (message "Will result in --> %s" result)
-    result))
-
-(defun org-latex-guess-polyglossia-language (header info)
-  "Set the Polyglossia language according to the LANGUAGE keyword.
-
-HEADER is the LaTeX header string.  INFO is the plist used as
-a communication channel.
-
-Insertion of guessed language only happens when the Polyglossia
-package has been explicitly loaded.
-
-The argument to Polyglossia may be \"AUTO\" which is then
-replaced with the language of the document or
-`org-export-default-language'.  Note, the language is really set
-using \setdefaultlanguage and not as an option to the package.
-
-Return the new header.
-OBSOLETE"
-  (let* ((language (plist-get info :language)))
-    ;; If no language is set or Polyglossia is not loaded, return
-    ;; HEADER as-is.
-    (if (or (not (stringp language))
-	    (not (string-match
-		  "\\\\usepackage\\(?:\\[\\([^]]+?\\)\\]\\){polyglossia}\n"
-		  header)))
-	header
-      (let* ((options (org-string-nw-p (match-string 1 header)))
-	     (languages (and options
-			     ;; Reverse as the last loaded language is
-			     ;; the main language.
-			     (nreverse
-			      (delete-dups
-			       (save-match-data
-				 (org-split-string
-				  (replace-regexp-in-string
-				   "AUTO" language options t)
-				  ",[ \t]*"))))))
-	     (main-language-set
-	      (string-match-p "\\\\setmainlanguage{.*?}" header))
-             ;; collect the language names used in \setmainlanguage{}
-             ;; and \setotherlanguage{} in `lang-collector' to add the
-             ;; font specifications.
-             (lang-collector))
-	(replace-match
-	 (concat "\\usepackage{polyglossia}\n"
-		 (mapconcat
-		  (lambda (l)
-		    (let* ((plist (cdr
-				   (assoc language org-latex-language-alist)))
-			   (polyglossia-variant (plist-get plist :polyglossia-variant))
-			   (polyglossia-lang (plist-get plist :polyglossia))
-			   (l (if (equal l language)
-				  polyglossia-lang
-				l)))
-                      (progn
-                        (message "add %s to lang-collector" l)
-                        ;; TODO - don't add if font with tag already exists
-                        (cl-pushnew l lang-collector :test #'equal)
-		        (format (if main-language-set (format "\\setotherlanguage{%s}\n" l)
-			          (setq main-language-set t)
-			          "\\setmainlanguage%s{%s}\n")
-			        (if polyglossia-variant
-			            (format "[variant=%s]" polyglossia-variant)
-			          "")
-			        l))
-                      ))
-		  languages
-		  "")
-                 (org-latex--polyglossia-fonts lang-collector))
-	 t t header 0)))))
-
-;;
-;;
 (defun org-latex--get-doc-scripts ()
   "This function gets the char-scripts used in the current buffer.
 Returns a list of strings with the char-scripts.
@@ -2275,6 +2181,7 @@ we are using neither bale nor polyglossia"
           (insert "\n")))
       ;; If the CJK font families have been included
       ;; Check for polyglossia and/or babel and warn?
+      ;; Or advise for these packages to be added to `org-latex-package-alist' ??
       (when (and cjk-packages (equal compiler "xelatex"))
         (message "Adding the CJK packages")
         (goto-char (point-min))
@@ -2288,6 +2195,9 @@ we are using neither bale nor polyglossia"
 
 Dispatches to the different prelude generation routines depending
 on the current LaTeX compiler and language support backend.
+
+If `org-latex-multi-lang-driver' is nil, return an empty string
+and rely on the legacy routines for language and babel guessing.
 "
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
@@ -2308,11 +2218,8 @@ on the current LaTeX compiler and language support backend.
   "This function filters out the font management packages.
 Keep the package if we are in legacy mode or
 if it is not a font management package."
-  (let ((result
-         (or (null use-driver)
-             (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "unicode-math"))))))
-    (message "%% keep-pkg(%s %s --> %s" pkg use-driver result)
-    result))
+  (or (null use-driver)
+      (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "unicode-math")))))
 
 (defun org-latex--remove-packages (pkg-alist info)
   "Remove packages based on the current LaTeX compiler.
@@ -2544,27 +2451,24 @@ specified in `org-latex-default-packages-alist' or
     ;; This is just a note for the integration of the new features with main
     ;;
     (let ((new-template
-           (org-latex-guess-inputenc ;; This is old, so maybe move this out (???)
-            (org-element-normalize-string
-	     (org-splice-latex-header
-	      class-template
-	      (org-latex--remove-packages org-latex-default-packages-alist info)
-	      (org-latex--remove-packages org-latex-packages-alist info)
-              (org-latex-fontspec-to-string info)
-	      snippet?
-	      (mapconcat #'org-element-normalize-string
-		         (list (plist-get info :latex-header)
-			       (and (not snippet?)
-			            (plist-get info :latex-header-extra)))
-		         ""))))))
+           (org-element-normalize-string
+	    (org-splice-latex-header
+	     class-template
+	     (org-latex--remove-packages org-latex-default-packages-alist info)
+	     (org-latex--remove-packages org-latex-packages-alist info)
+             (org-latex-fontspec-to-string info)
+	     snippet?
+	     (mapconcat #'org-element-normalize-string
+		        (list (plist-get info :latex-header)
+			      (and (not snippet?)
+			           (plist-get info :latex-header-extra)))
+		        "")))))
       (if multi-lang-driver
-          ;; Things are generated using the new drivers
+          ;; Full headers are generated using the new drivers
           new-template
-        ;; (org-latex-guess-polyglossia-language
-        (org-latex-guess-babel-language new-template info)
-        ;; info)
-        ))
-    ))
+        ;; Apply the "old" strategy of generating and then guessing
+        (org-latex-guess-inputenc
+         (org-latex-guess-babel-language new-template info))))))
 
 (defun org-latex-template (contents info)
   "Return complete document string after LaTeX conversion.
