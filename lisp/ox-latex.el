@@ -2425,15 +2425,19 @@ just outside of it."
 INFO is a plist used as a communication channel."
   (org-export-translate s :latex info))
 
+(defun org-latex--get-lang (lang)
+  "LANG can be a command separated list.
+In this case, take the first language code in the list."
+  (when lang
+    (setq lang (car (string-split lang "," t " ")))
+    (let ((plist (cdr (assoc lang org-latex-language-alist))))
+      ;; (message "%s" plist)
+      (or (plist-get plist :lang-name) lang))))
+
 (defun org-latex--format-spec (info)
   "Create a format spec for document meta-data.
 INFO is a plist used as a communication channel."
-  (let ((language (let* ((lang (plist-get info :language))
-		         (plist (cdr
-			         (assoc lang org-latex-language-alist))))
-                    ;; Here the actual name of the LANGUAGE or LANG is used.
-		    (or (plist-get plist :lang-name)
-		        lang))))
+  (let ((language (org-latex--get-lang (plist-get info :language))))
     `((?a . ,(if (plist-get info :with-author)
                  (org-export-data (plist-get info :author) info)
                ""))
