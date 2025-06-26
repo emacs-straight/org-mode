@@ -2094,23 +2094,20 @@ babel on lualatex/xelatex.
 Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
 and #+LANGUAGE over `org-export-default-language'"
 
-  (let ((compiler
-         (or (plist-get info :latex-compiler) org-latex-compiler))
+  (let (;; uncomment if we need to differentiate between xelatex and lualatex
+        ;;(compiler
+        ;; (or (plist-get info :latex-compiler) org-latex-compiler))
         (latex-babel-langs
          (or (plist-get info :language) org-export-default-language))
         (doc-fontspec org-latex-fontspec-config)
         (doc-babel-fontspec org-latex-babel-fontspec)
         (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
-      ;; (setq latex-babel-langs (replace-regexp-in-string "\\(.+,\\)?\\(AUTO\\)\\(,.+\\)?"
-      ;;                                                   main-lang
-      ;;                                                   latex-babel-langs
-      ;;                                                   t t 2))
       (goto-char (point-min))
       ;; TODO: do we really need fontspec??
       (insert "\\usepackage{fontspec}")
       (insert (format "\n\\usepackage{babel}"))
-      (let ((opt "import,main"))
+      (let ((opt "import,main")) ;; first language is the main language
         (cl-loop for bab-lang in (split-string latex-babel-langs ",")
                  do
                  (insert (format "\n\\babelprovide[%s]{%s}" opt (org-latex--get-babel-lang bab-lang)))
@@ -2188,7 +2185,7 @@ we are using neither bale nor polyglossia"
       (when fallback-alist
         (unless (equal compiler "lualatex")
           (setq fallback-alist nil)
-          (warn "Fallback fonts will only work with lualatex! Fix your fontspec configuration.")))
+          (warn "Fallback fonts only work with lualatex!")))
       (when fallback-alist ;; if there are fonts with fallbacks
         ;; create the directlua header
         (dolist (fallback fallback-alist)
