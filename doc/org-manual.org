@@ -15227,25 +15227,40 @@ meaning that no extra =polyglossia=-related font configurations are
 generated.
 
 When non-~nil~, ~org-latex-polyglossia-font-config~ contains a list of
-definitions for the different fonts you need in your PDF output.
-Each definition is a property list (~plist~).
+definitions for the different fonts you need in your PDF output.  Each
+definition is a property list (~plist~). The following is an example
+of the definition of the font configuration to use =polyglossia= in a
+document with English and Hebrew text:
 
-=polyglossia= controls fonts on a per-language, per-script basis. For
-example, using the =FreeMono= script for Hebrew script in mono-spaced
-passages is achieved with the following definition in LaTeX:
+#+BEGIN_SRC emacs-lisp :results none :exports none
+((org-mode
+  . ((org-latex-polyglossia-font-config
+      . (("en"
+          :font "FreeSerif")
+         ("en" :variant "sf"
+          :font "FreeSans")
+         ("en" :variant "tt"
+          :font "FreeMono")
+         ("he"
+          :props "Script=Hebrew" :font "Hadasim CLM")
+         ("he" :variant "tt"
+          :props "Script=Hebrew" :font "Miriam Mono CLM")
+         ("he" :variant "sf"
+          :props "Script=Hebrew" :font "Miriam CLM"))))))
+
+#+END_SRC
+
+As you see, =polyglossia= controls fonts on a per-language, per-script
+basis. For example, the document will use using the =Miriam Mono CLM=
+script for Hebrew script in mono-spaced passages (=:variant
+"tt"=). You will see the following in the exported LaTeX:
 
 #+BEGIN_SRC LaTeX :results none :exports code
-  \newfontfamily{\hebrewfonttt}[Script=Hebrew]{FreeMono}
+  \newfontfamily{\hebrewfonttt}[Script=Hebrew]{Miriam Mono CLM}
 #+END_SRC
 
-To include the definition for the monospaced Hebrew font above in
-~org-latex-polyglossia-font-config~, you will need to add the following
-
-#+BEGIN_SRC emacs-lisp :results none :exports code
-  ("he"  :font "FreeMono" :variant "tt" :props "Script=Hebrew")
-#+END_SRC
-
-to it. Each entry associates a language, ="he"= for Hebrew[fn:51] to a list
+Each entry in the property list associates a language(for example,
+="he"= for Hebrew, ="en"= for English, etc.[fn:51]) to a list
 of properties.
 
 The properties you can define are:
@@ -15298,20 +15313,20 @@ each element has the form:
 and ~FONT~ is the system font name.
 
 For example, for a document with text in Latin and Arabic script,
-where the main language uses a Latin script, this variable could have
-the following value:
+where the main language uses a Latin script, this variable could be
+initialised as follows:
 
 #+BEGIN_SRC elisp :results none :exports code
-'(("AUTO" :fonts (("rm" . "Noto Serif")
-                  ("sf" . "Noto Sans")
-                  ("tt" . "Noto Mono")))
-  ("arabic" :fonts (("rm" . "Noto Naskh Arabic")
-                    ("sf" . "Noto Kufi Arabic"))))
+(setq org-latex-babel-fontspec
+      '(("AUTO" :fonts (("rm" . "Noto Serif")
+                        ("sf" . "Noto Sans")
+                        ("tt" . "Noto Mono")))
+        ("arabic" :fonts (("rm" . "Noto Naskh Arabic")
+                          ("sf" . "Noto Kufi Arabic"))))
 #+END_SRC
 
-provided the necessary fonts from the *Noto* family are installed in
-your system. This setting will produce the following code in the LaTeX
-export header:
+This setting will produce the following code in the LaTeX export
+header:
 
 #+BEGIN_SRC latex :results none :exports code
 \babelfont{rm}[Language=Default]{Noto Serif}
