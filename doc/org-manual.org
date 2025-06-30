@@ -14100,7 +14100,8 @@ interactive online viewing or high-quality print publication.
 
 While the details are covered in-depth in this section, here are some
 quick references to variables for the impatient: for engines, see
-~org-latex-compiler~; for build sequences, see
+~org-latex-compiler~; for multi-language handling, see
+~org-latex-multi-lang-driver~; for build sequences, see
 ~org-latex-pdf-process~; for packages, see
 ~org-latex-default-packages-alist~ and ~org-latex-packages-alist~.
 
@@ -14159,27 +14160,15 @@ from https://mirrors.ctan.org/info/latex-doc-ptr/latex-doc-ptr.pdf]
 #+cindex: lualatex
 #+cindex: @samp{LATEX_COMPILER}, keyword
 
-The LaTeX export backend can use any of these LaTeX engines:
-=pdflatex=, =xelatex=, and =lualatex=.  These engines compile LaTeX
-files with different compilers, packages, and output options.  The
-LaTeX export backend finds the compiler version to use from
-~org-latex-compiler~ variable or the =#+LATEX_COMPILER= keyword in the
-Org file.
-
-In conjunction with the ~org-latex-multi-lang-driver~ variable or the
-~#+LATEX_MULTI_LANG~ keyword below, it controls the package to support
-multiple languages and/or scripts in your document.  See the docstring
-for the ~org-latex-default-packages-alist~ for loading packages with
-certain compilers.  Also see ~org-latex-bibtex-compiler~ to set the
-bibliography compiler[fn:48].
-
 *** LaTeX specific export settings
 :PROPERTIES:
 :DESCRIPTION: Unique to this @LaTeX{} backend.
 :END:
 
-The LaTeX export backend has several additional keywords for
-customizing LaTeX output.  Setting these keywords works similar to the
+The LaTeX export backend can use different LaTeX compilers, each of
+which compile LaTeX files with different packages and output
+options. The LaTeX export backend has several additional keywords to
+customise LaTeX output.  Setting these keywords works similar to the
 general options (see [[*Export Settings]]).
 
 #+attr_texinfo: :sep ,
@@ -15089,7 +15078,7 @@ will be:
 #+BEGIN_SRC latex
 \setmainfont{FreeSerif}
 \setsansfont{FreeSans}
-\setmonofont{FreeMono}
+\setmonofont{Tex Gyre Cursor}
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
@@ -15098,27 +15087,35 @@ with the property ~:features~.  For example, if you want a nicer
 scaling for the monotype font you could define the ~mono~ font as:
 
 #+BEGIN_SRC elisp
-    ("mono" :font "TeX Gyre Cursor"
-            :features "Scale=MatchLowercase")
+(setq-default org-latex-fontspec-config
+              '(("main" :font "FreeSerif")
+                ("sans" :font "FreeSans")
+                ("mono" :font "TeX Gyre Cursor"
+                 :features "Scale=MatchLowercase")
+                ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
 This is translated as:
 
 #+BEGIN_SRC latex
+\setmainfont{FreeSerif}
+\setsansfont{FreeSans}
 \setmonofont{TeX Gyre Cursor}[Scale=MatchLowercase]
+\setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
 The ~:features~ can be a string or a list of strings to improve
 readability.  For example, to make the ~mono~ font appear in blue and
-scaled, you could specify it as
+scaled, you could specify it as:
 
 #+BEGIN_SRC elisp
-    ("mono" :font "TeX Gyre Cursor"
-            :features ("Color=blue"
-                       "Scale=MatchLowercase"))
+("mono" :font "TeX Gyre Cursor"
+        :features ("Color=blue"
+                   "Scale=MatchLowercase"))
 #+END_SRC
 
-or as:
+When you have more than one feature to add, you can also provide them
+as a comma-separated list. The following code also would also define
 
 #+BEGIN_SRC elisp
     ("mono" :font "TeX Gyre Cursor"
@@ -15131,17 +15128,24 @@ detected by Emacs during the export process.
 
 Use the property ~:fallback~ for this purpose.  It links to an
 associative list that maps the script names as detected by Emacs with
-their fallback configuration.  For example, if you configure the
-=main= font as:
+their fallback configuration.  Take, for example, that you configure the
+=main= font in ~org-latex-fontspec-config~ as:
 
 #+BEGIN_SRC elisp
-("main" :font "TeX Gyre Termes"
-        :fallback (("emoji" . "Noto Color Emoji:mode=harf")
-                   ("han"   . "Noto Serif CJK JP:")
-                   ("kana"  . "Noto Serif CJK JP:")))
+(setq-default org-latex-fontspec-config
+              '(("main"
+                 :font "TeX Gyre Termes"
+                 :fallback (("emoji" . "Noto Color Emoji:mode=harf")
+                            ("han"   . "Noto Serif CJK JP:")
+                            ("kana"  . "Noto Serif CJK JP:")))
+                ("sans" :font "FreeSans")
+                ("mono"
+                 :font "TeX Gyre Cursor"
+                 :features "Scale=MatchLowercase")
+                ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
-if Emacs detects characters belonging to the ~emoji~ character set, it
+If Emacs detects characters belonging to the ~emoji~ character set, it
 will include the following fallback definition for the =main= font[fn:50]:
 
 #+BEGIN_SRC latex
@@ -15156,6 +15160,9 @@ and, then, generate the following font specification for =main=.
 
 #+BEGIN_SRC latex
 \setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
+\setsansfont{FreeSans}
+\setmonofont{TeX Gyre Cursor}[Scale=MatchLowercase]
+\setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
 When you specify ~:features~ for a font, the fallback is appended as
@@ -24004,9 +24011,9 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 for different files.  However, "smart" LaTeX compilation systems, such
 as latexmk, can select the correct bibliography compiler.
 
-[fn:49] Consult
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][Per-Directory
-Local Variables]] to learn to define and use directory local variables.
+
+[fn:49] Consult [[info:emacs#Directory Variables][Directory Variables]]
+to learn to define and use directory local variables.
 
 [fn:50] Any font in ~org-latex-fontspec-config~ which includes a
 fallback for the =emoji= character set will produce equivalent code
