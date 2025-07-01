@@ -14152,6 +14152,13 @@ from https://mirrors.ctan.org/info/latex-doc-ptr/latex-doc-ptr.pdf]
   mode syntax before.  This is a global command that can be invoked in
   any buffer.
 
+The LaTeX export backend finds the compiler version to use from
+~org-latex-compiler~ variable or the =#+LATEX_COMPILER= keyword in the
+Org file.  See the docstring for ~org-latex-default-packages-alist~
+for loading packages with certain compilers. Also see the docstring
+for ~org-latex-bibtex-compiler~ to set the bibliography
+compiler[fn:48].
+
 #+vindex: org-latex-compiler
 #+vindex: org-latex-bibtex-compiler
 #+vindex: org-latex-default-packages-alist
@@ -14167,7 +14174,7 @@ from https://mirrors.ctan.org/info/latex-doc-ptr/latex-doc-ptr.pdf]
 
 The LaTeX export backend can use different LaTeX compilers, each of
 which compile LaTeX files with different packages and output
-options. The LaTeX export backend has several additional keywords to
+options. It provides several additional keywords to
 customise LaTeX output.  Setting these keywords works similar to the
 general options (see [[*Export Settings]]).
 
@@ -24025,7 +24032,6 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 [fn:48] This does not allow setting different bibliography compilers
 for different files.  However, "smart" LaTeX compilation systems, such
 as latexmk, can select the correct bibliography compiler.
-
 
 [fn:49] Consult [[info:emacs#Directory Variables][Directory Variables]]
 to learn to define and use directory local variables.
