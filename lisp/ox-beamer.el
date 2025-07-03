@@ -129,7 +129,8 @@ close   The closing string of the environment."
 (defcustom org-beamer-outline-frame-title "Outline"
   "Default title of a frame containing an outline."
   :group 'org-export-beamer
-  :type '(string :tag "Outline frame title"))
+  :type '(string :tag "Outline frame title")
+  :safe #'stringp)
 
 (defcustom org-beamer-outline-frame-options ""
   "Outline frame options appended after \\begin{frame}.
