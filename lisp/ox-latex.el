@@ -171,6 +171,7 @@
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
     (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang-driver)
+    (:languages "LANGUAGE" nil (list org-export-default-language) split)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1965,7 +1966,7 @@ for the fontenc package.
 
 We get the encodings, then remove duplicates and finally reverse the order,
 because the last encoding is used for the default language."
-  (let* ((lang-list (string-split langs "," t))
+  (let* ((lang-list (if (stringp langs) (string-split langs "," t) langs))
          (enc-list (mapcar #'org-latex--pdflatex-encode lang-list)))
     (org-latex--mk-options (reverse (seq-uniq enc-list)))))
 
@@ -1986,11 +1987,12 @@ be supported with the ldf method."
 (defun org-latex--babel-ldf-list (langs)
   "Return the list of long language names list.
 This is the recommended strategy for babel on pdflatex.
-
+LANGS is a list of Org language names.
 Mark first one with main="
   (org-latex--mk-options
    (concat "main="
-           (mapconcat #'org-latex--pdflatex-ldf (split-string langs "," t) ","))))
+           ;; (mapconcat #'org-latex--pdflatex-ldf (split-string langs "," t) ",")
+           (mapconcat #'org-latex--pdflatex-ldf langs ","))))
 
 (defun org-latex--pdflatex-fontconfig (info)
   "This function returns a string with the font configuration
@@ -2002,7 +2004,7 @@ and that cannot be used with pdf-latex.
 
 Using babel is only possible when you are sure that the ldf method can be used."
   (let ((latex-langs
-         (or (plist-get info :language) org-export-default-language))
+         (or (plist-get info :languages) (list org-export-default-language)))
         (driver
          (or (plist-get info :latex-multi-lang) org-latex-multi-lang-driver)))
     (with-temp-buffer
@@ -2019,18 +2021,14 @@ Using babel is only possible when you are sure that the ldf method can be used."
 polyglossia (in lualatex/xelatex"
   (let* ((compiler (or (plist-get info :compiler)
                        org-latex-compiler))
-         (polyglossia-langs (plist-get info :language))
+         (polyglossia-list (plist-get info :languages))
          (unicode-math-options nil) ;; TODO
-         (polyglossia-list nil) ;; to store the splitted polyglossia-langs
          (lang-type "main")
          ;; These change inside `with-temp-buffer'
          (fontspec-config org-latex-fontspec-config)
          (polyglossia-font-config org-latex-polyglossia-font-config))
     (when (equal compiler "pdflatex")
         (warn "polyglossia isn't supported by pdflatex!"))
-    (setq polyglossia-list (seq-uniq
-                            (mapcar #'string-trim
-                                    (string-split polyglossia-langs ","))))
    (with-temp-buffer
      (goto-char (point-min))
      (insert "\\usepackage{fontspec}\n")
@@ -2098,7 +2096,7 @@ and #+LANGUAGE over `org-export-default-language'"
         ;;(compiler
         ;; (or (plist-get info :latex-compiler) org-latex-compiler))
         (latex-babel-langs
-         (or (plist-get info :language) org-export-default-language))
+         (or (plist-get info :languages) (list org-export-default-language)))
         (doc-fontspec org-latex-fontspec-config)
         (doc-babel-fontspec org-latex-babel-fontspec)
         (unicode-math-options nil)) ;; TODO: define document option for this
@@ -2108,7 +2106,7 @@ and #+LANGUAGE over `org-export-default-language'"
       (insert "\\usepackage{fontspec}")
       (insert (format "\n\\usepackage{babel}"))
       (let ((opt "import,main")) ;; first language is the main language
-        (cl-loop for bab-lang in (split-string latex-babel-langs ",")
+        (cl-loop for bab-lang in latex-babel-langs
                  do
                  (insert (format "\n\\babelprovide[%s]{%s}" opt (org-latex--get-babel-lang bab-lang)))
                  (setq opt "import")))
@@ -2423,10 +2421,13 @@ INFO is a plist used as a communication channel."
   (org-export-translate s :latex info))
 
 (defun org-latex--get-lang (lang)
-  "LANG can be a command separated list.
-In this case, take the first language code in the list."
+  "Return the long language name for LANG.
+LANG can be a string, a comma-separated string or a list of languages.
+When we have multiple languages, take the first."
   (when lang
-    (setq lang (car (string-split lang "," t " ")))
+    (if (stringp lang)
+        (setq lang (car (string-split lang "," t " ")))
+      (setq lang (car lang)))
     (let ((plist (cdr (assoc lang org-latex-language-alist))))
       ;; (message "%s" plist)
       (or (plist-get plist :lang-name) lang))))
@@ -2434,7 +2435,7 @@ In this case, take the first language code in the list."
 (defun org-latex--format-spec (info)
   "Create a format spec for document meta-data.
 INFO is a plist used as a communication channel."
-  (let ((language (org-latex--get-lang (plist-get info :language))))
+  (let ((language (org-latex--get-lang (plist-get info :languages))))
     `((?a . ,(if (plist-get info :with-author)
                  (org-export-data (plist-get info :author) info)
                ""))

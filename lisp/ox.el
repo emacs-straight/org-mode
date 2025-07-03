@@ -3099,6 +3099,10 @@ still inferior to file-local settings."
                        (append (org-export-get-all-options backend)
                                org-export-options-alist))))
         tree modified-tick)
+    ;; Get :languages and insert it into :language
+    (when-let* ((languages (plist-get info :languages))
+                (lang (nth 0 languages)))
+      (setq info (plist-put info :language lang)))
     ;; Run first hook with current backend's name as argument.
     (run-hook-with-args 'org-export-before-processing-hook
                         (org-export-backend-name backend))
