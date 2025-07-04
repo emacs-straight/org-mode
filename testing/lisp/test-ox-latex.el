@@ -374,7 +374,7 @@ in the document header and test that the default can be overwritten
      'latex
      "#+TITLE: fontspec
 #+OPTIONS: toc:nil H:3 num:nil
-#+LANGUAGE: de,greek
+#+LANGUAGE: de greek
 #+LATEX_MULTI_LANG: babel
 
 * Einleitung
