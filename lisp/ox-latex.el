@@ -507,15 +507,16 @@ AUTO will automatically be replaced with a coding system derived
 from `buffer-file-coding-system'.  See also the variable
 `org-latex-inputenc-alist' for a way to influence this mechanism.
 
-OBSOLETE: Likewise, if your header contains \"\\usepackage[AUTO]{babel}\"
-or \"\\usepackage[AUTO]{polyglossia}\", AUTO will be replaced
-with the language related to the language code specified by
-`org-export-default-language'.  Note that constructions such as
-\"\\usepackage[french,AUTO,english]{babel}\" are permitted.  For
+When `org-latex-multi-lang-driver' is nil, if your header contains
+\"\\usepackage[AUTO]{babel}\" or \"\\usepackage[AUTO]{polyglossia}\",
+AUTO will be replaced with the language related to the language code
+specified by `org-export-default-language'.  Note that constructions
+such as \"\\usepackage[french,AUTO,english]{babel}\" are permitted.  For
 Polyglossia the language will be set via the macros
 \"\\setmainlanguage\" and \"\\setotherlanguage\".  See also
 `org-latex-guess-babel-language' and
 `org-latex-guess-polyglossia-language'.
+See also `org-latex-multi-lang-driver'.
 
 The sectioning structure
 ------------------------
