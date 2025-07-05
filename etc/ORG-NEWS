@@ -390,45 +390,52 @@ default fonts defined in a template when exporting to =beamer=).
 
 This variable is aliased as ~org-latex-lualatex-font-config~ for very
 early adopters. It is advised to migrate and use the new name ASAP.
+
 *** New Option ~org-md-link-org-files-as-md~
 
 This option makes it possible to disable mapping of linked org files
 to markdown during export to Markdown. This is analogous to how
 ~org-html-link-org-files-as-html~ works in export to HTML.
 
-*** New option ~org-latex-ployglossia-font-config~
+*** New option ~org-latex-fontspec-config~
 
-This option holds a comma separated list of languages used to define
-the main and other languages after the ~polyglossia~ package has been
-loaded.  =AUTO= denotes the main language of the document and will be
-derived from the ~#+LANGUAGE:~ option in the document.
-
-*** New option ~#+LATEX_BABEL_LANGS~
-
-The new option ~#+LATEX_BABEL_LANGS~ controls the languages
-activated when using the ~babel~ package in the LaTeX export
-backend for ~lualatex~ and ~xelatex~.  This option sets the
-variable ~org-latex-babel-languages~.  It replaces the need to
-include the ~babel~ package in the ~#+LATEX_HEADER:~.
-
-*** New variable ~org-latex-babel-fontspec~
-
-This variable controls the fonts used in the LaTeX export when the
-~babel~ package is used in multilingual documents.
-
-*** New option ~#+LATEX_POLYGLOSSIA_LANGS~
-
-The new option ~#+LATEX_POLYGLOSSIA_LANGS~ controls the languages
-activated when using the ~polyglossia~ package in the LaTeX export
-backend for ~lualatex~ and ~xelatex~.  This option sets the
-variable ~org-latex-polyglossia-languages~.  It replaces the need to
-include the ~polyglossia~ package in the ~#+LATEX_HEADER:~.
+The new option ~org-latex-fontspec-config~ stores the configuration
+for the ~fontspec~ package. It is used when ~org-latex-multi-lang-driver~
+is ~t~.
 
 *** New option ~org-latex-fontspec-default-features~
 
 The new option ~org-latex-fontspec-default-features~ controls the
 generation of the ~\\defaultfontfeatures{}~ command for the ~fontspec~
 package.
+
+*** New option ~org-latex-polyglossia-font-config~
+
+This variable controls the fonts used in the LaTeX export when the
+~polyglossia~ package is used in multilingual documents.
+
+*** New variable ~org-latex-babel-fontspec~
+
+This variable controls the fonts used in the LaTeX export when the
+~babel~ package is used in multilingual documents.
+
+*** New options ~org-latex-multi-lang-driver~ and ~#+LATEX_MULTI_LANG:~
+
+The new option ~org-latex-multi-lang-driver~ activates the new
+language control features when exporting to LaTeX. By default, its
+value is ~nil~. Setting it to ~t~ will activate multi-script handling
+using the ~fontspec~ package. You can also set it to ~"babel"~ or
+~"polyglossia"~ to activate the new multi-lingual handling routines.
+
+
+*** New format for ~#+LANGUAGE~ when exporting to LaTeX
+
+The option ~#+LANGUAGE~ controls the languages activated when using
+the ~polyglossia~ or ~babel~ packages in the LaTeX export backend. The
+new format is a (space-separated) list of Org language codes. The
+first language in the list passed as the main language to
+~polyglossia~ or ~babel~ when ~org-latex-multi-lang-driver~ activates
+either for localisation.
 
 ** New functions and changes in function arguments
 
