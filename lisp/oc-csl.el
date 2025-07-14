@@ -820,6 +820,35 @@ INFO is the export state, as a property list."
               "\\[CSL-MAXLABEL-CHARS\\]" ,(number-to-string max-offset)))
     result))
 
+(defun org-cite-csl--generate-html-head (info)
+  "Generate the CSL-related part of the HTML head.
+INFO is the export state, as a property list.  Return the generated head
+fragment or nil if no fragment should be inserted."
+  (let* ((parameters (cadr (org-cite-csl--rendered-bibliographies info)))
+	 (head-part
+	  (concat
+	   (and (cdr (assq 'second-field-align parameters))
+		(let* ((max-offset (cdr (assq 'max-offset parameters)))
+		       (char-width
+			(string-to-number org-cite-csl-html-label-width-per-char))
+		       (char-width-unit
+			(progn
+			  (string-match (number-to-string char-width)
+					org-cite-csl-html-label-width-per-char)
+			  (substring org-cite-csl-html-label-width-per-char
+				     (match-end 0)))))
+		  (format
+		   "<style>.csl-left-margin{float: left; padding-right: 0em;}
+ .csl-right-inline{margin: 0 0 0 %d%s;}</style>"
+		   (* max-offset char-width)
+		   char-width-unit)))
+	   (and (cdr (assq 'hanging-indent parameters))
+		(format
+		 "<style>.csl-entry{text-indent: -%s; margin-left: %s;}</style>"
+		 org-cite-csl-html-hanging-indent
+		 org-cite-csl-html-hanging-indent)))))
+    (and (not (string= "" head-part)) head-part)))
+
 
 ;;; Export capability
 (defun org-cite-csl-render-citation (citation _style _backend info)
@@ -837,37 +866,20 @@ INFO is the export state, as a property list."
   "Export bibliography.
 INFO is the export state, as a property list."
   (org-require-package 'citeproc)
-  (pcase-let*  ((format (org-cite-csl--output-format info))
-                (`(,outputs ,parameters) (org-cite-csl--rendered-bibliographies info))
-                (output (cdr (assoc props outputs))))
+  (let* ((format (org-cite-csl--output-format info))
+	 (outputs (car (org-cite-csl--rendered-bibliographies info)))
+	 (output (cdr (assoc props outputs))))
     (pcase format
       ('html
-       (concat
-        (and (cdr (assq 'second-field-align parameters))
-             (let* ((max-offset (cdr (assq 'max-offset parameters)))
-                    (char-width
-                     (string-to-number org-cite-csl-html-label-width-per-char))
-                    (char-width-unit
-                     (progn
-                       (string-match (number-to-string char-width)
-                                     org-cite-csl-html-label-width-per-char)
-                       (substring org-cite-csl-html-label-width-per-char
-                                  (match-end 0)))))
-               (format
-                "<style>.csl-left-margin{float: left; padding-right: 0em;}
- .csl-right-inline{margin: 0 0 0 %d%s;}</style>"
-                (* max-offset char-width)
-                char-width-unit)))
-        (and (cdr (assq 'hanging-indent parameters))
-             (format
-              "<style>.csl-entry{text-indent: -%s; margin-left: %s;}</style>"
-              org-cite-csl-html-hanging-indent
-              org-cite-csl-html-hanging-indent))
-        output))
+       (unless (plist-get info :html-head-csl-styles-added)
+	 (if-let* ((head-part (org-cite-csl--generate-html-head info)))
+	     (plist-put info :html-head
+                        (concat (plist-get info :html-head) head-part)))
+	 (plist-put info :html-head-csl-styles-added t))
+       output)
       ('org-latex output)
       (_
-       ;; Parse Org output to re-export it during the regular export
-       ;; process.
+       ;; Parse Org output to re-export it during the regular export process.
        (org-cite-parse-elements output)))))
 
 (defun org-cite-csl-finalizer (output _keys _files _style _backend info)
