@@ -133,6 +133,19 @@ to your configuration.
 The new behaviour follows general babel backend rules (auto-detecting
 result type), but may affect the existing usage.
 
+*** =#+LANGUAGE:= is now a list of languages for the LaTeX exporter
+
+The LaTeX exporter assumes that =#+LANGUAGE= is a (space-separated)
+list of Org language codes. The first language in this list is the
+main language in the document. It will be used, among other things, to
+replace AUTO when adjusting ~\usepackage[AUTO]{babel}~ or
+~\usepackage[AUTO]{polyglossia}~ if the new font management features
+are not activated.
+
+When the new font management features are activated, the option
+~#+LANGUAGE~ controls the languages activated when using the
+~polyglossia~ or ~babel~ packages in the LaTeX export backend.
+
 ** New features
 
 # We list the most important features, and the features that may
@@ -414,7 +427,7 @@ package.
 This variable controls the fonts used in the LaTeX export when the
 ~polyglossia~ package is used in multilingual documents.
 
-*** New variable ~org-latex-babel-fontspec~
+*** New option ~org-latex-babel-fontspec~
 
 This variable controls the fonts used in the LaTeX export when the
 ~babel~ package is used in multilingual documents.
@@ -427,15 +440,6 @@ value is ~nil~. Setting it to ~t~ will activate multi-script handling
 using the ~fontspec~ package. You can also set it to ~"babel"~ or
 ~"polyglossia"~ to activate the new multi-lingual handling routines.
 
-
-*** New format for ~#+LANGUAGE~ when exporting to LaTeX
-
-The option ~#+LANGUAGE~ controls the languages activated when using
-the ~polyglossia~ or ~babel~ packages in the LaTeX export backend. The
-new format is a (space-separated) list of Org language codes. The
-first language in the list passed as the main language to
-~polyglossia~ or ~babel~ when ~org-latex-multi-lang-driver~ activates
-either for localisation.
 
 ** New functions and changes in function arguments
 
