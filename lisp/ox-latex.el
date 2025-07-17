@@ -2053,8 +2053,9 @@ polyglossia (in lualatex/xelatex"
                 (setq lang-type "other")))
      ;; Get fontspec fonts
      (cl-loop for (ftype . props) in fontspec-config do
-              (let ((fname (plist-get props :font)))
-                (insert (format "\n\\set%sfont{%s}" ftype fname))))
+              (let ((fname (plist-get props :font))
+                    (fprops (plist-get props :props)))
+                (insert (format "\n\\set%sfont{%s}%s" ftype fname (org-latex--mk-options fprops)))))
      ;; Get polyglossia specifics
      (cl-loop for (lang . props) in polyglossia-font-config
               do
@@ -2109,17 +2110,20 @@ and #+LANGUAGE over `org-export-default-language'"
       (let ((opt "import,main")) ;; first language is the main language
         (cl-loop for bab-lang in latex-babel-langs
                  do
-                 (insert (format "\n\\babelprovide[%s]{%s}" opt (org-latex--get-babel-lang bab-lang)))
+                 (insert (format "\n\\babelprovide%s{%s}"
+                                 (org-latex--mk-options opt) (org-latex--get-babel-lang bab-lang)))
                  (setq opt "import")))
       (insert (format "\n\\usepackage%s{unicode-math}"
                       (org-latex--mk-options unicode-math-options)))
+      ;; support \babelfont with_out_ language likein
+      ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (message "babel-fontspec: %s" doc-babel-fontspec)
       (cl-loop for (lang . babel-fontlist) in doc-babel-fontspec
                do (let* ((props nil)
                          (font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . font) in font-list
-                             do (insert (format "\n\\babelfont[%s]{%s}%s{%s}"
-                                                (org-latex--get-babel-lang lang) script
+                             do (insert (format "\n\\babelfont%s{%s}%s{%s}"
+                                                (org-latex--mk-options (org-latex--get-babel-lang lang)) script
                                                 (org-latex--mk-options props)
                                                 font)))))
       ;; Last resort... use fontspec-config if no babel specific fonts are defined
