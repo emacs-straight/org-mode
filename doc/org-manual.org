@@ -14107,7 +14107,7 @@ quick references to variables for the impatient: for engines, see
 
 An important note about the LaTeX export backend: it is sensitive to
 blank lines in the Org document.  That's because LaTeX itself depends
-on blank lines to tell apart syntactical elements, such as paragraphs.
+on blank lines to tell apart paragraphs.
 
 The following sections expect users to be familiar with common LaTeX
 terminology.  You may refer to https://tug.org/begin.html to get
@@ -14400,6 +14400,10 @@ If you use =babel=, you can control the fonts used for different
 languages in the PDF output with the variable
 ~org-latex-babel-font-config~.
 
+In general, when exporting to LaTeX or PDF, it is advisable that you
+select a Unicode font that covers the scripts you use in you
+document. This will highly simplify font configuration.
+
 When ~org-latex-multi-lang-driver~ is ~nil~, the value of
 ~org-export-default-language~ will replace appearances of the string
 ~"AUTO"~ when importing ~babel~ or ~polyglossia~ with a
@@ -14419,7 +14423,7 @@ Will result in the LaTeX header
 \usepackage[de,en-gb]{babel}
 #+END_SRC
 
-in a first stage and that will be then translated to
+in a first stage. This will then generate
 
 #+BEGIN_SRC latex :results none :exports code
 \usepackage[main=ngerman,british]{babel}
@@ -15026,6 +15030,8 @@ to include that. Include the other commands in your document header:
 #+END_SRC
 
 *** Controlling the font configuration for LuaLaTeX and XeLaTeX
+#+cindex: latex backend configuratiom
+#+vindex: org-latex-multi-lang-driver
 
 The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword,
 which acts as a placeholder for font specification code. By default,
@@ -15034,7 +15040,9 @@ generated LaTeX output.
 
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the =fontspec=. Remember that
-=polyglossia= will load =fontspec= automatically.
+=polyglossia= will load =fontspec= automatically. Setting variable
+~org-latex-multi-lang-driver~ to ~t~ enables optimised =fontspec=
+configuration.
 
 Org mode will load =fontspec= for =babel=. However, font configuration
 will use a different mechanism described [[#babel-fontconfig][below]].
@@ -15130,14 +15138,22 @@ as a comma-separated list. The following code also would also define
             :features "Color=blue,Scale=MatchLowercase")
 #+END_SRC
 
-If you are using =lualatex= as your LaTeX compiler, you can also declare
-fallback fonts for specific fonts when specific character scripts are
-detected by Emacs during the export process.
+As mentioned earlier, it is always advisable to use (Unicode) fonts
+that cover all scripts in your document to simplify font
+configuration.  If you are using =lualatex= as your LaTeX compiler,
+you can also declare fallback fonts for specific scripts that are not
+included in the fonts used for your document.
 
-Use the property ~:fallback~ for this purpose.  It links to an
-associative list that maps the script names as detected by Emacs with
-their fallback configuration.  Take, for example, that you configure the
-=main= font in ~org-latex-fontspec-config~ as:
+When this is the case, the LaTeX process will complain and Emacs will
+warn you. Using the list of scripts detected in the buffer, which it
+always generates during the export process in the *=*Messages*=*
+buffer, you can declare the fallback fonts for missing scripts, using
+~:fallback~ property for this purpose.  It links to an associative
+list that maps the script names as detected by Emacs with their
+fallback configuration.
+
+For example, assume you configure the =main= font in
+~org-latex-fontspec-config~ as:
 
 #+BEGIN_SRC elisp
 (setq-default org-latex-fontspec-config
@@ -15173,8 +15189,11 @@ and, then, generate the following font specification for =main=.
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
-When you specify ~:features~ for a font, the fallback is appended as
-another feature to the font definition.
+This will enable you to include emojis in parts of the document that
+are printed with the main document font.
+
+Note that when you specify ~:features~ for a font, the fallback
+definition is appended as another feature to the font definition.
 
 You may use any font name used in the ~\set..font{}~ command by the
 ~fontspec~ package.  For example, when using XeLaTeX, you can
@@ -15196,7 +15215,7 @@ customise them:
 #+END_SRC
 
 #+vindex: org-latex-fontspec-default-features
-Additionally, you can define common features for all fonts, using the
+Additionally, you can define common features for all fonts using the
 ~org-latex-fontspec-default-features~ variable. Its default value is
 `nil' meaning that no defaults are defined. If you need to default
 common features for all fonts, you can define them as an associative
