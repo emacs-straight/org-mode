@@ -133,18 +133,20 @@ to your configuration.
 The new behaviour follows general babel backend rules (auto-detecting
 result type), but may affect the existing usage.
 
-*** =#+LANGUAGE:= is now a list of languages for the LaTeX exporter
+*** =#+LANGUAGE:= is now a list of languages
 
-The LaTeX exporter assumes that =#+LANGUAGE= is a (space-separated)
-list of Org language codes. The first language in this list is the
-main language in the document. It will be used, among other things, to
-replace AUTO when adjusting ~\usepackage[AUTO]{babel}~ or
-~\usepackage[AUTO]{polyglossia}~ if the new font management features
-are not activated.
+=#+LANGUAGE= is now a (space-separated) list of Org language codes.
+The first language in this list is the main language in the document.
 
-When the new font management features are activated, the option
-~#+LANGUAGE~ controls the languages activated when using the
-~polyglossia~ or ~babel~ packages in the LaTeX export backend.
+*** New property ~:languages~ to obtain the languages for ~#+LANGUAGE:~
+
+The new property ~:languages~ returns all languages listed in in
+~#+LANGUAGE: keyword~. The new font management features in the LaTeX
+exporter use ~#:languages~ when the ~polyglossia~ or ~babel~ packages
+are used to generate the language-dependant configuration.
+
+The ~:language~ property returns the first language in property
+~:languages~ to assure backwards compatibility.
 
 ** New features
 

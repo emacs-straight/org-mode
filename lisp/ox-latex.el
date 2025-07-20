@@ -171,7 +171,6 @@
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
     (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang-driver)
-    (:languages "LANGUAGE" nil (list org-export-default-language) split)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
