@@ -138,14 +138,14 @@ result type), but may affect the existing usage.
 =#+LANGUAGE= is now a (space-separated) list of Org language codes.
 The first language in this list is the main language in the document.
 
-*** New property ~:languages~ to obtain the languages for ~#+LANGUAGE:~
+*** New export option ~:languages~ to obtain the languages for ~#+LANGUAGE:~
 
-The new property ~:languages~ returns all languages listed in in
+The new export optopm ~:languages~ returns all languages listed in in
 ~#+LANGUAGE: keyword~. The new font management features in the LaTeX
 exporter use ~#:languages~ when the ~polyglossia~ or ~babel~ packages
 are used to generate the language-dependant configuration.
 
-The ~:language~ property returns the first language in property
+The export option ~:language~ returns the first language in property
 ~:languages~ to assure backwards compatibility.
 
 ** New features

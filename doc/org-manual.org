@@ -12349,10 +12349,12 @@ global variables, include:
 
   #+cindex: @samp{LANGUAGE}, keyword
   #+vindex: org-export-default-language
-  Language to use for translating certain strings
-  (~org-export-default-language~).  With =#+LANGUAGE: fr=, for
-  example, Org translates =Table of contents= to the French =Table des
-  matières=[fn:42].
+  List of languages used in the document. The first element is used
+  for translating certain strings (~org-export-default-language~).
+  With =#+LANGUAGE: fr es=, for example, Org translates =Table of
+  contents= to the French =Table des matières=[fn:42], since French is
+  the first element in the list. You signal Org that there are parts
+  of the document in Spanish (with the second element =es=).
 
 - =SELECT_TAGS= ::
 
@@ -14261,11 +14263,11 @@ general options (see [[*Export Settings]]).
 
   For example:
   #+BEGIN_SRC org :results none :exports code
-,#+LANGUAGE: fr,de,es
+,#+LANGUAGE: fr de es
 ,#+LATEX_MULTI_LANG: polyglossia
   #+END_SRC
 
-  sets multi-language handling to use polyglossia in a document, where
+  sets multi-language handling to use =polyglossia= in a document, where
   the main language (i.e. header, figure, table names) and typesetting
   options use French and there are passages in German and Spanish.
 
@@ -14379,7 +14381,7 @@ the primary language, and French as the secondary language using the
 =polyglossia= package to handle document languages:
 
 #+begin_example
-,#+LANGUAGE: el-polyton,fr
+,#+LANGUAGE: el-polyton fr
 ,#+LATEX_MULTI_LANG: polyglossia
 #+end_example
 

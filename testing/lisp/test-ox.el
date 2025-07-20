@@ -233,9 +233,12 @@ num:2 <:active")))
   ;; Properties should follow buffer order.
   (should
    (equal
-    (org-test-with-temp-text "#+LANGUAGE: fr\n#+CREATOR: Me\n#+EMAIL: email"
-      (org-export--get-inbuffer-options))
-    '(:language "fr" :creator "Me" :email "email")))
+    (org-test-with-temp-text
+     "#+LANGUAGE: fr\n#+CREATOR: Me\n#+EMAIL: email"
+     (let ((result (org-export--get-inbuffer-options)))
+       (message "get-inbuffer-options: %s" result)
+       result))
+    '(:languages ("fr") :creator "Me" :email "email")))
   ;; Test `space' behaviour.
   (should
    (equal
@@ -294,7 +297,7 @@ num:2 <:active")))
 #+TITLE: c"
 		org-test-dir)
       (org-export--get-inbuffer-options))
-    '(:language "fr" :select-tags ("a" "b" "c") :title ("a b c"))))
+    '(:languages ("fr") :select-tags ("a" "b" "c") :title ("a b c"))))
   ;; Options set through SETUPFILE specified using a URL.
   (let ((buffer (generate-new-buffer "url-retrieve-output"))
         (org-resource-download-policy t))
@@ -326,7 +329,7 @@ num:2 <:active")))
 #+SELECT_TAGS: c
 #+TITLE: c"
 	      (org-export--get-inbuffer-options))
-	    '(:language "fr" :select-tags ("a" "b" "c") :title ("a b c")))))
+	    '(:languages ("fr") :select-tags ("a" "b" "c") :title ("a b c")))))
       (kill-buffer buffer)))
   ;; More than one property can refer to the same buffer keyword.
   (should
