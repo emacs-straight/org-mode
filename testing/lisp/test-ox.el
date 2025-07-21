@@ -1,3 +1,4 @@
+
 ;;; test-ox.el --- Tests for ox.el                   -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2012-2016, 2019  Nicolas Goaziou
@@ -297,7 +298,7 @@ num:2 <:active")))
 #+TITLE: c"
 		org-test-dir)
       (org-export--get-inbuffer-options))
-    '(:languages ("fr") :select-tags ("a" "b" "c") :title ("a b c"))))
+    '(:languages ("es" "en" "fr") :select-tags ("a" "b" "c") :title ("a b c"))))
   ;; Options set through SETUPFILE specified using a URL.
   (let ((buffer (generate-new-buffer "url-retrieve-output"))
         (org-resource-download-policy t))
@@ -329,7 +330,7 @@ num:2 <:active")))
 #+SELECT_TAGS: c
 #+TITLE: c"
 	      (org-export--get-inbuffer-options))
-	    '(:languages ("fr") :select-tags ("a" "b" "c") :title ("a b c")))))
+	    '(:languages ("es" "en" "fr") :select-tags ("a" "b" "c") :title ("a b c")))))
       (kill-buffer buffer)))
   ;; More than one property can refer to the same buffer keyword.
   (should
