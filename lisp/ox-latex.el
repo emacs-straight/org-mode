@@ -2053,7 +2053,7 @@ polyglossia (in lualatex/xelatex"
      ;; Get fontspec fonts
      (cl-loop for (ftype . props) in fontspec-config do
               (let ((fname (plist-get props :font))
-                    (fprops (plist-get props :props)))
+                    (fprops (plist-get props :features)))
                 (insert (format "\n\\set%sfont{%s}%s" ftype fname (org-latex--mk-options fprops)))))
      ;; Get polyglossia specifics
      (cl-loop for (lang . props) in polyglossia-font-config
@@ -2236,9 +2236,9 @@ we are using neither bale nor polyglossia"
             (when-let* ((fallback-check fallback-alist) ;; don't do anything when no fallbacks
                         (fallback-fn (alist-get ffamily fallback-alist nil nil #'string=))
                         (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-fn))))
-              (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec)))
-              ;; (message "ffeatures %s" ffeatures)
-              (insert (org-latex--mk-options ffeatures))))
+              (setq ffeatures (cl-concatenate #'list ffeatures (list fallback-spec))))
+            ;; (message "---> ffeatures %s" ffeatures)
+            (insert (org-latex--mk-options ffeatures)))
           (insert "\n")))
       ;; If the CJK font families have been included
       ;; Check for polyglossia and/or babel and warn?
