@@ -2216,6 +2216,10 @@ we are using neither bale nor polyglossia"
                 (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
                 ;; Here we get the font fallbacks list
                 (dolist (fname fallback-flist)
+                  ;; If the string doesn't contain a ":"
+                  ;; it is assumed to be a font name that needs it at the end
+                  (unless (string-match-p ":" fname)
+                    (setq fname (concat fname ":")))
                   ;; TODO; when (car fpair) in document charsets
                   (insert (format "  \"%s\",\n" fname)))
                 (insert " })\n")))))
