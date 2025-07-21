@@ -15162,8 +15162,8 @@ For example, assume you configure the =main= font in
               '(("main"
                  :font "TeX Gyre Termes"
                  :fallback (("emoji" . "Noto Color Emoji:mode=harf")
-                            ("han"   . "Noto Serif CJK JP:")
-                            ("kana"  . "Noto Serif CJK JP:")))
+                            ("han"   . "Noto Serif CJK JP")
+                            ("kana"  . "Noto Serif CJK JP")))
                 ("sans" :font "FreeSans")
                 ("mono"
                  :font "TeX Gyre Cursor"
@@ -15196,6 +15196,11 @@ are printed with the main document font.
 
 Note that when you specify ~:features~ for a font, the fallback
 definition is appended as another feature to the font definition.
+The format for the specification is
+1. ~("<script>" . "<font name>")~ to activate a font for a specific
+   script, or
+2. ~("<script>" . "<font name>:<extra options>")~ to activate a font
+   with a set of options for a specific script
 
 You may use any font name used in the ~\set..font{}~ command by the
 ~fontspec~ package.  For example, when using XeLaTeX, you can
