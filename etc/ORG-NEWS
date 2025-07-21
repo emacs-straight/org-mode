@@ -135,15 +135,16 @@ result type), but may affect the existing usage.
 
 *** =#+LANGUAGE:= is now a list of languages
 
-=#+LANGUAGE= is now a (space-separated) list of Org language codes.
-The first language in this list is the main language in the document.
+=#+LANGUAGE:= is now a list of Org language codes.  Multiple instances
+of =#+LANGUAGE:= are collected in the ~:languages~ export option and
+none is discarded.
 
 *** New export option ~:languages~ to obtain the languages for ~#+LANGUAGE:~
 
-The new export optopm ~:languages~ returns all languages listed in in
-~#+LANGUAGE: keyword~. The new font management features in the LaTeX
-exporter use ~#:languages~ when the ~polyglossia~ or ~babel~ packages
-are used to generate the language-dependant configuration.
+The new export option ~:languages~ returns all languages collected
+with the ~#+LANGUAGE:~ keyword. The new font management features in
+the LaTeX exporter use ~#:languages~ when the ~polyglossia~ or ~babel~
+packages are used to generate the language-dependant configuration.
 
 The export option ~:language~ returns the first language in property
 ~:languages~ to assure backwards compatibility.
