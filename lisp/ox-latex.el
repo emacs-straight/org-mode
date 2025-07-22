@@ -2017,8 +2017,8 @@ Using babel is only possible when you are sure that the ldf method can be used."
       (buffer-string))))
 
 (defun org-latex--lualatex-polyglossia-config (info)
-  "Retirn a string with the prelude part for
-polyglossia (in lualatex/xelatex"
+  "Return a string with the prelude part for
+polyglossia for lualatex or xelatex"
   (let* ((compiler (or (plist-get info :compiler)
                        org-latex-compiler))
          (polyglossia-list (plist-get info :languages))
@@ -2026,6 +2026,7 @@ polyglossia (in lualatex/xelatex"
          (lang-type "main")
          ;; These change inside `with-temp-buffer'
          (fontspec-config org-latex-fontspec-config)
+         (current-default-features org-latex-fontspec-default-features)
          (polyglossia-font-config org-latex-polyglossia-font-config))
     (when (equal compiler "pdflatex")
         (warn "polyglossia isn't supported by pdflatex!"))
@@ -2034,6 +2035,14 @@ polyglossia (in lualatex/xelatex"
      (insert "\\usepackage{fontspec}\n")
      (insert "\\usepackage{polyglossia}\n")
      (insert (format "\\usepackage%s{unicode-math}" (org-latex--mk-options unicode-math-options)))
+     (when current-default-features
+       (let ((def-feat-list
+              (cl-loop for (feat . val) in current-default-features
+                       collect (concat feat "=" val) into result
+                       finally return (mapconcat #'identity result ",\n  "))))
+         (insert (format "\n\\defaultfontfeatures{\n  %s\n}"
+                         def-feat-list))))
+
      ;; Insert newline at the beginning to avoid too many empty lines in the export
      (cl-loop for lang in polyglossia-list do
               ;; No BCP-47 support (yet)
