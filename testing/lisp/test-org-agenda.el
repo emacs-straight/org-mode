@@ -899,11 +899,11 @@ both yesterday"))))))
              '("tag_b_2" "tag_b_1" "tag_a_2" "tag_a_1" "lonely" "groupless" "group_a" "blueberry")
              "\n"))
            ((or (pred (equal string-length<))
-                `(,string-length<))
+                `(,(pred (equal string-length<))))
             (string-join
              '("lonely" "group_a" "tag_a_2" "tag_b_2" "tag_a_1" "tag_b_1" "groupless" "blueberry")
              "\n"))
-           (`(,string-length< org-string<)
+           (`(,(pred (equal string-length<)) org-string<)
             (string-join
              '("lonely" "group_a" "tag_a_1" "tag_a_2" "tag_b_1" "tag_b_2" "blueberry" "groupless")
              "\n"))

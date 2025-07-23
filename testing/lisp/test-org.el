@@ -2455,9 +2455,8 @@ Test
   (org-test-with-temp-text "
 Text.
 * Heading <point>"
-    (let ((pos (point)))
-      (should-not (org-up-heading-safe))
-      (should (looking-at-p "^\\* Heading"))))
+    (should-not (org-up-heading-safe))
+    (should (looking-at-p "^\\* Heading")))
   ;; Jump from inside a heading.
   (org-test-with-temp-text "
 * H1

@@ -530,9 +530,9 @@ This is a tab:\t.
   (should
    (eq 'bar
        (org-test-with-temp-text "A footnote<point>[fn:1]\n[fn:1] Definition"
-	 (setq-local foo 'bar)
+	 (setq-local test-org-src--foo 'bar)
 	 (org-edit-special)
-	 (prog1 foo (org-edit-src-exit))))))
+	 (prog1 test-org-src--foo (org-edit-src-exit))))))
 
 ;;; Code escaping
 

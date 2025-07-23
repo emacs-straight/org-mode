@@ -211,7 +211,7 @@ Return interpreted string."
              'dummy
              `(:foo
                ,(org-element-deferred-create
-                 nil (lambda (el)
+                 nil (lambda (_el)
                      (org-element-deferred-create
                       nil (lambda (_) 1))))))))
     (should (eq 1 (org-element-property :foo el)))))
@@ -5292,7 +5292,7 @@ Text
                   (org-test-with-temp-text "* H1\nP1\n<point>*H2\n"
                     (let ((org-element-use-cache t))
                       (org-element-cache-map #'ignore :granularity 'element)
-                      (backward-delete-char 1)
+                      (delete-char 1)
                       (org-element-type (org-element-at-point))))))
   (org-test-with-temp-text "Paragraph.\n #<point> comment"
     (let ((org-element-use-cache t))

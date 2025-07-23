@@ -1331,7 +1331,7 @@ Text"
   (should
    (equal
     (with-temp-buffer
-      (insert-file
+      (insert-file-contents
        (expand-file-name "examples/include.org" org-test-dir))
       (replace-regexp-in-string
        (regexp-quote "#+INCLUDE: \"include2.org\"")

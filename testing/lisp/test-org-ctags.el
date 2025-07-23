@@ -115,7 +115,7 @@ _COMMENTS should appear in failure message."
          (test-org-ctags/list-elements actual indicies)))
 
 (defun test-org-ctags/list-elements-equal-explain
-    (expect actual indicies &rest _comments)
+    (_expect actual indicies &rest _comments)
   "`ert-eplainer' for `test-org-ctags/list-elements-equal-p'."
   (if (listp actual)
       (list

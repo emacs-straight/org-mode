@@ -490,9 +490,9 @@ Test updates of source and config file."
 		       :include ("index/file1.org" "index/file2.org"))
         (lambda (_)) nil t pub-dir t)
       ;; Pretend that a new Emacs session started as follows:
-      ;; Use empty transient cache.
+      ;; Use empty cache.
       ;; Touch file2.org as changed, while file1.org is skipped.
-      (setq org-publish-transient-cache nil)
+      (org-publish-reset-cache)
       (org-test-publish-touch (expand-file-name "index/file2.org" base))
       (let ((result
              (org-test-publish
