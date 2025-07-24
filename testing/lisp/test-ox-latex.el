@@ -384,7 +384,7 @@ Irgend etwas.
      ;; (message "--> %s" (buffer-string))
      (goto-char (point-min))
      (should (search-forward "\\usepackage{fontspec}" nil t))
-     (should (search-forward "\\usepackage{babel}" nil t))
+     (should (re-search-forward "\\\\usepackage\\[[^]]+\\]{babel}" nil t))
      (save-excursion
        (should  (search-forward "\\babelprovide[import,main]{german}" nil t)))
      (save-excursion

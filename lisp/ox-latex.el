@@ -2102,19 +2102,19 @@ babel on lualatex/xelatex.
 Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
 and #+LANGUAGE over `org-export-default-language'"
 
-  (let (;; uncomment if we need to differentiate between xelatex and lualatex
-        ;;(compiler
-        ;; (or (plist-get info :latex-compiler) org-latex-compiler))
-        (latex-babel-langs
-         (or (plist-get info :languages) (list org-export-default-language)))
-        (doc-fontspec org-latex-fontspec-config)
-        (doc-babel-fontspec org-latex-babel-fontspec)
-        (unicode-math-options nil)) ;; TODO: define document option for this
+  (let* ((compiler
+          (or (plist-get info :latex-compiler) org-latex-compiler))
+         (latex-babel-langs
+          (or (plist-get info :languages) (list org-export-default-language)))
+         (doc-fontspec org-latex-fontspec-config)
+         (doc-babel-fontspec org-latex-babel-fontspec)
+         (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
+         (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       (goto-char (point-min))
       ;; TODO: do we really need fontspec??
       (insert "\\usepackage{fontspec}")
-      (insert (format "\n\\usepackage{babel}"))
+      (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       (let ((opt "import,main")) ;; first language is the main language
         (cl-loop for bab-lang in latex-babel-langs
                  do
