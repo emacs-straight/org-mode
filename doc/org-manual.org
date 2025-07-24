@@ -15327,9 +15327,9 @@ variable.  By default, this variable is ~nil~, meaning that no extra
 font configuration will be generated.
 
 To generate a babel font configuration, this variable needs to hold a
-property list array mapping babel language names to the fonts used
+property list array mapping Org language names to the fonts used
 when exporting to babel.  Each entry maps a language name to a
-~:fonts~ property.  Use ~"AUTO"~ as the language name for the fonts
+~:fonts~ property.  Use ~nil~ as the language name for the fonts
 used by the default language.
 
 The ~:fonts~ property list has the form of an associative list, where
@@ -15344,32 +15344,35 @@ each element has the form:
 - ~"sf"~ for the sans serif font
 - ~"tt"~ for the teletype (monospaced) font.
 
-and ~FONT~ is the system font name.
+and ~FONT~ is the system font name for that script.
 
-For example, for a document with text in Latin and Arabic script,
-where the main language uses a Latin script, this variable could be
+For example, for a document with text in German and Greek,
+where the main language is German, this variable could be
 initialised as follows:
 
 #+BEGIN_SRC elisp :results none :exports code
 (setq org-latex-babel-fontspec
-      '(("AUTO" :fonts (("rm" . "Noto Serif")
-                        ("sf" . "Noto Sans")
-                        ("tt" . "Noto Mono")))
-        ("arabic" :fonts (("rm" . "Noto Naskh Arabic")
-                          ("sf" . "Noto Kufi Arabic"))))
+      '(("de"
+         :fonts (("rm" . "CMU Serif")))
+        ("el-polyton"
+         :fonts (("rm" . "Noto Serif")))
+        (nil
+         :fonts (("tt" . "DejaVu Sans Mono")))))
 #+END_SRC
 
 This setting will produce the following code in the LaTeX export
 header:
 
 #+BEGIN_SRC latex :results none :exports code
-\babelfont{rm}[Language=Default]{Noto Serif}
-\babelfont{sf}[Language=Default]{Noto Sans}
-\babelfont{tt}[Language=Default]{Noto Mono}
-\babelfont[arabic]{rm}[Language=Default]{Noto Naskh Arabic}
-\babelfont[arabic]{sf}[Language=Default]{Noto Kufi Arabic}
+\babelfont[german]{rm}{CMU Serif}
+\babelfont[polytonicgreek]{rm}{Noto Serif}
+\babelfont{tt}{DejaVu Sans Mono}
 #+END_SRC
 
+meaning that the text will be set in Serif (~{rm}~) and that text in
+German will use the ~CMU Serif~ font and the text in Greek will use
+the ~Noto Serif~. The text set in mono-spaced font will use ~DejaVu
+Sans Mono~ regardless of the language.
 
 ** Markdown Export
 :PROPERTIES:
