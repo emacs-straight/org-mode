@@ -1093,7 +1093,8 @@ following syntax:
   :type '(repeat
 	  (list
 	   (string :tag "Listings option name ")
-	   (string :tag "Listings option value"))))
+	   (string :tag "Listings option value")))
+  :safe #'nested-alist-p)
 
 (defcustom org-latex-minted-langs
   '((emacs-lisp "common-lisp")
