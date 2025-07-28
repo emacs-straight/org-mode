@@ -14237,7 +14237,7 @@ general options (see [[*Export Settings]]).
   one-element list with the value of ~org-export-default-language~ (by
   default - =en=, American English)
 
-  The language codes supported by Org is stored in the variable
+  The language codes supported by Org are stored in the variable
   ~org-latex-language-alist~.
 
 - =LATEX_MULTI_LANG= ::
@@ -14250,8 +14250,18 @@ general options (see [[*Export Settings]]).
   are ~"polyglossia"~, ~"babel"~, ~t~ or ~nil~.
 
   By default, it is ~nil~ and multi-language documents are controlled
-  by importing the package with the ~#+LATEX_HEADER~ keyword. Use
-  =AUTO= in the package options to include language information.
+  by importing the LaTeX package to control multi-language features
+  with the ~#+LATEX_HEADER~ keyword. Use =AUTO= in the package options
+  to include language information, for example:
+  #+BEGIN_EXAMPLE
+#+LANGUAGE: es
+#+LATEX_HEADER: \usepackage[AUTO]{babel}
+  #+END_EXAMPLE
+  would tell LaTeX to use the ~babel~ package to create a document
+  with Spanish headers.
+
+  When ~org-latex-multi-lang-driver~ is ~nil~, all options and
+  features are controlled by the user in ~#+LATEX_HEADER:~ options.
 
   When it is ~t~, only font control features implemented in the
   =fontspec= package are activated, when the LaTeX compiler is
@@ -14368,11 +14378,11 @@ A sample Org file with the above headers:
 #+vindex: org-export-default-language
 
 The LaTeX export backend can handle documents for non-English
-audiences and documents with multiple languages with the LaTeX
+audiences and documents with multiple languages using the LaTeX
 packages =babel= or =polyglossia=. It will use the =LANGUAGE= keyword,
-if present in the document or the value of
+if present in the document, or the value of
 ~org-export-default-language~ to determine the languages used in a
-document. If this value is a comma-separated list of languages, it
+document. If this value is a space-separated list of languages, it
 will assume the first one to be the main language in the list.
 
 
@@ -14400,7 +14410,7 @@ languages in the PDF output with the variable
 
 If you use =babel=, you can control the fonts used for different
 languages in the PDF output with the variable
-~org-latex-babel-font-config~.
+~org-latex-babel-fontspec~.
 
 In general, when exporting to LaTeX or PDF, it is advisable that you
 select a Unicode font that covers the scripts you use in you
@@ -14411,27 +14421,29 @@ When ~org-latex-multi-lang-driver~ is ~nil~, the value of
 ~"AUTO"~ when importing ~babel~ or ~polyglossia~ with a
 ~#+LATEX_HEADER:~ keyword.
 
-For example:
+# For example:
 
-#+BEGIN_SRC org :results none :exports code
-,#+LANGUAGE: de
-,#+LATEX_COMPILER: pdflatex
-,#+LATEX_HEADER: \usepackage[AUTO,en-gb]{babel}
-#+END_SRC
+# #+BEGIN_SRC org :results none :exports code
+# ,#+LANGUAGE: de
+# ,#+LATEX_COMPILER: pdflatex
+# ,#+LATEX_HEADER: \usepackage[AUTO,en-gb]{babel}
+# #+END_SRC
 
-Will result in the LaTeX header
+# Will result in the LaTeX header
 
-#+BEGIN_SRC latex :results none :exports code
-\usepackage[de,en-gb]{babel}
-#+END_SRC
+# #+BEGIN_SRC latex :results none :exports code
+# \usepackage[de,en-gb]{babel}
+# #+END_SRC
 
-in a first stage. This will then generate
+# in a first stage. This will then generate
 
-#+BEGIN_SRC latex :results none :exports code
-\usepackage[main=ngerman,british]{babel}
-#+END_SRC
+# #+BEGIN_SRC latex :results none :exports code
+# \usepackage[ngerman,british]{babel}
+# #+END_SRC
 
-for the LaTeX export.
+# for the LaTeX export.
+When you indicate more than one language in your
+document, ~AUTO~ will be replaced with the *first* language.
 
 *** Quoting LaTeX code
 :PROPERTIES:
@@ -15005,6 +15017,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 #+end_example
 
 *** Controlling the font configuration for ~pdflatex~
+#+vindex: org-latex-default-packages-alist
 
 ~pdflatex~ uses packages to import the fonts that will be used in the
 PDF output. Refer to [[https://tug.org/FontCatalogue/][the LaTeX font
@@ -15022,8 +15035,9 @@ the following configuration in the linked page:
 \renewcommand*\oldstylenums[1]{\textosf{#1}}
 #+END_SRC
 
-Since the exporter handles the ~fontenc~ package, you will not need
-to include that. Include the other commands in your document header:
+By default, LaTeX export includes the ~fontenc~ package automatically
+(see ~org-latex-default-packages-alist~), so you do not need to
+include that.  Other commands need to be included manually:
 
 #+BEGIN_SRC org :results none :exports code
 ,#+LATEX_HEADER: \usepackage[proportional,scaled=1.064]{erewhon}
@@ -15032,13 +15046,14 @@ to include that. Include the other commands in your document header:
 #+END_SRC
 
 *** Controlling the font configuration for LuaLaTeX and XeLaTeX
-#+cindex: latex backend configuratiom
+#+cindex: latex backend
 #+vindex: org-latex-multi-lang-driver
+#+vindex: org-latex-classes
 
-The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword,
-which acts as a placeholder for font specification code. By default,
-Org mode places the font specification code at the beginning of the
-generated LaTeX output.
+The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword
+(see ~org-latex-classes~), which acts as a placeholder for font
+specification code. By default, Org mode places the font specification
+code at the beginning of the generated LaTeX output.
 
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the =fontspec=. Remember that
@@ -15062,15 +15077,15 @@ Org mode uses the variable ~org-latex-fontspec-config~ to map your
 document's fonts to the fonts used in the document. To familiarise
 yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
-package manual]] Part II.  This variable be set in your Emacs
-initialisation code, in the file local variables or in the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][directory
-local variable file]] ~.dir-locals.el~[fn:49] .
+package manual]] Part II.  This variable should be set in your Emacs
+initialisation code, in the file local variables or in the directory
+local variable file ~.dir-locals.el~[fn:49] .
 
-If do not want or need any specific configuration for the ~fontspec~
-package, make sure ~org-latex-fontspec-config~ is set to ~nil~ (this
-is the default value).  This is normally the case when exporting to
-=beamer=, where you most probably want to use the fonts defined in the
-template.
+If you do not want or need any specific configuration for the
+~fontspec~ package, make sure that ~org-latex-fontspec-config~ is set
+to ~nil~ (this is the default value).  This is normally the case when
+exporting to =beamer=, where you most probably want to use the fonts
+defined in the template.
 
 ~org-latex-fontspec-config~ maps the font name used in the
 =\set...font{}= commands defined by the =fontspec= package with the
