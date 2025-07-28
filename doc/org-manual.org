@@ -15359,7 +15359,9 @@ each element has the form:
 - ~"sf"~ for the sans serif font
 - ~"tt"~ for the teletype (monospaced) font.
 
-and ~FONT~ is the system font name for that script.
+and ~FONT~ is either the system font name for that script or a list of
+strings. In this case, the first string is the system font name and
+the rest are options to apply to this font.
 
 For example, for a document with text in German and Greek,
 where the main language is German, this variable could be
@@ -15372,7 +15374,7 @@ initialised as follows:
         ("el-polyton"
          :fonts (("rm" . "Noto Serif")))
         (nil
-         :fonts (("tt" . "DejaVu Sans Mono")))))
+         :fonts (("tt" . ("DejaVu Sans Mono" "Scale=Matchlocase"))))))
 #+END_SRC
 
 This setting will produce the following code in the LaTeX export
@@ -15381,13 +15383,15 @@ header:
 #+BEGIN_SRC latex :results none :exports code
 \babelfont[german]{rm}{CMU Serif}
 \babelfont[polytonicgreek]{rm}{Noto Serif}
-\babelfont{tt}{DejaVu Sans Mono}
+\babelfont{tt}{DejaVu Sans Mono}[Scale=MatchLowercase]
 #+END_SRC
 
 meaning that the text will be set in Serif (~{rm}~) and that text in
 German will use the ~CMU Serif~ font and the text in Greek will use
 the ~Noto Serif~. The text set in mono-spaced font will use ~DejaVu
-Sans Mono~ regardless of the language.
+Sans Mono~ regardless of the language. The mono-spaced text will be
+scaled to match the default font size and produce a better-looking
+output.
 
 ** Markdown Export
 :PROPERTIES:

@@ -1660,10 +1660,14 @@ used when exporting to babel.  Each entry maps a string with the
 language name to a `:fonts' property list.
 
 Each element in the `:fonts' property list has the form
-(SCRIPT . FONT).  SCRIPT is one of the script codes:
-\"rm\" for the roman (serif) font
-\"sf\" for the sans serif font
-\"tt\" for the teletype (monospaced) font."
+(SCRIPT . FONT).
+ SCRIPT is one of the script codes:
+   \"rm\" for the roman (serif) font
+   \"sf\" for the sans serif font
+   \"tt\" for the teletype (monospaced) font.
+FONT is either a string with a system font name or a list of strings
+starting with a system font name and extra properties to control the
+font's appearance (for example: \"Scale=MatchLowercase\")."
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No babel font config" nil)
@@ -2128,15 +2132,20 @@ and #+LANGUAGE over `org-export-default-language'"
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (message "babel-font-config: %s" doc-babel-font-config)
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
-               do (let* ((props nil)
-                         (font-list (plist-get babel-fontlist :fonts)))
+               do (let* ((font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . font) in font-list
-                             do (insert (format "\n\\babelfont%s{%s}%s{%s}"
-                                                (org-latex--mk-options (org-latex--get-babel-lang lang)) script
-                                                (org-latex--mk-options props)
-                                                font)))))
+                             do (let ((props nil))
+                                  ;; font can be a string
+                                  (unless (stringp font)
+                                    ;; or a list of ("fontname" "prop=value" ...)
+                                    (setq props (cdr font))
+                                    (setq font (car font)))
+                                  (insert (format "\n\\babelfont%s{%s}%s{%s}"
+                                                  (org-latex--mk-options (org-latex--get-babel-lang lang)) script
+                                                  (org-latex--mk-options props)
+                                                  font))))))
       ;; Last resort... use fontspec-config if no babel specific fonts are defined
-      ;; TODO: if fallbacks are accepted, call fontspec config instead earlier
+      ;; TODO: check if fallbacks are accepted, call fontspec config instead earlier
       (unless doc-babel-font-config
         (cl-loop for (fname . fprops) in doc-fontspec
                  do (let ((font  (plist-get fprops :font))
