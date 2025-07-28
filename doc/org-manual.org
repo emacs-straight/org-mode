@@ -14410,7 +14410,7 @@ languages in the PDF output with the variable
 
 If you use =babel=, you can control the fonts used for different
 languages in the PDF output with the variable
-~org-latex-babel-fontspec~.
+~org-latex-babel-font-config~.
 
 In general, when exporting to LaTeX or PDF, it is advisable that you
 select a Unicode font that covers the scripts you use in you
@@ -15331,13 +15331,13 @@ The properties you can define are:
 **** Controlling font configuration when using the =babel= package
 :PROPERTIES:
 :custom_id: babel-fontconfig
-:description: Using org-latex-babel-fontspec
+:description: Using org-latex-babel-font-config
 :END:
 #+cindex: babel font configuration
-#+vindex: org-latex-babel-fontspec
+#+vindex: org-latex-babel-font-config
 
 Org mode will control the fonts used for multilingual documents when
-using the =babel= package with the ~org-latex-babel-fontspec~
+using the =babel= package with the ~org-latex-babel-font-config~
 variable.  By default, this variable is ~nil~, meaning that no extra
 font configuration will be generated.
 
@@ -15366,7 +15366,7 @@ where the main language is German, this variable could be
 initialised as follows:
 
 #+BEGIN_SRC elisp :results none :exports code
-(setq org-latex-babel-fontspec
+(setq org-latex-babel-font-config
       '(("de"
          :fonts (("rm" . "CMU Serif")))
         ("el-polyton"

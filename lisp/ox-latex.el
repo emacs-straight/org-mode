@@ -1654,7 +1654,7 @@ in
 		 (alist :tag "polyglossia font config"))
   :safe #'list-or-null-p)
 
-(defcustom org-latex-babel-fontspec nil
+(defcustom org-latex-babel-font-config nil
   "A property list array to map babel language names to the fonts
 used when exporting to babel.  Each entry maps a string with the
 language name to a `:fonts' property list.
@@ -2108,7 +2108,7 @@ and #+LANGUAGE over `org-export-default-language'"
          (latex-babel-langs
           (or (plist-get info :languages) (list org-export-default-language)))
          (doc-fontspec org-latex-fontspec-config)
-         (doc-babel-fontspec org-latex-babel-fontspec)
+         (doc-babel-font-config org-latex-babel-font-config)
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
          (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
@@ -2126,8 +2126,8 @@ and #+LANGUAGE over `org-export-default-language'"
                       (org-latex--mk-options unicode-math-options)))
       ;; support \babelfont with_out_ language likein
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
-      (message "babel-fontspec: %s" doc-babel-fontspec)
-      (cl-loop for (lang . babel-fontlist) in doc-babel-fontspec
+      (message "babel-font-config: %s" doc-babel-font-config)
+      (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* ((props nil)
                          (font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . font) in font-list
@@ -2137,7 +2137,7 @@ and #+LANGUAGE over `org-export-default-language'"
                                                 font)))))
       ;; Last resort... use fontspec-config if no babel specific fonts are defined
       ;; TODO: if fallbacks are accepted, call fontspec config instead earlier
-      (unless doc-babel-fontspec
+      (unless doc-babel-font-config
         (cl-loop for (fname . fprops) in doc-fontspec
                  do (let ((font  (plist-get fprops :font))
                           (feats (plist-get fprops :features)))
