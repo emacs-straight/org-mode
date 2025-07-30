@@ -1657,17 +1657,30 @@ in
 (defcustom org-latex-babel-font-config nil
   "A property list array to map babel language names to the fonts
 used when exporting to babel.  Each entry maps a string with the
-language name to a `:fonts' property list.
+language name to a `:fonts' property list:
+ (ORG-LANG :fonts (PLIST))
+Use `nil' in ORG-LANG for the document's default fonts.
 
 Each element in the `:fonts' property list has the form
-(SCRIPT . FONT).
+(SCRIPT FONT-PLIST).
  SCRIPT is one of the script codes:
    \"rm\" for the roman (serif) font
    \"sf\" for the sans serif font
    \"tt\" for the teletype (monospaced) font.
-FONT is either a string with a system font name or a list of strings
-starting with a system font name and extra properties to control the
-font's appearance (for example: \"Scale=MatchLowercase\")."
+FONT-PLIST is a property list containing a mandatory property `:font' with a
+system font name and an optional property `:props' which is either a
+string or a list of strings storing extra properties to control the
+font's appearance. For example:
+
+((nil
+  :fonts
+  ((\"rm\" :font \"CMU Serif\")
+   (\"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))))
+
+indicates that the default roman font is CMU Serif and that the default
+monotype font, DejaVu Sans Mono, needs to be scaled to better match the
+roman font's appearance."
+
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No babel font config" nil)
@@ -2117,8 +2130,9 @@ and #+LANGUAGE over `org-export-default-language'"
          (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       (goto-char (point-min))
+      ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
       ;; TODO: do we really need fontspec??
-      (insert "\\usepackage{fontspec}")
+      (insert "\\tracinglostchars=2\n\\usepackage{fontspec}")
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       (let ((opt "import,main")) ;; first language is the main language
         (cl-loop for bab-lang in latex-babel-langs
@@ -2133,13 +2147,11 @@ and #+LANGUAGE over `org-export-default-language'"
       (message "babel-font-config: %s" doc-babel-font-config)
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* ((font-list (plist-get babel-fontlist :fonts)))
-                    (cl-loop for (script . font) in font-list
-                             do (let ((props nil))
-                                  ;; font can be a string
-                                  (unless (stringp font)
-                                    ;; or a list of ("fontname" "prop=value" ...)
-                                    (setq props (cdr font))
-                                    (setq font (car font)))
+                    (cl-loop for (script . prop-list) in font-list
+                             do (let ((font  (plist-get prop-list :font))
+                                      (props (plist-get prop-list :props)))
+                                  (when (null font)
+                                    (error "Babel: font name missing script: %s lang: %s" script lang))
                                   (insert (format "\n\\babelfont%s{%s}%s{%s}"
                                                   (org-latex--mk-options (org-latex--get-babel-lang lang)) script
                                                   (org-latex--mk-options props)

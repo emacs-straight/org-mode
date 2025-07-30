@@ -15345,13 +15345,17 @@ To generate a babel font configuration, this variable needs to hold a
 property list array mapping Org language names to the fonts used
 when exporting to babel.  Each entry maps a language name to a
 ~:fonts~ property.  Use ~nil~ as the language name for the fonts
-used by the default language.
+used by the default language:
+
+#+begin_example
+(ORG-LANG :fonts FONTS)
+#+end_example
 
 The ~:fonts~ property list has the form of an associative list, where
 each element has the form:
 
 #+begin_example
-(SCRIPT . FONT)
+(SCRIPT FONT-PLIST)
 #+end_example
 
 ~SCRIPT~ is one of the script codes:
@@ -15359,9 +15363,10 @@ each element has the form:
 - ~"sf"~ for the sans serif font
 - ~"tt"~ for the teletype (monospaced) font.
 
-and ~FONT~ is either the system font name for that script or a list of
-strings. In this case, the first string is the system font name and
-the rest are options to apply to this font.
+and ~FONT-PLIST~ is a property list, with a mandatory property ~:font~
+for the system font name for that script and an optional property ~:props~.
+The property ~:props~ is either a string or a list of strings that represent
+options to apply to this font.
 
 For example, for a document with text in German and Greek,
 where the main language is German, this variable could be
@@ -15369,29 +15374,27 @@ initialised as follows:
 
 #+BEGIN_SRC elisp :results none :exports code
 (setq org-latex-babel-font-config
-      '(("de"
-         :fonts (("rm" . "CMU Serif")))
-        ("el-polyton"
-         :fonts (("rm" . "Noto Serif")))
+      '(("el-polyton"
+         :fonts (("rm" :font "Noto Serif")))
         (nil
-         :fonts (("tt" . ("DejaVu Sans Mono" "Scale=Matchlocase"))))))
+         :fonts (("rm" :font "CMU Serif")
+                 ("tt" :font "DejaVu Sans Mono" :props"Scale=Matchlocase"))))))
 #+END_SRC
 
 This setting will produce the following code in the LaTeX export
 header:
 
 #+BEGIN_SRC latex :results none :exports code
-\babelfont[german]{rm}{CMU Serif}
-\babelfont[polytonicgreek]{rm}{Noto Serif}
+\babelfont{rm}{CMU Serif}
 \babelfont{tt}{DejaVu Sans Mono}[Scale=MatchLowercase]
+\babelfont[polytonicgreek]{rm}{Noto Serif}
 #+END_SRC
 
-meaning that the text will be set in Serif (~{rm}~) and that text in
-German will use the ~CMU Serif~ font and the text in Greek will use
-the ~Noto Serif~. The text set in mono-spaced font will use ~DejaVu
-Sans Mono~ regardless of the language. The mono-spaced text will be
-scaled to match the default font size and produce a better-looking
-output.
+implying that text set in Serif (~{rm}~) will use the ~CMU Serif~ font
+unless it is in Greek, where the ~Noto Serif~ font will be used. The
+text set in mono-spaced font will use ~DejaVu Sans Mono~ regardless of
+the language. The mono-spaced text will be scaled to match the default
+font size and produce a better-looking output.
 
 ** Markdown Export
 :PROPERTIES:
