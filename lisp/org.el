@@ -3010,13 +3010,28 @@ is better to limit inheritance to certain tags using the variables
   "When set, tags are sorted using this function as a comparator.
 When the value is nil, use default sorting order.  The default sorting
 is alphabetical, except in `org-set-tags' where no sorting is done by
-default."
+default.
+
+This can also be a list of functions.  To enable advanced sorting
+algorithms a special algorithm is used.  If a sorting function returns
+nil when comparing two tags, then it is tried again with the tags in the
+opposite order.  If the function once again returns nil, it is assumed
+that both tags are deemed equal and they will then be sorted by the next
+sort function in the list.
+
+A sort function can call `org-tag-sort' which will use the next sort
+function in the list.
+
+For an example of a function that uses this advanced sorting system, see
+`org-tags-sort-hierarchy'."
   :group 'org-tags
   :type '(choice
 	  (const :tag "Default sorting" nil)
 	  (const :tag "Alphabetical" org-string<)
 	  (const :tag "Reverse alphabetical" org-string>)
-	  (function :tag "Custom function" nil)))
+          (const :tag "Sort by hierarchy" org-tags-sort-hierarchy)
+          (function :tag "Custom function" nil)
+          (repeat function)))
 
 (defvar org-tags-history nil
   "History of minibuffer reads for tags.")
@@ -4343,6 +4358,62 @@ See `org-tag-alist' for their structure."
 	  (_ (error "Invalid association in tag alist: %S" tag-pair))))
       ;; Preserve order of ALIST1.
       (append (nreverse to-add) alist2)))))
+
+(defun org-tags-sort (tag1 tag2)
+  "Sort tags TAG1 and TAG2 according to the value of `org-tags-sort-function'."
+  (let ((org-tags-sort-function
+         (cond ((functionp org-tags-sort-function) (list org-tags-sort-function))
+               ((consp     org-tags-sort-function) org-tags-sort-function)
+               ;; Default sorting as described in docstring of `org-tags-sort-function'.
+               ((null      org-tags-sort-function) (list #'org-string<)))))
+    (catch :org-tags-sort-return
+      (dolist (sort-fun org-tags-sort-function)
+        ;; So the function can call `org-tags-sort'
+        (let ((org-tags-sort-function (cdr org-tags-sort-function)))
+          (cond
+           ((funcall sort-fun tag1 tag2) ; tag1 < tag2
+            (throw :org-tags-sort-return t))
+           ((funcall sort-fun tag2 tag1) ; tag1 > tag2
+            (throw :org-tags-sort-return nil))
+           (t ; tag1 = tag2
+            'continue-loop)))))))
+
+(defun org-tags-sort-hierarchy (tag1 tag2)
+  "Sort tags TAG1 and TAG2 by the tag hierarchy.
+
+See Info node `(org) Tag Hierarchy' or `org-tag-alist' for how to set up
+a tag hierarchy.
+
+This function is intended to be a value of `org-tags-sort-function'."
+  (let ((group-alist (or org-tag-groups-alist-for-agenda
+                         org-tag-groups-alist)))
+    (if (not (and org-group-tags
+                  group-alist))
+        (org-tags-sort tag1 tag2)
+      (let* ((tag-path-function
+              ;; Returns a list of tags describing the tag path
+              ;; ex: '("top level tag" "second level" "tag")
+              (lambda (tag)
+                (let ((result (list tag)))
+                  (while (and
+                          ;; Prevent infinite loop
+                          (not (member tag (cdr result)))
+                          (setq tag
+                                (map-some
+                                 (lambda (key tags)
+                                   (when (member tag tags)
+                                     key))
+                                 group-alist)))
+                    (push tag result))
+                  result)))
+             (tag1-path (funcall tag-path-function tag1))
+             (tag2-path (funcall tag-path-function tag2)))
+        (catch :result
+          (dotimes (n (min (length tag1-path) (length tag2-path)))
+            ;; find the first difference and sort on that
+            (unless (string-equal (nth n tag1-path) (nth n tag2-path))
+              (throw :result (org-tags-sort (nth n tag1-path) (nth n tag2-path)))))
+          (< (length tag1-path) (length tag2-path)))))))
 
 (defun org-priority-to-value (s)
   "Convert priority string S to its numeric value."
@@ -6583,9 +6654,8 @@ Assume that point is on the inserted heading."
 	    (cond
 	     ((org-fold-folded-p
                (max (point-min)
-                    (1- (line-beginning-position)))
-               'headline)
-	      (org-fold-region (line-end-position 0) (line-end-position) nil 'headline))
+                    (1- (line-beginning-position))))
+	      (org-fold-region (line-end-position 0) (line-end-position) nil))
 	     (t nil))
           (pcase (get-char-property-and-overlay (point) 'invisible)
 	    (`(outline . ,o)
@@ -12125,8 +12195,8 @@ This function assumes point is on a headline."
 		   (_ (error "Invalid tag specification: %S" tags))))
 	   (old-tags (org-get-tags nil t))
 	   (tags-change? nil))
-       (when (functionp org-tags-sort-function)
-         (setq tags (sort tags org-tags-sort-function)))
+       (when org-tags-sort-function
+         (setq tags (sort tags #'org-tags-sort)))
        (setq tags-change? (not (equal tags old-tags)))
        (when tags-change?
          ;; Delete previous tags and any trailing white space.
@@ -19781,7 +19851,7 @@ matches in paragraphs or comments, use it."
 		       (org-element-at-point)))
 	    (type (org-element-type element))
 	    (post-affiliated (org-element-post-affiliated element)))
-       (unless (< p post-affiliated)
+       (unless (or (not element) (< p post-affiliated))
 	 (cl-case type
 	   (comment
 	    (save-excursion
@@ -20502,11 +20572,14 @@ it has a `diary' type."
 (defcustom org-yank-image-save-method 'attach
   "Method to save images yanked from clipboard and dropped to Emacs.
 It can be the symbol `attach' to add it as an attachment, or a
-directory name to copy/cut the image to that directory."
+directory name to copy/cut the image to that directory, or a
+function that will be called without arguments and should return the
+directory name, as a string."
   :group 'org
   :package-version '(Org . "9.7")
   :type '(choice (const :tag "Add it as attachment" attach)
-                 (directory :tag "Save it in directory"))
+                 (directory :tag "Save it in directory")
+                 (function :tag "Save it in a directory returned from the function call"))
   :safe (lambda (x) (eq x 'attach)))
 
 (defcustom org-yank-image-file-name-function #'org-yank-image-autogen-filename
@@ -20546,26 +20619,37 @@ end."
          (iname (funcall org-yank-image-file-name-function))
          (filename (with-no-warnings ; Suppress warning in Emacs <28
                      (file-name-with-extension iname ext)))
+         (dirname (cond ((eq org-yank-image-save-method 'attach) temporary-file-directory)
+                        ((stringp org-yank-image-save-method) org-yank-image-save-method)
+                        ((functionp org-yank-image-save-method)
+                         (let ((retval (funcall org-yank-image-save-method)))
+                           (when (not (stringp retval))
+                             (user-error
+                              "`org-yank-image-save-method' did not return a string: %S"
+                              retval))
+                           retval))
+                        (t (user-error
+                            "Unknown value of `org-yank-image-save-method': %S"
+                            org-yank-image-save-method))))
          (absname (expand-file-name
                    filename
-                   (if (eq org-yank-image-save-method 'attach)
-                       temporary-file-directory
-                     org-yank-image-save-method))))
+                   dirname)))
     (when (and (not (eq org-yank-image-save-method 'attach))
-               (not (file-directory-p org-yank-image-save-method)))
-      (make-directory org-yank-image-save-method t))
+               (not (file-directory-p dirname)))
+      (make-directory dirname t))
     ;; DATA is a raw image.  Tell Emacs to write it raw, without
     ;; trying to auto-detect the coding system.
     (let ((coding-system-for-write 'emacs-internal))
       (with-temp-file absname
         (insert data)))
-    (if (null (eq org-yank-image-save-method 'attach))
-        (insert (org-link-make-string
-                 (concat "file:"
-                         (org-link--normalize-filename absname))))
-      (require 'org-attach)
-      (org-attach-attach absname nil 'mv)
-      (insert (org-link-make-string (concat "attachment:" filename))))))
+    (insert
+     (if (not (eq org-yank-image-save-method 'attach))
+         (org-link-make-string (concat "file:" (org-link--normalize-filename absname)))
+       (progn
+         (require 'org-attach)
+         (org-attach-attach absname nil 'mv)
+         (org-link-make-string (concat "attachment:" filename)))))
+    ))
 
 ;; I cannot find a spec for this but
 ;; https://indigo.re/posts/2021-12-21-clipboard-data.html and pcmanfm
@@ -21140,7 +21224,7 @@ interactive command with similar behavior."
               (org-element-at-point)
               (lambda (el)
                 (goto-char (org-element-begin el))
-                (or invisible-ok (not (org-fold-folded-p))))
+                (or invisible-ok (not (org-invisible-p))))
             '(headline inlinetask)
             'with-self 'first-match)
         (user-error "Before first headline at position %d in buffer %s"
@@ -21173,7 +21257,7 @@ Respect narrowing."
 If INVISIBLE-NOT-OK is non-nil, an invisible heading line is not ok."
   (save-excursion
     (forward-line 0)
-    (and (or (not invisible-not-ok) (not (org-fold-folded-p)))
+    (and (or (not invisible-not-ok) (not (org-invisible-p)))
 	 (looking-at outline-regexp))))
 
 (defun org-in-commented-heading-p (&optional no-inheritance element)

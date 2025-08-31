@@ -894,6 +894,83 @@ $x$"
         (with-current-buffer export-buffer
           (libxml-parse-xml-region (point-min) (point-max))))))))
 
+
+;;; Rendering Timestamps
+
+(ert-deftest ox-html/plain-timestamps ()
+  "Test rendering of timestamps (outside of clock/planning)"
+  (org-test-with-temp-text "
+- [2025-01-31 Fri]
+- [2025-01-31 Fri 14:00]
+- <2025-02-18 Tue>
+- <2025-02-18 Tue 23:59>
+- [2025-02-17 Tue 17:00]--[2025-02-17 Fri 19:00]
+"
+    (let ((export-buffer "*Test HTML Export")
+          (org-export-show-temporary-buffer nil))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil t)
+      (with-current-buffer export-buffer
+        (mapc (lambda (s) (should (search-forward s nil t)))
+              '("<span class=\"timestamp\">[2025-01-31 Fri]</span>"
+                "<span class=\"timestamp\">[2025-01-31 Fri 14:00]</span>"
+                "<span class=\"timestamp\">&lt;2025-02-18 Tue&gt;</span>"
+                "<span class=\"timestamp\">&lt;2025-02-18 Tue 23:59&gt;</span>"
+                "<span class=\"timestamp\">[2025-02-17 Mon 17:00]&ndash;[2025-02-17 Mon 19:00]</span>"))))))
+
+(ert-deftest ox-html/clock ()
+  "Test rendering of clock elements"
+  (org-test-with-temp-text "
+* Test
+:LOGBOOK:
+CLOCK: [2025-02-21 Fri 17:43]--[2025-02-21 Fri 17:48] =>  0:05
+:END:
+"
+    (let ((export-buffer "*Test HTML Export")
+          (org-export-show-temporary-buffer nil)
+          (org-export-with-drawers t)
+          (org-export-with-clocks t))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil t)
+      (with-current-buffer export-buffer
+        (should (search-forward
+                 "<span class=\"timestamp-kwd\">CLOCK:</span> <span class=\"timestamp\">[2025-02-21 Fri 17:43]&ndash;[2025-02-21 Fri 17:48] </span> <span class=\"timestamp\">(0:05)</span>"
+                 nil t))))))
+
+(ert-deftest ox-html/planning ()
+  "Test rendering of timestamps in planning elements"
+  (org-test-with-temp-text "
+* Some Item
+SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25 Tue 19:09]
+"
+    (let ((export-buffer "*Test HTML Export")
+          (org-export-show-temporary-buffer nil)
+          (org-export-with-planning t))
+      (org-export-to-buffer 'html export-buffer
+        nil nil nil t)
+      (with-current-buffer export-buffer
+        (mapc (lambda (s) (should (search-forward s nil t)))
+              '("<span class=\"timestamp-kwd\">CLOSED:</span> <span class=\"timestamp\">[2025-03-25 Tue 19:09]</span>"
+                "<span class=\"timestamp-kwd\">DEADLINE:</span> <span class=\"timestamp\">&lt;2025-03-27 Thu 13:00&gt; </span>"
+                "<span class=\"timestamp-kwd\">SCHEDULED:</span> <span class=\"timestamp\">&lt;2025-03-26 Wed&gt; </span>"))))))
+
+(ert-deftest ox-html/html5-fancy-timestamps ()
+  "Test rendering of timestamps with fancy HTML5 enabled"
+  (org-test-with-temp-text "
+[2025-06-25 Wed]
+<2025-06-25 Wed 19:10>
+"
+   (let ((export-buffer "*Test HTML Export")
+         (org-export-show-temporary-buffer nil)
+         (org-html-doctype "html5")
+         (org-html-html5-fancy t))
+     (org-export-to-buffer 'html export-buffer
+       nil nil nil t)
+     (with-current-buffer export-buffer
+       (mapc (lambda (s)
+               (should (search-forward s nil t)))
+             '("<span class=\"timestamp-wrapper\"><time class=\"timestamp\" datetime=\"2025-06-25\">[2025-06-25 Wed]</time></span>"
+               "<span class=\"timestamp-wrapper\"><time class=\"timestamp\" datetime=\"2025-06-25T19:10:00\">&lt;2025-06-25 Wed 19:10&gt;</time></span>"))))))
 
 
 ;;; Postamble Format
@@ -1011,6 +1088,23 @@ entirely."
   (should (string= (org-html-normalize-string-or-function "abcdefg")
                    "abcdefg\n"))
   (should (= (org-html-normalize-string-or-function 123 nil) 123)))
+
+
+;;; Rendering Table of Contents list
+
+(ert-deftest org-html/test-toc-text ()
+  "Test the generation of HTML TOC lists by `org-html--toc-text'."
+  ;; Test 1: Standard TOC (scope is nil)
+  (let ((toc-entries '(("1" . 1) ("1.1" . 2) ("2" . 1)))
+        (expected "\n<ul>\n<li>1\n<ul>\n<li>1.1</li>\n</ul>\n</li>\n<li>2</li>\n</ul>\n"))
+    (should (string= (org-html--toc-text toc-entries nil) expected)))
+  ;; Test 2: TOC starting with a non-toplevel headline.
+  ;; This case, specific to a global TOC (scope is nil), checks
+  ;; if the function correctly wraps the output in outer lists
+  ;; to represent the skipped headline levels.
+  (let ((toc-entries '(("1" . 2) ("1.1" . 3) ("2" . 1)))
+        (expected "\n<ul>\n<li>\n<ul>\n<li>1\n<ul>\n<li>1.1</li>\n</ul>\n</li>\n</ul>\n</li>\n<li>2</li>\n</ul>\n"))
+    (should (string= (org-html--toc-text toc-entries nil) expected))))
 
 (provide 'test-ox-html)
 ;;; test-ox-html.el ends here

@@ -1168,6 +1168,19 @@ See `format-time-string' for more information on its components."
   :package-version '(Org . "8.0")
   :type 'string)
 
+(defcustom org-html-datetime-formats '("%F" . "%FT%T")
+  "Formats used for the timestamp added as metadata to the time HTML element.
+This only has an effect when `org-html-html5-fancy' is enabled, but
+does not affect how the timestamp is displayed.  The format in CAR
+represents the timestamp used for timestamps without a time component,
+CDR the one for the full date and time.  Note that the HTML standard
+restricts what timestamp formats are considered valid for the datetime
+attribute.  See `format-time-string' for more information on its
+components."
+  :type '(cons string string)
+  :group 'org-export-html
+  :package-version '(Org . "9.8"))
+
 ;;;; Template :: Mathjax
 
 (defcustom org-html-mathjax-options
@@ -1806,6 +1819,29 @@ INFO is a plist used as a communication channel.  This function
 is meant to be used as a predicate for `org-export-get-ordinal' or
 a value to `org-html-standalone-image-predicate'."
   (org-element-property :caption element))
+
+(defun org-html--format-timestamp (timestamp info)
+  "Format given TIMESTAMP for inclusion in an HTML document.
+INFO is a plist used as a communication channel.  Formatted timestamp
+will be wrapped in an element with class timestamp."
+  (let ((html-tag (if (org-html--html5-fancy-p info) "time" "span"))
+        (html-attrs (concat "class=\"timestamp\""
+                            (when (org-html--html5-fancy-p info)
+                              (format " datetime=\"%s\""
+                                      (org-format-timestamp
+                                       timestamp
+                                       (if (org-timestamp-has-time-p timestamp)
+                                           (cdr org-html-datetime-formats)
+                                           (car org-html-datetime-formats))))))))
+    (replace-regexp-in-string
+     "--"
+     "&ndash;"
+     (format "<%s %s>%s</%s>"
+             html-tag
+             html-attrs
+             (org-html-plain-text (org-timestamp-translate timestamp)
+                                  info)
+             html-tag))))
 
 ;;;; Table
 
@@ -2483,7 +2519,7 @@ of contents as a string, or nil if it is empty."
       (let* ((toc-id-counter (plist-get info :org-html--toc-counter))
              (toc (concat (format "<div id=\"text-table-of-contents%s\" role=\"doc-toc\">"
                                   (if toc-id-counter (format "-%d" toc-id-counter) ""))
-			  (org-html--toc-text toc-entries)
+			  (org-html--toc-text toc-entries scope)
 			  "</div>\n")))
         (plist-put info :org-html--toc-counter (1+ (or toc-id-counter 0)))
 	(if scope toc
@@ -2501,11 +2537,14 @@ of contents as a string, or nil if it is empty."
 		    toc
 		    (format "</%s>\n" outer-tag))))))))
 
-(defun org-html--toc-text (toc-entries)
+(defun org-html--toc-text (toc-entries &optional scope)
   "Return innards of a table of contents, as a string.
+
 TOC-ENTRIES is an alist where key is an entry title, as a string,
-and value is its relative level, as an integer."
-  (let* ((prev-level (1- (cdar toc-entries)))
+and value is its relative level, as an integer. Optional SCOPE,
+when non-nil, indicates a TOC for a subtree, which affects the
+initial nesting level."
+  (let* ((prev-level (if scope (1- (cdar toc-entries)) 0))
 	 (start-level prev-level))
     (concat
      (mapconcat
@@ -2651,17 +2690,17 @@ holding contextual information."
 
 ;;;; Clock
 
-(defun org-html-clock (clock _contents _info)
+(defun org-html-clock (clock _contents info)
   "Transcode a CLOCK element from Org to HTML.
 CONTENTS is nil.  INFO is a plist used as a communication
 channel."
   (format "<p>
 <span class=\"timestamp-wrapper\">
-<span class=\"timestamp-kwd\">%s</span> <span class=\"timestamp\">%s</span>%s
+<span class=\"timestamp-kwd\">%s</span> %s%s
 </span>
 </p>"
 	  org-clock-string
-	  (org-timestamp-translate (org-element-property :value clock))
+	  (org-html--format-timestamp (org-element-property :value clock) info)
 	  (let ((time (org-element-property :duration clock)))
 	    (and time (format " <span class=\"timestamp\">(%s)</span>" time)))))
 
@@ -3340,7 +3379,7 @@ INFO is a plist holding contextual information.  See
       (let ((destination (org-export-resolve-radio-link link info)))
 	(if (not destination) desc
 	  (format "<a href=\"#%s\"%s>%s</a>"
-		  (org-export-get-reference destination info)
+		  (org-html--reference destination info)
 		  attributes
 		  desc))))
      ;; Links pointing to a headline: Find destination and build
@@ -3577,10 +3616,9 @@ channel."
 	 (when timestamp
 	   (let ((string (car pair)))
 	     (format "<span class=\"timestamp-kwd\">%s</span> \
-<span class=\"timestamp\">%s</span> "
+%s "
 		     string
-		     (org-html-plain-text (org-timestamp-translate timestamp)
-					  info))))))
+		     (org-html--format-timestamp timestamp info))))))
      `((,org-closed-string . ,(org-element-property :closed planning))
        (,org-deadline-string . ,(org-element-property :deadline planning))
        (,org-scheduled-string . ,(org-element-property :scheduled planning)))
@@ -3932,17 +3970,16 @@ information."
   "Transcode a TIMESTAMP object from Org to HTML.
 CONTENTS is nil.  INFO is a plist holding contextual
 information."
-  (let* (
-         ;; Strip :post-blank
-         ;; It will be handled as a part of generic transcoder code
-         ;; so we should avoid double-counting post-blank.
-         (timestamp-no-blank
-          (org-element-put-property
-           (org-element-copy timestamp t)
-           :post-blank 0))
-         (value (org-html-plain-text (org-timestamp-translate timestamp-no-blank) info)))
-    (format "<span class=\"timestamp-wrapper\"><span class=\"timestamp\">%s</span></span>"
-	    (replace-regexp-in-string "--" "&ndash;" value))))
+  (let (
+        ;; Strip :post-blank
+        ;; It will be handled as a part of generic transcoder code
+        ;; so we should avoid double-counting post-blank.
+        (timestamp-no-blank
+         (org-element-put-property
+          (org-element-copy timestamp t)
+          :post-blank 0)))
+    (format "<span class=\"timestamp-wrapper\">%s</span>"
+	    (org-html--format-timestamp timestamp-no-blank info))))
 
 ;;;; Underline
 

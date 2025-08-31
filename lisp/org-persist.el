@@ -760,7 +760,7 @@ COLLECTION is the plist holding data collection."
 
 (defun org-persist-read:index (cont index-file _)
   "Read index container CONT from INDEX-FILE."
-  (when (file-exists-p index-file)
+  (when (and (file-exists-p index-file) (file-readable-p index-file))
     (let ((index (org-persist--read-elisp-file index-file)))
       (when index
         (catch :found
@@ -816,9 +816,10 @@ COLLECTION is the plist holding data collection."
       (when (file-exists-p org-persist-directory)
         (dolist (file (directory-files org-persist-directory 'absolute
                                        "\\`[^.][^.]"))
-          (if (file-directory-p file)
-              (delete-directory file t)
-            (delete-file file))))
+          (when (file-writable-p file)
+            (if (file-directory-p file)
+                (delete-directory file t)
+              (delete-file file)))))
       (plist-put (org-persist--get-collection container) :expiry 'never))))
 
 (defun org-persist--load-index ()
@@ -955,6 +956,7 @@ Otherwise, return t."
 
 (defun org-persist--merge-index-with-disk ()
   "Merge `org-persist--index' with the current index file on disk."
+  (org-persist--load-index)
   (let* ((index-file
           (org-file-name-concat org-persist-directory org-persist-index-file))
          (disk-index

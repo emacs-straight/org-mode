@@ -148,6 +148,20 @@ packages are used to generate the language-dependant configuration.
 
 The export option ~:language~ returns the first language in property
 ~:languages~ to assure backwards compatibility.
+*** Org mode no longer treats =:results drawer= as verbatim output
+
+Previously, =:results drawer= left the code block results verbatim in
+some scenarios.  This is no longer the case, in line with the manual
+and the intended purpose of this option.  However, the fix may have
+brought subtle changes in the code block output for users who made use
+of the previous erroneous behavior.  If you use =:results drawer= in your
+Org documents, please watch out for potential changes in the code evaluation.
+
+*** ~org-element-drawer-parser~ assigns ~:pre-blank~ property
+
+Previously, the whole contents of drawer, including blank lines at the beginning were
+parsed as paragraph.  Now, the blank lines at the beginning are stored in ~:pre-blank~
+property, just as in other greater elements.
 
 ** New features
 
@@ -239,6 +253,10 @@ appropriate major mode is unavailable.
 *** Graphviz Dot mode is used if available
 
 When editing Dot source blocks, Org now uses Graphviz Dot mode, if installed.
+
+*** C# code block support with =ob-csharp.el=
+
+Org now officially enables C# code block evaluation based on the .NET SDK.
 
 ** New and changed options
 
@@ -372,6 +390,19 @@ behaviour of other exporters. In this case, to exclude a section from
 the table of contents, mark it as =:UNNUMBERED: notoc= in its
 properties.
 
+*** ~org-tags-sort-function~ can now be a list of functions
+
+~org-tags-sort-function~ can now be set to a list of functions.
+Subsequent sorting functions will be used if two tags are found to be
+equivalent.  See docstring for more information.
+
+*** New tags sorting function ~org-tags-sort-hierarchy~
+
+By setting ~org-tags-sort-function~ to ~org-tags-sort-hierarchy~, tags
+are sorted taking their hierarchy into account.  See
+[[info:org#Tag Hierarchy][Tag Hierarchy]] for how to set up a tag
+hierarchy.
+
 *** New option ~org-cite-basic-complete-key-crm-separator~
 
 This option makes ~org-cite~'s ~basic~ insert processor use
@@ -432,6 +463,12 @@ value is ~nil~. Setting it to ~t~ will activate multi-script handling
 using the ~fontspec~ package. You can also set it to ~"babel"~ or
 ~"polyglossia"~ to activate the new multi-lingual handling routines.
 
+*** ~org-yank-image-save-method~ can be a function producing directory name
+
+In previous versions, ~org-yank-image-save-method~ could be either a
+symbol ~attach~ or a string -- directory name.  Now it can also be a
+function, which will be called with no arguments and its return value
+will be used as a directory to save the image to.
 
 ** New functions and changes in function arguments
 
@@ -581,6 +618,17 @@ capture ~:tree-type~ options]], the internal variable
 undocumented helper function ~org-datetree-insert-line~.
 
 ** Miscellaneous
+*** ~org-capture~ target pointing to headline is now handled uniformly for =plain= entry type
+
+Previously, when using ~file+regexp~, ~file+function~ or ~function~, =plain= entries
+were inserted right at the point according to regexp/function, even when point is
+on an existing headline.
+
+Now, when target points to an existing headline, =plain= entries are
+inserted inside its body, honoring ~:prepend~ property.  This is more
+consistent with how ~item~, ~checkitem~, and ~table-line~ templates
+are handled.
+
 *** HTML export wraps ~<code>~ around all the exported src blocks
 
 HTML export always uses ~<pre>~ tag around exported src blocks.
@@ -732,6 +780,15 @@ Previously, the LaTeX exporter handled the PDF metadata =pdfcreator=,
 will be defined as empty and not produce any metadata if their
 corresponding ~org-latex-with-author~, ~org-latex-with-title~, or
 ~org-latex-with-creator~ option is set to ~nil~.
+
+*** Fancy HTML5 export uses ~<time>~ element for timestamps
+Previously, timestamps would always be rendered inside a ~<span
+class="timestamp">~. Now, if both ~org-html-doctype~ is ~html5~ and
+~org-html-html5-fancy~ is enabled, org will use the semantic
+~<time>~ element. This will also have the ~timestamp~ class, but
+additionally set the ~datetime~ attribute with a machine readable
+variant of the timestamp. The format used for the attribute can be
+customized using ~org-html-datetime-formats~.
 
 * Version 9.7
 
