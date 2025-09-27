@@ -470,6 +470,14 @@ symbol ~attach~ or a string -- directory name.  Now it can also be a
 function, which will be called with no arguments and its return value
 will be used as a directory to save the image to.
 
+*** ~org-refile-targets~ can now match all headlines in the target file(s)
+
+Candidate refile targets may now be specified with the symbol ~t~ to
+indicate that all headlines within the specified file are to be
+considered.  For example, setting ~org-refile-targets~ to ~((nil
+. t))~ will allow one to refile to any heading within the current
+buffer.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
@@ -795,6 +803,12 @@ customized using ~org-html-datetime-formats~.
 Previously, the arrow keys and the mouse wheel were ignored in the
 export dispatcher, ~org-export-dispatch~ bound to =C-c C-e=.  Now,
 they scroll the text in the export dispatcher window.
+
+*** Add completion for ID links
+
+Completion is enabled for ID links inserted with ~org-insert-link~.
+Completion candidates will be sourced from all files known to contain
+headlines with IDs.
 
 * Version 9.7
 
