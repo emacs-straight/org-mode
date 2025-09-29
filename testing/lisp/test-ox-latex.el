@@ -276,7 +276,7 @@ is suppressed
   "Test that neither defaultfontfeatures nor directlua block is not created
 when no fallbacks in fontspec configuration"
   (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang-driver t)
+        (org-latex-multi-lang t)
         (org-latex-fontspec-config '(("main" :font "FreeSans"))))
     (org-test-with-exported-text
      'latex
@@ -299,7 +299,7 @@ A random text.
   "Test that defaultfontfeatures is generated
 when org-latex-fontspec-default-features are defined."
   (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang-driver t)
+        (org-latex-multi-lang t)
         (org-latex-fontspec-default-features '(("Numbers" . "OldStyle")))
         (org-latex-fontspec-config '(("main" :font "FreeSans"))))
     (org-test-with-exported-text
@@ -319,7 +319,7 @@ A random text.
 (ert-deftest test-ox-latex/lualatex-fontspec-directlua ()
   "Test that directlua block is created"
   (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang-driver t)
+        (org-latex-multi-lang t)
         (org-latex-fontspec-config '(("main"
                                       :font "FreeSans"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
@@ -342,7 +342,7 @@ A random text with emoji: 👍
   "Test that directlua block is not created because it is not needed
 no emojis detected"
   (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang-driver t)
+        (org-latex-multi-lang t)
         (org-latex-fontspec-config '(("main"
                                       :font "FreeSans"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
@@ -365,11 +365,11 @@ A random text without emojis.
 
 (ert-deftest test-ox-latex/lualatex-babel-langs ()
   "Test that babel is handled correctly.
-In this test we set org-latex-multi-lang-driver to \"babel\"
+In this test we set org-latex-multi-lang to \"babel\"
 in the document header and test that the default can be overwritten
 "
   (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang-driver t))
+        (org-latex-multi-lang t))
     (org-test-with-exported-text
      'latex
      "#+TITLE: fontspec

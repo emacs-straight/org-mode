@@ -436,7 +436,7 @@ to markdown during export to Markdown. This is analogous to how
 *** New option ~org-latex-fontspec-config~
 
 The new option ~org-latex-fontspec-config~ stores the configuration
-for the ~fontspec~ package. It is used when ~org-latex-multi-lang-driver~
+for the ~fontspec~ package. It is used when ~org-latex-multi-lang~
 is ~t~.
 
 *** New option ~org-latex-fontspec-default-features~
@@ -455,9 +455,9 @@ This variable controls the fonts used in the LaTeX export when the
 This variable controls the fonts used in the LaTeX export when the
 ~babel~ package is used in multi-lingual documents.
 
-*** New options ~org-latex-multi-lang-driver~ and ~#+LATEX_MULTI_LANG:~
+*** New options ~org-latex-multi-lang~ and ~#+LATEX_MULTI_LANG:~
 
-The new option ~org-latex-multi-lang-driver~ activates the new
+The new option ~org-latex-multi-lang~ activates the new
 language control features when exporting to LaTeX. By default, its
 value is ~nil~. Setting it to ~t~ will activate multi-script handling
 using the ~fontspec~ package. You can also set it to ~"babel"~ or

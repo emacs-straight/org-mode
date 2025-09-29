@@ -14103,7 +14103,7 @@ interactive online viewing or high-quality print publication.
 While the details are covered in-depth in this section, here are some
 quick references to variables for the impatient: for engines, see
 ~org-latex-compiler~; for multi-language handling, see
-~org-latex-multi-lang-driver~; for build sequences, see
+~org-latex-multi-lang~; for build sequences, see
 ~org-latex-pdf-process~; for packages, see
 ~org-latex-default-packages-alist~ and ~org-latex-packages-alist~.
 
@@ -14243,7 +14243,7 @@ general options (see [[*Export Settings]]).
 - =LATEX_MULTI_LANG= ::
 
   #+cindex: @samp{LATEX_MULTI_LANG}, keyword
-  #+vindex: org-latex-multi-lang-driver
+  #+vindex: org-latex-multi-lang
   #+vindex: org-export-default-language
 
   The strategy to handle multi-lingual features.  Possible values
@@ -14260,7 +14260,7 @@ general options (see [[*Export Settings]]).
   would tell LaTeX to use the ~babel~ package to create a document
   with Spanish headers.
 
-  When ~org-latex-multi-lang-driver~ is ~nil~, all options and
+  When ~org-latex-multi-lang~ is ~nil~, all options and
   features are controlled by the user in ~#+LATEX_HEADER:~ options.
 
   When it is ~t~, only font control features implemented in the
@@ -14416,7 +14416,7 @@ In general, when exporting to LaTeX or PDF, it is advisable that you
 select a Unicode font that covers the scripts you use in you
 document. This will highly simplify font configuration.
 
-When ~org-latex-multi-lang-driver~ is ~nil~, the value of
+When ~org-latex-multi-lang~ is ~nil~, the value of
 ~org-export-default-language~ will replace appearances of the string
 ~"AUTO"~ when importing ~babel~ or ~polyglossia~ with a
 ~#+LATEX_HEADER:~ keyword.
@@ -15047,7 +15047,7 @@ include that.  Other commands need to be included manually:
 
 *** Controlling the font configuration for LuaLaTeX and XeLaTeX
 #+cindex: latex backend
-#+vindex: org-latex-multi-lang-driver
+#+vindex: org-latex-multi-lang
 #+vindex: org-latex-classes
 
 The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword
@@ -15058,7 +15058,7 @@ code at the beginning of the generated LaTeX output.
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the =fontspec=. Remember that
 =polyglossia= will load =fontspec= automatically. Setting variable
-~org-latex-multi-lang-driver~ to ~t~ enables optimised =fontspec=
+~org-latex-multi-lang~ to ~t~ enables optimised =fontspec=
 configuration.
 
 Org mode will load =fontspec= for =babel=. However, font configuration

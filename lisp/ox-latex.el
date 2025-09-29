@@ -170,7 +170,7 @@
     (:latex-title-command nil nil org-latex-title-command)
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
-    (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang-driver)
+    (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -506,7 +506,7 @@ AUTO will automatically be replaced with a coding system derived
 from `buffer-file-coding-system'.  See also the variable
 `org-latex-inputenc-alist' for a way to influence this mechanism.
 
-When `org-latex-multi-lang-driver' is nil, if your header contains
+When `org-latex-multi-lang' is nil, if your header contains
 \"\\usepackage[AUTO]{babel}\" or \"\\usepackage[AUTO]{polyglossia}\",
 AUTO will be replaced with the language related to the language code
 specified by `org-export-default-language'.  Note that constructions
@@ -515,7 +515,7 @@ Polyglossia the language will be set via the macros
 \"\\setmainlanguage\" and \"\\setotherlanguage\".  See also
 `org-latex-guess-babel-language' and
 `org-latex-guess-polyglossia-language'.
-See also `org-latex-multi-lang-driver'.
+See also `org-latex-multi-lang'.
 
 The sectioning structure
 ------------------------
@@ -1558,7 +1558,7 @@ property to `toc'"
   :type 'boolean
   :safe #'booleanp)
 
-(defcustom org-latex-multi-lang-driver nil
+(defcustom org-latex-multi-lang nil
   "The multi-lingual support package used by the LaTeX backend.
 
 Possible values are \"polyglossia\",\"babel\" , `t' or `nil'.
@@ -2024,7 +2024,7 @@ Using babel is only possible when you are sure that the ldf method can be used."
   (let ((latex-langs
          (or (plist-get info :languages) (list org-export-default-language)))
         (driver
-         (or (plist-get info :latex-multi-lang) org-latex-multi-lang-driver)))
+         (or (plist-get info :latex-multi-lang) org-latex-multi-lang)))
     (with-temp-buffer
       (goto-char (point-min))
       (when driver
@@ -2292,13 +2292,13 @@ we are using neither bale nor polyglossia"
 Dispatches to the different prelude generation routines depending
 on the current LaTeX compiler and language support backend.
 
-If `org-latex-multi-lang-driver' is nil, return an empty string
+If `org-latex-multi-lang' is nil, return an empty string
 and rely on the legacy routines for language and babel guessing.
 "
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
         (driver
-         (or (plist-get info :latex-multi-lang) org-latex-multi-lang-driver)))
+         (or (plist-get info :latex-multi-lang) org-latex-multi-lang)))
     (cond ((null driver) "")
           ((equal compiler "pdflatex")
            (org-latex--pdflatex-fontconfig info))
@@ -2547,9 +2547,9 @@ specified in `org-latex-default-packages-alist' or
 			"^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
 			class-options header t nil 1))))
 	      (user-error "Unknown LaTeX class `%s'" class)))
-         (multi-lang-driver (or (plist-get info :latex-multi-lang)
-                                org-latex-multi-lang-driver)))
-    (message "org-latex-make-preamble from %s" template)
+         (multi-lang (or (plist-get info :latex-multi-lang)
+                                org-latex-multi-lang)))
+    ;; (message "org-latex-make-preamble from %s" template)
     ;;
     ;; This is just a note for the integration of the new features with main
     ;;
@@ -2566,7 +2566,7 @@ specified in `org-latex-default-packages-alist' or
 			      (and (not snippet?)
 			           (plist-get info :latex-header-extra)))
 		        "")))))
-      (if multi-lang-driver
+      (if multi-lang
           ;; Full headers are generated using the new drivers
           new-template
         ;; Apply the "old" strategy of guessing on the generated template
