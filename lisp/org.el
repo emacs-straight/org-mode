@@ -7080,13 +7080,16 @@ After top level, it switches back to sibling level."
 	(funcall fun)))))
 
 (defun org-map-region (fun beg end)
-  "Call FUN for every heading between BEG and END."
+  "Call FUN for every heading between BEG and END.
+The point is placed at the beginning of each heading
+(including any *) before FUN is called."
   (let ((org-ignore-region t))
     (save-excursion
       (setq end (copy-marker end))
       (goto-char beg)
       (when (and (re-search-forward org-outline-regexp-bol nil t)
 		 (< (point) end))
+        (goto-char (match-beginning 0))
 	(funcall fun))
       (while (and (progn
 		    (outline-next-heading)
@@ -7369,7 +7372,7 @@ of some markers in the region, even if CUT is non-nil.  This is
 useful if the caller implements cut-and-paste as copy-then-paste-then-cut."
   (interactive "p")
   (org-preserve-local-variables
-   (let (beg end folded (beg0 (point)))
+   (let (beg end folded subtree-text (beg0 (point)))
      (if (called-interactively-p 'any)
 	 (org-back-to-heading nil)    ; take what looks like a subtree
        (org-back-to-heading t))	      ; take what is really there
@@ -7396,11 +7399,13 @@ useful if the caller implements cut-and-paste as copy-then-paste-then-cut."
        (setq org-subtree-clip-folded folded)
        (when (or cut force-store-markers)
 	 (org-save-markers-in-region beg end))
+       (setq subtree-text (buffer-substring-no-properties beg end))
        (if cut (kill-region beg end) (copy-region-as-kill beg end))
-       (setq org-subtree-clip (current-kill 0))
+       (setq org-subtree-clip subtree-text)
        (message "%s: Subtree(s) with %d characters"
 		(if cut "Cut" "Copied")
-		(length org-subtree-clip))))))
+		(length org-subtree-clip))
+       subtree-text))))
 
 (defun org-paste-subtree (&optional level tree for-yank remove)
   "Paste the clipboard as a subtree, with modification of headline level.
