@@ -249,7 +249,7 @@
       ("oc" :fontenc "T1" :babel "occitan" :polyglossia "occitan" :lang-name "Occitan" :script "latin" :script-tag "latn")
       ("pl" :fontenc "T1" :babel "polish" :polyglossia "polish" :lang-name "Polish" :script "latin" :script-tag "latn")
       ("pms" :fontenc "T1" :babel "piedmontese" :polyglossia "piedmontese" :lang-name "Piedmontese" :script "latin" :script-tag "latn")
-      ("pt"    :fontenc "T1" :babel "portuges" :polyglossia "portuges" :lang-name "Portuges" :script "latin" :script-tag "latn")
+      ("pt"    :fontenc "T1" :babel "portuges" :polyglossia "portuguese" :lang-name "Portuges" :script "latin" :script-tag "latn")
       ("pt-br" :fontenc "T1" :babel "brazilian" :polyglossia "brazilian" :lang-name "Portuges" :script "latin" :script-tag "latn")
       ("rm" :babel-ini-only "romansh" :polyglossia "romansh" :lang-name "Romansh" :script "latin" :script-tag "latn")
       ("ro" :fontenc "T1" :babel "romanian" :polyglossia "romanian" :lang-name "Romanian" :script "latin" :script-tag "latn")
