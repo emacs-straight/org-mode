@@ -2113,6 +2113,16 @@ polyglossia for lualatex or xelatex"
           (or babel-lang babel-ini-only)))
     lang))
 
+(defun org-latex--babel-langs-as-option(langs)
+  (mapconcat #'identity
+             (mapcar #'(lambda (s)
+                         (let* ((props (alist-get s org-latex-language-alist nil nil #'string=))
+                                (lang  (plist-get props :babel)))
+                           ;; (message "%s --> props %s" s props)
+                           (or lang s)))
+                     (reverse langs))
+             ","))
+
 (defun org-latex--lualatex-babel-config (info)
   "This function returns a string with the prelude part for
 babel on lualatex/xelatex.
@@ -2126,23 +2136,27 @@ and #+LANGUAGE over `org-export-default-language'"
           (or (plist-get info :languages) (list org-export-default-language)))
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
-         (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
+         ;; (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
+         (babel-options (org-latex--babel-langs-as-option latex-babel-langs))
          (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       (goto-char (point-min))
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
       ;; TODO: do we really need fontspec??
-      (insert "\\tracinglostchars=2\n\\usepackage{fontspec}")
+      (insert "\\tracinglostchars=2\n%%\\usepackage{fontspec}")
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
-      (let ((opt "import,main")) ;; first language is the main language
-        (cl-loop for bab-lang in latex-babel-langs
-                 do
-                 (insert (format "\n\\babelprovide%s{%s}"
-                                 (org-latex--mk-options opt) (org-latex--get-babel-lang bab-lang)))
-                 (setq opt "import")))
+      ;; babelprovide based on :provide atribute
+      (cl-loop for (bab-lang . props) in doc-babel-font-config
+               do (let ((provide (plist-get props :provide)))
+                    ;; \\babelprovide needs language and provide
+                    ;; it doesn't work on the default language
+                    (when (and bab-lang provide)
+                      (insert (format "\n\\babelprovide%s{%s}"
+                                     (org-latex--mk-options provide)
+                                     (org-latex--get-babel-lang bab-lang))))))
       (insert (format "\n\\usepackage%s{unicode-math}"
                       (org-latex--mk-options unicode-math-options)))
-      ;; support \babelfont with_out_ language likein
+      ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (message "babel-font-config: %s" doc-babel-font-config)
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
