@@ -2128,7 +2128,13 @@ polyglossia for lualatex or xelatex"
 babel on lualatex/xelatex.
 
 Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
-and #+LANGUAGE over `org-export-default-language'"
+and #+LANGUAGE over `org-export-default-language'.
+
+The structure is intended to cover most examples from
+https://github.com/latex3/babel/tree/main/samples.
+
+Use fontspec as a last resort and when defined.
+"
 
   (let* ((compiler
           (or (plist-get info :latex-compiler) org-latex-compiler))
@@ -2136,21 +2142,25 @@ and #+LANGUAGE over `org-export-default-language'"
           (or (plist-get info :languages) (list org-export-default-language)))
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
-         ;; (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
-         (babel-options (org-latex--babel-langs-as-option latex-babel-langs))
+         (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
          (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
       (goto-char (point-min))
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
       ;; TODO: do we really need fontspec??
       (insert "\\tracinglostchars=2\n%%\\usepackage{fontspec}")
+      ;; do *not* include languages here
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
-      ;; babelprovide based on :provide atribute
+      ;; import the main language with a babelprovide
+      (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
+      ;; For the other languages, generate babelprovide based on :provide atribute, default to "import"
       (cl-loop for (bab-lang . props) in doc-babel-font-config
                do (let ((provide (plist-get props :provide)))
                     ;; \\babelprovide needs language and provide
                     ;; it doesn't work on the default language
-                    (when (and bab-lang provide)
+                    (when bab-lang
+                      (unless provide
+                        (setq provide "import"))
                       (insert (format "\n\\babelprovide%s{%s}"
                                      (org-latex--mk-options provide)
                                      (org-latex--get-babel-lang bab-lang))))))
@@ -2158,7 +2168,6 @@ and #+LANGUAGE over `org-export-default-language'"
                       (org-latex--mk-options unicode-math-options)))
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
-      (message "babel-font-config: %s" doc-babel-font-config)
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* ((font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . prop-list) in font-list

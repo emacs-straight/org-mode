@@ -15398,13 +15398,14 @@ font size and produce a better-looking output.
 
 You can add an optional ~:provide~ property to any language mapping
 except the default mapping. The ~:provide~ property is a string and
-will generate a
+will default to ~"import"~ if not present. It will generate a
 
 #+begin_example
 \babelprovide[provide]{lang}
 #+end_example
 
-line with additional configuration when needed. For example:
+line with additional configuration when needed. The main language will
+always use ~"import,main"~. For example:
 
 #+BEGIN_SRC emacs-lisp :results none :exports code
 (setq org-latex-babel-font-config
@@ -15415,10 +15416,18 @@ line with additional configuration when needed. For example:
          :provide "onchar=ids fonts")))
 #+END_SRC
 
+applied to an org file with
+#+BEGIN_SRC org :results none :exports code
+,#+LATEX_COMPILER: lualatex
+,#+LANGUAGE: el pt
+,#+LATEX_MULTI_LANG: babel
+#+END_SRC
+
 will generate the following LaTeX code:
 
 #+BEGIN_SRC latex :results none :exports code
-\usepackage[portuguese,greek]{babel}
+\usepackage[bidi=basic]{babel}
+\babelprovide[import,main]{greek}
 \babelprovide[onchar=ids fonts]{portuguese}
 \usepackage{unicode-math}
 \babelfont{rm}{FreeSerif}
@@ -15427,7 +15436,6 @@ will generate the following LaTeX code:
 
 to set a document in Greek and Portuguese using the ~DejaVu Sans~ font
 for the Portuguese text and ~FreeSerif~ for Greek.
-
 
 ** Markdown Export
 :PROPERTIES:
