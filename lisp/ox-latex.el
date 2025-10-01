@@ -2152,18 +2152,20 @@ Use fontspec as a last resort and when defined.
       ;; do *not* include languages here
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       ;; import the main language with a babelprovide
-      (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
+      ;; it is the fist language in the list.
+      (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (pop latex-babel-langs))))
       ;; For the other languages, generate babelprovide based on :provide atribute, default to "import"
-      (cl-loop for (bab-lang . props) in doc-babel-font-config
-               do (let ((provide (plist-get props :provide)))
+      ;; for that we have to loop the languages
+      (cl-loop for bab-lang in latex-babel-langs
+               do (let* ((props (alist-get bab-lang doc-babel-font-config nil nil #'string=))
+                         (provide (when props (plist-get props :provide))))
                     ;; \\babelprovide needs language and provide
                     ;; it doesn't work on the default language
-                    (when bab-lang
-                      (unless provide
-                        (setq provide "import"))
-                      (insert (format "\n\\babelprovide%s{%s}"
-                                     (org-latex--mk-options provide)
-                                     (org-latex--get-babel-lang bab-lang))))))
+                    (unless provide
+                      (setq provide "import"))
+                    (insert (format "\n\\babelprovide%s{%s}"
+                                    (org-latex--mk-options provide)
+                                    (org-latex--get-babel-lang bab-lang)))))
       (insert (format "\n\\usepackage%s{unicode-math}"
                       (org-latex--mk-options unicode-math-options)))
       ;; support \babelfont with_out_ language like in
