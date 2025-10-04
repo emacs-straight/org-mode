@@ -14275,7 +14275,7 @@ general options (see [[*Export Settings]]).
 
   When =#+LATEX_MULTI_LANG= is either ~babel~ or ~polyglossia~, Org mode
   will configure the corresponding LaTeX package to handle
-  multi-language support.  =LANGUAGE= option will be used to determine
+  multi-language support.  The =LANGUAGE= option will be used to determine
   the main and secondary languages. For example:
 
   #+BEGIN_SRC org :results none :exports code
@@ -14429,7 +14429,7 @@ languages in the PDF output with the variable
 ~org-latex-babel-font-config~.
 
 In general, when exporting to LaTeX or PDF, it is advisable that you
-select a Unicode font that covers the scripts you use in you
+select a Unicode font that covers the scripts you use in your
 document. This will highly simplify font configuration.
 
 When ~org-latex-multi-lang~ is ~nil~, the value of
