@@ -14247,39 +14247,59 @@ general options (see [[*Export Settings]]).
   #+vindex: org-export-default-language
 
   The strategy to handle multi-lingual features.  Possible values
-  are ~"polyglossia"~, ~"babel"~, ~t~ or ~nil~.
+  are ~nil~, ~"fontspec"~, "~"polyglossia"~ or ~"babel"~.
 
-  By default, it is ~nil~ and multi-language documents are controlled
-  by importing the LaTeX package to control multi-language features
-  with the ~#+LATEX_HEADER~ keyword. Use =AUTO= in the package options
-  to include language information, for example:
+  When this variable is nil, the LaTeX language features need to be
+  configured manually, specifying appropriate LaTeX headers (see
+  ~#+LATEX_HEADER~ keyword).  For convenience, if the LaTeX headers
+  load =babel= or =polyglossia=, you can use word =AUTO= in the
+  package options to automatically specify the document's main
+  language according to Org's =#+LANGUAGE= keyword:
+
   #+BEGIN_EXAMPLE
 #+LANGUAGE: es
 #+LATEX_HEADER: \usepackage[AUTO]{babel}
   #+END_EXAMPLE
+#+texinfo: @noindent
   would tell LaTeX to use the ~babel~ package to create a document
   with Spanish headers.
 
-  When ~org-latex-multi-lang~ is ~nil~, all options and
-  features are controlled by the user in ~#+LATEX_HEADER:~ options.
-
-  When it is ~t~, only font control features implemented in the
-  =fontspec= package are activated, when the LaTeX compiler is
-  =lualatex= or =xelatex=.
+  When =#+LATEX_MULTI_LANG= is set to ~fontspec~, Org mode will
+  configure the font defaults using LaTeX's ~fontspec~ package.  Note
+  that ~fontspec~ can configure the fonts either globally (for all the
+  languages used in the document), or for different character sets
+  (for example, ~emoji~, ~han~, ~kana~).  See [[#lualatex-fontspec]]
+  for more details.  Beware that ~fontspec~ does not work with
+  =pdflatex= compiler.  We recommend using =lualatex= or =xelatex= for
+  reliable non-latin language support.
 
   When it is either ~babel~ or ~polyglossia~, it designates the
   language control package that is imported and the =LANGUAGE= option
   is used to determine the main and secondary languages.
 
-  For example:
+  When =#+LATEX_MULTI_LANG= is either ~babel~ or ~polyglossia~, Org mode
+  will configure the corresponding LaTeX package to handle
+  multi-language support.  =LANGUAGE= option will be used to determine
+  the main and secondary languages. For example:
+
   #+BEGIN_SRC org :results none :exports code
 ,#+LANGUAGE: fr de es
 ,#+LATEX_MULTI_LANG: polyglossia
   #+END_SRC
-
+#+texinfo: @noindent
   sets multi-language handling to use =polyglossia= in a document, where
   the main language (i.e. header, figure, table names) and typesetting
   options use French and there are passages in German and Spanish.
+
+  ~babel~ and ~polyglossia~ should be used for non-English documents.
+  Both provide setting up the fonts, including setting them up on a
+  per-language basis.
+
+  See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
+  details about ~babel~ and ~polyglossia~ configuration.  Note that
+  ~polyglossia~ does not work with =pdflatex= compiler.  We recommend
+  using =lualatex= or =xelatex= for reliable non-latin language
+  support.
 
 - =KEYWORDS= ::
 
