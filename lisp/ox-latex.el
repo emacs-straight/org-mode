@@ -1558,10 +1558,15 @@ property to `toc'"
   :type 'boolean
   :safe #'booleanp)
 
+(defun string-or-null-p (object)
+  "Return non-nil when `object' is a string or nil"
+  (or (null object)
+      (stringp object)))
+
 (defcustom org-latex-multi-lang nil
   "The multi-lingual support package used by the LaTeX backend.
 
-Possible values are \"polyglossia\",\"babel\" , `t' or `nil'.
+Possible values are \"polyglossia\",\"babel\" , \"fontspec\" or `nil'.
 \"polyglossia\" or \"babel\"  activates new implementations for
                               either LaTeX package,
 `t'           activates new font/multi-lingual support,
@@ -1570,11 +1575,9 @@ Possible values are \"polyglossia\",\"babel\" , `t' or `nil'.
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "Babel" "babel")
 		 (const :tag "Polyglossia" "polyglossia")
-		 (const :tag "Activate new fontspec" t)
+		 (const :tag "Fontspec" "fontspec")
 		 (const :tag "None" nil))
-  :safe #'(lambda (obj)
-            "Return true if OBJ is a string or a boolean"
-            (or (stringp obj) (booleanp obj))))
+  :safe #'string-or-null-p)
 
 (defun list-or-null-p (object)
   "Return non-nil when `object' is a list or nil"
@@ -2023,14 +2026,14 @@ and that cannot be used with pdf-latex.
 Using babel is only possible when you are sure that the ldf method can be used."
   (let ((latex-langs
          (or (plist-get info :languages) (list org-export-default-language)))
-        (driver
+        (multi-lang
          (or (plist-get info :latex-multi-lang) org-latex-multi-lang)))
     (with-temp-buffer
       (goto-char (point-min))
-      (when driver
+      (when multi-lang
         (insert "%% \\usepackage[utf8]{inputenc}\n")
         (insert (format "\\usepackage%s{fontenc}\n" (org-latex--fontenc-options latex-langs)))
-        (when (equal driver "babel")
+        (when (equal multi-lang "babel")
           (insert (format "\n\\usepackage%s{babel}" (org-latex--babel-ldf-list latex-langs)))))
       (buffer-string))))
 
@@ -2322,14 +2325,14 @@ and rely on the legacy routines for language and babel guessing.
 "
   (let ((compiler
          (or (plist-get info :latex-compiler) org-latex-compiler))
-        (driver
+        (multi-lang
          (or (plist-get info :latex-multi-lang) org-latex-multi-lang)))
-    (cond ((null driver) "")
-          ((equal compiler "pdflatex")
+    (cond ((null multi-lang) "") ;; delegate
+          ((equal compiler "pdflatex") ;; pdflatex needs separate handling
            (org-latex--pdflatex-fontconfig info))
-          ((equal driver "babel")
+          ((equal multi-lang "babel")
            (org-latex--lualatex-babel-config info))
-          ((equal driver "polyglossia")
+          ((equal multi-lang "polyglossia")
            (org-latex--lualatex-polyglossia-config info))
           (t ;; else lualatex or xelatex with fontspec
            (org-latex--lualatex-fontspec-config info)))))
@@ -2354,14 +2357,14 @@ LaTeX compiler is defined in :latex-compiler INFO plist entry.
 
 Return new list of packages."
   (let ((compiler (or (plist-get info :latex-compiler) ""))
-        (driver   (plist-get info :latex-multi-lang)))
+        (multi-lang   (plist-get info :latex-multi-lang)))
     (if (not (member-ignore-case compiler org-latex-compilers)) pkg-alist
       (cl-remove-if-not
        (lambda (package)
 	 (pcase package
 	   (`(,_ ,_ ,_ nil) t)
 	   (`(,_ ,pkg ,_ ,compilers) (and (member-ignore-case compiler compilers)
-                                          (keep-pkg pkg driver)))
+                                          (keep-pkg pkg multi-lang)))
 	   (_ t)))
        pkg-alist))))
 
