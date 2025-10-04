@@ -14249,18 +14249,18 @@ general options (see [[*Export Settings]]).
   The strategy to handle multi-lingual features.  Possible values
   are ~nil~, ~"fontspec"~, "~"polyglossia"~ or ~"babel"~.
 
-  When this variable is nil, the LaTeX language features need to be
-  configured manually, specifying appropriate LaTeX headers (see
-  ~#+LATEX_HEADER~ keyword).  For convenience, if the LaTeX headers
-  load =babel= or =polyglossia=, you can use word =AUTO= in the
-  package options to automatically specify the document's main
+  When this variable is nil (default), the LaTeX language features
+  need to be configured manually, specifying appropriate LaTeX headers
+  (see ~#+LATEX_HEADER~ keyword).  For convenience, if the LaTeX
+  headers load =babel= or =polyglossia=, you can use word =AUTO= in
+  the package options to automatically specify the document's main
   language according to Org's =#+LANGUAGE= keyword:
 
   #+BEGIN_EXAMPLE
 #+LANGUAGE: es
 #+LATEX_HEADER: \usepackage[AUTO]{babel}
   #+END_EXAMPLE
-#+texinfo: @noindent
+  #+texinfo: @noindent
   would tell LaTeX to use the ~babel~ package to create a document
   with Spanish headers.
 
@@ -14273,10 +14273,6 @@ general options (see [[*Export Settings]]).
   =pdflatex= compiler.  We recommend using =lualatex= or =xelatex= for
   reliable non-latin language support.
 
-  When it is either ~babel~ or ~polyglossia~, it designates the
-  language control package that is imported and the =LANGUAGE= option
-  is used to determine the main and secondary languages.
-
   When =#+LATEX_MULTI_LANG= is either ~babel~ or ~polyglossia~, Org mode
   will configure the corresponding LaTeX package to handle
   multi-language support.  =LANGUAGE= option will be used to determine
@@ -14286,7 +14282,7 @@ general options (see [[*Export Settings]]).
 ,#+LANGUAGE: fr de es
 ,#+LATEX_MULTI_LANG: polyglossia
   #+END_SRC
-#+texinfo: @noindent
+  #+texinfo: @noindent
   sets multi-language handling to use =polyglossia= in a document, where
   the main language (i.e. header, figure, table names) and typesetting
   options use French and there are passages in German and Spanish.
