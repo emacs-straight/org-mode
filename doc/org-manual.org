@@ -14393,23 +14393,25 @@ A sample Org file with the above headers:
 #+cindex: @samp{LANGUAGE}, keyword
 #+vindex: org-export-default-language
 
-The LaTeX export backend can handle documents for non-English
-audiences and documents with multiple languages using the LaTeX
-packages =babel= or =polyglossia=. It will use the =LANGUAGE= keyword,
-if present in the document, or the value of
-~org-export-default-language~ to determine the languages used in a
-document. If this value is a space-separated list of languages, it
-will assume the first one to be the main language in the list.
+The LaTeX export backend can handle non-English and multiple-language
+documents using the LaTeX packages =babel= or =polyglossia=.
+The document languages should be specified using =LANGUAGE= keyword.
+If =LANGUAGE= is not specified, the value of ~org-export-default-language~ is used.
 
-
-For example, suppose a document declares Polytonic Greek as
-the primary language, and French as the secondary language using the
-=polyglossia= package to handle document languages:
-
+For example, consider an Org document written using Polytonic Greek
+with some parts written in French:
 #+begin_example
 ,#+LANGUAGE: el-polyton fr
 ,#+LATEX_MULTI_LANG: polyglossia
 #+end_example
+#+texinfo: @noindent
+The above snippet will make Org mode use =polyglossia= LaTeX package
+with Polytonic Greek as the primary language (used for standard names
+like "Table of Contents", "Table", "Figure", etc), and French as the
+secondary language.
+
+# TODO: We should describe how to mark snippets in other # language in
+# Org.
 
 This would produce in LaTeX (with the actual =polyglossia= syntax):
 
@@ -14428,14 +14430,14 @@ If you use =babel=, you can control the fonts used for different
 languages in the PDF output with the variable
 ~org-latex-babel-font-config~.
 
-In general, when exporting to LaTeX or PDF, it is advisable that you
-select a Unicode font that covers the scripts you use in your
-document. This will highly simplify font configuration.
+In general, when exporting to LaTeX or PDF, we recommend
+using a Unicode font set that covers the scripts you use in your
+document. This will simplify the font configuration.
 
-When ~org-latex-multi-lang~ is ~nil~, the value of
-~org-export-default-language~ will replace appearances of the string
-~"AUTO"~ when importing ~babel~ or ~polyglossia~ with a
-~#+LATEX_HEADER:~ keyword.
+When ~org-latex-multi-lang~ is ~nil~, the first language in the
+=LANGUAGE= keyword (or the value of ~org-export-default-language~ if
+it is not used) will replace appearances of the string ~"AUTO"~ when
+importing ~babel~ or ~polyglossia~ with a ~#+LATEX_HEADER:~ keyword.
 
 # For example:
 
@@ -14458,8 +14460,6 @@ When ~org-latex-multi-lang~ is ~nil~, the value of
 # #+END_SRC
 
 # for the LaTeX export.
-When you indicate more than one language in your
-document, ~AUTO~ will be replaced with the *first* language.
 
 *** Quoting LaTeX code
 :PROPERTIES:
