@@ -14349,10 +14349,10 @@ A sample Org file with the above headers:
 #+vindex: org-export-multi-lang
 #+vindex: org-export-default-language
 
-  The LaTeX export backend can handle non-English and
-  multiple-language using the LaTeX packages =babel= or
-  =polyglossia=.  The document languages should be specified using
-  =LANGUAGE= keyword.  If =LANGUAGE= is not specified, the value of
+  The LaTeX export backend can handle non-English and multi-language
+  documents using the LaTeX packages =babel= or =polyglossia=.  The
+  document languages should be specified using =LANGUAGE= keyword.  If
+  =LANGUAGE= is not specified, the value of
   ~org-export-default-language~ is used.
 
   The way to handle documents with localisation requirements is set
@@ -14365,7 +14365,9 @@ A sample Org file with the above headers:
   convenience, if the LaTeX headers load =babel= or =polyglossia=, you
   can use word =AUTO= in the package options to automatically specify
   the document's main language according to Org's =#+LANGUAGE=
-  keyword:
+  keyword. Use this setting when you must use =pdflatex= and follow
+  the instructions in [[#pdflatex-fonts]] to set up fonts in your
+  document.
 
   #+BEGIN_EXAMPLE
 #+LANGUAGE: es
@@ -14994,6 +14996,9 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 #+end_example
 
 *** Controlling the font configuration for ~pdflatex~
+:PROPERTIES:
+:custom_id: pdflatex-fonts
+:END:
 #+vindex: org-latex-default-packages-alist
 
 ~pdflatex~ uses packages to import the fonts that will be used in the
