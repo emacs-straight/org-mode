@@ -14247,7 +14247,7 @@ general options (see [[*Export Settings]]).
   #+vindex: org-export-default-language
 
   The strategy to handle multi-lingual features.  Possible values
-  are ~nil~, ~"fontspec"~, "~"polyglossia"~ or ~"babel"~.
+  are ~nil~, ~fontspec~, ~polyglossia~ or ~babel~.
   See more details about setting up multi-language documents in the
   [[*Handling different languages in LaTeX exports]] section.
 
@@ -14345,21 +14345,27 @@ A sample Org file with the above headers:
 
 *** Handling different languages in LaTeX exports
 
-#+cindex: @samp{LANGUAGE}, keyword
+#+cindex: @samp{LANGUAGE} keyword, @samp{LATEX_MULTI_LANG} keyword
+#+vindex: org-export-multi-lang
 #+vindex: org-export-default-language
 
   The LaTeX export backend can handle non-English and
-  multiple-language documents using the LaTeX packages =babel= or
+  multiple-language using the LaTeX packages =babel= or
   =polyglossia=.  The document languages should be specified using
   =LANGUAGE= keyword.  If =LANGUAGE= is not specified, the value of
   ~org-export-default-language~ is used.
 
-  When this variable is nil (default), the LaTeX language features
-  need to be configured manually, specifying appropriate LaTeX headers
-  (see ~#+LATEX_HEADER~ keyword).  For convenience, if the LaTeX
-  headers load =babel= or =polyglossia=, you can use word =AUTO= in
-  the package options to automatically specify the document's main
-  language according to Org's =#+LANGUAGE= keyword:
+  The way to handle documents with localisation requirements is set
+  using the =LATEX_MULTI_LANG= keyword, or the ~org-latex-multi-lang~
+  variable when the keyword is not used.
+
+  =LATEX_MULTI_LANG= is ~nil~ by default. In this case, the LaTeX
+  language features need to be configured manually, specifying
+  appropriate LaTeX headers (see ~#+LATEX_HEADER~ keyword).  For
+  convenience, if the LaTeX headers load =babel= or =polyglossia=, you
+  can use word =AUTO= in the package options to automatically specify
+  the document's main language according to Org's =#+LANGUAGE=
+  keyword:
 
   #+BEGIN_EXAMPLE
 #+LANGUAGE: es
@@ -14378,56 +14384,24 @@ A sample Org file with the above headers:
   supported by the default fonts.  See [[#lualatex-fontspec]] for more
   details.  Beware that ~fontspec~ does not work with =pdflatex=
   compiler.  We recommend using =lualatex= or =xelatex= for reliable
-  non-latin language support.
+  non-Latin language support.
 
   When =#+LATEX_MULTI_LANG= is either ~babel~ or ~polyglossia~, Org
   mode will use the indicated LaTeX package to handle multi-language
-  support.  The =LANGUAGE= option will be used to determine the main
-  and secondary languages. For example:
+  support.  Either should be used for non-English documents.  Both
+  provide setting up your font configuration globally for your
+  document and on a per-language basis.  The =LANGUAGE= option will be
+  used to determine the main and secondary languages.  For example:
 
   #+BEGIN_SRC org :results none :exports code
 ,#+LANGUAGE: fr de es
 ,#+LATEX_MULTI_LANG: polyglossia
   #+END_SRC
   #+texinfo: @noindent
-  sets multi-language handling to use =polyglossia= in a document, where
-  the main language (i.e. header, figure, table names) and typesetting
-  options use French and there are passages in German and Spanish.
-
-  ~babel~ and ~polyglossia~ should be used for non-English documents.
-  Both provide setting up the fonts, including setting them up on a
-  per-language basis.
-
-  See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
-  details about ~babel~ and ~polyglossia~ configuration.  Note that
-  ~polyglossia~ does not work with =pdflatex= compiler.  We recommend
-  using =lualatex= or =xelatex= for reliable non-latin language
-  support.
-
-  # TODO: Consider removing this. This can be treated further down...
-
-  For example, consider an Org document written using Polytonic Greek
-  with some parts written in French:
-  #+begin_example
-,#+LANGUAGE: el-polyton fr
-,#+LATEX_MULTI_LANG: polyglossia
-  #+end_example
-  #+texinfo: @noindent
-  The above snippet will make Org mode use =polyglossia= LaTeX package
-  with Polytonic Greek as the primary language (used for standard names
-  like "Table of Contents", "Table", "Figure", etc), and French as the
-  secondary language.
-
-# TODO: We should describe how to mark snippets in other # language in
-# Org.
-
-  This would produce in LaTeX (with the actual =polyglossia= syntax):
-
-#+begin_example
-\usepackage{polyglossia}
-\setmainlanguage[variant=polytonic]{greek}
-\setotherlanguage{french}
-#+end_example
+  sets multi-language handling to use =polyglossia= in a document,
+  where the main language (used for header, figure, table names and
+  typesetting options) is French and there are passages in German and
+  Spanish.
 
   If you use =polyglossia=, you can control the fonts used for
   different languages in the PDF output with the variable
@@ -14442,32 +14416,11 @@ A sample Org file with the above headers:
   using a Unicode font set that covers the scripts you use in your
   document. This will simplify the font configuration.
 
-  When ~org-latex-multi-lang~ is ~nil~, the first language in the
-  =LANGUAGE= keyword (or the value of ~org-export-default-language~ if
-  it is not used) will replace appearances of the string ~"AUTO"~ when
-  importing ~babel~ or ~polyglossia~ with a ~#+LATEX_HEADER:~ keyword.
-
-# For example:
-
-# #+BEGIN_SRC org :results none :exports code
-# ,#+LANGUAGE: de
-# ,#+LATEX_COMPILER: pdflatex
-# ,#+LATEX_HEADER: \usepackage[AUTO,en-gb]{babel}
-# #+END_SRC
-
-# Will result in the LaTeX header
-
-# #+BEGIN_SRC latex :results none :exports code
-# \usepackage[de,en-gb]{babel}
-# #+END_SRC
-
-# in a first stage. This will then generate
-
-# #+BEGIN_SRC latex :results none :exports code
-# \usepackage[ngerman,british]{babel}
-# #+END_SRC
-
-# for the LaTeX export.
+  See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
+  details about ~babel~ and ~polyglossia~ configuration.  Note that
+  ~polyglossia~ does not work with =pdflatex= compiler.  We recommend
+  using =lualatex= or =xelatex= for reliable non-Latin language
+  support.
 
 *** Quoting LaTeX code
 :PROPERTIES:
@@ -15383,8 +15336,9 @@ each element has the form:
 #+end_example
 
 ~SCRIPT~ is one of the script codes:
-- ~"rm"~ for the roman (serif) font
-- ~"sf"~ for the sans serif font
+- ~"rm"~ for the roman (serif) font (this is normally the default font
+  for text passages),
+- ~"sf"~ for the sans serif font, and
 - ~"tt"~ for the teletype (monospaced) font.
 
 and ~FONT-PLIST~ is a property list, with a mandatory property ~:font~
@@ -15402,7 +15356,8 @@ initialised as follows:
          :fonts (("rm" :font "Noto Serif")))
         (nil
          :fonts (("rm" :font "CMU Serif")
-                 ("tt" :font "DejaVu Sans Mono" :props"Scale=Matchlocase"))))))
+                 ("tt" :font "DejaVu Sans Mono"
+                  :props"Scale=Matchlocase"))))))
 #+END_SRC
 
 This setting will produce the following code in the LaTeX export
