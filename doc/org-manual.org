@@ -14355,6 +14355,12 @@ A sample Org file with the above headers:
   =LANGUAGE= is not specified, the value of
   ~org-export-default-language~ is used.
 
+  As a general rule, most LaTeX classes include standard font settings
+  that work well with languages using the Latin character
+  set. Languages using non-Latin character sets will need font
+  configuration, which will vary depending on the LaTeX compiler and
+  multi-language support package you use.
+
   The way to handle documents with localisation requirements is set
   using the =LATEX_MULTI_LANG= keyword, or the ~org-latex-multi-lang~
   variable when the keyword is not used.
@@ -14995,7 +15001,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :END:
 #+end_example
 
-*** Controlling the font configuration for ~pdflatex~
+*** Controlling the font configuration for PDFLaTeX
 :PROPERTIES:
 :custom_id: pdflatex-fonts
 :END:
