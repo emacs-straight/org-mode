@@ -14349,39 +14349,33 @@ A sample Org file with the above headers:
 #+vindex: org-export-multi-lang
 #+vindex: org-export-default-language
 
-  The LaTeX export backend can handle non-English and multi-language
-  documents using the LaTeX packages =babel= or =polyglossia=.  The
-  document languages should be specified using =LANGUAGE= keyword.  If
-  =LANGUAGE= is not specified, the value of
-  ~org-export-default-language~ is used.
+  LaTeX was initially developed to handle documents written primally
+  in English. As long as you don't need localisation, you can use it
+  as-is with any language that uses the Latin character set.  As a
+  general rule, most LaTeX classes include standard font settings that
+  work well in this situation.  Languages using non-Latin character
+  sets will need font configuration, which will vary depending on the
+  LaTeX compiler and multi-language support package you use.
 
-  As a general rule, most LaTeX classes include standard font settings
-  that work well with languages using the Latin character
-  set. Languages using non-Latin character sets will need font
-  configuration, which will vary depending on the LaTeX compiler and
-  multi-language support package you use.
+  Non-English and multi-language documents use the LaTeX packages
+  =babel= or =polyglossia=  to localise document features like the
+  table of contents, dates, hyphenation, etc.
 
-  The way to handle documents with localisation requirements is set
-  using the =LATEX_MULTI_LANG= keyword, or the ~org-latex-multi-lang~
-  variable when the keyword is not used.
+  By default, LaTeX only loads the fonts appropriate for Latin
+  characters. Non-Latin characters in the document are often not
+  rendered correctly without loading a custom font. =pdflatex= relies
+  on LaTeX packages you need to include using the =#+LATEX_HEADER:=
+  keyword.  =lualatex= and =xelatex= handle custom fonts using either
+  =fontspec=, =polyglossia= or =babel= as described below. We
+  recommend selecting Unicode fonts that cover the character sets of
+  in the languages used in your document.
 
-  =LATEX_MULTI_LANG= is ~nil~ by default. In this case, the LaTeX
-  language features need to be configured manually, specifying
-  appropriate LaTeX headers (see ~#+LATEX_HEADER~ keyword).  For
-  convenience, if the LaTeX headers load =babel= or =polyglossia=, you
-  can use word =AUTO= in the package options to automatically specify
-  the document's main language according to Org's =#+LANGUAGE=
-  keyword. Use this setting when you must use =pdflatex= and follow
-  the instructions in [[#pdflatex-fonts]] to set up fonts in your
-  document.
+  The languages used in a document are specified using =LANGUAGE=
+  keyword. Use the =LATEX_MULTI_LANG= keyword to set the way
+  to handle localisation and font configuration.
 
-  #+BEGIN_EXAMPLE
-#+LANGUAGE: es
-#+LATEX_HEADER: \usepackage[AUTO]{babel}
-  #+END_EXAMPLE
-  #+texinfo: @noindent
-  would tell LaTeX to use the ~babel~ package to create a document
-  with Spanish headers.
+  =LATEX_MULTI_LANG= is ~nil~ by default to handle localisation
+  manually as described at the end of this section.
 
   When =#+LATEX_MULTI_LANG= is set to ~fontspec~, Org mode will
   configure the document's fonts using LaTeX's ~fontspec~ package.
@@ -14411,24 +14405,44 @@ A sample Org file with the above headers:
   typesetting options) is French and there are passages in German and
   Spanish.
 
-  If you use =polyglossia=, you can control the fonts used for
-  different languages in the PDF output with the variable
-  ~org-latex-polyglossia-font-config~.
-  #+vindex: org-latex-polyglossia-font-config
+  # If you use =polyglossia=, you can control the fonts used for
+  # different languages in the PDF output with the variable
+  # ~org-latex-polyglossia-font-config~.
+  # #+vindex: org-latex-polyglossia-font-config
 
-  If you use =babel=, you can control the fonts used for different
-  languages in the PDF output with the variable
-  ~org-latex-babel-font-config~.
+  # If you use =babel=, you can control the fonts used for different
+  # languages in the PDF output with the variable
+  # ~org-latex-babel-font-config~.
 
   In general, when exporting to LaTeX or PDF, we recommend
   using a Unicode font set that covers the scripts you use in your
   document. This will simplify the font configuration.
 
   See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
-  details about ~babel~ and ~polyglossia~ configuration.  Note that
-  ~polyglossia~ does not work with =pdflatex= compiler.  We recommend
-  using =lualatex= or =xelatex= for reliable non-Latin language
-  support.
+  details about how to configure fonts using ~babel~ and
+  ~polyglossia~.  Note that ~polyglossia~ does not work with
+  =pdflatex= compiler.  We recommend using =lualatex= or =xelatex= for
+  reliable non-Latin language support.
+
+  When =LATEX_MULTI_LANG= is ~nil~, you need to configure LaTeX
+  language features manually in LaTeX headers (see ~#+LATEX_HEADER~
+  keyword).  For convenience, if the LaTeX headers load =babel= or
+  =polyglossia=, you may use =AUTO= in the package options to refer to
+  the document's main language. Org's will translate it according to
+  the value of the =#+LANGUAGE= keyword. Use this setting when you
+  must use =pdflatex= and follow the instructions in
+  [[#pdflatex-fonts]] to set up fonts in your document.
+
+  #+BEGIN_EXAMPLE
+#+LANGUAGE: es
+#+LATEX_HEADER: \usepackage[AUTO]{babel}
+  #+END_EXAMPLE
+  #+texinfo: @noindent
+  would tell LaTeX to use the ~babel~ package to create a document
+  with Spanish headers. The =LATEX_HEADER= would be translated to
+  #+BEGIN_EXAMPLE
+\usepackage[spanish]{babel}
+  #+END_EXAMPLE
 
 *** Quoting LaTeX code
 :PROPERTIES:
