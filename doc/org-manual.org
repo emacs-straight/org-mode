@@ -15382,6 +15382,28 @@ The properties you can define are:
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
 
+When using =polyglossia=, you can also configure the fonts used for
+the document's main language with the configuration for
+=fontspec=. For example:
+
+#+BEGIN_SRC emacs-lisp :results none :exports code
+((org-mode
+  . ((org-latex-fontspec-default-features
+      . (("Ligatures" . "TeX")))
+     (org-latex-fontspec-config
+      . (("main" :font "CMU Serif")
+         ("sans" :font "CMU Sans Serif")
+         ("mono" :font "DejaVu Sans Mono" :features "Scale=MatchLowercase")))
+     (org-latex-polyglossia-font-config
+      . (("el" :variant "rm" :font "Noto Serif"
+               :props ("Script=Greek" "Scale=MatchLowercase")))))))
+#+END_SRC
+
+will set =CMU Serif= and =CMU Sans Serif= as the fonts for text and
+=DejaVu Sans Mono= for listings in all documents where you use
+=fontspec=. Additionally, if you use =polyglossia= and have Greek
+text, you will typeset it with the =Noto Serif= font.
+
 **** Controlling font configuration when using the =babel= package
 :PROPERTIES:
 :custom_id: babel-fontconfig
