@@ -14354,7 +14354,7 @@ A sample Org file with the above headers:
 
   LaTeX was initially developed to handle documents written primarily
   in (American) English.  The standard LaTeX document classes assume
-  this and provide a default font configuration to deliver a default
+  this and provide a default font configuration to deliver an intended
   appearance to the output.
   Spelling out dates, section headers for the table of contents,
   etc. as well as captions for figures, tables, listings, etc. are
