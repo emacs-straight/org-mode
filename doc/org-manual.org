@@ -12063,7 +12063,7 @@ text.  Markers always start with =fn:=.  For example:
 #+begin_example
 The Org website[fn:1] now looks a lot better than it used to.
 ...
-[fn:54] The link is: https://orgmode.org
+[fn:55] The link is: https://orgmode.org
 #+end_example
 
 Org mode extends the number-based syntax to /named/ footnotes and
@@ -14401,19 +14401,20 @@ A sample Org file with the above headers:
   # recommend selecting Unicode fonts that cover the character sets of
   # in the languages used in your document.
 
-  The languages used in a document are specified using =LANGUAGE=
-  keyword. Use the =LATEX_MULTI_LANG= keyword to set the way
-  to handle localisation and font configuration.
+  Use the =LANGUAGE= keyword to specify the languages used in a
+  document and the =LATEX_MULTI_LANG= keyword to set the way to handle
+  localisation and font configuration.
 
-  =LATEX_MULTI_LANG= is ~nil~ by default to handle localisation
-  manually.  In this case you need to configure LaTeX language
-  features manually in LaTeX headers (see ~#+LATEX_HEADER~ keyword).
-  For convenience, if the LaTeX headers load =babel= or =polyglossia=,
-  you may use =AUTO= in the package options to refer to the document's
-  main language. Org's will translate it according to the value of the
-  =#+LANGUAGE= keyword. Use this setting when you must use =pdflatex=
-  and follow the instructions in [[#pdflatex-fonts]] to set up fonts
-  in your document.
+  =LATEX_MULTI_LANG= is ~nil~ by default. In this case, you need to
+  handle localisation manually.  In this case you need to configure
+  LaTeX language features manually in LaTeX headers (see
+  ~#+LATEX_HEADER~ keyword).  For convenience, if the LaTeX headers
+  load =babel= or =polyglossia=, you may use =AUTO= in the package
+  options to refer to the document's main language. Org's will
+  translate it according to the value of the =#+LANGUAGE= keyword. Use
+  this setting when you must use =pdflatex= and follow the
+  instructions in [[#pdflatex-fonts]] to set up fonts in your
+  document. For example:
 
   #+BEGIN_EXAMPLE
 #+LANGUAGE: es
@@ -14456,13 +14457,40 @@ A sample Org file with the above headers:
   typesetting options) is French and there are passages in German and
   Spanish.
 
+  When using multiple languages, you can include passages in non-main
+  language using embedded LaTeX markup, which will depend on the
+  package you use.
+
+  For =polyglossia=:
+  #+begin_src org :results none :exports code
+
+  @@latex:\textgerman{@@Dies ist ein Abschnitt auf Deutsch.@@latex:}@@
+
+  ,#+begin_german
+  Auch dies ist ein Absatz auf Deutsch.
+  ,#+end_german
+  #+end_src
+
+  For =babel=:
+  #+begin_src org :results none :exports code
+  @@latex:\foreignlanguage{french}{@@Ceci est un passage en français.@@latex:}@@
+
+  ,#+ATTR_LATEX: :options {french}
+  ,#+begin_otherlanguage
+  Ce passage est aussi en français.
+  ,#+end_otherlanguage
+  #+end_src
+
+  Consult the package manuals to get the language name[fn:50] for the
+  LaTeX markup.
+
   See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
   details about how to configure fonts using ~babel~ and
   ~polyglossia~.
 
-  Note that ~polyglossia~ does not work with =pdflatex= compiler.  We
-  recommend using =lualatex= or =xelatex= for reliable non-Latin
-  language support.
+  Finally, remember that ~polyglossia~ does not work with =pdflatex=
+  compiler.  We recommend using =lualatex= or =xelatex= for reliable
+  non-Latin language support.
 
 
 *** Quoting LaTeX code
@@ -15105,7 +15133,7 @@ yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
 package manual]] Part II.  This variable should be set in your Emacs
 initialisation code, in the file local variables or in the directory
-local variable file ~.dir-locals.el~[fn:50] .
+local variable file ~.dir-locals.el~[fn:51] .
 
 If you do not want or need any specific configuration for the
 ~fontspec~ package, make sure that ~org-latex-fontspec-config~ is set
@@ -15213,7 +15241,7 @@ For example, assume you configure the =main= font in
 #+END_SRC
 
 If Emacs detects characters belonging to the ~emoji~ character set, it
-will include the following fallback definition for the =main= font[fn:51]:
+will include the following fallback definition for the =main= font[fn:52]:
 
 #+BEGIN_SRC latex
 \directlua{
@@ -15335,7 +15363,7 @@ script for Hebrew script in mono-spaced passages (=:variant
 #+END_SRC
 
 Each entry in the property list associates a language(for example,
-="he"= for Hebrew, ="en"= for English, etc.[fn:52]) to a list
+="he"= for Hebrew, ="en"= for English, etc.[fn:53]) to a list
 of properties.
 
 The properties you can define are:
@@ -19381,7 +19409,7 @@ block, collects the results, and inserts them in the buffer.
 
 #+cindex: @samp{CALL}, keyword
 #+vindex: org-babel-inline-result-wrap
-By calling a named code block[fn:53] from an Org mode buffer or
+By calling a named code block[fn:54] from an Org mode buffer or
 a table.  Org can call the named code blocks from the current Org mode
 buffer or from the "Library of Babel" (see [[*Library of Babel]]).
 
@@ -19589,7 +19617,7 @@ they are mutually exclusive.
 
 - =value= ::
 
-  Default for most Babel libraries[fn:53].  Functional mode.  Org
+  Default for most Babel libraries[fn:54].  Functional mode.  Org
   gets the value by wrapping the code in a function definition in the
   language of the source block.  That is why when using =:results
   value=, code should execute like a function and return a value.  For
@@ -20452,7 +20480,7 @@ the second code block is expanded as
 #+end_example
 
 Note that noweb expansion does not automatically carry over =:var=
-header arguments[fn:54].
+header arguments[fn:55].
 
 You may also include the contents of multiple blocks sharing a common
 =noweb-ref= header argument, which can be set at the file, subtree,
@@ -20994,7 +21022,7 @@ in the desired amount with hard spaces and hiding leading stars.
 To display the buffer in the indented view, activate Org Indent minor
 mode, using {{{kbd(M-x org-indent-mode)}}}.  Text lines that are not
 headlines are prefixed with virtual spaces to vertically align with
-the headline text[fn:55].
+the headline text[fn:56].
 
 #+vindex: org-indent-indentation-per-level
 To make more horizontal space, the headlines are shifted by two
@@ -21022,7 +21050,7 @@ use =STARTUP= keyword as follows:
 
 It is possible to use hard spaces to achieve the indentation instead,
 if the bare ASCII file should have the indented look also outside
-Emacs[fn:56].  With Org's support, you have to indent all lines to
+Emacs[fn:57].  With Org's support, you have to indent all lines to
 line up with the outline headers.  You would use these settings[fn::
 ~org-adapt-indentation~ can also be set to ='headline-data=, in which
 case only data lines below the headline will be indented.]:
@@ -22189,7 +22217,7 @@ Tags]]) only for those set in these variables.
 
 #+vindex: org-mobile-directory
 The mobile application needs access to a file directory on
-a server[fn:57] to interact with Emacs.  Pass its location through
+a server[fn:58] to interact with Emacs.  Pass its location through
 the ~org-mobile-directory~ variable.  If you can mount that directory
 locally just set the variable to point to that directory:
 
@@ -22233,7 +22261,7 @@ Symbolic links in ~org-directory~ need to have the same name as their
 targets.].
 
 Push creates a special Org file =agendas.org= with custom agenda views
-defined by the user[fn:58].
+defined by the user[fn:59].
 
 Finally, Org writes the file =index.org=, containing links to other
 files.  The mobile application reads this file first from the server
@@ -22708,7 +22736,7 @@ of these strategies:
 To wrap a source table in LaTeX, use the =comment= environment
 provided by =comment.sty=[fn:: https://www.ctan.org/pkg/comment].  To
 activate it, put ~\usepackage{comment}~ in the document header.
-Orgtbl mode inserts a radio table skeleton[fn:59] with the command
+Orgtbl mode inserts a radio table skeleton[fn:60] with the command
 {{{kbd(M-x orgtbl-insert-radio-table)}}}, which prompts for a table
 name.  For example, if =salesfigures= is the name, the template
 inserts:
@@ -22728,7 +22756,7 @@ The line =#+ORGTBL: SEND= tells Orgtbl mode to use the function
 ~orgtbl-to-latex~ to convert the table to LaTeX format, then insert
 the table at the target (receive) location named =salesfigures=.  Now
 the table is ready for data entry.  It can even use spreadsheet
-features[fn:60]:
+features[fn:61]:
 
 #+begin_example
 % BEGIN RECEIVE ORGTBL salesfigures
@@ -24158,22 +24186,26 @@ words or short expressions in Greek, you will need to configure the
 fonts you use in the PDF export, even if the main document is intended
 for an American English context.
 
-[fn:50] Consult [[info:emacs#Directory Variables][Directory Variables]]
+[fn:50] The language name is normally spelt out in lowercase. A
+notable exception is Arabic in the =polyglossia= package, which needs
+to be capitalised (i.e. =Arabic=).
+
+[fn:51] Consult [[info:emacs#Directory Variables][Directory Variables]]
 to learn to define and use directory local variables.
 
-[fn:51] Any font in ~org-latex-fontspec-config~ which includes a
+[fn:52] Any font in ~org-latex-fontspec-config~ which includes a
 fallback for the =emoji= character set will produce equivalent code
 inside the =\directlua{}= code block.
 
-[fn:52] The language name can be the language as written out in the
+[fn:53] The language name can be the language as written out in the
 font declaration or the language identifier used in
 ~org-latex-languages-alist~.
 
-[fn:53] Actually, the constructs =call_<name>()= and =src_<lang>{}=
+[fn:54] Actually, the constructs =call_<name>()= and =src_<lang>{}=
 are not evaluated when they appear in a keyword (see [[*Summary of
 In-Buffer Settings]]).
 
-[fn:54] In the following example, attempting to evaluate
+[fn:55] In the following example, attempting to evaluate
 the second code block will give an error, because the variables
 defined in the first code block will not be defined in the second
 block.
@@ -24201,29 +24233,29 @@ values.
 ,#+END_SRC
 #+end_example
 
-[fn:55] Org Indent mode also sets ~wrap-prefix~ correctly for
+[fn:56] Org Indent mode also sets ~wrap-prefix~ correctly for
 indenting and wrapping long lines of headlines or text.  This minor
 mode also handles Visual Line mode and directly applied settings
 through ~word-wrap~.
 
-[fn:56] This works, but requires extra effort.  Org Indent mode is
+[fn:57] This works, but requires extra effort.  Org Indent mode is
 more convenient for most applications.
 
-[fn:57] For a server to host files, consider using a WebDAV server,
+[fn:58] For a server to host files, consider using a WebDAV server,
 such as [[https://nextcloud.com][Nextcloud]].  Additional help is at this [[https://orgmode.org/worg/org-faq.html#mobileorg_webdav][FAQ entry]].
 
-[fn:58] While creating the agendas, Org mode forces =ID= properties
+[fn:59] While creating the agendas, Org mode forces =ID= properties
 on all referenced entries, so that these entries can be uniquely
 identified if Org Mobile flags them for further action.  To avoid
 setting properties configure the variable
 ~org-mobile-force-id-on-agenda-items~ to ~nil~.  Org mode then relies
 on outline paths, assuming they are unique.
 
-[fn:59] By default this works only for LaTeX, HTML, and Texinfo.
+[fn:60] By default this works only for LaTeX, HTML, and Texinfo.
 Configure the variable ~orgtbl-radio-table-templates~ to install
 templates for other modes.
 
-[fn:60] If the =TBLFM= keyword contains an odd number of dollar
+[fn:61] If the =TBLFM= keyword contains an odd number of dollar
 characters, this may cause problems with Font Lock in LaTeX mode.  As
 shown in the example you can fix this by adding an extra line inside
 the =comment= environment that is used to balance the dollar
