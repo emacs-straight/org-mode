@@ -14355,17 +14355,13 @@ A sample Org file with the above headers:
   LaTeX was initially developed to handle documents written primarily
   in (American) English.  The standard LaTeX document classes assume
   this and provide a default font configuration to deliver an intended
-  appearance to the output.
-  Spelling out dates, section headers for the table of contents,
-  etc. as well as captions for figures, tables, listings, etc. are
-  defined in this context.  As long as you don't need localisation
-  (i.e. adapting or translating these to the document's intended
-  linguistic environment), you can use most LaTeX document classes
-  as-is with any document that uses the Latin character set.
-  # LaTeX
-  # document classes include standard font settings that work well in
-  # this situation.
-  Documents using non-Latin character sets will need
+  appearance to the output.  Spelling out dates, section headers for
+  the table of contents, etc. as well as captions for figures, tables,
+  listings, etc. are defined in this context.  As long as you don't
+  need localisation (i.e. adapting or translating these to the
+  document's intended linguistic environment), you can use most LaTeX
+  document classes as-is with any document that uses the Latin
+  character set.  Documents using non-Latin character sets will need
   font configuration[fn:49], which will vary depending on the document
   class, the LaTeX compiler and multi-language support package you
   use.
