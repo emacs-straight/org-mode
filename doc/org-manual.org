@@ -14362,44 +14362,18 @@ A sample Org file with the above headers:
   document's intended linguistic environment), you can use most LaTeX
   document classes as-is with any document that uses the Latin
   character set.  Documents using non-Latin character sets will need
-  font configuration[fn:49], which will vary depending on the document
-  class, the LaTeX compiler and multi-language support package you
-  use.
-
-  To fine-tune the document's appearance provided by the LaTeX
-  document class you use, you may need to change the font
-  configuration. How this is done depends on the LaTeX compiler you
-  use.
-
-  In the case of =pdflatex=, this is achieved by including font
-  packages (cf. [[#pdflatex-fonts]]).
-
-  Modern, UTF-8 enabled LaTeX compilers (i.e. =lualatex= and
-  =xelatex=) handle font configuration using the package
-  =fontspec=. We recommend to choose Unicode fonts that include the
-  non-Latin character sets you use to simplify the configuration
-  (cf. [[#nonpdflatex-fonts]]).
+  font configuration, which depend on the document class, the LaTeX
+  compiler and multi-language support package you use[fn:49].
 
   For documents that a written for outside an American English
-  linguistic context and for multilingual documents, LaTeX provides the
-  packages =babel= or =polyglossia= to localise document features like
-  the table of contents, dates, hyphenation, etc.
+  linguistic context and for multilingual documents, LaTeX provides
+  the packages =babel= or =polyglossia= to localise document features
+  like text direction (left-to-right vs. right-to-left), the table of
+  contents, dates, hyphenation, etc.
 
-  # When you don't add extra configuration, Org mode will use LaTeX defaults,
-  # i.e. American English with Latin fonts.
-
-  # By default, LaTeX only loads the fonts appropriate for Latin
-  # characters. Non-Latin characters in the document are often not
-  # rendered correctly without loading a custom font. =pdflatex= relies
-  # on LaTeX packages you need to include using the =#+LATEX_HEADER:=
-  # keyword.  =lualatex= and =xelatex= handle custom fonts using either
-  # =fontspec=, =polyglossia= or =babel= as described below. We
-  # recommend selecting Unicode fonts that cover the character sets of
-  # in the languages used in your document.
-
-  Use the =LANGUAGE= keyword to specify the languages used in a
-  document and the =LATEX_MULTI_LANG= keyword to set the way to handle
-  localisation and font configuration.
+  Org provides the =LANGUAGE= keyword to specify the languages used in
+  a document and the =LATEX_MULTI_LANG= keyword to set the way to
+  handle localisation and font configuration when exporting to LaTeX.
 
   =LATEX_MULTI_LANG= is ~nil~ by default. In this case, you need to
   handle localisation manually.  In this case you need to configure
@@ -14424,17 +14398,6 @@ A sample Org file with the above headers:
   #+END_EXAMPLE
   #+texinfo:@noindent
   Multiple languages are also handled.
-
-  When =#+LATEX_MULTI_LANG= is set to ~fontspec~, Org mode will
-  configure the document's fonts using LaTeX's ~fontspec~ package.  It
-  configures the fonts used in the document. It distinguishes between
-  the Roman (=main=), Sans-serfi (=sans=) and monotype (=mono=) fonts,
-  and can provide fallbacks for character sets (for example, ~emoji~,
-  ~han~, ~kana~, etc.) not supported by the default fonts.  See
-  [[#lualatex-fontspec]] for more details.
-  Note that ~fontspec~ is not intended for document localisation and
-  that it does not work with =pdflatex= compiler.  We recommend using
-  =lualatex= or =xelatex= for reliable non-Latin language support.
 
   When =#+LATEX_MULTI_LANG= is set to either ~babel~ or ~polyglossia~,
   Org will use the indicated LaTeX package to handle multi-language
@@ -14484,10 +14447,35 @@ A sample Org file with the above headers:
   details about how to configure fonts using ~babel~ and
   ~polyglossia~.
 
+  When =#+LATEX_MULTI_LANG= is set to ~fontspec~, Org mode will
+  configure the document's fonts using LaTeX's ~fontspec~ package.
+  This assumes that the document is intended for an American English
+  context. ~fontspec~ will help you to configure the fonts used in the
+  document. It distinguishes between the Roman (=main=), Sans-serif
+  (=sans=) and monotype (=mono=) fonts, and can provide fallbacks for
+  character sets (for example, ~emoji~, ~han~, ~kana~, etc.) not
+  supported by the default fonts.  See [[#lualatex-fontspec]] for more
+  details.  Note that ~fontspec~ is not intended for document
+  localisation and that it does not work with =pdflatex= compiler.  We
+  recommend using =lualatex= or =xelatex= for reliable non-Latin
+  language support.
+
   Finally, remember that ~polyglossia~ does not work with =pdflatex=
   compiler.  We recommend using =lualatex= or =xelatex= for reliable
   non-Latin language support.
 
+  To fine-tune the document's appearance provided by the LaTeX
+  document class you use, you may need to change the font
+  configuration. How this is done depends on the LaTeX compiler you
+  use.
+  In the case of =pdflatex=, this is achieved by including font
+  packages (cf. [[#pdflatex-fonts]]).
+
+  Modern, UTF-8 enabled LaTeX compilers (i.e. =lualatex= and
+  =xelatex=) handle font configuration using the package
+  =fontspec=. We recommend to choose Unicode fonts that include the
+  non-Latin character sets you use to simplify the configuration
+  (cf. [[#nonpdflatex-fonts]]).
 
 *** Quoting LaTeX code
 :PROPERTIES:
@@ -24199,10 +24187,11 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 for different files.  However, "smart" LaTeX compilation systems, such
 as latexmk, can select the correct bibliography compiler.
 
-[fn:49] For example, if you use emojis in your document or intersperse
-words or short expressions in Greek, you will need to configure the
-fonts you use in the PDF export, even if the main document is intended
-for an American English context.
+[fn:49] For example, in a document is that is intended for an American
+English context where you don't need localisation, you will need to
+configure the fonts you use in the PDF export, if you use emojis in
+your document or intersperse words or short expressions in another
+language that uses non Latin characters (e.g. Greek, Russian, etc.)
 
 [fn:50] The language name is normally spelt out in lowercase. A
 notable exception is Arabic in the =polyglossia= package, which needs
