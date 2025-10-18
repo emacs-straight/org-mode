@@ -12064,7 +12064,7 @@ text.  Markers always start with =fn:=.  For example:
 #+begin_example
 The Org website[fn:1] now looks a lot better than it used to.
 ...
-[fn:55] The link is: https://orgmode.org
+[fn:56] The link is: https://orgmode.org
 #+end_example
 
 Org mode extends the number-based syntax to /named/ footnotes and
@@ -14366,34 +14366,34 @@ A sample Org file with the above headers:
   font configuration, which depend on the document class, the LaTeX
   compiler and multi-language support package you use[fn:49].
 
-  For documents that a written for outside an American English
-  linguistic context and for multilingual documents, LaTeX provides
-  the packages =babel= or =polyglossia= to localise document features
-  like text direction (left-to-right vs. right-to-left), the table of
-  contents, dates, hyphenation, etc.
+  For documents that are outside the American English linguistic
+  context and for multilingual documents, LaTeX provides the packages
+  =babel= and =polyglossia= to localise document features like text
+  direction (left-to-right vs. right-to-left), the table of contents,
+  dates, hyphenation, etc.
 
   Org provides the =LANGUAGE= keyword to specify the languages used in
   a document and the =LATEX_MULTI_LANG= keyword to set the way to
   handle localisation and font configuration when exporting to LaTeX.
 
   =LATEX_MULTI_LANG= is ~nil~ by default. In this case, you need to
-  handle localisation manually.  In this case you need to configure
-  LaTeX language features manually in LaTeX headers (see
-  ~#+LATEX_HEADER~ keyword).  For convenience, if the LaTeX headers
-  load =babel= or =polyglossia=, you may use =AUTO= in the package
-  options to refer to the document's main language. Org's will
-  translate it according to the value of the =#+LANGUAGE= keyword. Use
-  this setting when you must use =pdflatex= and follow the
-  instructions in [[#pdflatex-fonts]] to set up fonts in your
-  document. For example:
+  handle localisation manually, configuring LaTeX language features in
+  LaTeX headers (see ~#+LATEX_HEADER~ keyword).  Use this setting when
+  you must use =pdflatex= and follow the instructions in
+  [[#pdflatex-fonts]] to set up fonts in your document.
+
+  For convenience, if the LaTeX headers load =babel= or =polyglossia=,
+  you may use =AUTO= in the package options to refer to the document's
+  main language. Org's will translate it according to the value of the
+  =#+LANGUAGE= keyword. For example:
 
   #+BEGIN_EXAMPLE
 #+LANGUAGE: es
 #+LATEX_HEADER: \usepackage[AUTO]{babel}
   #+END_EXAMPLE
   #+texinfo: @noindent
-  would tell LaTeX to use the ~babel~ package to create a document
-  with Spanish headers. The =LATEX_HEADER= would be translated to
+  tells LaTeX to use the ~babel~ package to create a document with
+  Spanish headers. The =LATEX_HEADER= would be translated [fn:50] to
   #+BEGIN_EXAMPLE
 \usepackage[spanish]{babel}
   #+END_EXAMPLE
@@ -14441,7 +14441,7 @@ A sample Org file with the above headers:
   ,#+end_otherlanguage
   #+end_src
 
-  Consult the package manuals to get the language name[fn:50] for the
+  Consult the package manuals to get the language name[fn:51] for the
   LaTeX markup.
 
   See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
@@ -14450,32 +14450,21 @@ A sample Org file with the above headers:
 
   When =#+LATEX_MULTI_LANG= is set to ~fontspec~, Org mode will
   configure the document's fonts using LaTeX's ~fontspec~ package.
-  This assumes that the document is intended for an American English
-  context. ~fontspec~ will help you to configure the fonts used in the
-  document. It distinguishes between the Roman (=main=), Sans-serif
-  (=sans=) and monotype (=mono=) fonts, and can provide fallbacks for
-  character sets (for example, ~emoji~, ~han~, ~kana~, etc.) not
-  supported by the default fonts.  See [[#lualatex-fontspec]] for more
-  details.  Note that ~fontspec~ is not intended for document
-  localisation and that it does not work with =pdflatex= compiler.  We
-  recommend using =lualatex= or =xelatex= for reliable non-Latin
-  language support.
+  This package assumes that the document is intended for an American
+  English context (i.e. header, figure, table names and typesetting
+  options will be set for American English).
 
-  Finally, remember that ~polyglossia~ does not work with =pdflatex=
-  compiler.  We recommend using =lualatex= or =xelatex= for reliable
-  non-Latin language support.
+   ~fontspec~ distinguishes between the Roman (=main=), Sans-serif
+  (=sans=) and monotype (=mono=) fonts, and can provide fall-backs for
+  character sets (for example, ~emoji~, ~han~, ~kana~, etc.) that are
+  not provided by the default fonts in your document.  See
+  [[#lualatex-fontspec]] for more details.  Note that ~fontspec~ does
+  not work with =pdflatex= compiler. In this case you can control
+  fonts using font packages (cf. [[#pdflatex-fonts]]).
 
-  To fine-tune the document's appearance provided by the LaTeX
-  document class you use, you may need to change the font
-  configuration. How this is done depends on the LaTeX compiler you
-  use.
-  In the case of =pdflatex=, this is achieved by including font
-  packages (cf. [[#pdflatex-fonts]]).
-
-  Modern, UTF-8 enabled LaTeX compilers (i.e. =lualatex= and
-  =xelatex=) handle font configuration using the package
-  =fontspec=. We recommend to choose Unicode fonts that include the
-  non-Latin character sets you use to simplify the configuration
+  We recommend using =lualatex= or =xelatex= for reliable non-Latin
+  language support and using Unicode fonts that include
+  the non-Latin character sets you use to simplify the configuration
   (cf. [[#nonpdflatex-fonts]]).
 
 *** Quoting LaTeX code
@@ -15055,14 +15044,14 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :END:
 #+vindex: org-latex-default-packages-alist
 
-~pdflatex~ uses packages to import the fonts that will be used in the
+~pdflatex~ uses LaTeX packages to import the fonts used in the
 PDF output. Refer to [[https://tug.org/FontCatalogue/][the LaTeX font
 catalogue]] to find the LaTeX package or packages you need for your
 document and include them with the ~#+LATEX_HEADER:~ keyword.
 
 For example, if you need the
-[[https://tug.org/FontCatalogue/erewhon/][Erewhon]] font, you will see
-the following configuration in the linked page:
+[[https://tug.org/FontCatalogue/erewhon/][Erewhon]] font, you will find
+the following configuration in the LaTeX font catalogue:
 
 #+BEGIN_SRC latex :results none :exports code
 \usepackage[proportional,scaled=1.064]{erewhon}
@@ -15073,7 +15062,8 @@ the following configuration in the linked page:
 
 By default, LaTeX export includes the ~fontenc~ package automatically
 (see ~org-latex-default-packages-alist~), so you do not need to
-include that.  Other commands need to be included manually:
+include it in your header.  The rest of the configuration needs to be
+included manually as:
 
 #+BEGIN_SRC org :results none :exports code
 ,#+LATEX_HEADER: \usepackage[proportional,scaled=1.064]{erewhon}
@@ -15095,15 +15085,16 @@ specification code. By default, Org mode places the font specification
 code at the beginning of the generated LaTeX output.
 
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
-control the fonts used in the PDF using the =fontspec=. Remember that
-=polyglossia= will load =fontspec= automatically. Setting variable
-~org-latex-multi-lang~ to ~t~ enables optimised =fontspec=
+control the fonts used in the PDF using the ~fontspec~.  Setting
+variable ~org-latex-multi-lang~ to ~t~ enables optimised ~fontspec~
 configuration.
 
-Org mode will load =fontspec= for =babel=. However, font configuration
-will use a different mechanism described [[#babel-fontconfig][below]].
+Org mode will load ~fontspec~ for ~polyglossia~ and ~babel~. When
+using ~polyglossia~, you can combine ~fontspec~ and
+~polyglossia~-specific configuration.  Font configuration will use a
+different mechanism [[#babel-fontconfig][when using ~babel~]].
 
-**** Controlling the configuration of the =fontspec= package
+**** Controlling the configuration of the ~fontspec~ package
 :PROPERTIES:
 :custom_id: lualatex-fontspec
 :description: Using org-latex-fontspec-config
@@ -15118,16 +15109,16 @@ yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
 package manual]] Part II.  This variable should be set in your Emacs
 initialisation code, in the file local variables or in the directory
-local variable file ~.dir-locals.el~[fn:51] .
+local variable file ~.dir-locals.el~[fn:52] .
 
 If you do not want or need any specific configuration for the
 ~fontspec~ package, make sure that ~org-latex-fontspec-config~ is set
 to ~nil~ (this is the default value).  This is normally the case when
-exporting to =beamer=, where you most probably want to use the fonts
+exporting to ~beamer~, where you most probably want to use the fonts
 defined in the template.
 
 ~org-latex-fontspec-config~ maps the font name used in the
-=\set...font{}= commands defined by the =fontspec= package with the
+~\set...font{}~ commands defined by the ~fontspec~ package with the
 font name and optional font features.
 
 For example, if you want to map the ~math~ font to the system font
@@ -15226,7 +15217,7 @@ For example, assume you configure the =main= font in
 #+END_SRC
 
 If Emacs detects characters belonging to the ~emoji~ character set, it
-will include the following fallback definition for the =main= font[fn:52]:
+will include the following fallback definition for the =main= font[fn:53]:
 
 #+BEGIN_SRC latex
 \directlua{
@@ -15348,7 +15339,7 @@ script for Hebrew script in mono-spaced passages (=:variant
 #+END_SRC
 
 Each entry in the property list associates a language(for example,
-="he"= for Hebrew, ="en"= for English, etc.[fn:53]) to a list
+="he"= for Hebrew, ="en"= for English, etc.[fn:54]) to a list
 of properties.
 
 The properties you can define are:
@@ -15460,15 +15451,16 @@ the language. The mono-spaced text will be scaled to match the default
 font size and produce a better-looking output.
 
 You can add an optional ~:provide~ property to any language mapping
-except the default mapping. The ~:provide~ property is a string and
-will default to ~"import"~ if not present. It will generate a
+except the default mapping. The ~:provide~ property is a string. It is
+always ~"import,main"~ for the main language and defaults for other
+languages to ~"import"~ if not present in the configuration; it will
+generate a line
 
 #+begin_example
 \babelprovide[provide]{lang}
 #+end_example
-
-line with additional configuration when needed. The main language will
-always use ~"import,main"~. For example:
+#+texinfo: @noindent
+per language listed in =#+LANGUAGE=. For example:
 
 #+BEGIN_SRC emacs-lisp :results none :exports code
 (setq org-latex-babel-font-config
@@ -15478,14 +15470,15 @@ always use ~"import,main"~. For example:
          :fonts (("rm" :font "DejaVu Sans"))
          :provide "onchar=ids fonts")))
 #+END_SRC
+#+texinfo: @noindent
+applied to an Org file with the following settings in the header
 
-applied to an org file with
 #+BEGIN_SRC org :results none :exports code
 ,#+LATEX_COMPILER: lualatex
 ,#+LANGUAGE: el pt
 ,#+LATEX_MULTI_LANG: babel
 #+END_SRC
-
+#+texinfo: @noindent
 will generate the following LaTeX code:
 
 #+BEGIN_SRC latex :results none :exports code
@@ -15496,8 +15489,8 @@ will generate the following LaTeX code:
 \babelfont{rm}{FreeSerif}
 \babelfont[portuguese]{rm}{DejaVu Sans}
 #+END_SRC
-
-to set a document in Greek and Portuguese using the ~DejaVu Sans~ font
+#+texinfo: @noindent
+to typeset a document in Greek and Portuguese using the ~DejaVu Sans~ font
 for the Portuguese text and ~FreeSerif~ for Greek.
 
 ** Markdown Export
@@ -19417,7 +19410,7 @@ block, collects the results, and inserts them in the buffer.
 
 #+cindex: @samp{CALL}, keyword
 #+vindex: org-babel-inline-result-wrap
-By calling a named code block[fn:54] from an Org mode buffer or
+By calling a named code block[fn:55] from an Org mode buffer or
 a table.  Org can call the named code blocks from the current Org mode
 buffer or from the "Library of Babel" (see [[*Library of Babel]]).
 
@@ -19625,7 +19618,7 @@ they are mutually exclusive.
 
 - =value= ::
 
-  Default for most Babel libraries[fn:54].  Functional mode.  Org
+  Default for most Babel libraries[fn:55].  Functional mode.  Org
   gets the value by wrapping the code in a function definition in the
   language of the source block.  That is why when using =:results
   value=, code should execute like a function and return a value.  For
@@ -20488,7 +20481,7 @@ the second code block is expanded as
 #+end_example
 
 Note that noweb expansion does not automatically carry over =:var=
-header arguments[fn:55].
+header arguments[fn:56].
 
 You may also include the contents of multiple blocks sharing a common
 =noweb-ref= header argument, which can be set at the file, subtree,
@@ -21030,7 +21023,7 @@ in the desired amount with hard spaces and hiding leading stars.
 To display the buffer in the indented view, activate Org Indent minor
 mode, using {{{kbd(M-x org-indent-mode)}}}.  Text lines that are not
 headlines are prefixed with virtual spaces to vertically align with
-the headline text[fn:56].
+the headline text[fn:57].
 
 #+vindex: org-indent-indentation-per-level
 To make more horizontal space, the headlines are shifted by two
@@ -21058,7 +21051,7 @@ use =STARTUP= keyword as follows:
 
 It is possible to use hard spaces to achieve the indentation instead,
 if the bare ASCII file should have the indented look also outside
-Emacs[fn:57].  With Org's support, you have to indent all lines to
+Emacs[fn:58].  With Org's support, you have to indent all lines to
 line up with the outline headers.  You would use these settings[fn::
 ~org-adapt-indentation~ can also be set to ='headline-data=, in which
 case only data lines below the headline will be indented.]:
@@ -22225,7 +22218,7 @@ Tags]]) only for those set in these variables.
 
 #+vindex: org-mobile-directory
 The mobile application needs access to a file directory on
-a server[fn:58] to interact with Emacs.  Pass its location through
+a server[fn:59] to interact with Emacs.  Pass its location through
 the ~org-mobile-directory~ variable.  If you can mount that directory
 locally just set the variable to point to that directory:
 
@@ -22269,7 +22262,7 @@ Symbolic links in ~org-directory~ need to have the same name as their
 targets.].
 
 Push creates a special Org file =agendas.org= with custom agenda views
-defined by the user[fn:59].
+defined by the user[fn:60].
 
 Finally, Org writes the file =index.org=, containing links to other
 files.  The mobile application reads this file first from the server
@@ -22744,7 +22737,7 @@ of these strategies:
 To wrap a source table in LaTeX, use the =comment= environment
 provided by =comment.sty=[fn:: https://www.ctan.org/pkg/comment].  To
 activate it, put ~\usepackage{comment}~ in the document header.
-Orgtbl mode inserts a radio table skeleton[fn:60] with the command
+Orgtbl mode inserts a radio table skeleton[fn:61] with the command
 {{{kbd(M-x orgtbl-insert-radio-table)}}}, which prompts for a table
 name.  For example, if =salesfigures= is the name, the template
 inserts:
@@ -22764,7 +22757,7 @@ The line =#+ORGTBL: SEND= tells Orgtbl mode to use the function
 ~orgtbl-to-latex~ to convert the table to LaTeX format, then insert
 the table at the target (receive) location named =salesfigures=.  Now
 the table is ready for data entry.  It can even use spreadsheet
-features[fn:61]:
+features[fn:62]:
 
 #+begin_example
 % BEGIN RECEIVE ORGTBL salesfigures
@@ -24187,7 +24180,7 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 
 [fn:48] This does not allow setting different bibliography compilers
 for different files.  However, "smart" LaTeX compilation systems, such
-as latexmk, can select the correct bibliography compiler.
+as ~latexmk~, can select the correct bibliography compiler.
 
 [fn:49] For example, in a document is that is intended for an American
 English context where you don't need localisation, you will need to
@@ -24195,26 +24188,31 @@ configure the fonts you use in the PDF export, if you use emojis in
 your document or intersperse words or short expressions in another
 language that uses non Latin characters (e.g. Greek, Russian, etc.)
 
-[fn:50] The language name is normally spelt out in lowercase. A
+[fn:50] Org will translate the language codes to the language
+designator used by ~babel~ or ~polyglossia~ automatically using
+~org-latex-language-alist~. This variable maps Org language code to
+different parameters used by both packages.
+
+[fn:51] The language name is normally spelt out in lowercase. A
 notable exception is Arabic in the =polyglossia= package, which needs
 to be capitalised (i.e. =Arabic=).
 
-[fn:51] Consult [[info:emacs#Directory Variables][Directory Variables]]
+[fn:52] Consult [[info:emacs#Directory Variables][Directory Variables]]
 to learn to define and use directory local variables.
 
-[fn:52] Any font in ~org-latex-fontspec-config~ which includes a
+[fn:53] Any font in ~org-latex-fontspec-config~ which includes a
 fallback for the =emoji= character set will produce equivalent code
 inside the =\directlua{}= code block.
 
-[fn:53] The language name can be the language as written out in the
+[fn:54] The language name can be the language as written out in the
 font declaration or the language identifier used in
 ~org-latex-languages-alist~.
 
-[fn:54] Actually, the constructs =call_<name>()= and =src_<lang>{}=
+[fn:55] Actually, the constructs =call_<name>()= and =src_<lang>{}=
 are not evaluated when they appear in a keyword (see [[*Summary of
 In-Buffer Settings]]).
 
-[fn:55] In the following example, attempting to evaluate
+[fn:56] In the following example, attempting to evaluate
 the second code block will give an error, because the variables
 defined in the first code block will not be defined in the second
 block.
@@ -24242,29 +24240,29 @@ values.
 ,#+END_SRC
 #+end_example
 
-[fn:56] Org Indent mode also sets ~wrap-prefix~ correctly for
+[fn:57] Org Indent mode also sets ~wrap-prefix~ correctly for
 indenting and wrapping long lines of headlines or text.  This minor
 mode also handles Visual Line mode and directly applied settings
 through ~word-wrap~.
 
-[fn:57] This works, but requires extra effort.  Org Indent mode is
+[fn:58] This works, but requires extra effort.  Org Indent mode is
 more convenient for most applications.
 
-[fn:58] For a server to host files, consider using a WebDAV server,
+[fn:59] For a server to host files, consider using a WebDAV server,
 such as [[https://nextcloud.com][Nextcloud]].  Additional help is at this [[https://orgmode.org/worg/org-faq.html#mobileorg_webdav][FAQ entry]].
 
-[fn:59] While creating the agendas, Org mode forces =ID= properties
+[fn:60] While creating the agendas, Org mode forces =ID= properties
 on all referenced entries, so that these entries can be uniquely
 identified if Org Mobile flags them for further action.  To avoid
 setting properties configure the variable
 ~org-mobile-force-id-on-agenda-items~ to ~nil~.  Org mode then relies
 on outline paths, assuming they are unique.
 
-[fn:60] By default this works only for LaTeX, HTML, and Texinfo.
+[fn:61] By default this works only for LaTeX, HTML, and Texinfo.
 Configure the variable ~orgtbl-radio-table-templates~ to install
 templates for other modes.
 
-[fn:61] If the =TBLFM= keyword contains an odd number of dollar
+[fn:62] If the =TBLFM= keyword contains an odd number of dollar
 characters, this may cause problems with Font Lock in LaTeX mode.  As
 shown in the example you can fix this by adding an extra line inside
 the =comment= environment that is used to balance the dollar
