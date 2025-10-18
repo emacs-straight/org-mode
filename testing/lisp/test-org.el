@@ -1079,40 +1079,40 @@ Otherwise, evaluate RESULT as an sexp and return its result."
    (zerop
     (org-test-with-temp-text "%%(org-calendar-holiday)"
       (org-indent-line)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "[fn:1] fn"
       (let ((org-adapt-indentation t)) (org-indent-line))
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H"
       (org-indent-line)
-      (org-get-indentation))))
+      (current-indentation))))
   ;; Do not indent before first headline.
   (should
    (zerop
     (org-test-with-temp-text ""
       (org-indent-line)
-      (org-get-indentation))))
+      (current-indentation))))
   ;; Indent according to headline level otherwise, unless
   ;; `org-adapt-indentation' is nil.
   (should
    (= 2
       (org-test-with-temp-text "* H\n<point>A"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text "* H\n<point>\nA"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H\n<point>A"
       (let ((org-adapt-indentation nil)) (org-indent-line))
-      (org-get-indentation))))
+      (current-indentation))))
   ;; Indenting preserves point position.
   (should
    (org-test-with-temp-text "* H\nA<point>B"
@@ -1123,13 +1123,13 @@ Otherwise, evaluate RESULT as an sexp and return its result."
    (= 1
       (org-test-with-temp-text "* H\n<point> - A"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 1
       (org-test-with-temp-text
 	  "\\begin{equation}\n <point>1+1=2\n\\end{equation}"
 	(org-indent-line)
-	(org-get-indentation))))
+	(current-indentation))))
   ;; On blank lines at the end of a list, indent like last element
   ;; within it if the line is still in the list.  If the last element
   ;; is an item, indent like its contents.  Otherwise, indent like the
@@ -1138,39 +1138,39 @@ Otherwise, evaluate RESULT as an sexp and return its result."
    (= 4
       (org-test-with-temp-text "* H\n- A\n  - AA\n<point>"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 4
       (org-test-with-temp-text "* H\n- A\n  -\n\n<point>"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H\n- A\n  - AA\n\n\n\n<point>"
       (let ((org-adapt-indentation t)) (org-indent-line))
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (= 4
       (org-test-with-temp-text "* H\n- A\n  - \n<point>"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 4
       (org-test-with-temp-text
 	  "* H\n  - \n    #+BEGIN_SRC emacs-lisp\n  t\n    #+END_SRC\n<point>"
 	(let ((org-adapt-indentation t)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text "- A\n  B\n\n<point>"
 	(let ((org-adapt-indentation nil)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text
 	  "- A\n  \begin{cases}    1 + 1\n  \end{cases}\n\n<point>"
 	(let ((org-adapt-indentation nil)) (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   ;; Likewise, on a blank line at the end of a footnote definition,
   ;; indent at column 0 if line belongs to the definition.  Otherwise,
   ;; indent like the definition itself.
@@ -1178,29 +1178,29 @@ Otherwise, evaluate RESULT as an sexp and return its result."
    (zerop
     (org-test-with-temp-text "* H\n[fn:1] Definition\n<point>"
       (let ((org-adapt-indentation t)) (org-indent-line))
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H\n[fn:1] Definition\n\n\n\n<point>"
       (let ((org-adapt-indentation t)) (org-indent-line))
-      (org-get-indentation))))
+      (current-indentation))))
   ;; After the end of the contents of a greater element or other
   ;; block, indent like the beginning of the element.
-  (mapcar (lambda (type)
-	    (should
-	     (= 1
-		(org-test-with-temp-text
-		    (format " #+BEGIN_%1$s\n  Contents\n<point>#+END_%1$s" type)
-		  (org-indent-line)
-		  (current-indentation)))))
-	  '("CENTER" "COMMENT" "EXAMPLE" "EXPORT" "SRC" "VERSE"))
+  (mapc (lambda (type)
+	  (should
+	   (= 1
+	      (org-test-with-temp-text
+		  (format " #+BEGIN_%1$s\n  Contents\n<point>#+END_%1$s" type)
+		(org-indent-line)
+		(current-indentation)))))
+	'("CENTER" "COMMENT" "EXAMPLE" "EXPORT" "SRC" "VERSE"))
   ;; On blank lines after a paragraph, indent like its last non-empty
   ;; line.
   (should
    (= 1
       (org-test-with-temp-text " Paragraph\n\n<point>"
 	(org-indent-line)
-	(org-get-indentation))))
+	(current-indentation))))
   ;; At the first line of an element, indent like previous element's
   ;; first line, ignoring footnotes definitions and inline tasks, or
   ;; according to parent.
@@ -1209,18 +1209,18 @@ Otherwise, evaluate RESULT as an sexp and return its result."
      (= 2
         (org-test-with-temp-text "A\n\n  B\n\nC<point>"
 	                         (org-indent-line)
-	                         (org-get-indentation))))
+	                         (current-indentation))))
     (should
      (= 1
         (org-test-with-temp-text " A\n\n[fn:1] B\n\n\nC<point>"
 	                         (org-indent-line)
-	                         (org-get-indentation))))
+	                         (current-indentation))))
     (should
      (= 1
         (org-test-with-temp-text
 	 " #+BEGIN_CENTER\n<point>  Contents\n#+END_CENTER"
 	 (org-indent-line)
-	 (org-get-indentation)))))
+	 (current-indentation)))))
   ;; Within code part of a source block, use language major mode if
   ;; `org-src-tab-acts-natively' is non-nil, only add
   ;; `org-edit-src-content-indentation' to lines with indentation that
@@ -1232,7 +1232,7 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 	(let ((org-src-tab-acts-natively t)
 	      (org-edit-src-content-indentation 0))
 	  (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text
@@ -1241,7 +1241,7 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 	      (org-edit-src-content-indentation 2))
 	  (org-indent-line))
         (forward-line -1)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 1
       (org-test-with-temp-text
@@ -1249,14 +1249,14 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 	(let ((org-src-tab-acts-natively nil)
 	      (org-edit-src-content-indentation 0))
 	  (org-indent-line))
-	(org-get-indentation))))
+	(current-indentation))))
   ;; Otherwise, indent like the first non-blank line above.
   (should
    (zerop
     (org-test-with-temp-text
 	"#+BEGIN_CENTER\nline1\n\n<point>  line2\n#+END_CENTER"
       (org-indent-line)
-      (org-get-indentation))))
+      (current-indentation))))
   ;; Align node properties according to `org-property-format'.  Handle
   ;; nicely empty values.
   (should
@@ -3273,10 +3273,11 @@ More text
 	    (org-edit-headline "B")
 	    (buffer-string))))
   ;; Handle tags.
-  (equal "* B :tag:"
-	 (org-test-with-temp-text "* A :tag:"
-	   (let ((org-tags-column 4)) (org-edit-headline "B"))
-	   (buffer-string))))
+  (should
+   (equal "* B :tag:"
+	  (org-test-with-temp-text "* A :tag:"
+	    (let ((org-tags-column 4)) (org-edit-headline "B"))
+	    (buffer-string)))))
 
 
 
@@ -4307,10 +4308,10 @@ text"
    (org-test-with-temp-text "* Main\n** H1\nFoo\n** H2\nBar\n** H3\nBaz"
      (org-overview)
      (search-forward "H1")
-     (org-show-context 'minimal)
+     (org-fold-show-context 'minimal)
      (org-cycle)
      (search-forward "H3")
-     (org-show-context 'minimal)
+     (org-fold-show-context 'minimal)
      ;; At this point, buffer displays, with point at "|",
      ;;
      ;; * Main
@@ -5969,7 +5970,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-demote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 3
       (org-test-with-temp-text "* H\n  :PROPERTIES:\n  :FOO: Bar\n  :END:"
@@ -5977,7 +5978,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-demote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should-not
    (= 3
       (org-test-with-temp-text "* H\n  SCHEDULED: <2014-03-04 tue.>"
@@ -5985,7 +5986,7 @@ Text.
 	      (org-adapt-indentation nil))
 	  (org-demote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   ;; When `org-adapt-indentation' is non-nil, shift all lines in
   ;; section accordingly.  Ignore, however, footnote definitions and
   ;; inlinetasks boundaries.
@@ -5996,7 +5997,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-demote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text "* H\n  Paragraph"
@@ -6004,7 +6005,7 @@ Text.
 	      (org-adapt-indentation nil))
 	  (org-demote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H\n[fn:1] def line 1\ndef line 2"
@@ -6012,7 +6013,7 @@ Text.
 	    (org-adapt-indentation t))
 	(org-demote))
       (goto-char (point-max))
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (= 3
       (org-test-with-temp-text "* H\n[fn:1] Def.\n\n\n  After def."
@@ -6020,7 +6021,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-demote))
 	(goto-char (point-max))
-	(org-get-indentation))))
+	(current-indentation))))
   (when (featurep 'org-inlinetask)
     (should
      (zerop
@@ -6029,7 +6030,7 @@ Text.
 	(org-test-with-temp-text "* H\n***** I\n***** END"
 	  (org-demote)
 	  (forward-line)
-	  (org-get-indentation))))))
+	  (current-indentation))))))
   (when (featurep 'org-inlinetask)
     (should
      (= 3
@@ -6038,7 +6039,7 @@ Text.
 	  (org-test-with-temp-text "* H\n***** I\n  Contents\n***** END"
 	    (org-demote)
 	    (forward-line 2)
-	    (org-get-indentation))))))
+	    (current-indentation))))))
   ;; When `org-adapt-indentation' is non-nil, log drawers are
   ;; adjusted.
   (should
@@ -6075,7 +6076,7 @@ Text.
 	    (org-src-preserve-indentation nil))
 	(org-demote))
       (forward-line 2)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H\n#+BEGIN_EXAMPLE\n(+ 1 1)\n#+END_EXAMPLE"
@@ -6083,7 +6084,7 @@ Text.
 	    (org-src-preserve-indentation t))
 	(org-demote))
       (forward-line 2)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text "* H\n#+BEGIN_SRC emacs-lisp\n(+ 1 1)\n#+END_SRC"
@@ -6091,7 +6092,7 @@ Text.
 	    (org-src-preserve-indentation t))
 	(org-demote))
       (forward-line 2)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text
@@ -6100,7 +6101,7 @@ Text.
 	    (org-src-preserve-indentation nil))
 	(org-demote))
       (forward-line 2)
-      (org-get-indentation)))))
+      (current-indentation)))))
 
 (ert-deftest test-org/promote ()
   "Test `org-promote' specifications."
@@ -6153,7 +6154,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text "** H\n   :PROPERTIES:\n   :FOO: Bar\n   :END:"
@@ -6161,7 +6162,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should-not
    (= 2
       (org-test-with-temp-text "** H\n   SCHEDULED: <2014-03-04 tue.>"
@@ -6169,7 +6170,7 @@ Text.
 	      (org-adapt-indentation nil))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   ;; When `org-adapt-indentation' is non-nil, shift all lines in
   ;; section accordingly.  Ignore, however, footnote definitions and
   ;; inlinetasks boundaries.
@@ -6180,7 +6181,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should-not
    (= 2
       (org-test-with-temp-text "** H\n   Paragraph"
@@ -6188,7 +6189,7 @@ Text.
 	      (org-adapt-indentation nil))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 2
       (org-test-with-temp-text "** H\n   Paragraph\n[fn:1] line1\nline2"
@@ -6196,7 +6197,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (when (featurep 'org-inlinetask)
     (should
      (zerop
@@ -6205,7 +6206,7 @@ Text.
 	(org-test-with-temp-text "** H\n***** I\n***** END"
 	  (org-promote)
 	  (forward-line)
-	  (org-get-indentation))))))
+	  (current-indentation))))))
   (when (featurep 'org-inlinetask)
     (should
      (= 2
@@ -6214,7 +6215,7 @@ Text.
 	  (org-test-with-temp-text "** H\n***** I\n   Contents\n***** END"
 	    (org-promote)
 	    (forward-line 2)
-	    (org-get-indentation))))))
+	    (current-indentation))))))
   ;; Give up shifting if it would break document's structure
   ;; otherwise.
   (should
@@ -6224,7 +6225,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   (should
    (= 3
       (org-test-with-temp-text "** H\n   Paragraph\n * list."
@@ -6232,7 +6233,7 @@ Text.
 	      (org-adapt-indentation t))
 	  (org-promote))
 	(forward-line)
-	(org-get-indentation))))
+	(current-indentation))))
   ;; When `org-adapt-indentation' is non-nil, log drawers are
   ;; adjusted.
   (should
@@ -6280,7 +6281,7 @@ Text.
 	    (org-odd-levels-only nil))
 	(org-promote))
       (forward-line)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text
@@ -6290,7 +6291,7 @@ Text.
 	    (org-odd-levels-only nil))
 	(org-promote))
       (forward-line)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text
@@ -6300,7 +6301,7 @@ Text.
 	    (org-odd-levels-only nil))
 	(org-promote))
       (forward-line)
-      (org-get-indentation))))
+      (current-indentation))))
   (should
    (zerop
     (org-test-with-temp-text
@@ -6310,7 +6311,7 @@ Text.
 	    (org-odd-levels-only nil))
 	(org-promote))
       (forward-line)
-      (org-get-indentation)))))
+      (current-indentation)))))
 
 (ert-deftest test-org/org-get-valid-level ()
   "Test function `org-get-valid-level' specifications."

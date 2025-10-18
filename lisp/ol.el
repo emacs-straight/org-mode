@@ -1636,7 +1636,7 @@ will be used to search in all files.
 When AVOID-POS is given, ignore matches near that position.
 
 When optional argument STEALTH is non-nil, do not modify
-visibility around point, thus ignoring `org-show-context-detail'
+visibility around point, thus ignoring `org-fold-show-context-detail'
 variable.
 
 When optional argument NEW-HEADING-CONTAINER is an element, any
@@ -2424,7 +2424,7 @@ NAME."
 	    (move-beginning-of-line 2)
 	    (set-mark (point)))))
     (setq org-store-link-plist nil)
-    ;; Negate `org-context-in-file-links' when given a single universal arg.
+    ;; Negate `org-link-context-for-files' when given a single universal arg.
     (let ((org-link-context-for-files (org-xor org-link-context-for-files
                                                (equal arg '(4))))
           link desc search agenda-link) ;; description

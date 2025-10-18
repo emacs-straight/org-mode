@@ -120,9 +120,9 @@
   "Test `org-fold-hide-block-toggle' specifications."
   (should
    (org-test-with-temp-text "#+BEGIN: dynamic\nContents\n#+END:"
-     (org-hide-block-toggle)))
+     (org-fold-hide-block-toggle)))
   (should-error
-   (org-test-with-temp-text "Paragraph" (org-hide-block-toggle))))
+   (org-test-with-temp-text "Paragraph" (org-fold-hide-block-toggle))))
 
 (ert-deftest test-org-fold/org-fold-hide-entry ()
   "Test `org-fold-hide-entry' specifications."
@@ -551,6 +551,9 @@ Text here"
     (org-overview)
     (org-set-property "TEST" "1")
     (re-search-forward "TEST")
+    ;; In Emacs must not handle visibility changes inside change
+    ;; functions.
+    (run-hooks 'post-command-hook)
     (should (org-invisible-p)))
   (org-test-with-temp-text
       "* Heading 1<point>
@@ -558,6 +561,9 @@ Text here"
     (org-overview)
     (insert " and extra heading text")
     (re-search-backward "heading")
+    ;; In Emacs must not handle visibility changes inside change
+    ;; functions.
+    (run-hooks 'post-command-hook)
     (should-not (org-invisible-p)))
   (org-test-with-temp-text
       "* Heading 1
@@ -565,6 +571,9 @@ Text<point> here"
     (org-overview)
     (insert " and extra text")
     (re-search-backward "extra")
+    ;; In Emacs must not handle visibility changes inside change
+    ;; functions.
+    (run-hooks 'post-command-hook)
     (should (org-invisible-p))))
 
 
@@ -588,9 +597,9 @@ Unfolded Paragraph.
 "
        (org-cycle)
        (search-forward "FOLDED-DRAWER")
-       (org-hide-drawer-toggle t)
+       (org-fold-hide-drawer-toggle t)
        (search-forward "begin_src")
-       (org-hide-block-toggle t)
+       (org-fold-hide-block-toggle t)
        (goto-char 1)
        ,@body)))
 
@@ -713,7 +722,7 @@ Unfolded Paragraph.
 ** Subheading 2
 [[file:%s]]" org-logo-image org-logo-image org-logo-image)
       (org-overview)
-      (org-show-subtree)
+      (org-fold-show-subtree)
       (org-fold-subtree t)
       (run-hook-with-args 'org-cycle-hook 'folded)
       (should-not org-link-preview-overlays)
@@ -721,7 +730,7 @@ Unfolded Paragraph.
        (cl-every
         (lambda (ov) (overlay-get ov 'org-image-overlay))
         (overlays-in (point-min) (point-max))))
-      (org-show-subtree)
+      (org-fold-show-subtree)
       (run-hook-with-args 'org-cycle-hook 'subtree)
       (should org-link-preview-overlays)
       (should
