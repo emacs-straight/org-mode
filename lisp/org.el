@@ -6162,7 +6162,6 @@ needs to be inserted at a specific position in the font-lock sequence.")
 		'(org-font-lock-keywords t nil nil backward-paragraph))
     (setq-local font-lock-extend-after-change-region-function
 		#'org-fontify-extend-region)
-    (kill-local-variable 'font-lock-keywords)
     nil))
 
 (defun org-toggle-pretty-entities ()
@@ -19024,7 +19023,8 @@ With prefix arg UNCOMPILED, load the uncompiled versions."
 	(when (or (> marker (point-max)) (< marker (point-min)))
 	  (widen))
 	(goto-char marker)
-	(org-fold-show-context 'org-goto))
+        (when (derived-mode-p 'org-mode)
+	  (org-fold-show-context 'org-goto)))
     (if bookmark
 	(bookmark-jump bookmark)
       (error "Cannot find location"))))
