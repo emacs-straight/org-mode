@@ -14248,7 +14248,7 @@ general options (see [[*Export Settings]]).
   #+vindex: org-export-default-language
 
   The strategy to handle multi-lingual features.  Possible values
-  are ~nil~, ~fontspec~, ~polyglossia~ or ~babel~.
+  are ~nil~(default), ~fontspec~, ~polyglossia~ or ~babel~.
   See more details about setting up multi-language documents in the
   [[*Handling different languages and character sets in LaTeX exports]] section.
 
@@ -14454,10 +14454,10 @@ A sample Org file with the above headers:
   English context (i.e. header, figure, table names and typesetting
   options will be set for American English).
 
-   ~fontspec~ distinguishes between the Roman (=main=), Sans-serif
-  (=sans=) and monotype (=mono=) fonts, and can provide fall-backs for
+  ~fontspec~ distinguishes between the Roman (=main=), the Sans-Serif
+  (=sans=) and the Monotype (=mono=) font, and can provide fall-backs for
   character sets (for example, ~emoji~, ~han~, ~kana~, etc.) that are
-  not provided by the default fonts in your document.  See
+  not provided by the fonts you use in your document.  See
   [[#lualatex-fontspec]] for more details.  Note that ~fontspec~ does
   not work with =pdflatex= compiler. In this case you can control
   fonts using font packages (cf. [[#pdflatex-fonts]]).
