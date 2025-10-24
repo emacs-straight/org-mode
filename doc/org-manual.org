@@ -15123,9 +15123,9 @@ local variable file ~.dir-locals.el~[fn:52] .
 
 If you do not want or need any specific configuration for the
 ~fontspec~ package, make sure that ~org-latex-fontspec-config~ is set
-to ~nil~ (this is the default value).  This is normally the case when
-exporting to ~beamer~, where you most probably want to use the fonts
-defined in the template.
+to ~nil~ (this is the default value).  This is, for example, the case
+when you export to ~beamer~ and want to rely on the fonts defined in
+the template you use.
 
 ~org-latex-fontspec-config~ maps the font name used in the
 ~\set...font{}~ commands defined by the ~fontspec~ package with the
