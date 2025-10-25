@@ -14881,7 +14881,7 @@ some text in German...
 \end{foreigndisplayquote}
 #+end_example
 
-*** Controlling the way the table of contents is generated
+*** Table of contents in LaTeX export
 #+cindex: LaTeX ToC export
 
 When exporting your document to LaTeX, only numbered sections will be
@@ -14917,7 +14917,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :END:
 #+end_example
 
-*** Handling different languages and character sets in LaTeX exports
+*** Different languages and character sets in LaTeX export
 :properties:
 #+LABEL: LaTeX languages and character sets
 :end:
@@ -15045,7 +15045,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   the non-Latin character sets you use to simplify the configuration
   (cf. [[#nonpdflatex-fonts]]).
 
-*** Controlling the font configuration for PDFLaTeX
+*** Font configuration for PDFLaTeX
 :PROPERTIES:
 :custom_id: pdflatex-fonts
 :END:
@@ -15078,7 +15078,7 @@ included manually as:
 ,#+LATEX_HEADER: \renewcommand*\oldstylenums[1]{\textosf{#1}}
 #+END_SRC
 
-*** Controlling the font configuration for LuaLaTeX and XeLaTeX
+*** Font configuration for LuaLaTeX and XeLaTeX
 :PROPERTIES:
 :custom_id: nonpdflatex-fonts
 :END:
@@ -15102,7 +15102,7 @@ variable ~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to
 configuration.  Font configuration will use a different mechanism
 [[#babel-fontconfig][when using ~babel~]].
 
-**** Controlling the configuration of the ~fontspec~ package
+**** Configuration of the ~fontspec~ package
 :PROPERTIES:
 :custom_id: lualatex-fontspec
 :description: Using org-latex-fontspec-config
@@ -15290,7 +15290,7 @@ the following LaTeX code in the file header:
 #+END_SRC
 If you need more features, add them to this list.
 
-**** Controlling font configuration when using the =polyglossia= package
+**** Font configuration when using the =polyglossia= package
 :PROPERTIES:
 :custom_id: lualatex-polyglossia
 :description: Using org-latex-polyglossia-font-config
@@ -15382,7 +15382,7 @@ will set =CMU Serif= and =CMU Sans Serif= as the fonts for text and
 =fontspec=. Additionally, if you use =polyglossia= and have Greek
 text, you will typeset it with the =Noto Serif= font.
 
-**** Controlling font configuration when using the =babel= package
+**** Font configuration when using the =babel= package
 :PROPERTIES:
 :custom_id: babel-fontconfig
 :description: Using org-latex-babel-font-config
