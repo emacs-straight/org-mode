@@ -14249,7 +14249,7 @@ general options (see [[*Export Settings]]).
 
   The strategy to handle multi-lingual features.  Possible values are
   ~nil~ (default), ~fontspec~, ~polyglossia~ or ~babel~.  See more
-  details about setting up multi-language documents in the [[*Handling
+  details about setting up multi-language documents in [[*Handling
   different languages and character sets in LaTeX exports]]. You can
   set the value globally by customizing ~org-latex-multi-lang~
   variable. Setting the keyword supersedes the variable value.
