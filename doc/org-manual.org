@@ -14922,7 +14922,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 #+LABEL: LaTeX languages and character sets
 :end:
 #+cindex: @samp{LANGUAGE} keyword, @samp{LATEX_MULTI_LANG} keyword
-#+vindex: org-export-multi-lang
+#+vindex: org-latex-multi-lang
 #+vindex: org-export-default-language
 
   LaTeX was initially developed to handle documents written primarily
@@ -14962,7 +14962,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 
   For convenience, if the LaTeX headers load =babel= or =polyglossia=,
   you may use =AUTO= in the package options to refer to the document's
-  main language. Org's will translate it according to the value of the
+  main language. Org will translate it according to the value of the
   =#+LANGUAGE= keyword. For example:
 
   #+BEGIN_EXAMPLE
@@ -15037,7 +15037,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   character sets (for example, ~emoji~, ~han~, ~kana~, etc.) that are
   not provided by the fonts you use in your document.  See
   [[#lualatex-fontspec]] for more details.  Note that ~fontspec~ does
-  not work with =pdflatex= compiler. In this case you can control
+  not work with =pdflatex= compiler. For =pdflatex=, you can control
   fonts using font packages (cf. [[#pdflatex-fonts]]).
 
   We recommend using =lualatex= or =xelatex= for reliable non-Latin
@@ -15095,7 +15095,7 @@ before the actual document.
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the ~fontspec~.  Setting
 variable ~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to
-~t~ enables optimised ~fontspec~ configuration[fn:53].
+~fontspec~ enables optimised ~fontspec~ configuration[fn:53].
 
 ~polyglossia~ and ~babel~ load ~fontspec~ internally. When using
 ~polyglossia~, you can combine ~fontspec~ and ~polyglossia~-specific
@@ -15348,8 +15348,8 @@ The properties you can define are:
 
 1. =:font=: a string with the system font name. This property is
    *mandatory*.
-2. =:variant=: a string for the font variant (e.g. "=sf=" for Sans
-   Serif, "=tt=" for Mono, "=rm=" for Roman aka. Serif). The variants
+2. =:variant=: a string for the font variant (e.g. =sf= for Sans
+   Serif, =tt= for Mono, =rm= for Roman aka. Serif). The variants
    are [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter
    codes used in LaTeX for the different font families]].
 3. =:tag=: a string that will used to define the language name in the
@@ -15434,7 +15434,7 @@ initialised as follows:
         (nil
          :fonts (("rm" :font "CMU Serif")
                  ("tt" :font "DejaVu Sans Mono"
-                  :props"Scale=Matchlocase")))))
+                  :props "Scale=Matchlocase")))))
 #+END_SRC
 
 This setting will produce the following code in the LaTeX export
@@ -15464,7 +15464,7 @@ generate a line
 #+texinfo: @noindent
 per language listed in =#+LANGUAGE=. For example, if you can detect
 the language a passage is written by the characters, you can use the
-babel option =onchar=ids fonts":
+babel option =onchar=ids fonts=:
 
 #+BEGIN_SRC emacs-lisp :results none :exports code
 (setq org-latex-babel-font-config
