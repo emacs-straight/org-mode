@@ -16770,7 +16770,7 @@ DEF-PKG and PKG are assumed to be alists of options/packagename lists.
 EXTRA is a string.
 SNIPPETS-P indicates if this is run to create snippet images for HTML."
   (let (rpl (end ""))
-    (message "Template:\n%s" tpl)
+    ;; (message "Template:\n%s" tpl)
     (if (string-match "^[ \t]*\\[\\(NO-\\)?DEFAULT-PACKAGES\\][ \t]*\n?" tpl)
 	(setq rpl (if (or (match-end 1) (not def-pkg))
 		      "" (org-latex-packages-to-string def-pkg snippets-p t))
