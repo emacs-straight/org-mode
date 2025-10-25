@@ -13091,6 +13091,12 @@ We strongly recommend familiarizing yourself with Beamer terminology
 before reading the rest of this chapter.  See
 <https://en.wikipedia.org/wiki/Beamer_(LaTeX)> and references therein.
 
+Read sections [[*Different languages and character sets in LaTeX
+export]] and [[*Font configuration for LuaLaTeX and XeLaTeX]] to
+familiarise yourself with font customisation if you intend to create
+PDF files from your Beamer Org documents using modern LaTeX compilers
+like =lualatex= or =xelatex=.
+
 *** Beamer export commands
 :PROPERTIES:
 :DESCRIPTION: For creating Beamer documents.
@@ -13126,9 +13132,9 @@ before reading the rest of this chapter.  See
 :DESCRIPTION: For customizing Beamer export.
 :END:
 
-Beamer export backend has several additional keywords for customizing
-Beamer output.  These keywords work similar to the general options
-settings (see [[*Export Settings]]).
+The Beamer export backend has several additional keywords for
+customizing Beamer output.  These keywords work similar to the general
+options settings (see [[*Export Settings]]).
 
 - =BEAMER_THEME= ::
 
@@ -13181,7 +13187,7 @@ settings (see [[*Export Settings]]).
 - =SUBTITLE= ::
 
   #+cindex: @samp{SUBTITLE}, keyword
-  Document's subtitle.  For typesetting, use
+  The document subtitle.  For typesetting, use
   ~org-beamer-subtitle-format~ string.  Use
   ~org-latex-hyperref-template~ to configure document metadata.  Use
   ~org-latex-title-command~ to configure typesetting of subtitle as
