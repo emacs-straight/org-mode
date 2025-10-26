@@ -14991,7 +14991,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   document and on a per-language basis.  The =LANGUAGE= option will be
   used to determine the main and secondary languages.  For example:
 
-  #+BEGIN_SRC org :eval no
+  #+BEGIN_SRC org
 ,#+LANGUAGE: fr de es
 ,#+LATEX_MULTI_LANG: polyglossia
   #+END_SRC
@@ -15006,7 +15006,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   package you use.
 
   For =polyglossia=:
-  #+begin_src org :eval no
+  #+begin_src org
 
   @@latex:\textgerman{@@Dies ist ein Abschnitt auf Deutsch.@@latex:}@@
 
@@ -15016,7 +15016,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   #+end_src
 
   For =babel=:
-  #+begin_src org :eval no
+  #+begin_src org
   @@latex:\foreignlanguage{french}{@@Ceci est un passage en français.@@latex:}@@
 
   ,#+ATTR_LATEX: :options {french}
@@ -15066,7 +15066,7 @@ For example, if you need the
 [[https://tug.org/FontCatalogue/erewhon/][Erewhon]] font, you will find
 the following configuration in the LaTeX font catalogue:
 
-#+BEGIN_SRC latex :eval no
+#+BEGIN_SRC latex
 \usepackage[proportional,scaled=1.064]{erewhon}
 \usepackage[erewhon,vvarbb,bigdelims]{newtxmath}
 \usepackage[T1]{fontenc}
@@ -15078,7 +15078,7 @@ By default, LaTeX export includes the ~fontenc~ package automatically
 include it in your header.  The rest of the configuration needs to be
 included manually as:
 
-#+BEGIN_SRC org :eval no
+#+BEGIN_SRC org
 ,#+LATEX_HEADER: \usepackage[proportional,scaled=1.064]{erewhon}
 ,#+LATEX_HEADER: \usepackage[erewhon,vvarbb,bigdelims]{newtxmath}
 ,#+LATEX_HEADER: \renewcommand*\oldstylenums[1]{\textosf{#1}}
@@ -15134,7 +15134,7 @@ For example, if you want to map the ~math~ font to the system font
 ~:font~. Consider the following definition for
 ~org-latex-fontspec-config~:
 
-#+BEGIN_SRC elisp :eval no
+#+BEGIN_SRC elisp
 (setq-default org-latex-fontspec-config
               '(("main" :font "FreeSerif")
                 ("sans" :font "FreeSans")
@@ -15143,6 +15143,7 @@ For example, if you want to map the ~math~ font to the system font
 #+END_SRC
 #+RESULTS:
 
+#+texinfo: @noindent
 When generating the font prelude for ~lualatex~, the resulting commands
 will be:
 
@@ -15166,6 +15167,7 @@ scaling for the monotype font you could define the ~mono~ font as:
                 ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
+#+texinfo: @noindent
 This is translated as:
 
 #+BEGIN_SRC latex
@@ -15175,7 +15177,7 @@ This is translated as:
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
-The ~:features~ can be a string or a list of strings to improve
+The ~:features~ property can be a string or a list of strings to improve
 readability.  For example, to make the ~mono~ font appear in blue and
 scaled, you could specify it as:
 
@@ -15184,11 +15186,12 @@ scaled, you could specify it as:
         :features ("Color=blue"
                    "Scale=MatchLowercase"))
 #+END_SRC
-
+#+texinfo: @noindent
 When you have more than one feature to add, you can also provide them
 as a comma-separated list. The following code also would also define
+the ~mono~ font as blue and scaled:
 
-#+BEGIN_SRC emacs-lisp :eval no
+#+BEGIN_SRC emacs-lisp
 ("mono" :font "TeX Gyre Cursor"
         :features "Color=blue,Scale=MatchLowercase")
 #+END_SRC
@@ -15201,16 +15204,16 @@ included in the fonts used for your document.
 
 When this is the case, the LaTeX process will complain and Emacs will
 warn you. Using the list of scripts detected in the buffer, which it
-always generates during the export process in the *=*Messages*=*
+always generates during the export process in the *~*Messages*~*
 buffer, you can declare the fallback fonts for missing scripts, using
 ~:fallback~ property for this purpose.  It links to an associative
 list that maps the script names as detected by Emacs with their
 fallback configuration.
 
-For example, assume your ~init.el~ configures the =main= font in
+For example, assume your ~init.el~ configures the ~main~ font in
 ~org-latex-fontspec-config~ as:
 
-#+BEGIN_SRC emacs-lisp :eval no
+#+BEGIN_SRC emacs-lisp
 (setq-default org-latex-fontspec-config
               '(("main"
                  :font "TeX Gyre Termes"
@@ -15225,7 +15228,7 @@ For example, assume your ~init.el~ configures the =main= font in
 #+END_SRC
 
 If Emacs detects characters belonging to the ~emoji~ character set, it
-will include the following fallback definition for the =main= font[fn:55]:
+will include the following fallback definition for the ~main~ font[fn:55]:
 
 #+BEGIN_SRC latex
 \directlua{
@@ -15263,7 +15266,7 @@ packages.  These packages provide the ~\setCKJmainfont{}~,
 ~CJKsans~ and ~CJK mono~ to specify the fonts supporting the Chinese,
 Japanese or Korean scripts you need for your documents.  For example:
 
-#+BEGIN_SRC elisp :eval no
+#+BEGIN_SRC elisp
 ((org-mode .
   ((org-latex-fontspec-config .
     (("main" :font "Noto Serif")
@@ -15281,7 +15284,7 @@ Additionally, you can define common features for all fonts using the
 common features for all fonts, you can define them as an associative
 list of strings (FEATURE . VALUE) in this variable. For example:
 
-#+BEGIN_SRC elisp :eval no
+#+BEGIN_SRC elisp
 (setq org-latex-fontspec-default-features
       '(("Numbers". "OldStyle")))
 #+END_SRC
@@ -15289,14 +15292,14 @@ list of strings (FEATURE . VALUE) in this variable. For example:
 or its equivalent as a file or directory local variable will generate
 the following LaTeX code in the file header:
 
-#+BEGIN_SRC latex :eval no
+#+BEGIN_SRC latex
 \defaultfontfeatures{
   Numbers=OldStyle
 }
 #+END_SRC
 If you need more features, add them to this list.
 
-**** Font configuration when using the =polyglossia= package
+**** Font configuration when using the ~polyglossia~ package
 :PROPERTIES:
 :custom_id: lualatex-polyglossia
 :description: Using org-latex-polyglossia-font-config
@@ -15304,13 +15307,13 @@ If you need more features, add them to this list.
 #+cindex: polyglossia font configuration
 #+vindex: org-latex-polyglossia-font-config
 
-If you use the =polyglossia= package in multi-lingual documents, it
-will load for you the =fontspec= package. Any general settings that
+If you use the ~polyglossia~ package in multi-lingual documents, it
+will load the ~fontspec~ package for you. Any general settings that
 depend on the variable ~org-latex-fontspec-config~ described
 [[#lualatex-fontspec][above]] still apply. In addition, settings
-specific to the =polyglossia= package are controlled by
+specific to the ~polyglossia~ package are controlled by
 ~org-latex-polyglossia-font-config~. Its default value is ~nil~,
-meaning that no extra =polyglossia=-related font configurations are
+meaning that no extra ~polyglossia~-related font configurations are
 generated.
 
 When non-~nil~, ~org-latex-polyglossia-font-config~ contains a list of
@@ -15319,7 +15322,7 @@ definition is a property list (~plist~). The following is show an example
 of the definition of the font configuration to use ~polyglossia~ in a
 document with English and Hebrew text placed in a ~.dir-locals.el~ file:
 
-#+BEGIN_SRC emacs-lisp :eval no
+#+BEGIN_SRC emacs-lisp
 ((org-mode
   . ((org-latex-polyglossia-font-config
       . (("en"
@@ -15337,41 +15340,41 @@ document with English and Hebrew text placed in a ~.dir-locals.el~ file:
 
 #+END_SRC
 
-As you see, =polyglossia= controls fonts on a per-language, per-script
-basis. For example, the document will use using the =Miriam Mono CLM=
-script for Hebrew script in mono-spaced passages (=:variant
-"tt"=). You will see the following in the exported LaTeX:
+As you see, ~polyglossia~ controls fonts on a per-language, per-script
+basis. For example, the document will use using the ~Miriam Mono CLM~
+script for Hebrew script in mono-spaced passages (~:variant "tt"~).
+You will see the following in the exported LaTeX:
 
-#+BEGIN_SRC LaTeX :eval no
+#+BEGIN_SRC LaTeX
   \newfontfamily{\hebrewfonttt}[Script=Hebrew]{Miriam Mono CLM}
 #+END_SRC
 
 Each entry in the property list associates a language(for example,
-="he"= for Hebrew, ="en"= for English, etc.[fn:56]) to a list
+~"he"~ for Hebrew, ~"en"~ for English, etc.[fn:56]) to a list
 of properties.
 
 The properties you can define are:
 
-1. =:font=: a string with the system font name. This property is
+1. ~:font~: a string with the system font name. This property is
    *mandatory*.
-2. =:variant=: a string for the font variant (e.g. =sf= for Sans
-   Serif, =tt= for Mono, =rm= for Roman aka. Serif). The variants
+2. ~:variant~: a string for the font variant (e.g. ~sf~ for Sans
+   Serif, ~tt~ for Mono, ~rm~ for Roman aka. Serif). The variants
    are [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter
    codes used in LaTeX for the different font families]].
-3. =:tag=: a string that will used to define the language name in the
-   font family.  For example, the language may be ="hindi"= but the
-   name for the font family ="devanagari"=. In this case, the latter
-   can be indicated with a =:tag=,
-4. =:props=: a string for extra properties as defined in the
+3. ~:tag~: a string that will used to define the language name in the
+   font family.  For example, the language may be ~"hindi"~ but the
+   name for the font family ~"devanagari"~. In this case, the latter
+   can be indicated with a ~:tag~,
+4. ~:props~: a string for extra properties as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
 
-When using =polyglossia=, you can also configure the fonts used for
+When using ~polyglossia~, you can also configure the fonts used for
 the document's main language with the configuration for
-=fontspec=. For example, the following settings in you
+~fontspec~. For example, the following settings in you
 directory-local variables:
 
-#+BEGIN_SRC emacs-lisp :eval no
+#+BEGIN_SRC emacs-lisp
 ((org-mode
   . ((org-latex-fontspec-default-features
       . (("Ligatures" . "TeX")))
@@ -15385,12 +15388,12 @@ directory-local variables:
 #+END_SRC
 
 #+texinfo: @noindent
-will set =CMU Serif= and =CMU Sans Serif= as the fonts for text and
-=DejaVu Sans Mono= for listings in all documents where you use
-=fontspec=. Additionally, if you use =polyglossia= and have Greek
-text, you will typeset it with the =Noto Serif= font.
+will set ~CMU Serif~ and ~CMU Sans Serif~ as the fonts for text and
+~DejaVu Sans Mono~ for listings in all documents where you use
+~fontspec~. Additionally, if you use ~polyglossia~ and have Greek
+text, you will typeset it with the ~Noto Serif~ font.
 
-**** Font configuration when using the =babel= package
+**** Font configuration when using the ~babel~ package
 :PROPERTIES:
 :custom_id: babel-fontconfig
 :description: Using org-latex-babel-font-config
@@ -15399,7 +15402,7 @@ text, you will typeset it with the =Noto Serif= font.
 #+vindex: org-latex-babel-font-config
 
 Org mode will control the fonts used for multilingual documents when
-using the =babel= package with the ~org-latex-babel-font-config~
+using the ~babel~ package with the ~org-latex-babel-font-config~
 variable.  By default, this variable is ~nil~, meaning that no extra
 font configuration will be generated.
 
@@ -15435,7 +15438,7 @@ For example, for a document with text in German and Greek,
 where the main language is German, this variable could be
 initialised as follows:
 
-#+BEGIN_SRC elisp :eval no
+#+BEGIN_SRC elisp
 (setq org-latex-babel-font-config
       '(("el-polyton"
          :fonts (("rm" :font "Noto Serif")))
@@ -15448,7 +15451,7 @@ initialised as follows:
 This setting will produce the following code in the LaTeX export
 header:
 
-#+BEGIN_SRC latex :eval no
+#+BEGIN_SRC latex
 \babelfont{rm}{CMU Serif}
 \babelfont{tt}{DejaVu Sans Mono}[Scale=MatchLowercase]
 \babelfont[polytonicgreek]{rm}{Noto Serif}
@@ -15470,11 +15473,11 @@ generate a line
 \babelprovide[provide]{lang}
 #+end_example
 #+texinfo: @noindent
-per language listed in =#+LANGUAGE=. For example, if you can detect
+per language listed in ~#+LANGUAGE~. For example, if you can detect
 the language a passage is written by the characters, you can use the
-babel option =onchar=ids fonts=:
+babel option ~onchar=ids fonts~:
 
-#+BEGIN_SRC emacs-lisp :eval no
+#+BEGIN_SRC emacs-lisp
 (setq org-latex-babel-font-config
       '((nil
          :fonts (("rm" :font "FreeSerif")))
@@ -15485,7 +15488,7 @@ babel option =onchar=ids fonts=:
 #+texinfo: @noindent
 When applied to an Org file with the following settings in the header
 
-#+BEGIN_SRC org :eval no
+#+BEGIN_SRC org
 ,#+LATEX_COMPILER: lualatex
 ,#+LANGUAGE: el pt
 ,#+LATEX_MULTI_LANG: babel
@@ -15493,7 +15496,7 @@ When applied to an Org file with the following settings in the header
 #+texinfo: @noindent
 it will generate the following LaTeX preamble code:
 
-#+BEGIN_SRC latex :eval no
+#+BEGIN_SRC latex
 \usepackage[bidi=basic]{babel}
 \babelprovide[import,main]{greek}
 \babelprovide[onchar=ids fonts]{portuguese}
