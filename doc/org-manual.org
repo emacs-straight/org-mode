@@ -17885,6 +17885,7 @@ search for citation keys.
 One can then insert and edit citations using ~org-cite-insert~, called
 with {{{kbd(C-c C-x @)}}}.
 
+#+cindex: citation
 A /citation/ requires one or more citation /key(s)/, elements
 identifying a reference in the bibliography.
 
@@ -17901,37 +17902,208 @@ identifying a reference in the bibliography.
 
   : [cite:see @key p. 123]
 
-- A single citation can cite more than one reference ; the keys are
-  separated by semicolons ; the formatting of such citation groups is
+- A single citation can cite more than one reference; the keys are
+  separated by semicolons; the formatting of such citation groups is
   specified by the style.
 
   : [cite:@key1;@key2;@key3]
 
 - One can also specify a stylistic variation for the citations by
   inserting a =/= and a style name between the =cite= keyword and the
-  colon; this usually makes sense only for the author-year styles.
+  colon; this usually makes sense only for the author-year
+  styles.  Additionally, one can insert a =/= and a variant name after
+  the style.
 
-  : [cite/style:common prefix ;prefix @key suffix; ... ; common suffix]
+  : [cite/<style>:@key]
+  : [cite/<style>/<variant>:@key]
 
-  When =style= is not specified, one of the two default styles are
-  used
+- The only mandatory elements are:
 
-  + either the default style specified in the =CITE_EXPORT= keyword
-    (see [[*Citation export processors]])
+  + The =cite= keyword and the colon.
+  + The =@= character immediately preceding each key.
+  + The brackets surrounding the citation(s) (group).
 
-    : #+cite_export: basic numeric noauthor/bare
-    : [cite:@key] is the same as [cite/noauthor/bare:@key]
+#+cindex: styles, for citations
+Support for styles varies between processors.  Supported styles and
+variants are detailed below.  The examples illustrate default results
+for the =csl= processor except for styles only supported by =basic=.
+Citation styles and variants can be specified by their full name
+(e.g., =author/bare=) or shortcut (e.g., =a/b=).
 
-  + or, if =CITE_EXPORT= is not set, using the default =nil= style
+- default style =nil= (<omitted>) :: Provide a typical author-date
+  citation in parentheses.\\
+  Variants: =bare= (=b=), =caps= (=c=), =bare-caps= (=bc=), =full=
+  (=f=), =bare-full= (=bf=), =caps-full= (=cf=), =bare-caps-full=
+  (=bcf=).\\
+  Support: =basic= (=b=, =c=, =bc=), =csl= (=b=, =c=, =bc=), =natbib=
+  (all variants), =bibtex= (variants not supported), =biblatex= (=b=,
+  =c=, =bc=).
 
-    : [cite:@key] is the same as [cite/nil:@key]
+  | =[cite:@dewaal06 p. 5]=            | (de Waal et al. 2006, 5) |
+  | =[cite//bare-caps:@dewaal06 p. 5]= | De Waal et al. 2006, 5   |
+  | =[cite//bc:@dewaal06 p. 5]=        | De Waal et al. 2006, 5   |
 
+- =author= (=a=) :: Provide the author names only.\\
+  Variants: =bare= (=b=), =caps= (=c=), =full= (=f=), and all their
+  combinations.\\
+  Support: =basic= (only =c=), =csl= (all variants), =natbib= (=c=,
+  =f=), =biblatex= (=c=, =f=, =cf=).
 
-The only mandatory elements are:
+  | =[cite/author:@dewaal06 p. 5]= | (de Waal et al.) |
+  | =[cite/a:@dewaal06 p. 5]=      | (de Waal et al.) |
 
-- The =cite= keyword and the colon.
-- The =@= character immediately preceding each key.
-- The brackets surrounding the citation(s) (group).
+- =noauthor= (=na=) :: As default, but suppress author names.\\
+  Variants: =bare= (=b=), =caps= (=c=), and =bare-caps= (=bc=).\\
+  Support: =basic= (only =b=), =csl= (all variants), =natbib= (only
+  =b=), =biblatex= (only =b=).
+
+  | =[cite/noauthor:@dewaal06, p. 5]= | (2006, 5) |
+  | =[cite/na:@dewaal06, p. 5]=       | (2006, 5) |
+
+- =year= (=y=) :: Provide the year only, like =noauthor=, but also suppress
+  locators.\\
+  Variant: =bare=.\\
+  Support: =csl=.
+
+  | =[cite/year:@dewaal06, p. 5]= | (2006) |
+  | =[cite/y:@dewaal06, p. 5]=    | (2006) |
+
+- =nocite= (=n=) :: Suppress the whole citation (but list the item in
+  the bibliography).  As a special case, =[cite/n:@*]= will cause all
+  works in the bibliography file(s) to be printed in the bibliography.\\
+  Variants: none.\\
+  Support: =basic=, =csl=, =natbib=, =bibtex=, =biblatex=.
+
+  | =[cite/nocite:@dewaal06]= | <empty> |
+  | =[cite/n:@dewaal06]=      | <empty> |
+
+- =text= (=t=) :: Provide an author-date citation with the author
+  outside the parentheses.\\
+  Variants: =caps= (=c=), =full= (=f=), and =caps-full= (=cf=).\\
+  Support: =basic= (only =c=), =natbib= (all variants), =biblatex=
+  (only =c=).
+
+  | =[cite/text:@dewaal06 p. 5]= | de Waal et al. (2006, 5)           |
+  | =[cite/t/cf:@dewaal06 p. 5]= | De Waal, Li, Wu, and Roy (2006, 5) |
+
+- =title= (=ti=) :: Provide the title only.\\
+  Variant: =bare=.\\
+  Support: =csl=.
+
+  | =[cite/title:@dewaal06, p. 5]= | ("Unicorn Conservation")       |
+  | =[cite/ti/b:@dewaal06, p. 5]=  | "Unicorn Conservation"         |
+
+- =locators= (=l=) :: Provide the locator(s) only, e.g., the page
+  number.\\
+  Variant: =bare= (=b=), =caps= (=c=), =bare-caps= (=bc=).\\
+  Support: =csl= (only =b=), =biblatex= (all variants).
+
+  | =[cite/locators:@dewaal06 p. 5]= | (5)      |
+  | =[cite/l:@dewaal06 sec. 2]=      | (sec. 2) |
+
+- =numeric= (=nb=) :: Provide the citation number.\\
+  Variant: none.\\
+  Support: =basic=.[fn:numeric:Other processors than the =basic= one
+  can also make numeric- or note-style citations, but this is done by
+  using an appropriate style file, rather than adding style variants
+  to the individual citations.  A numeric style is the default for the
+  =bibtex= exporter.]
+
+  | =[cite/numeric:@dewaal06 p. 5]= | (1 p. 5) |
+  | =[cite/n:@dewaal06 p. 5]=       | (1 p. 5) |
+
+- =note= (=ft=) :: Provide a footnote.\\
+  Variant:\\
+  Support: =basic=.
+
+  | =[cite/note:@dewaal06 p. 5]= | [1] |
+  | =[cite/n:@dewaal06 p. 5]=    | [1] |
+
+- =bibentry= (=b=) :: Provide full bibliographic information as an
+  in-text citation.\\
+  Variant: =bare=.\\
+  Support: =csl=.
+
+Here is the full list of all the variants and their meaning:
+
+- =bare= (=b=) :: Do not enclose the citation in parentheses.
+
+  | =[cite//bare:@dewaal06 p. 5]= | de Waal et al. 2006, 5 |
+  | =[cite//b:@dewaal06 p. 5]=    | de Waal et al. 2006, 5 |
+
+- =caps= (=c=) :: Capitalize the first word.  This is sometimes useful
+  for last names beginning e.g.\nbsp{}with "von" or "de".
+
+  | =[cite//caps:@dewaal06 p. 5]= | (De Waal et al. 2006, 5) |
+  | =[cite//c:@dewaal06 p. 5]=    | (De Waal et al. 2006, 5) |
+
+- =bare-caps= (=bc=) :: Combine =bare= and =caps=.
+
+  | =[cite//bare-caps:@dewaal06 p. 5]= | De Waal et al. 2006, 5 |
+  | =[cite//bc:@dewaal06 p. 5]=        | De Waal et al. 2006, 5 |
+
+- =full= (=f=) :: List all author names instead of replacing them with
+  "et al."
+
+  | =[cite//full:@dewaal06 p. 5]= | (de Waal, Li, Wu, and Roy 2006, 5) |
+  | =[cite//f:@dewaal06 p. 5]=    | (de Waal, Li, Wu, and Roy 2006, 5) |
+
+- =bare-full= (=bf=) :: Combine =bare= and =full=.
+
+  | =[cite//bare-full:@dewaal06 p. 5]= | de Waal, Li, Wu, and Roy 2006, 5 |
+  | =[cite//bf:@dewaal06 p. 5]=        | de Waal, Li, Wu, and Roy 2006, 5 |
+
+- =caps-full= (=cf=) ::  Combine =caps= and =full=.
+
+  | =[cite//caps-full:@dewaal06 p. 5]= | (De Waal, Li, Wu, and Roy 2006, 5) |
+  | =[cite//cf:@dewaal06 p. 5]=        | (De Waal, Li, Wu, and Roy 2006, 5) |
+
+- =bare-caps-full= (=bcf=) :: Combine =bare=, =caps=, and =full=.
+
+  | =[cite//bare-caps-full:@dewaal06 p. 5]= | De Waal, Li, Wu, and Roy 2006, 5 |
+  | =[cite//bcf:@dewaal06 p. 5]=            | De Waal, Li, Wu, and Roy 2006, 5 |
+
+When =style= is not specified, one of the two default styles is used:
+
+- either the default style specified in the =CITE_EXPORT= keyword
+  (see [[*Citation export processors]])
+
+  : #+cite_export: basic numeric noauthor/bare
+  : [cite:@key] is the same as [cite/noauthor/bare:@key]
+
+- or, if =CITE_EXPORT= is not set, the default =nil= style
+
+  : [cite:@key] is the same as [cite/nil:@key]
+
+#+vindex: org-cite-biblatex-styles
+While the =basic= and =csl= processors format citations directly in
+the final output format, the =bibtex=, =natbib=, and =biblatex=
+processors output corresponding Bib(La)TeX cite commands for further
+processing.  For example, the =natbib= processor renders
+=[cite/author:@Jones]= as ~\citeauthor{Jones}~.  With the =biblatex=
+processor the resulting commands can be controlled by customizing
+`org-cite-biblatex-styles'.  Results will depend on the style as well
+as the engine used (bibtex or biber), and will vary between
+processors.
+
+#+cindex: locators
+When the =csl= processor is used, "locators" such as page references
+will be recognized and rendered according to the selected CSL style
+(other processors will render them verbatim).  A locator is a part of
+the citation suffix that starts with a locator term and ends with the
+last comma or digit in the suffix, whichever comes last.  Locator
+terms include "p.", "page", and "chap."[fn::The CSL locator terms are
+"book", "bk.", "bks.", "chapter", "chap.", "chaps.", "column", "col.",
+"cols.", "figure", "fig.", "figs.", "folio", "fol.", "fols.",
+"number", "no.", "nos.", "line", "l.", "ll.", "note", "n.", "nn.",
+"opus", "op.", "opp.", "page", "p.", "pp.", "paragraph", "para.",
+"paras.", "¶", "¶¶", "part", "pt.", "pts.", "section", "sec.",
+"secs.", "§", "§§", "sub verbo", "s.v.", "s.vv.", "verse", "v.",
+"vv.", "volume", "vol.", "vols."].  In the following example, the
+locator =p. 3-4= might be rendered "pp. 3--4" or just "3--4" in
+export, depending on the CSL style.
+
+: [cite:see @Tarski1965 p. 3-4 for an example]
 
 ** Citation export processors
 
