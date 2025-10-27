@@ -62,17 +62,21 @@ Return the clock line as a string."
                               (/ (mod sec-diff 3600) 60))))
             "\n")))
 
-(defun test-org-clock-clocktable-contents (options &optional initial)
+(defun test-org-clock-clocktable-contents (options &optional initial no-move)
   "Return contents of a Clock table for current buffer
 
 OPTIONS is a string of Clock table options.  Optional argument
 INITIAL is a string specifying initial contents within the Clock
 table.
 
+When NO-MOVE is non-nil, then place the clocktable at point instead of
+the beginning of the buffer.
+
 Caption is ignored in contents.  The clocktable doesn't appear in
 the buffer."
   (declare (indent 2))
-  (goto-char (point-min))
+  (unless no-move
+    (goto-char (point-min)))
   (save-excursion
     (insert "#+BEGIN: clocktable " options "\n")
     (when initial (insert initial))
@@ -337,6 +341,107 @@ CLOCK: [2022-11-03 %s 06:00]--[2022-11-03 %s 06:01] =>  0:01
                      (buffer-string))))))
 
 
+;;; org-clock-sum
+
+(ert-deftest test-org-clock/org-clock-sum ()
+  "Test `org-clock-sum'."
+  (org-test-at-time "<2025-10-18 12:00>"
+    (cl-flet ((org-test-get-clock-minutes (text-property)
+                (org-map-entries
+                 (lambda ()
+                   (get-char-property (point) text-property)))))
+      (org-test-with-temp-text
+          "* This is test
+CLOCK: [2025-10-18 Sat 09:00]--[2025-10-18 Sat 10:00] =>  1:00
+*************** Here
+:LOGBOOK:
+CLOCK: [2025-10-18 Sat 13:00]
+CLOCK: [2025-10-18 Sat 10:00]--[2025-10-18 Sat 11:00] =>  1:00
+CLOCK: [2025-10-18 Sat 13:00]
+CLOCK: [2025-10-18 Sat 14:43]
+:END:
+The open clocks here are fake outs.
+*************** END"
+        (require 'org-inlinetask)
+        (org-clock-sum)
+        (should
+         (eq 120 org-clock-file-total-minutes))
+        (should
+         (equal
+          '(120 60)
+          (org-test-get-clock-minutes :org-clock-minutes)))
+        ;; Test including the current clocking task.  Requires tstart and
+        ;; tend to be set so just use `org-clock-sum-today'.
+        (let ((org-clock-report-include-clocking-task t))
+          (org-clock-in nil (time-subtract nil (* 2 60 60)))
+          (org-clock-sum-today)
+          (should
+           (eq 240 org-clock-file-total-minutes))
+          (should
+           (equal
+            '(240 60)
+            (org-test-get-clock-minutes :org-clock-minutes-today)))
+          (org-clock-cancel)
+          ;; Test open clock on inline task
+          (search-forward "Here")
+          (org-clock-in nil (time-subtract nil (* 3 60 60)))
+          (org-clock-sum-today)
+          (should
+           (eq 300 org-clock-file-total-minutes))
+          (should
+           (equal
+            '(300 240)
+            (org-test-get-clock-minutes :org-clock-minutes-today))))))))
+
+(ert-deftest test-org-clock/org-clock-sum-source-block ()
+  "Test `org-clock-sum' with source blocks."
+  (org-test-at-time "<2025-10-18 15:00>"
+    (cl-flet ((org-test-get-clock-minutes (text-property)
+                (org-map-entries
+                 (lambda ()
+                   (get-char-property (point) text-property)))))
+      (org-test-with-temp-text
+          "* This is test
+CLOCK: [2025-10-18 Sat 09:00]--[2025-10-18 Sat 10:00] =>  1:00
+#+begin_src org
+<point>
+,* foo
+CLOCK: [2025-10-18 Sat 10:00]--[2025-10-18 Sat 11:00] =>  1:00
+,** subfoo
+CLOCK: [2025-10-18 Sat 11:00]--[2025-10-18 Sat 12:00] =>  1:00
+,* bar
+CLOCK: [2025-10-18 Sat 12:00]--[2025-10-18 Sat 13:00] =>  1:00
+,** subbar
+CLOCK: [2025-10-18 Sat 13:00]--[2025-10-18 Sat 14:00] =>  1:00
+#+end_src
+CLOCK: [2025-10-18 Sat 14:00]--[2025-10-18 Sat 15:00] =>  1:00
+"
+        (org-clock-sum)
+        (should
+         (eq 120 org-clock-file-total-minutes))
+        (should
+         (equal
+          '(120)
+          (org-test-get-clock-minutes :org-clock-minutes)))
+        ;; Test when editing source block
+        (org-edit-special)
+        (org-clock-sum)
+        (should
+         (eq 240 org-clock-file-total-minutes))
+        (should
+         (equal
+          '(120 60 120 60)
+          (org-test-get-clock-minutes :org-clock-minutes)))
+        (org-edit-src-exit)
+        ;; After exiting we still have the original results
+        (should
+         (eq 120 org-clock-file-total-minutes))
+        (should
+         (equal
+          '(120)
+          (org-test-get-clock-minutes :org-clock-minutes)))))))
+
+
 ;;; Clocktable
 
 (ert-deftest test-org-clock/clocktable/insert ()
@@ -345,13 +450,12 @@ CLOCK: [2022-11-03 %s 06:00]--[2022-11-03 %s 06:01] =>  0:01
    (equal
     "| Headline     | Time   |
 |--------------+--------|
-| *Total time* | *1:00* |
+| *Total time* | *2:00* |
 |--------------+--------|
-| H1           | 1:00   |"
+| H1           | 2:00   |"
     (org-test-with-temp-text "* H1\n<point>"
-      (insert (org-test-clock-create-clock ". 1:00" ". 2:00"))
-
-      (goto-line 2)
+      (insert (org-test-clock-create-clock ". 1:00" ". 2:00")
+              "CLOCK: => 1:00\n")
       (require 'org-clock)
       (org-dynamic-block-insert-dblock "clocktable")
 
@@ -362,6 +466,40 @@ CLOCK: [2022-11-03 %s 06:00]--[2022-11-03 %s 06:01] =>  0:01
 	    (buffer-substring-no-properties
 	     (point) (progn (search-forward "#+END:") (line-end-position 0))))
 	(delete-region (point) (search-forward "#+END:\n")))))))
+
+(ert-deftest test-org-clock/clocktable/open-clock ()
+  "Test open clocks.
+Open clocks should be ignored unless it is clocked in and
+`org-clock-report-include-clocking-task' is t."
+  (let ((time-reported "| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *1:00* |
+|--------------+--------|
+| H1           | 1:00   |")
+        (time-not-reported "| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *0:00* |"))
+    (dolist (org-clock-report-include-clocking-task '(nil t))
+      (dolist (actually-clock-in '(nil t))
+        ;; FIXME: Without leading characters then
+        ;; `org-clock-hd-marker' doesn't get updated when clocktable
+        ;; is inserted and test fails.
+        (org-test-with-temp-text "\n*<point> H1\n"
+          (should
+           (equal
+            (if (and org-clock-report-include-clocking-task
+                     actually-clock-in)
+                time-reported
+              time-not-reported)
+            (progn
+              (if actually-clock-in
+                  (org-clock-in nil (- (float-time) (* 60 60)))
+                (goto-char (point-max))
+                (insert (org-test-clock-create-clock "-1h")))
+              ;; Unless tstart and tend are fully specified it doesn't work
+              (test-org-clock-clocktable-contents ":tstart \"<-2d>\" :tend \"<tomorrow>\""))))
+          (when actually-clock-in
+            (org-clock-cancel)))))))
 
 (ert-deftest test-org-clock/clocktable/ranges ()
   "Test ranges in Clock table."
@@ -443,6 +581,33 @@ CLOCK: [2022-11-03 %s 06:00]--[2022-11-03 %s 06:01] =>  0:01
       (goto-line 4)
       (test-org-clock-clocktable-contents ":tags t :indent nil")))))
 
+(ert-deftest test-org-clock/clocktable/timestamp ()
+  "Test \":timestamp\" parameter in Clock table."
+  (should
+   (equal
+    "| Timestamp              | Headline           |   Time |
+|------------------------+--------------------+--------|
+|                        | *Total time*       | *4:00* |
+|------------------------+--------------------+--------|
+| <2025-10-24 Fri 10:00> | scheduled          |   1:00 |
+| <2025-10-24 Fri 10:00> | deadline           |   1:00 |
+| <2025-10-24 Fri 10:00> | timestamp          |   1:00 |
+| [2025-10-24 Fri 10:00] | inactive timestamp |   1:00 |"
+    (org-test-with-temp-text "* scheduled
+SCHEDULED: <2025-10-24 Fri 10:00>
+CLOCK: [2025-10-23 Thu 12:00]--[2025-10-23 Thu 13:00] =>  1:00
+* deadline
+DEADLINE: <2025-10-24 Fri 10:00>
+CLOCK: [2025-10-23 Thu 12:00]--[2025-10-23 Thu 13:00] =>  1:00
+* timestamp
+<2025-10-24 Fri 10:00>
+CLOCK: [2025-10-23 Thu 12:00]--[2025-10-23 Thu 13:00] =>  1:00
+* inactive timestamp
+[2025-10-24 Fri 10:00]
+CLOCK: [2025-10-23 Thu 12:00]--[2025-10-23 Thu 13:00] =>  1:00
+"
+      (test-org-clock-clocktable-contents ":timestamp t")))))
+
 (ert-deftest test-org-clock/clocktable/scope ()
   "Test \":scope\" parameter in Clock table."
   ;; Test `file-with-archives' scope.  In particular, preserve "TBLFM"
@@ -470,7 +635,22 @@ CLOCK: [2012-03-29 Thu 16:00]--[2012-03-29 Thu 17:00] =>  1:00"
       (let ((the-file (buffer-file-name)))
         (org-test-with-temp-text-in-file ""
           (test-org-clock-clocktable-contents
-           (format ":scope (lambda () (list %S))" the-file))))))))
+           (format ":scope (lambda () (list %S))" the-file)))))))
+  ;; Test "subtree" scope.
+  (should
+   (string-equal
+    "| Headline         | Time   |      |
+|------------------+--------+------|
+| *Total time*     | *1:00* |      |
+|------------------+--------+------|
+| \\_  subtree Test |        | 1:00 |"
+    (org-test-with-temp-text
+     "* Test
+CLOCK: [2012-03-29 Thu 8:00]--[2012-03-29 Thu 16:40] => 8:40
+** subtree Test
+<point>
+CLOCK: [2012-03-29 Thu 16:00]--[2012-03-29 Thu 17:00] =>  1:00"
+     (test-org-clock-clocktable-contents ":scope subtree" nil t)))))
 
 (ert-deftest test-org-clock/clocktable/maxlevel ()
   "Test \":maxlevel\" parameter in Clock table."
@@ -1284,6 +1464,21 @@ CLOCK: [2012-03-29 Thu 16:00]--[2012-03-29 Thu 17:00] =>  1:00"
           (test-org-clock-clocktable-contents
            (format ":hidefiles t :scope (lambda () (list %S))" the-file))))))))
 
+(ert-deftest test-org-clock/clocktable/malformed-clock-lines ()
+  "Test clocktable with malformed clock lines."
+  (let (org-warning)
+    (cl-letf* (((symbol-function #'org-display-warning)
+                (lambda (message) (setq org-warning message))))
+      (should
+       (equal
+        "| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *0:00* |"
+        (org-test-with-temp-text "* H1
+CLOCK: [2012-01-01 sun. 00rr:04]--[2012-01-01 sun. 00:05] =>  0:01"
+          (test-org-clock-clocktable-contents ""))))
+      (should (string-prefix-p "org-clock-sum: Ignoring invalid" org-warning)))))
+
 ;;; Mode line
 
 (ert-deftest test-org-clock/mode-line ()
@@ -1464,6 +1659,86 @@ Variables'."
                                 days))))
                    cases))))
     (should-not failed)))
+
+;;; Inline tasks clocktable
+
+(require 'org-inlinetask)
+
+(ert-deftest test-org-clock/clocktable/inlinetask/insert ()
+  "Test insert clocktable on an inline task."
+  (should
+   (equal
+    "| Headline     | Time   |      |
+|--------------+--------+------|
+| *Total time* | *2:00* |      |
+|--------------+--------+------|
+| H1           | 2:00   |      |
+| \\_  I        |        | 2:00 |"
+    (let ((org-inlinetask-min-level 5))
+      (org-test-with-temp-text "* H1
+***** I
+<point>
+***** END
+foo"
+      (insert (org-test-clock-create-clock ". 1:00" ". 2:00")
+              "CLOCK: => 1:00\n")
+      (test-org-clock-clocktable-contents ""))))))
+
+(ert-deftest test-org-clock/clocktable/inlinetask/no-heading ()
+  "Test insert clocktable on an inline task not under a heading."
+  (should
+   (equal
+    "| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *2:00* |
+|--------------+--------|
+| I            | 2:00   |"
+    (let ((org-inlinetask-min-level 5))
+      (org-test-with-temp-text "***** I
+<point>
+***** END
+foo"
+      (insert (org-test-clock-create-clock ". 1:00" ". 2:00")
+              "CLOCK: => 1:00\n")
+      (test-org-clock-clocktable-contents ""))))))
+
+(ert-deftest test-org-clock/clocktable/inlinetask/open-clock ()
+  "Test open clocks on an inline task.
+Open clocks should be ignored unless it is clocked in and
+`org-clock-report-include-clocking-task' is t."
+  (let ((time-reported
+         "| Headline     | Time   |      |
+|--------------+--------+------|
+| *Total time* | *1:00* |      |
+|--------------+--------+------|
+| H1           | 1:00   |      |
+| \\_  I        |        | 1:00 |")
+        (time-not-reported "| Headline     | Time   |
+|--------------+--------|
+| *Total time* | *0:00* |")
+        (org-inlinetask-min-level 5))
+    (dolist (org-clock-report-include-clocking-task '(nil t))
+      (dolist (actually-clock-in '(nil t))
+        (org-test-with-temp-text
+         "* H1
+***** I
+<point>
+***** END
+foo"
+         (should
+          (equal
+           (if (and org-clock-report-include-clocking-task
+                    actually-clock-in)
+               time-reported
+             time-not-reported)
+           (progn
+             (if actually-clock-in
+                 (org-clock-in nil (- (float-time) (* 60 60)))
+               (insert (org-test-clock-create-clock "-1h")))
+             ;; Unless tstart and tend are fully specified it doesn't work
+             (test-org-clock-clocktable-contents ":tstart \"<-2d>\" :tend \"<tomorrow>\""))))
+         (when actually-clock-in
+           (org-clock-cancel)))))))
 
 (provide 'test-org-clock)
 ;;; test-org-clock.el end here
