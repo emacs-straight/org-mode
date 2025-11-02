@@ -2216,7 +2216,7 @@ rely on fontspec only."
         (cjk-packages nil) ;; will we need the packages to support CJK fonts?
         (directlua nil)    ;; Did we write the \\directlua{} block?
         (fallback-alist))  ;; an alist (font_name . fallback-name)
-    (message "FONTSPEC: Intended compiler: %s" compiler)
+    ;; (message "FONTSPEC: Intended compiler: %s" compiler)
     (with-temp-buffer
       (goto-char (point-min))
       (insert "\\usepackage{fontspec}\n")
