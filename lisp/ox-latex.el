@@ -1562,13 +1562,11 @@ property to `toc'"
   :safe #'booleanp)
 
 (defcustom org-latex-multi-lang nil
-  "The multi-lingual support package used by the LaTeX backend.
+  "The multi-font/multi-language support package used by the LaTeX backend.
 Can also be set in buffers via #+LATEX_MULTI_LANG.
 
 Possible values are \"polyglossia\",\"babel\" , \"fontspec\" or nil.
-\"polyglossia\" activates new implementation for polyglossia,
-\"babel\"       activates new implementation for babel
-t   activates new font/multi-lingual support,
+\"polyglossia\", \"babel\" and \"fontspec\" activate new support.
 nil means legacy support for babel/polyglossia."
   :group 'org-export-latex
   :package-version '(Org . "9.8")
@@ -1584,13 +1582,12 @@ nil means legacy support for babel/polyglossia."
       (listp object)))
 
 (defcustom org-latex-fontspec-config nil
-  "This variable stores the configuration for the fontspec package.
-By default, this variable is set to nil to generate no configuration.
-
-Each element is defined as
-(`font-name' . `font-plist')
- where `font-name' is the name in `\\set...font{}'
- and `font-plist' is a plist. The keys for this plist are
+  "Configuration for the fontspec package.
+When nil, generate no configuration.
+When non-nil, should be an alist with elements defined as
+\\(FONT-NAME . FONT-PLIST)
+FONT-NAME is a string - is the name in `\\set...font{}'
+FONT-PLIST is a plist.  The keys for this plist are
   `:font':     system font name (mandatory)
   `:features': string or list of strings with font features.
                A potential fallback will be appended.
@@ -1600,7 +1597,7 @@ Each element is defined as
 
 For example, this could be placed in your .dir-locals.el:
 
-((org-mode
+\\((org-mode
   . ((org-latex-fontspec-config
       . ((\"main\" :font \"TeXGyreSchola\")
          (\"sans\" :font \"TeXGyreHeros\"
@@ -1616,15 +1613,15 @@ For example, this could be placed in your .dir-locals.el:
   :safe #'list-or-null-p)
 
 (defcustom org-latex-fontspec-default-features nil
-  "This variable stores the list of default features for the fontspec package.
+  "List of default features for the fontspec package.
 When nil, no default features are assumed.
-Else it is an associative list of strings (FEATURE . VALUE) that is used to
-generate:
+When non-nil, the value should be an alist of (FEATURE . VALUE) that is
+used to generate:
 
 \\defaultfontfeatures{FEATURE=VALUE,...}
 
 in the LaTeX header.
-"
+FEATURE and VALUE should be strings."
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No template" nil)
@@ -1632,14 +1629,12 @@ in the LaTeX header.
   :safe #'list-or-null-p)
 
 (defcustom org-latex-polyglossia-font-config nil
-  "This variable stores the font specifications for polyglossia.
-By defauly, this variable is set to nil to generate no configuration.
-
-It is an associative list, where each element is defined as
-(`language' . `lang-plist')
-where
-`language' is the language name as a string (e.g. \"english\") and
-`lang-plist' is the language plist, with the following keys:
+  "Font specifications for polyglossia.
+When nil, generate no configuration.
+When non-nil, the value should be an alist, where each element is
+defined as (LANGUAGE . LANG-PLIST).
+LANGUAGE is the language name as a string (e.g. \"english\") and
+LANG-PLIST is the language plist, with the following keys:
  `:font': a string with the system font name, mandatory
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
  `:tag': a string will substitute the language in the font definition.
@@ -1657,8 +1652,7 @@ in the exported LaTeX code; and
   (\"hebrew\" :variant \"tt\"
     :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
 in
-  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
-"
+  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}"
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No polyglossia font config" nil)
@@ -1666,24 +1660,23 @@ in
   :safe #'list-or-null-p)
 
 (defcustom org-latex-babel-font-config nil
-  "A property list array to map babel language names to the fonts
-used when exporting to babel.  Each entry maps a string with the
-language name to a `:fonts' property list:
- (ORG-LANG :fonts (PLIST))
-Use nil in ORG-LANG for the document's default fonts.
+  "Mapping of language names to fonts when using babel.
+Each entry maps a string with the
+language name to a `:fonts' property list: (ORG-LANG :fonts FONTS)
+ORG-LANG is a language name as defined in `org-latex-language-alist'.
+ORG-LANG can also be nil for the document's default fonts.
 
-Each element in the `:fonts' property list has the form
-(SCRIPT FONT-PLIST).
- SCRIPT is one of the script codes:
+Each element in FONTS is (SCRIPT . FONT-PLIST).
+SCRIPT is one of the script codes:
    \"rm\" for the roman (serif) font
    \"sf\" for the sans serif font
    \"tt\" for the teletype (monospaced) font.
-FONT-PLIST is a property list containing a mandatory property `:font' with a
-system font name and an optional property `:props' which is either a
-string or a list of strings storing extra properties to control the
-font's appearance. For example:
+FONT-PLIST is a property list containing a mandatory property `:font'
+with a system font name and an optional property `:props' which is
+either a string or a list of strings storing extra properties to
+control the font's appearance.  For example:
 
-((nil
+\\((nil
   :fonts
   ((\"rm\" :font \"CMU Serif\")
    (\"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))))
@@ -1691,7 +1684,6 @@ font's appearance. For example:
 indicates that the default roman font is CMU Serif and that the default
 monotype font, DejaVu Sans Mono, needs to be scaled to better match the
 roman font's appearance."
-
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No babel font config" nil)
@@ -1952,9 +1944,8 @@ Return the new header."
 
 See initial version proposed by Juan Manuel Macías in URL
 `https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/'
-
-FIXME: Ignore text that will not be exported. (somehow difficult though)
 "
+  ;; FIXME: Ignore text that will not be exported. (somehow difficult though)
   (let ((scripts))
     (save-excursion
       (goto-char (point-min))
@@ -1967,14 +1958,13 @@ FIXME: Ignore text that will not be exported. (somehow difficult though)
     scripts))
 
 (defun org-latex--mk-options (opts)
-  "Return a string that is interpreted as an options string
-in LaTeX from OPTS, e.g [opt] or [opt1,opt2].
+  "Return an options string for LaTeX from OPTS, e.g [opt] or [opt1,opt2].
 
 Return empty string if OPTS is nil or a zero-length string.
 If OPTS is a non-empty string, enclose it in square brackets.
-If OPTS is a list of strings, trim each string in the list
-before concatenating to a comma separated list and
-returning the list enclosed in square brackets."
+If OPTS is a list of strings, trim each string in the list before
+concatenating to a comma-separated list and returning the list
+enclosed in square brackets."
   (cond ((null opts) "")
         ((stringp opts) (if (length= opts 0 ) "" (format "[%s]" opts)))
         (t (format "[%s]" (mapconcat #'string-trim opts ",")))))
@@ -1982,8 +1972,8 @@ returning the list enclosed in square brackets."
 (defun org-latex--pdflatex-encode (lang)
   "Return the encoding for pdflatex based on LANG.
 
-Gets the :fontenc property from `org-latex-language-alist' and
-signals an error if it is not defined."
+Get the :fontenc property from `org-latex-language-alist' and signal
+an error if it is not defined."
   ;; FIXME: more languages and possible error conditions.
   (let ((candidate))
     (if-let* ((lang (string-trim lang))
@@ -1995,18 +1985,16 @@ signals an error if it is not defined."
     candidate))
 
 (defun org-latex--fontenc-options (langs)
-  "Get the encodings for the language list and create the options string
-for the fontenc package.
+  "Return options string for LANGS for the fontenc package.
+ The first language in LANGS is considered the default language."
 
-We get the encodings, then remove duplicates and finally reverse the order,
-because the last encoding is used for the default language."
-  (let* ((lang-list (if (stringp langs) (string-split langs "," t) langs))
-         (enc-list (mapcar #'org-latex--pdflatex-encode lang-list)))
+  ;; We get the encodings, then remove duplicates and finally reverse the order,
+  ;; because the last encoding is used for the default language.
+  (let* ((enc-list (mapcar #'org-latex--pdflatex-encode lang-list)))
     (org-latex--mk-options (reverse (seq-uniq enc-list)))))
 
 (defun org-latex--pdflatex-ldf (lang)
-  "Return the ldf code for LANG from the :babel property in
-`org-latex-language-alist'.
+  "Return the ldf code for LANG from the :babel property in `org-latex-language-alist'.
 
 Triggers an error for languages that are not based on ldf files. See URL
 `https://latex3.github.io/babel/guides/which-method-for-which-language.html'"
@@ -2031,18 +2019,17 @@ Mark first one with main="
            (mapconcat #'org-latex--pdflatex-ldf langs ","))))
 
 (defun org-latex--pdflatex-fontconfig (info)
-  "Return a string with the font configuration prelude for pdflatex,
-extracting the information from INFO.
+  "Return the font configuration preamble for pdflatex.
+Extract the information from INFO.
 
-pdflatex and babel play together, but we will only return a basic version,
-of the babel header, defining languages. Font definitions imply fontspec,
-and that cannot be used with pdf-latex.
+pdflatex and babel play together, but we will only return a basic
+version, of the babel header, defining languages.  Font definitions
+imply fontspec, and that cannot be used with pdf-latex.
 
-Using babel is only possible when you are sure that the ldf method can be used."
+Using babel is only possible when ldf method can be used."
   (let ((latex-langs (plist-get info :languages))
         (multi-lang  (plist-get info :latex-multi-lang)))
     (with-temp-buffer
-      (goto-char (point-min))
       (when multi-lang
         (insert "%% \\usepackage[utf8]{inputenc}\n")
         (insert (format "\\usepackage%s{fontenc}\n" (org-latex--fontenc-options latex-langs)))
@@ -2051,11 +2038,11 @@ Using babel is only possible when you are sure that the ldf method can be used."
       (buffer-string))))
 
 (defun org-latex--lualatex-polyglossia-config (info)
-  "Return a string with the prelude part for polyglossia for lualatex or
-xelatex using the document information from INFO."
+  "Return preamble part for polyglossia for lualatex or xelatex.
+Extract the information from INFO."
   (let* ((compiler (plist-get info :compiler))
          (polyglossia-list (plist-get info :languages))
-         ;; TODO: Read more about unicode-math and its options
+         ;; FIXME: Read more about unicode-math and its options
          (unicode-math-options nil)
          ;; These change inside `with-temp-buffer'
          (fontspec-config org-latex-fontspec-config)
@@ -2064,7 +2051,6 @@ xelatex using the document information from INFO."
     (when (equal compiler "pdflatex")
       (warn "LaTeX package polyglossia isn't supported by pdflatex!"))
     (with-temp-buffer
-      (goto-char (point-min))
       (insert "\\usepackage{fontspec}\n")
       (insert "\\usepackage{polyglossia}\n")
       (insert (format "\\usepackage%s{unicode-math}" (org-latex--mk-options unicode-math-options)))
@@ -2128,19 +2114,9 @@ else signal error."
         (plist-get lang-plist :babel-ini-only)
         lang)))
 
-;; (defun org-latex--babel-langs-as-option(langs)
-;;   (mapconcat #'identity
-;;              (mapcar #'(lambda (s)
-;;                          (let* ((props (alist-get s org-latex-language-alist nil nil #'string=))
-;;                                 (lang  (plist-get props :babel)))
-;;                            ;; (message "%s --> props %s" s props)
-;;                            (or lang s)))
-;;                      (reverse langs))
-;;              ","))
 
 (defun org-latex--lualatex-babel-config (info)
-  "Return a string with the preamble part for
-babel on lualatex/xelatex.
+  "Return preamble components for babel on lualatex/xelatex.
 
 Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
 and #+LANGUAGE over `org-export-default-language'.
@@ -2148,8 +2124,7 @@ and #+LANGUAGE over `org-export-default-language'.
 The structure is intended to cover most examples from URL
 `https://github.com/latex3/babel/tree/main/samples.'
 
-Use fontspec as a last resort and when defined.
-"
+Use fontspec as a last resort and when defined."
 
   (let* ((compiler (plist-get info :latex-compiler))
          (latex-babel-langs (plist-get info :languages))
@@ -2158,7 +2133,6 @@ Use fontspec as a last resort and when defined.
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
          (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
-      (goto-char (point-min))
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
       ;; TODO: do we really need fontspec??
       (insert "\\tracinglostchars=2\n%%\\usepackage{fontspec}")
@@ -2171,7 +2145,7 @@ Use fontspec as a last resort and when defined.
       ;; for that we have to loop the languages
       (cl-loop for bab-lang in latex-babel-langs
                do (let* ((props (alist-get bab-lang doc-babel-font-config nil nil #'string=))
-                         (provide (when props (plist-get props :provide))))
+                         (provide (or (plist-get props :provide) "import")))
                     ;; \\babelprovide needs language and provide
                     ;; it doesn't work on the default language
                     (unless provide
@@ -2204,21 +2178,20 @@ Use fontspec as a last resort and when defined.
       (buffer-string))))
 
 (defun org-latex--lualatex-fontspec-config (info)
-  "Return the font preamble when we are on Lua/XeLaTeX
-rely on fontspec only."
+  "Return the font preamble for Lua/XeLaTeX relying on fontspec only.
+INFO is the export communication channel."
   (let ((compiler (plist-get info :latex-compiler))
         ;; Copy these to temp variable... (with-temp-buffer) overwrites them
         (current-fontspec-config org-latex-fontspec-config)
         (current-default-features org-latex-fontspec-default-features)
         (doc-scripts (org-latex--get-doc-scripts))
         ;;
-        (unicode-math-options nil)                 ;; TODO add unicode-math features to config
+        (unicode-math-options nil)                 ;; FIXME: add unicode-math features to config
         (cjk-packages nil) ;; will we need the packages to support CJK fonts?
         (directlua nil)    ;; Did we write the \\directlua{} block?
         (fallback-alist))  ;; an alist (font_name . fallback-name)
     ;; (message "FONTSPEC: Intended compiler: %s" compiler)
     (with-temp-buffer
-      (goto-char (point-min))
       (insert "\\usepackage{fontspec}\n")
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
@@ -2279,7 +2252,7 @@ rely on fontspec only."
                   ;; it is assumed to be a font name that needs it at the end
                   (unless (string-match-p ":" fname)
                     (setq fname (concat fname ":")))
-                  ;; TODO; when (car fpair) in document charsets
+                  ;; FIXME: when (car fpair) in document charsets
                   (insert (format "  \"%s\",\n" fname)))
                 (insert " })\n")))))
         (when directlua ;; if we have found any lua fallbacks, close the lua block
@@ -2309,19 +2282,19 @@ rely on fontspec only."
         (message "Adding the CJK packages")
         (goto-char (point-min))
         (forward-line 2)
-        ;; TODO: what about xpinyin??
+        ;; FIXME: what about xpinyin??
         (insert "\\usepackage[CJKspace]{xeCJK}\n"))
       (buffer-string))))
 
 (defun org-latex-fontspec-to-string (info)
   "Return the font preamble for the current buffer as a string.
+INFO is the export communication channel.
 
 Dispatches to the different preamble generation routines depending
 on the current LaTeX compiler and language support backend.
 
-If `org-latex-multi-lang' is nil, return an empty string
-and rely on the legacy routines for language and babel guessing.
-"
+If `org-latex-multi-lang' is nil, return an empty string and rely on the
+legacy routines for language and babel guessing."
   (let ((compiler (plist-get info :latex-compiler))
         (multi-lang (plist-get info :latex-multi-lang)))
     (cond ((null multi-lang) "") ;; delegate
@@ -2333,12 +2306,11 @@ and rely on the legacy routines for language and babel guessing.
            (org-latex--lualatex-polyglossia-config info))
           (t ;; else lualatex or xelatex with fontspec
            (org-latex--lualatex-fontspec-config info)))))
-;;
-;;
+
 (defun org-latex--keep-pkg (pkg use-driver)
-  "This function filters out the font management packages.
-Keep the package if we are in legacy mode or
-if it is not a font management package."
+  "Return non-nil, when PKG is not automatically loaded.
+Keep the package if we are in legacy mode (USE-DRIVER is nil) or if it
+is not a font management package."
   (or (null use-driver)
       (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "unicode-math")))))
 
@@ -2484,10 +2456,10 @@ just outside of it."
 INFO is a plist used as a communication channel."
   (org-export-translate s :latex info))
 
-(defun org-latex--get-lang (lang)
-  "Return the long language name for the first element in LANG.
+(defun org-latex--get-lang (langs)
+  "Return the long language name for the first element in LANGS.
 LANG is a list of languages."
-    (let* ((main-lang (car lang))
+    (let* ((main-lang (car langs))
            (plist (cdr (assoc main-lang org-latex-language-alist))))
       (or (plist-get plist :lang-name) main-lang)))
 
