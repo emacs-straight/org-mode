@@ -2040,15 +2040,15 @@ and that cannot be used with pdf-latex.
 
 Using babel is only possible when you are sure that the ldf method can be used."
   (let ((latex-langs (plist-get info :languages))
-        (multi-lang  (plist-get info :latex-multi-lang))
-        (with-temp-buffer
-          (goto-char (point-min))
-          (when multi-lang
-            (insert "%% \\usepackage[utf8]{inputenc}\n")
-            (insert (format "\\usepackage%s{fontenc}\n" (org-latex--fontenc-options latex-langs)))
-            (when (equal multi-lang "babel")
-              (insert (format "\n\\usepackage%s{babel}" (org-latex--babel-ldf-list latex-langs)))))
-          (buffer-string)))))
+        (multi-lang  (plist-get info :latex-multi-lang)))
+    (with-temp-buffer
+      (goto-char (point-min))
+      (when multi-lang
+        (insert "%% \\usepackage[utf8]{inputenc}\n")
+        (insert (format "\\usepackage%s{fontenc}\n" (org-latex--fontenc-options latex-langs)))
+        (when (equal multi-lang "babel")
+          (insert (format "\n\\usepackage%s{babel}" (org-latex--babel-ldf-list latex-langs)))))
+      (buffer-string))))
 
 (defun org-latex--lualatex-polyglossia-config (info)
   "Return a string with the prelude part for polyglossia for lualatex or
@@ -2323,16 +2323,16 @@ If `org-latex-multi-lang' is nil, return an empty string
 and rely on the legacy routines for language and babel guessing.
 "
   (let ((compiler (plist-get info :latex-compiler))
-        (multi-lang (plist-get info :latex-multi-lang))
-        (cond ((null multi-lang) "") ;; delegate
-              ((equal compiler "pdflatex") ;; pdflatex needs separate handling
-               (org-latex--pdflatex-fontconfig info))
-              ((equal multi-lang "babel")
-               (org-latex--lualatex-babel-config info))
-              ((equal multi-lang "polyglossia")
-               (org-latex--lualatex-polyglossia-config info))
-              (t ;; else lualatex or xelatex with fontspec
-               (org-latex--lualatex-fontspec-config info))))))
+        (multi-lang (plist-get info :latex-multi-lang)))
+    (cond ((null multi-lang) "") ;; delegate
+          ((equal compiler "pdflatex") ;; pdflatex needs separate handling
+           (org-latex--pdflatex-fontconfig info))
+          ((equal multi-lang "babel")
+           (org-latex--lualatex-babel-config info))
+          ((equal multi-lang "polyglossia")
+           (org-latex--lualatex-polyglossia-config info))
+          (t ;; else lualatex or xelatex with fontspec
+           (org-latex--lualatex-fontspec-config info)))))
 ;;
 ;;
 (defun org-latex--keep-pkg (pkg use-driver)
@@ -2489,7 +2489,7 @@ INFO is a plist used as a communication channel."
 LANG is a list of languages."
     (let* ((main-lang (car lang))
            (plist (cdr (assoc main-lang org-latex-language-alist))))
-      (or (plist-get plist :lang-name) main-lang))))
+      (or (plist-get plist :lang-name) main-lang)))
 
 (defun org-latex--format-spec (info)
   "Create a format spec for document meta-data.
