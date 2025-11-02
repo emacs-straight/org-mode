@@ -1967,7 +1967,7 @@ FIXME: Ignore text that will not be exported. (somehow difficult though)
     scripts))
 
 (defun org-latex--mk-options (opts)
-  "Construct a string that is interpreted as an options string
+  "Return a string that is interpreted as an options string
 in LaTeX from OPTS, e.g [opt] or [opt1,opt2].
 
 Return empty string if OPTS is nil or a zero-length string.
