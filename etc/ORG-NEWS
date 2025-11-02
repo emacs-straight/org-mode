@@ -18,6 +18,19 @@ Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 # require user action for most Org mode users.
 # Sorted from most important to least important.
 
+*** ~org-babel-lob-ingest~ no longer performs noweb expansion when ingesting blocks
+
+Previously, ~org-babel-lob-ingest~ would expand noweb references when
+adding source blocks to the Library of Babel.  Now, blocks are stored
+with unexpanded noweb references.
+
+Noweb expansion is handled appropriately when blocks are actually used
+via ~org-babel-execute-src-block~ or ~org-babel-exp-do-export~, with
+the correct context (~:tangle~, ~:export~, or ~:eval~).
+
+This change is unlikely to affect most users, but code that directly
+accesses ~org-babel-library-of-babel~ may observe the difference.
+
 *** ~org-store-link~ no longer asks to select store function when called noninteractively
 
 Previously, when multiple store functions are available to store link
@@ -481,6 +494,23 @@ buffer.
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
+
+*** ~org-attach-attach~ now returns a link to file stored
+
+Previously, ~org-attach-attach~ did not have any specified default value.
+Now, it returns a list =(LINK DESCRIPTION)= to the file stored.
+The link obeys non-nil ~org-attach-store-link-p~ setting.
+When ~org-attach-store-link-p~ is nil, an =attachment:= link is returned.
+
+*** New functions exposing link formatting done by ~org-insert-link~
+
+New function ~org-link-get-description~ exposes handling ~:insert-description~
+link parameter and ~org-link-make-description-function~.
+
+New function ~org-link-make-string-for-buffer~ exposes link and description
+cleanups performed by ~org-insert-link~, including cleaning up =<...>= brackets,
+stripping current buffer file path from the link, and adjusting =file:= links
+according to ~org-link-file-path-type~.
 
 *** New function ~org-src-get-lang-mode-if-bound~
 
