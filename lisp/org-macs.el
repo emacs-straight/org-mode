@@ -1848,6 +1848,11 @@ transient buffer) then return nil."
       (buffer-file-name base-buffer)
     (buffer-file-name buffer)))
 
+(defun org-latex-list-or-null-p (object)
+  "Return non-nil when `object' is a list or nil"
+  (or (null object)
+      (listp object)))
+
 (provide 'org-macs)
 
 ;; Local variables:
