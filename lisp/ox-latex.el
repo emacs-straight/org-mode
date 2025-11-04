@@ -1938,8 +1938,7 @@ Return the new header."
   "Return the list of char-scripts used in the current buffer.
 
 See initial version proposed by Juan Manuel Macías in URL
-`https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/'
-"
+`https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/'"
   ;; FIXME: Ignore text that will not be exported. (somehow difficult though)
   (let ((scripts))
     (save-excursion
@@ -1981,7 +1980,7 @@ an error if it is not defined."
 
 (defun org-latex--fontenc-options (langs)
   "Return options string for LANGS for the fontenc package.
- The first language in LANGS is considered the default language."
+The first language in LANGS is considered the default language."
 
   ;; We get the encodings, then remove duplicates and finally reverse the order,
   ;; because the last encoding is used for the default language.
@@ -1989,10 +1988,9 @@ an error if it is not defined."
     (org-latex--mk-options (reverse (seq-uniq enc-list)))))
 
 (defun org-latex--pdflatex-ldf (lang)
-  "Return the ldf code for LANG from the :babel property in
-`org-latex-language-alist'.
+  "Return the ldf code for LANG from `org-latex-language-alist'.
 
-Triggers an error for languages that are not based on ldf files. See URL
+Triggers an error for languages that are not based on ldf files.  See URL
 `https://latex3.github.io/babel/guides/which-method-for-which-language.html'"
   (let ((result))
     (if-let* ((lang-alist (assoc (string-trim lang) org-latex-language-alist))
@@ -2113,6 +2111,7 @@ else signal error."
 
 (defun org-latex--lualatex-babel-config (info)
   "Return preamble components for babel on lualatex/xelatex.
+INFO is the export communication channel.
 
 Prefer #+LATEX_COMPILER: over `org-latex-compiler' and
 and #+LANGUAGE over `org-export-default-language'.
@@ -2121,16 +2120,15 @@ The structure is intended to cover most examples from URL
 `https://github.com/latex3/babel/tree/main/samples.'
 
 Use fontspec as a last resort and when defined."
-
   (let* ((compiler (plist-get info :latex-compiler))
          (latex-babel-langs (plist-get info :languages))
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
-         (unicode-math-options nil)) ;; TODO: define document option for this
+         (unicode-math-options nil)) ;; FIXME: define document option for this
     (with-temp-buffer
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
-      ;; TODO: do we really need fontspec??
+      ;; FIXME: do we really need fontspec??
       (insert "\\tracinglostchars=2\n%%\\usepackage{fontspec}")
       ;; do *not* include languages here
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
@@ -2165,7 +2163,7 @@ Use fontspec as a last resort and when defined."
                                                   (org-latex--mk-options props)
                                                   font))))))
       ;; Last resort... use fontspec-config if no babel specific fonts are defined
-      ;; TODO: check if fallbacks are accepted, call fontspec config instead earlier
+      ;; FIXME: check if fallbacks are accepted, call fontspec config instead earlier
       (unless doc-babel-font-config
         (cl-loop for (fname . fprops) in doc-fontspec
                  do (let ((font  (plist-get fprops :font))
