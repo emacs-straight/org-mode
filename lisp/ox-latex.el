@@ -2124,8 +2124,8 @@ Use fontspec as a last resort and when defined."
 
   (let* ((compiler (plist-get info :latex-compiler))
          (latex-babel-langs (plist-get info :languages))
-         (org-latex-fontspec-config org-latex-fontspec-config)
-         (org-latex-babel-font-config org-latex-babel-font-config)
+         (doc-fontspec org-latex-fontspec-config)
+         (doc-babel-font-config org-latex-babel-font-config)
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
          (unicode-math-options nil)) ;; TODO: define document option for this
     (with-temp-buffer
@@ -2140,7 +2140,7 @@ Use fontspec as a last resort and when defined."
       ;; For the other languages, generate babelprovide based on :provide atribute, default to "import"
       ;; for that we have to loop the languages
       (cl-loop for bab-lang in latex-babel-langs
-               do (let* ((props (alist-get bab-lang org-latex-babel-font-config nil nil #'string=))
+               do (let* ((props (alist-get bab-lang doc-babel-font-config nil nil #'string=))
                          (provide (or (plist-get props :provide) "import")))
                     ;; \\babelprovide needs language and provide
                     ;; it doesn't work on the default language
@@ -2153,7 +2153,7 @@ Use fontspec as a last resort and when defined."
                       (org-latex--mk-options unicode-math-options)))
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
-      (cl-loop for (lang . babel-fontlist) in org-latex-babel-font-config
+      (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* ((font-list (plist-get babel-fontlist :fonts)))
                     (cl-loop for (script . prop-list) in font-list
                              do (let ((font  (plist-get prop-list :font))
@@ -2166,8 +2166,8 @@ Use fontspec as a last resort and when defined."
                                                   font))))))
       ;; Last resort... use fontspec-config if no babel specific fonts are defined
       ;; TODO: check if fallbacks are accepted, call fontspec config instead earlier
-      (unless org-latex-babel-font-config
-        (cl-loop for (fname . fprops) in org-latex-fontspec-config
+      (unless doc-babel-font-config
+        (cl-loop for (fname . fprops) in doc-fontspec
                  do (let ((font  (plist-get fprops :font))
                           (feats (plist-get fprops :features)))
                       (insert (format "\n\\set%sfont{%s}%s" fname font (org-latex--mk-options feats))))))
@@ -2178,11 +2178,11 @@ Use fontspec as a last resort and when defined."
 INFO is the export communication channel."
   (let ((compiler (plist-get info :latex-compiler))
         ;; Copy these to temp variable... (with-temp-buffer) overwrites them
-        (org-latex-fontspec-config org-latex-fontspec-config)
-        (org-latex-fontspec-default-features org-latex-fontspec-default-features)
+        (current-fontspec-config org-latex-fontspec-config)
+        (current-default-features org-latex-fontspec-default-features)
         (doc-scripts (org-latex--get-doc-scripts))
         ;;
-        (unicode-math-options nil)    ;; FIXME: add unicode-math features to config
+        (unicode-math-options nil)                 ;; FIXME: add unicode-math features to config
         (cjk-packages nil) ;; will we need the packages to support CJK fonts?
         (directlua nil)    ;; Did we write the \\directlua{} block?
         (fallback-alist))  ;; an alist (font_name . fallback-name)
@@ -2194,15 +2194,15 @@ INFO is the export communication channel."
       ;;
       ;; It there are font features, generate the declaration
       ;;
-      (when org-latex-fontspec-default-features
+      (when current-default-features
         (let ((def-feat-list
-               (cl-loop for (feat . val) in org-latex-fontspec-default-features
+               (cl-loop for (feat . val) in current-default-features
                         collect (concat feat "=" val) into result
                         finally return (mapconcat #'identity result ",\n  "))))
           (insert (format "\\defaultfontfeatures{\n  %s\n}\n"
                           def-feat-list))))
       ;; add all fonts with fallback to fallback-alist
-      (dolist (fconfig org-latex-fontspec-config)
+      (dolist (fconfig current-fontspec-config)
         (when-let* ((fname (car fconfig))
                     (config-plist (cdr fconfig))
                     (fallback (plist-get config-plist :fallback)))
@@ -2221,14 +2221,11 @@ INFO is the export communication channel."
         (dolist (fallback fallback-alist)
           ;; (message "fallback ===> %s" fallback)
           (when-let*
-              ((fbf-font-family (car fallback)) ; "main", "sans", ...
-               (fbf-font-name (cdr fallback))
-               (fbf-plist (alist-get fbf-font-family org-latex-fontspec-config nil nil #'string=))
+              ((fbf-fname (car fallback))
+               (fbf-name (cdr fallback))
+               (fbf-plist (alist-get fbf-fname current-fontspec-config nil nil #'string=))
                (fbf-flist (plist-get fbf-plist :fallback)))
-            ;; collect all fallbacks for scripts that are present in the doc
-            ;; fbf-flist looks like:
-            ;; :fallback
-            ;;   (("emoji" . "AppleColorEmoji:mode=harf")))
+            ;; collect all falbacks for scripts that are present in the doc
             (let ((fallback-flist
                    (cl-loop for fpair in fbf-flist
                             ;; check (car fpair) is in document scripts
@@ -2244,12 +2241,11 @@ INFO is the export communication channel."
                   (setq directlua t))
                 ;; (setq fallback-flist (cl-remove-duplicates fallback-flist
                 ;;                                            :test #'equal))
-                (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-font-name))
+                (insert (format " luaotfload.add_fallback (\"%s\",{\n" fbf-name))
                 ;; Here we get the font fallbacks list
                 (dolist (fname fallback-flist)
                   ;; If the string doesn't contain a ":"
                   ;; it is assumed to be a font name that needs it at the end
-                  ;; see example above.
                   (unless (string-match-p ":" fname)
                     (setq fname (concat fname ":")))
                   ;; FIXME: when (car fpair) in document charsets
@@ -2258,7 +2254,7 @@ INFO is the export communication channel."
         (when directlua ;; if we have found any lua fallbacks, close the lua block
           (insert "}\n")))
       ;; (message "fallbacks: %s" fallback-alist)
-      (dolist (fpair org-latex-fontspec-config)
+      (dolist (fpair current-fontspec-config)
         (when-let* ((ffamily (car fpair))
                     (fplist  (cdr fpair))
                     (ffont (plist-get fplist :font)))
