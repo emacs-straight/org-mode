@@ -3515,6 +3515,15 @@ images at the same place."
   :package-version '(Org . "9.0")
   :type 'string)
 
+(defcustom org-latex-mathml-directory "ltxmathml/"
+  "Path to store MathML files converted from LaTeX fragments.
+A relative path here creates many directories relative to the
+processed Org files paths.  An absolute path puts all files
+in the same place."
+  :group 'org-latex
+  :package-version '(Org . "9.8")
+  :type 'string)
+
 (defun org-format-latex-mathml-available-p ()
   "Return t if `org-latex-to-mathml-convert-command' is usable."
   (save-match-data
@@ -5163,8 +5172,9 @@ The following commands are available:
   ;; Initialize radio targets.
   (org-update-radio-target-regexp)
   ;; Indentation.
-  (setq-local indent-line-function 'org-indent-line)
-  (setq-local indent-region-function 'org-indent-region)
+  (setq-local indent-line-function #'org-indent-line)
+  (setq-local indent-region-function #'org-indent-region)
+  (setq-local electric-indent-inhibit t)
   ;; Filling and auto-filling.
   (org-setup-filling)
   ;; Comments.

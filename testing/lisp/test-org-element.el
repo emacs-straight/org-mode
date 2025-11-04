@@ -19,7 +19,7 @@
 
 ;;; Code:
 
-(eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
 
 (require 'org-element)
 (require 'org)
@@ -811,7 +811,8 @@ Some other text
   (should-not (org-element-copy nil))
   ;; Return a copy secondary strings.
   (should (equal '("text") (org-element-copy '("text"))))
-  (should-not (eq '("text") (org-element-copy '("text"))))
+  (let ((secondary (list "test")))
+    (should-not (eq secondary (org-element-copy secondary))))
   ;; Do not alter the source.
   (org-test-with-temp-text "*bold*"
     (let* ((source (org-element-context))
