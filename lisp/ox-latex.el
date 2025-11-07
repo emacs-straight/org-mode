@@ -1685,15 +1685,6 @@ roman font's appearance."
 		 (alist :tag "babel font configuration"))
   :safe #'org-latex-list-or-null-p)
 
-;; (defcustom org-latex-babel-languages nil
-;;   "A string with the babel languages.
-;; This is an alternative to adding the package in the LaTeX header"
-;;   :group 'org-export-latex
-;;   :package-version '(Org . "9.8")
-;;   :type '(choice (const :tag "No babel languages" nil)
-;; 		 (string :tag "babel language list"))
-;;   :safe #'string-or-null-p)
-
 
 ;;; Internal Functions
 
