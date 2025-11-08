@@ -2016,6 +2016,7 @@ Using babel is only possible when ldf method can be used."
         (multi-lang  (plist-get info :latex-multi-lang)))
     (with-temp-buffer
       (when multi-lang
+        (insert "%% Uncomment to debug Org export with pdflatex\n")
         (insert "%% \\usepackage[utf8]{inputenc}\n")
         (insert (format "\\usepackage%s{fontenc}\n" (org-latex--fontenc-options latex-langs)))
         (when (equal multi-lang "babel")
@@ -2070,13 +2071,14 @@ Extract the information from INFO."
                  (insert (format "\n\\set%sfont{%s}%s" ftype fname (org-latex--mk-options fprops)))))
       ;; Get polyglossia specifics
       (cl-loop for (lang . props) in polyglossia-font-config
+               ;; (lang . props) --> language and its properties
                do
                (let ((lang-tag lang))
-                 ;; (message "new font family: (%s . %s)" lang props)
                  (if-let* ((lang-alist (assoc lang org-latex-language-alist))
                            (lang-plist (cdr lang-alist)))
                      (setq lang-tag (plist-get lang-plist :polyglossia)))
-                 ;; (message "polyglossia language name is %s" lang-tag)
+                 ;; lang-tag is the polyglossia language name for lang
+                 ;; if it is defined in `org-latex-language-alist'
                  (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
                                  (or (plist-get props :tag) lang-tag)
                                  (or (plist-get props :variant) "")
@@ -2260,15 +2262,6 @@ INFO is the export communication channel."
             ;; (message "---> ffeatures %s" ffeatures)
             (insert (org-latex--mk-options ffeatures)))
           (insert "\n")))
-      ;; If the CJK font families have been included
-      ;; Check for polyglossia and/or babel and warn?
-      ;; Or advise for these packages to be added to `org-latex-package-alist' ??
-      (when (and cjk-packages (equal compiler "xelatex"))
-        (message "Adding the CJK packages")
-        (goto-char (point-min))
-        (forward-line 2)
-        ;; FIXME:  should we also include xpinyin here or should the user??
-        (insert "\\usepackage[CJKspace]{xeCJK}\n"))
       (buffer-string))))
 
 (defun org-latex-fontspec-to-string (info)
