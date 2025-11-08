@@ -21324,19 +21324,19 @@ Optional argument ELEMENT contains element at point."
 (defun org-at-keyword-p nil
   "Return t if cursor is at a keyword-line."
   (save-excursion
-    (move-beginning-of-line 1)
+    (forward-line 0)
     (looking-at org-keyword-regexp)))
 
 (defun org-at-drawer-p nil
   "Return t if cursor is at a drawer keyword."
   (save-excursion
-    (move-beginning-of-line 1)
+    (forward-line 0)
     (looking-at org-drawer-regexp)))
 
 (defun org-at-block-p nil
   "Return t if cursor is at a block keyword."
   (save-excursion
-    (move-beginning-of-line 1)
+    (forward-line 0)
     (looking-at org-block-regexp)))
 
 (defun org-point-at-end-of-empty-headline ()
