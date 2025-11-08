@@ -2121,16 +2121,15 @@ Use fontspec as a last resort and when defined."
          (unicode-math-options nil)) ;; FIXME: define document option for this
     (with-temp-buffer
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
-      ;; FIXME: do we really need fontspec??
-      (insert "\\tracinglostchars=2\n%%\\usepackage{fontspec}")
+      (insert "\\tracinglostchars=2")
       ;; do *not* include languages here
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       ;; import the main language with a babelprovide
       ;; it is the fist language in the list.
-      (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (pop latex-babel-langs))))
+      (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
       ;; For the other languages, generate babelprovide based on :provide atribute, default to "import"
       ;; for that we have to loop the languages
-      (cl-loop for bab-lang in latex-babel-langs
+      (cl-loop for bab-lang in (cdr latex-babel-langs)
                do (let* ((props (alist-get bab-lang doc-babel-font-config nil nil #'string=))
                          (provide (or (plist-get props :provide) "import")))
                     ;; \\babelprovide needs language and provide
@@ -2262,6 +2261,14 @@ INFO is the export communication channel."
             ;; (message "---> ffeatures %s" ffeatures)
             (insert (org-latex--mk-options ffeatures)))
           (insert "\n")))
+      ;; If the CJK font families have been included
+      ;; Check for polyglossia and/or babel and warn?
+      ;; Or advise for these packages to be added to `org-latex-package-alist' ??
+      (when (and cjk-packages (equal compiler "xelatex"))
+        (message "Adding the CJK packages")
+        (goto-char (point-min))
+        (forward-line 2)
+        (insert "\\usepackage[CJKspace]{xeCJK}\n"))
       (buffer-string))))
 
 (defun org-latex-fontspec-to-string (info)
