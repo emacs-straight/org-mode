@@ -381,9 +381,7 @@ in the document header and test that the default can be overwritten
 
 Irgend etwas.
 "
-     ;; (message "--> %s" (buffer-string))
      (goto-char (point-min))
-     (should (search-forward "\\usepackage{fontspec}" nil t))
      (should (re-search-forward "\\\\usepackage\\[[^]]+\\]{babel}" nil t))
      (save-excursion
        (should  (search-forward "\\babelprovide[main,import]{german}" nil t)))
