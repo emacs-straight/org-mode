@@ -5155,6 +5155,9 @@ The following commands are available:
   (org-setup-filling)
   ;; Comments.
   (org-setup-comments-handling)
+  ;; Obey the syntax-table text property when navigating text (used in
+  ;; source blocks).
+  (setq-local parse-sexp-lookup-properties t)
   ;; Beginning/end of defun
   (setq-local beginning-of-defun-function 'org-backward-element)
   (setq-local end-of-defun-function
@@ -5604,10 +5607,6 @@ by a #."
 	   limit t)
       (let ((beg (match-beginning 0))
 	    (end-of-beginline (match-end 0))
-	    ;; Including \n at end of #+begin line will include \n
-	    ;; after the end of block content.
-	    (block-start (match-end 0))
-	    (block-end nil)
 	    (lang (match-string 7)) ; The language, if it is a source block.
 	    (bol-after-beginline (line-beginning-position 2))
 	    (dc1 (downcase (match-string 2)))
@@ -5633,7 +5632,6 @@ by a #."
 	    (setq beg-of-endline (match-beginning 0)
 		  end-of-endline (match-end 0)
 		  nl-before-endline (1- (match-beginning 0)))
-	    (setq block-end (match-beginning 0)) ; Include the final newline.
 	    (when quoting
 	      (org-remove-flyspell-overlays-in bol-after-beginline nl-before-endline)
 	      (remove-text-properties beg end-of-endline
@@ -5644,6 +5642,8 @@ by a #."
 	    (org-remove-flyspell-overlays-in nl-before-endline end-of-endline)
             (cond
 	     ((and org-src-fontify-natively
+                   ;; Skip fontification of empty source-blocks
+                   (< bol-after-beginline beg-of-endline)
                    ;; Technically, according to the
                    ;; `org-src-fontify-natively' docstring, we should
                    ;; only fontify src blocks.  However, it is common
@@ -5653,8 +5653,8 @@ by a #."
                    ;; for user convenience.
                    (member block-type '("src" "export" "example")))
 	      (save-match-data
-                (org-src-font-lock-fontify-block (or lang "") block-start block-end))
-	      (add-text-properties bol-after-beginline block-end '(src-block t)))
+                (org-src-font-lock-fontify-block (or lang "") bol-after-beginline beg-of-endline))
+	      (add-text-properties bol-after-beginline beg-of-endline '(src-block t)))
 	     (quoting
 	      (add-text-properties
 	       bol-after-beginline beg-of-endline
@@ -6315,7 +6315,8 @@ If TAG is a number, get the corresponding match group."
     (remove-text-properties beg end
 			    '(mouse-face t keymap t org-linked-text t
 					 invisible t intangible t
-					 org-emphasis t))
+					 org-emphasis t
+                                         syntax-table t))
     (org-fold-core-update-optimisation beg end)
     (org-remove-font-lock-display-properties beg end)))
 
@@ -11816,7 +11817,7 @@ See also `org-scan-tags'."
 		   (mm
 		    (cond
 		     (regexp			; [2]
-                      `(with-syntax-table org-mode-tags-syntax-table
+                      `(org-with-syntax-table org-mode-tags-syntax-table
                          (org-match-any-p ,(substring tag 1 -1) tags-list)))
 		     (propp
 		      (let* (;; Determine property name.
@@ -11970,7 +11971,7 @@ the list of tags in this group."
 	    (add-text-properties
 	     (match-beginning 0) (match-end 0) '(regexp t) return-match)))
 	;; For each tag token found in MATCH, compute a regexp and  it
-	(with-syntax-table org-mode-tags-syntax-table
+	(org-with-syntax-table org-mode-tags-syntax-table
 	  (replace-regexp-in-string
 	   key-regexp
 	   (lambda (m)
@@ -17003,7 +17004,7 @@ This uses the `org-mode-transpose-word-syntax-table' syntax
 table, which interprets characters in `org-emphasis-alist' as
 word constituents."
   (interactive)
-  (with-syntax-table org-mode-transpose-word-syntax-table
+  (org-with-syntax-table org-mode-transpose-word-syntax-table
     (call-interactively 'transpose-words)))
 
 (defvar org-ctrl-c-ctrl-c-hook nil
@@ -19912,7 +19913,7 @@ width for filling.
 
 For convenience, when point is at a plain list, an item or
 a footnote definition, try to fill the first paragraph within."
-  (with-syntax-table org-mode-transpose-word-syntax-table
+  (org-with-syntax-table org-mode-transpose-word-syntax-table
     ;; Move to end of line in order to get the first paragraph within
     ;; a plain list or a footnote definition.
     (let ((element (save-excursion (end-of-line) (org-element-at-point))))
