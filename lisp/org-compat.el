@@ -61,13 +61,12 @@
 (declare-function org-element-contents-begin "org-element" (node))
 (declare-function org-element-contents-end "org-element" (node))
 (declare-function org-element-post-affiliated "org-element" (node))
-(declare-function org-end-of-subtree "org" (&optional invisible-ok to-heading))
+(declare-function org-end-of-subtree "org" (&optional invisible-ok to-heading element))
 (declare-function org-get-heading "org" (&optional no-tags no-todo no-priority no-comment))
 (declare-function org-get-tags "org" (&optional pos local))
 (declare-function org-fold-hide-block-toggle "org-fold" (&optional force no-error element))
 (declare-function org-link-display-format "ol" (s))
 (declare-function org-link-set-parameters "ol" (type &rest rest))
-(declare-function org-log-into-drawer "org" ())
 (declare-function org-make-tag-string "org" (tags))
 (declare-function org-next-visible-heading "org" (arg))
 (declare-function org-reduced-level "org" (l))
@@ -1035,9 +1034,9 @@ use of this function is for the stuck project list."
 (declare-function org-link-preview--remove-overlay "ol"
                   (ov after beg end &optional len))
 (declare-function org-attach-expand "org-attach" (file))
-(declare-function org-display-inline-image--width "org" (link))
-(declare-function org-image--align "org" (link))
-(declare-function org--create-inline-image "org" (file width))
+(declare-function org-display-inline-image--width "ol" (link))
+(declare-function org-image--align "ol" (link))
+(declare-function org--create-inline-image "ol" (file width))
 
 (define-obsolete-function-alias 'org-display-inline-remove-overlay
   'org-link-preview--remove-overlay "9.8")

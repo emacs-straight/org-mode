@@ -76,16 +76,13 @@
 (require 'org-table)
 (require 'org-fold-core)
 
-(declare-function org-at-heading-p "org" (&optional _))
 (declare-function org-escape-code-in-string "org-src" (s))
 (declare-function org-src-preserve-indentation-p "org-src" (&optional node))
 (declare-function org-macro-escape-arguments "org-macro" (&rest args))
 (declare-function org-macro-extract-arguments "org-macro" (s))
-(declare-function org-reduced-level "org" (l))
 (declare-function org-unescape-code-in-string "org-src" (s))
 (declare-function org-inlinetask-outline-regexp "org-inlinetask" ())
 (declare-function outline-next-heading "outline" ())
-(declare-function outline-previous-heading "outline" ())
 
 (defvar org-complex-heading-regexp)
 (defvar org-done-keywords)
@@ -562,8 +559,6 @@ The resulting function can be evaluated at a later time, from
 another buffer, effectively cloning the original buffer there.
 
 The function assumes BUFFER's major mode is `org-mode'."
-  (declare-function org-fold-core--update-buffer-folds "org-fold-core" ())
-  (require 'org-fold-core)
   (with-current-buffer buffer
     (let ((str (unless drop-contents
                  (org-with-wide-buffer
@@ -8552,7 +8547,7 @@ This function may modify the match data."
               (org-element-at-point (1+ epom) cached-only))))))))
 
 ;;;###autoload
-(defsubst org-element-at-point-no-context (&optional pom)
+(defun org-element-at-point-no-context (&optional pom)
   "Quickly find element at point or POM.
 
 It is a faster version of `org-element-at-point' that is not

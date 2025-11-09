@@ -124,7 +124,6 @@
 (require 'citeproc nil t)
 (declare-function citeproc-style-cite-note "ext:citeproc")
 (declare-function citeproc-proc-style "ext:citeproc")
-(declare-function citeproc-bt-entry-to-csl "ext:citeproc")
 (declare-function citeproc-locale-getter-from-dir "ext:citeproc")
 (declare-function citeproc-create "ext:citeproc")
 (declare-function citeproc-citation-create "ext:citeproc")
@@ -137,13 +136,12 @@
 (declare-function citeproc-style-cite-superscript-p "ext:citeproc")
 
 (declare-function org-element-interpret-data "org-element" (data))
-(declare-function org-element-map "org-element" (data types fun &optional info first-match no-recursion with-affiliated))
+(declare-function org-element-map "org-element" (data types fun &optional info first-match no-recursion with-affiliated no-undefer))
 (declare-function org-element-property "org-element-ast" (property node))
-(declare-function org-element-put-property "org-element-ast" (node property value))
 
-(declare-function org-export-data "org-export" (data info))
-(declare-function org-export-derived-backend-p "org-export" (backend &rest backends))
-(declare-function org-export-get-footnote-number "org-export" (footnote info &optional data body-first))
+(declare-function org-export-data "ox" (data info))
+(declare-function org-export-derived-backend-p "ox" (backend &rest backends))
+(declare-function org-export-get-footnote-number "ox" (footnote info &optional data body-first))
 
 
 ;;; Customization

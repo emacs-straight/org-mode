@@ -22,7 +22,10 @@
 (require 'org-test "../testing/org-test")
 (require 'org-agenda)
 (require 'org-habit)
-(require 'test-org-agenda)
+(eval-when-compile
+  (require 'test-org-agenda "../testing/lisp/test-org-agenda"))
+(eval-when-compile
+  (require 'test-org "../testing/lisp/test-org"))
 
 
 ;; Tests

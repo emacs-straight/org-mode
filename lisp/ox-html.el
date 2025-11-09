@@ -43,12 +43,7 @@
 
 ;;; Function Declarations
 
-(declare-function org-id-find-id-file "org-id" (id))
 (declare-function htmlize-region "ext:htmlize" (beg end))
-(declare-function mm-url-decode-entities "mm-url" ())
-(declare-function org-at-heading-p "org" (&optional _))
-(declare-function org-back-to-heading "org" (&optional invisible-ok))
-(declare-function org-next-visible-heading "org" (arg))
 
 (defvar htmlize-css-name-prefix)
 (defvar htmlize-output-type)
@@ -3887,7 +3882,6 @@ INFO is a plist used as a communication channel."
   "Format table.el TABLE into HTML.
 INFO is a plist used as a communication channel."
   (when (eq (org-element-property :type table) 'table.el)
-    (require 'table)
     (let ((outbuf (with-current-buffer
 		      (get-buffer-create "*org-export-table*")
 		    (erase-buffer) (current-buffer))))

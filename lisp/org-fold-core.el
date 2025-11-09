@@ -282,8 +282,6 @@
 (require 'org-macs)
 (require 'org-compat)
 
-(declare-function isearch-filter-visible "isearch" (beg end))
-
 ;;; Customization
 
 (defcustom org-fold-core-style (if (version< emacs-version "29")
@@ -1251,11 +1249,11 @@ This function is intended to be used as `isearch-filter-predicate'."
       (setq beg (car overlay-or-region)
             end (cdr overlay-or-region)))
     ;; FIXME: Reveal the match (usually point, but may sometimes go beyond the region).
-    (when (< beg (point) end)
-      (funcall org-fold-core-isearch-open-function (point)))
-    (if (overlayp overlay-or-region)
-        (delete-overlay overlay-or-region)
-      (org-fold-core-region beg end nil))))
+    (if (<= beg (point) end)
+        (funcall org-fold-core-isearch-open-function (point))
+      (if (overlayp overlay-or-region)
+          (delete-overlay overlay-or-region)
+        (org-fold-core-region beg end nil)))))
 
 (defun org-fold-core--isearch-show-temporary (region hide-p)
   "Temporarily reveal text in REGION.
