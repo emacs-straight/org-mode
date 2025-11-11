@@ -3528,6 +3528,8 @@ in the same place."
 
 (defcustom org-format-latex-header "\\documentclass{article}
 \\usepackage[usenames]{color}
+\[DEFAULT-PACKAGES]
+\[PACKAGES]
 \\pagestyle{empty}             % do not remove
 % The settings below are copied from fullpage.sty
 \\setlength{\\textwidth}{\\paperwidth}
@@ -3581,7 +3583,8 @@ header, or they will be appended."
     (""     "wrapfig"   nil)
     (""     "rotating"  nil)
     ("normalem" "ulem"  t)
-    ;; amsmath and amssymb after inputenc/fontenc for pdflatex ??
+    ;; amsmath and amssymb after inputenc/fontenc for pdflatex
+    ;; FIXME: check the other compilers
     (""     "amsmath"   t ("pdflatex"))
     (""     "amssymb"   t ("pdflatex"))
     (""     "capt-of"   nil)
