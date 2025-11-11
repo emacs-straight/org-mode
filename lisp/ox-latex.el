@@ -2523,13 +2523,13 @@ specified in `org-latex-default-packages-alist' or
 	     class-template
 	     (org-latex--remove-packages org-latex-default-packages-alist info)
 	     (org-latex--remove-packages org-latex-packages-alist info)
-             (org-latex-fontspec-to-string info)
 	     snippet?
 	     (mapconcat #'org-element-normalize-string
 		        (list (plist-get info :latex-header)
 			      (and (not snippet?)
 			           (plist-get info :latex-header-extra)))
-		        "")))))
+		        "")
+             (org-latex-fontspec-to-string info)))))
       (if multi-lang
           ;; Full headers are generated using the new drivers
           new-template

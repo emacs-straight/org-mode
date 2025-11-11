@@ -16752,7 +16752,7 @@ a HTML file."
 	  (delete-file (concat texfilebase e))))
       image-output-file)))
 
-(defun org-splice-latex-header (tpl def-pkg pkg fspec snippets-p &optional extra)
+(defun org-splice-latex-header (tpl def-pkg pkg snippets-p &optional extra fspec)
   "Fill a LaTeX header template TPL.
 In the template, the following place holders will be recognized:
 

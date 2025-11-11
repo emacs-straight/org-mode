@@ -41,7 +41,7 @@
 (declare-function org-latex-compile "ox-latex" (texfile &optional snippet))
 (declare-function org-latex-guess-inputenc "ox-latex" (header))
 (declare-function org-latex-fontspec-to-string "ox-latex" (header))
-(declare-function org-splice-latex-header "org" (tpl def-pkg pkg snippets-p &optional extra))
+(declare-function org-splice-latex-header "org" (tpl def-pkg pkg snippets-p &optional extra fspec))
 
 (defvar org-babel-tangle-lang-exts)
 (add-to-list 'org-babel-tangle-lang-exts '("latex" . "tex"))
