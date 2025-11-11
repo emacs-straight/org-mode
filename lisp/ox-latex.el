@@ -3218,11 +3218,11 @@ contextual information."
 	     ((and contents
 		   (string-match-p "\\`[ \t]*\\[" contents)
 		   (not (let ((e (car (org-element-contents item))))
-			  (and (org-element-type-p e 'paragraph)
-			       (let ((o (car (org-element-contents e))))
-			         (and (org-element-type-p o 'export-snippet)
-				      (eq (org-export-snippet-backend o)
-					  'latex)))))))
+			(and (org-element-type-p e 'paragraph)
+			     (let ((o (car (org-element-contents e))))
+			       (and (org-element-type-p o 'export-snippet)
+				    (eq (org-export-snippet-backend o)
+					'latex)))))))
 	      "\\relax ")
 	     (t " "))
 	    (and contents (org-trim contents)))))
@@ -3309,7 +3309,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
             (or (eq type 'math)
                 (org-latex--caption-above-p latex-environment info))))
       (if (not (or (org-element-property :name latex-environment)
-		   (org-element-property :caption latex-environment)))
+		 (org-element-property :caption latex-environment)))
 	  value
 	;; Environment is labeled: label must be within the environment
 	;; (otherwise, a reference pointing to that element will count
@@ -3789,7 +3789,7 @@ it."
 	  (when (and (member mode '("inline-math" "math"))
 		     ;; Do not wrap twice the same table.
 		     (not (org-element-type-p
-			   (org-element-parent table) 'latex-matrices)))
+			 (org-element-parent table) 'latex-matrices)))
 	    (let* ((caption (and (not (string= mode "inline-math"))
 				 (org-element-property :caption table)))
 		   (name (and (not (string= mode "inline-math"))
@@ -3876,7 +3876,7 @@ containing export options.  Modify DATA by side-effect and return it."
       (lambda (object)
 	;; Skip objects already wrapped.
 	(when (and (not (org-element-type-p
-		         (org-element-parent object) 'latex-math-block))
+		       (org-element-parent object) 'latex-math-block))
 		   (funcall valid-object-p object))
 	  (let ((math-block (list 'latex-math-block nil))
 		(next-elements (org-export-get-next-element object info t))
