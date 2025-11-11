@@ -277,9 +277,10 @@ This function is called by `org-babel-execute-src-block'."
                (org-latex--remove-packages
 	        org-latex-packages-alist
                 (list :latex-compiler org-latex-compiler))
+               nil   ; no snippets
+               ""    ; empty extra
                (org-latex-fontspec-to-string
-                (list :latex-compiler org-latex-compiler))
-	       nil))
+                (list :latex-compiler org-latex-compiler))))
 	     (if fit "\n\\usepackage[active, tightpage]{preview}\n" "")
 	     (if border (format "\\setlength{\\PreviewBorder}{%s}" border) "")
 	     (if height (concat "\n" (format "\\pdfpageheight %s" height)) "")

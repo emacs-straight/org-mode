@@ -455,12 +455,6 @@ This option makes it possible to disable mapping of linked org files
 to markdown during export to Markdown. This is analogous to how
 ~org-html-link-org-files-as-html~ works in export to HTML.
 
-*** New option ~org-latex-fontspec-config~
-
-The new option ~org-latex-fontspec-config~ stores the configuration
-for the ~fontspec~ package. It is used when ~org-latex-multi-lang~
-is ~t~.
-
 *** New option ~org-latex-fontspec-default-features~
 
 The new option ~org-latex-fontspec-default-features~ controls the
@@ -645,10 +639,11 @@ the intended compiler as an argument.
 Currently, it returns an empty string if the intended compiler is
 ~pdflatex~.
 
-*** Added mandatory parameter ~fspec~ to ~org-splice-latex-header~
+*** Added optional parameter ~fspec~ to ~org-splice-latex-header~
 
-~org-splice-latex-header~ now expects the fontspec as a string after
-the package list. This string will replace \[FSPEC] in the template.
+~org-splice-latex-header~ now accepts the fontspec as a string after
+the ~extra~ string. This string will replace \[FSPEC] in the template.
+
 *** ~org-clock-get-clock-string~ now takes an optional ~max-length~ argument
 
 When a ~max-length~ is passed to ~org-clock-get-clock-string~, it will first

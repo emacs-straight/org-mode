@@ -35,8 +35,6 @@
 (require 'ox-publish)
 
 ;;; Function Declarations
-(declare-function org-list-or-null-p "org-macs.el" (object))
-
 (defvar org-latex-default-packages-alist)
 (defvar org-latex-packages-alist)
 (defvar orgtbl-exp-regexp)
