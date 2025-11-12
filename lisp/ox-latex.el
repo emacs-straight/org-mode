@@ -230,6 +230,7 @@
       ("id" :babel "indonesian" :polyglossia "malay" :polyglossia-variant "indonesian" :lang-name "Indonesian" :script "latin" :script-tag "latn")
       ("is" :fontenc "T1" :babel "icelandic" :polyglossia "icelandic" :lang-name "Icelandic" :script "latin" :script-tag "latn")
       ("it" :fontenc "T1" :babel "italian" :polyglossia "italian" :lang-name "Italian" :script "latin" :script-tag "latn")
+      ("jp" :babel "japanese" :polyglossia "japanese" :lang-name "Japanese")
       ("kn" :babel-ini-only "kannada" :polyglossia "kannada" :lang-name "Kannada" :script "kannada" :script-tag "knda")
       ("la" :fontenc "T1" :babel "latin" :polyglossia "latin" :lang-name "Latin" :script "latin" :script-tag "latn")
       ("la-classic"  :babel "classiclatin" :polyglossia "latin" :polyglossia-variant "classic" :lang-name "Classic Latin" :script "latin" :script-tag "latn")
