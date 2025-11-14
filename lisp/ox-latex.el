@@ -2131,18 +2131,18 @@ Use fontspec as a last resort and when defined."
       ;; FIXME: check if fallbacks are accepted
       (unless doc-babel-font-config
         (save-match-data
-          (let ((using-cjk nil))
-            (cl-loop for (fname . _) in doc-fontspec
-                     do (setq using-cjk (or using-cjk (string-match-p "^CJK[a-z]" fname))))
-            (when using-cjk
+          ;; FIXME: Korean?
+          (let* ((main-lang (car-safe latex-babel-langs))
+                 (use-xecjk (member main-lang '("jp" "zh"))))
+            (when use-xecjk
               (insert "\n\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))
                               (feats (plist-get fprops :features)))
                           (insert (format "\n\\set%sfont{%s}%s" fname font (org-latex--mk-options feats)))))
-            (when using-cjk
+            (when use-xecjk
               (insert "\n\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax") ;; FIXME: agree on ZWS
-              (insert "\n\\parindent=1em") ;; FIXME: this is for jp - zh uses 2em as a convention
+              (insert (format "\n\\parindent=%dem" (if (string= main-lang "jp") 1 2))) ;; FIXME: Korean?
               (insert "\n\\linespread{1.333}")))))
       ;; FIXME: This works but needs to be fine-tuned:
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
