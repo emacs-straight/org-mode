@@ -2118,13 +2118,37 @@ Use fontspec as a last resort and when defined."
          (doc-babel-font-config org-latex-babel-font-config)
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
          (unicode-math-options nil)) ;; FIXME: define document option for this
+    ;; FIXME: add preliminary checks to flag potential configuration clashes
     (with-temp-buffer
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
       (insert "\\tracinglostchars=2")
       ;; do *not* include languages here
+      (insert (format "\n\\usepackage%s{unicode-math}"
+                      (org-latex--mk-options unicode-math-options)))
+      ;; jp and zh support:
+      ;; use fontspec to configure fonts and babel to localize
+      ;; FIXME: check for other languages
+      ;; FIXME: check if fallbacks are accepted
+      (unless doc-babel-font-config
+        (save-match-data
+          (let ((using-cjk nil))
+            (cl-loop for (fname . _) in doc-fontspec
+                     do (setq using-cjk (or using-cjk (string-match-p "^CJK[a-z]" fname))))
+            (when using-cjk
+              (insert "\n\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
+            (cl-loop for (fname . fprops) in doc-fontspec
+                     do (let ((font  (plist-get fprops :font))
+                              (feats (plist-get fprops :features)))
+                          (insert (format "\n\\set%sfont{%s}%s" fname font (org-latex--mk-options feats)))))
+            (when using-cjk
+              (insert "\n\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax") ;; FIXME: agree on ZWS
+              (insert "\n\\parindent=1em") ;; FIXME: this is for jp - zh uses 2em as a convention
+              (insert "\n\\linespread{1.333}")))))
+      ;; FIXME: This works but needs to be fine-tuned:
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       ;; import the main language with a babelprovide
       ;; it is the fist language in the list.
+      ;; FIXME: plain "import" or "import=*" ?
       (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
       ;; For the other languages, generate babelprovide based on :provide atribute, default to "import"
       ;; for that we have to loop the languages
@@ -2136,8 +2160,6 @@ Use fontspec as a last resort and when defined."
                     (insert (format "\n\\babelprovide%s{%s}"
                                     (org-latex--mk-options provide)
                                     (org-latex--get-babel-lang bab-lang)))))
-      (insert (format "\n\\usepackage%s{unicode-math}"
-                      (org-latex--mk-options unicode-math-options)))
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
@@ -2151,13 +2173,6 @@ Use fontspec as a last resort and when defined."
                                                   (org-latex--mk-options (org-latex--get-babel-lang lang)) script
                                                   (org-latex--mk-options props)
                                                   font))))))
-      ;; Last resort... use fontspec-config if no babel specific fonts are defined
-      ;; FIXME: check if fallbacks are accepted, call fontspec config instead earlier
-      (unless doc-babel-font-config
-        (cl-loop for (fname . fprops) in doc-fontspec
-                 do (let ((font  (plist-get fprops :font))
-                          (feats (plist-get fprops :features)))
-                      (insert (format "\n\\set%sfont{%s}%s" fname font (org-latex--mk-options feats))))))
       (buffer-string))))
 
 
