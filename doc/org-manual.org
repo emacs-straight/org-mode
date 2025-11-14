@@ -13092,7 +13092,7 @@ We strongly recommend familiarizing yourself with Beamer terminology
 before reading the rest of this chapter.  See
 <https://en.wikipedia.org/wiki/Beamer_(LaTeX)> and references therein.
 
-Read sections [[*Different languages and character sets in LaTeX
+Read sections [[***Different languages and character sets in LaTeX
 export]] and [[*Font configuration for LuaLaTeX and XeLaTeX]] to
 familiarise yourself with font customisation if you intend to create
 PDF files from your Beamer Org documents using modern LaTeX compilers
@@ -14256,10 +14256,10 @@ general options (see [[*Export Settings]]).
 
   The strategy to handle multi-lingual features.  Possible values are
   ~nil~ (default), ~fontspec~, ~polyglossia~ or ~babel~.  See more
-  details about setting up multi-language documents in [[*Handling
-  different languages and character sets in LaTeX exports]]. You can
-  set the value globally by customizing ~org-latex-multi-lang~
-  variable. Setting the keyword supersedes the variable value.
+  details about setting up multi-language documents in
+  [[#lang-charset-latex]]. You can set the value globally by
+  customizing ~org-latex-multi-lang~ variable. Setting the keyword
+  supersedes the variable value.
 
 - =KEYWORDS= ::
 
@@ -14926,7 +14926,8 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 
 *** Different languages and character sets in LaTeX export
 :properties:
-#+LABEL: LaTeX languages and character sets
+:CUSTOM_ID: lang-charset-latex
+:DESCRIPTION: Localisation and font management
 :end:
 #+cindex: @samp{LANGUAGE} keyword, @samp{LATEX_MULTI_LANG} keyword
 #+vindex: org-latex-multi-lang
@@ -15260,23 +15261,7 @@ The format for the specification is
    with a set of options for a specific script
 
 You may use any font name used in the ~\set..font{}~ command by the
-~fontspec~ package.  For example, when using XeLaTeX, you can compose
-Chinese, Japanese or Korean text using the ~xeCJK~ and ~xpinyin~
-packages.  These packages provide the ~\setCKJmainfont{}~,
-~\setCJKsansfont{}~ and ~\setCJKmonofnt{}~ commands.  Use ~CJKmain~,
-~CJKsans~ and ~CJK mono~ to specify the fonts supporting the Chinese,
-Japanese or Korean scripts you need for your documents.  For example:
-
-#+BEGIN_SRC elisp
-((org-mode .
-  ((org-latex-fontspec-config .
-    (("main" :font "Noto Serif")
-     ("sans" :font "Noto Sans")
-     ("mono" :font "Noto Sans Mono")
-     ("CJKmain" :font "Noto Serif CJK SC")
-     ("CJKsans" :font "Noto Sans CJK SC")
-     ("CJKmono" :font "Noto Sans Mono CJK SC"))))))
-#+END_SRC
+~fontspec~ package.
 
 #+vindex: org-latex-fontspec-default-features
 Additionally, you can define common features for all fonts using the
@@ -15508,6 +15493,67 @@ it will generate the following LaTeX preamble code:
 #+texinfo: @noindent
 to typeset a document in Greek and Portuguese using the ~DejaVu Sans~ font
 for the Portuguese text and ~FreeSerif~ for Greek.
+
+When composing Chinese, Japanese or Korean documents, localisation is
+provided by ~babel~, while fonts are configured using the ~xeCJK~
+package, which provides the ~\setCKJmainfont{}~, ~\setCJKsansfont{}~
+and ~\setCJKmonofnt{}~ commands.  Use ~org-latex-fontspec-config~ to
+define the ~CJKmain~, ~CJKsans~ and ~CJK mono~ fonts supporting the
+Chinese, Japanese or Korean scripts you need for your documents.
+
+The following document header
+#+BEGIN_SRC org
+,#+LANGUAGE: zh
+,#+LATEX_COMPILER: xelatex
+,#+LATEX_MULTI_LANG: babel
+#+END_SRC
+
+#+texinfo: @noindent
+will allow you to typeset a Chinese document. Setting
+~org-latex-fontspec-config~ to ~nil~ will produce a working document
+with the default fonts provided by the ~xeCJK~ package.
+
+Similarly, you can typeset Japanese documents. The following header
+
+#+BEGIN_SRC org
+,#+LANGUAGE: jp
+,#+LATEX_COMPILER: xelatex
+,#+LATEX_MULTI_LANG: babel
+#+END_SRC
+
+#+texinfo: @noindent
+and the following font configuration:
+
+#+BEGIN_SRC emacs-lisp
+((org-mode .
+  ((org-latex-fontspec-config .
+    (("CJKmain" :font "HaranoAjiMincho")
+     ("CJKsans" :font "HaranoAjiGothic")
+     ("CJKmono" :font "HaranoAjiGothic"))))))
+#+END_SRC
+
+will allow you to typeset a Japanese document. *Note* that you need to
+configure the fonts for Japanese documents.
+
+You can further adapt the font configuration to your needs. For
+example, the following font configuration will produce a Chinese
+document typeset with the Noto font family:
+
+#+BEGIN_SRC elisp
+((org-mode .
+  ((org-latex-fontspec-config .
+    (("main" :font "Noto Serif")
+     ("sans" :font "Noto Sans")
+     ("mono" :font "Noto Sans Mono")
+     ("CJKmain" :font "Noto Serif CJK SC")
+     ("CJKsans" :font "Noto Sans CJK SC")
+     ("CJKmono" :font "Noto Sans Mono CJK SC"))))))
+#+END_SRC
+
+#+texinfo: @noindent
+*Note:* use the ~Noto ... CJK JP~ fonts for a Japanese document.
+
+
 
 ** Markdown Export
 :PROPERTIES:
