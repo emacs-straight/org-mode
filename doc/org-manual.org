@@ -13092,7 +13092,7 @@ We strongly recommend familiarizing yourself with Beamer terminology
 before reading the rest of this chapter.  See
 <https://en.wikipedia.org/wiki/Beamer_(LaTeX)> and references therein.
 
-Read sections [[***Different languages and character sets in LaTeX
+Read sections [[*Different languages and character sets in LaTeX
 export]] and [[*Font configuration for LuaLaTeX and XeLaTeX]] to
 familiarise yourself with font customisation if you intend to create
 PDF files from your Beamer Org documents using modern LaTeX compilers
