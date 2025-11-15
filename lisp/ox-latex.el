@@ -2135,6 +2135,8 @@ Use fontspec as a last resort and when defined."
           (let* ((main-lang (car-safe latex-babel-langs))
                  (use-xecjk (member main-lang '("jp" "zh"))))
             (when use-xecjk
+              (unless (string= compiler "xelatex")
+                (error "Using xeCJK for jp and zh requires compiler xelatex."))
               (insert "\n\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))

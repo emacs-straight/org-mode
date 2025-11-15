@@ -15494,12 +15494,19 @@ it will generate the following LaTeX preamble code:
 to typeset a document in Greek and Portuguese using the ~DejaVu Sans~ font
 for the Portuguese text and ~FreeSerif~ for Greek.
 
+**** Font configuration for CJK languages with ~babel~ and ~xeCJK~.
+:PROPERTIES:
+:CUSTOM_ID: babel-xelatex-cjk
+:DESCRIPTION: Localisation and font management with xeCJK
+:END:
+
 When composing Chinese, Japanese or Korean documents, localisation is
 provided by ~babel~, while fonts are configured using the ~xeCJK~
 package, which provides the ~\setCKJmainfont{}~, ~\setCJKsansfont{}~
-and ~\setCJKmonofnt{}~ commands.  Use ~org-latex-fontspec-config~ to
+and ~\setCJKmonofont{}~ commands.  Use ~org-latex-fontspec-config~ to
 define the ~CJKmain~, ~CJKsans~ and ~CJK mono~ fonts supporting the
-Chinese, Japanese or Korean scripts you need for your documents.
+Chinese, Japanese or Korean scripts you need for your documents. *Note*
+that this solution will /only/ work with ~xelatex~.
 
 The following document header
 #+BEGIN_SRC org
@@ -15532,6 +15539,7 @@ and the following font configuration:
      ("CJKmono" :font "HaranoAjiGothic"))))))
 #+END_SRC
 
+#+texinfo: @noindent
 will allow you to typeset a Japanese document. *Note* that you need to
 configure the fonts for Japanese documents.
 
@@ -15552,7 +15560,6 @@ document typeset with the Noto font family:
 
 #+texinfo: @noindent
 *Note:* use the ~Noto ... CJK JP~ fonts for a Japanese document.
-
 
 
 ** Markdown Export
