@@ -388,6 +388,17 @@ Irgend etwas.
      (save-excursion
        (should (search-forward "\\babelprovide[import]{greek}" nil t))))))
 
+(ert-deftest test-ox-latex/math-in-alt-title ()
+  "Test math wrapping in ALT_TITLE properties."
+  (org-test-with-exported-text
+      'latex
+      "* \\phi wraps
+:PROPERTIES:
+:ALT_TITLE: \\psi wraps too
+:END:"
+    (goto-char (point-min))
+    (should (search-forward
+             "\\section[\\(\\psi\\) wraps too]{\\(\\phi\\) wraps}"))))
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here
