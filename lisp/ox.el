@@ -1428,15 +1428,21 @@ inferior to file-local settings."
   ;; global options are read.
   (org-export--set-variables (org-export--list-bound-variables))
   ;; Get and prioritize export options...
-  (org-combine-plists
-   ;; ... from global variables...
-   (org-export--get-global-options backend)
-   ;; ... from an external property list...
-   ext-plist
-   ;; ... from in-buffer settings...
-   (org-export--get-inbuffer-options backend)
-   ;; ... and from subtree, when appropriate.
-   (and subtreep (org-export--get-subtree-options backend))))
+  (let ((info
+         (org-combine-plists
+          ;; ... from global variables...
+          (org-export--get-global-options backend)
+          ;; ... from an external property list...
+          ext-plist
+          ;; ... from in-buffer settings...
+          (org-export--get-inbuffer-options backend)
+          ;; ... and from subtree, when appropriate.
+          (and subtreep (org-export--get-subtree-options backend)))))
+    ;; Get :languages and insert it into :language
+    (when-let* ((languages (plist-get info :languages))
+                (lang (car languages)))
+      (setq info (plist-put info :language lang)))
+    info))
 
 (defun org-export--parse-option-keyword (options &optional backend)
   "Parse an OPTIONS line and return values as a plist.
@@ -3137,10 +3143,6 @@ still inferior to file-local settings."
     (setq info
           (org-combine-plists
            info (org-export-get-environment backend subtreep ext-plist)))
-    ;; Get :languages and insert it into :language
-    (when-let* ((languages (plist-get info :languages))
-                (lang (car languages)))
-      (setq info (plist-put info :language lang)))
     ;; Pre-process citations environment, i.e. install
     ;; bibliography list, and citation processor in INFO.
     (when (plist-get info :with-cite-processors)
