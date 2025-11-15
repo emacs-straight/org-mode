@@ -1605,7 +1605,7 @@ For example, this could be placed in your .dir-locals.el:
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No template" nil)
 		 (alist :tag "fontspec config"))
-  :safe #'org-list-or-null-p)
+  :safe #'listp)
 
 (defcustom org-latex-fontspec-default-features nil
   "List of default features for the fontspec package.
@@ -1621,7 +1621,7 @@ FEATURE and VALUE should be strings."
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No template" nil)
 		 (alist :tag "Default font features"))
-  :safe #'org-list-or-null-p)
+  :safe #'listp)
 
 (defcustom org-latex-polyglossia-font-config nil
   "Font specifications for polyglossia.
@@ -1652,7 +1652,7 @@ in
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No polyglossia font config" nil)
 		 (alist :tag "polyglossia font config"))
-  :safe #'org-list-or-null-p)
+  :safe #'listp)
 
 (defcustom org-latex-babel-font-config nil
   "Mapping of language names to fonts when using babel.
@@ -1683,7 +1683,7 @@ roman font's appearance."
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No babel font config" nil)
 		 (alist :tag "babel font configuration"))
-  :safe #'org-list-or-null-p)
+  :safe #'listp)
 
 
 ;;; Internal Functions
