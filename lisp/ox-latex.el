@@ -2030,7 +2030,7 @@ Using babel is only possible when ldf method can be used."
                    collect (concat feat "=" val) into result
                    finally return (mapconcat #'identity result ",\n  "))))
 
-(defun org-latex--lualatex-polyglossia-config (info)
+(defun org-latex--utf8latex-polyglossia-config (info)
   "Return preamble part for polyglossia for lualatex or xelatex.
 Extract the information from INFO."
   (let* ((compiler (plist-get info :compiler))
@@ -2104,7 +2104,7 @@ else signal error."
         lang)))
 
 
-(defun org-latex--lualatex-babel-config (info)
+(defun org-latex--utf8latex-babel-config (info)
   "Return preamble components for babel on lualatex/xelatex.
 INFO is the export communication channel.
 
@@ -2178,7 +2178,7 @@ Use fontspec as a last resort and when defined."
       (buffer-string))))
 
 
-(defun org-latex--lualatex-fontspec-config (info)
+(defun org-latex--utf8latex-fontspec-config (info)
   "Return the font preamble for Lua/XeLaTeX relying on fontspec only.
 INFO is the export communication channel."
   (let ((compiler (plist-get info :latex-compiler))
@@ -2194,8 +2194,11 @@ INFO is the export communication channel."
     ;; (message "FONTSPEC: Intended compiler: %s" compiler)
     (with-temp-buffer
       (insert "\\usepackage{fontspec}\n")
-      (insert (format "\\usepackage%s{unicode-math}\n"
-                      (org-latex--mk-options unicode-math-options)))
+      ;; Use lualatex-math for lualatex
+      (if (string= compiler "lualatex")
+          (insert "\\usepackage{lualatex-math}\n")
+        (insert (format "\\usepackage%s{unicode-math}\n"
+                        (org-latex--mk-options unicode-math-options))))
       ;;
       ;; It there are font features, generate the declaration
       ;;
@@ -2293,18 +2296,18 @@ legacy routines for language and babel guessing."
           ((equal compiler "pdflatex") ;; pdflatex needs separate handling
            (org-latex--pdflatex-fontconfig info))
           ((equal multi-lang "babel")
-           (org-latex--lualatex-babel-config info))
+           (org-latex--utf8latex-babel-config info))
           ((equal multi-lang "polyglossia")
-           (org-latex--lualatex-polyglossia-config info))
+           (org-latex--utf8latex-polyglossia-config info))
           (t ;; else lualatex or xelatex with fontspec
-           (org-latex--lualatex-fontspec-config info)))))
+           (org-latex--utf8latex-fontspec-config info)))))
 
 (defun org-latex--keep-pkg (pkg use-driver)
   "Return non-nil, when PKG is not automatically loaded.
 Keep the package if we are in legacy mode (USE-DRIVER is nil) or if it
 is not a font management package."
   (or (null use-driver)
-      (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "unicode-math")))))
+      (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "lualatex-math" "unicode-math")))))
 
 (defun org-latex--remove-packages (pkg-alist info)
   "Remove packages based on the current LaTeX compiler.
