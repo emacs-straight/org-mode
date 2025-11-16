@@ -1290,14 +1290,11 @@ If `only-dangling-p' is non-nil, only ask to resolve dangling
 
 (defvar org-x11idle-exists-p
   ;; Check that x11idle exists.  But don't do that on DOS/Windows,
-  ;; since the command definitely does NOT exist there, and invoking
-  ;; COMMAND.COM on MS-Windows is a bad idea -- it hangs.
+  ;; since the command definitely does NOT exist there.
   (and (null (memq system-type '(windows-nt ms-dos)))
-       (eq 0 (call-process-shell-command
-              (format "command -v %s" org-clock-x11idle-program-name)))
+       (executable-find org-clock-x11idle-program-name)
        ;; Check that x11idle can retrieve the idle time
-       ;; FIXME: Why "..-shell-command" rather than just `call-process'?
-       (eq 0 (call-process-shell-command org-clock-x11idle-program-name))))
+       (eq 0 (call-process org-clock-x11idle-program-name))))
 
 (defun org-x11-idle-seconds ()
   "Return the current X11 idle time in seconds."
@@ -1332,6 +1329,8 @@ This routine returns a floating point number."
     (org-mac-idle-seconds))
    ((and (eq window-system 'x) org-x11idle-exists-p)
     (org-x11-idle-seconds))
+   ((fboundp 'w32-system-idle-time)
+    (/ (w32-system-idle-time) 1000.0))
    ((and
      org-logind-dbus-session-path
      (dbus-get-property
