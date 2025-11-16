@@ -2194,11 +2194,8 @@ INFO is the export communication channel."
     ;; (message "FONTSPEC: Intended compiler: %s" compiler)
     (with-temp-buffer
       (insert "\\usepackage{fontspec}\n")
-      ;; Use lualatex-math for lualatex
-      (if (string= compiler "lualatex")
-          (insert "\\usepackage{lualatex-math}\n")
-        (insert (format "\\usepackage%s{unicode-math}\n"
-                        (org-latex--mk-options unicode-math-options))))
+      (insert (format "\\usepackage%s{unicode-math}\n"
+                      (org-latex--mk-options unicode-math-options)))
       ;;
       ;; It there are font features, generate the declaration
       ;;
@@ -2307,7 +2304,7 @@ legacy routines for language and babel guessing."
 Keep the package if we are in legacy mode (USE-DRIVER is nil) or if it
 is not a font management package."
   (or (null use-driver)
-      (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "lualatex-math" "unicode-math")))))
+      (not (member-ignore-case pkg '("fontenc" "fontspec" "inputenc" "unicode-math")))))
 
 (defun org-latex--remove-packages (pkg-alist info)
   "Remove packages based on the current LaTeX compiler.
