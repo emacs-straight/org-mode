@@ -2193,9 +2193,20 @@ INFO is the export communication channel."
         (fallback-alist))  ;; an alist (font_name . fallback-name)
     ;; (message "FONTSPEC: Intended compiler: %s" compiler)
     (with-temp-buffer
+      (cl-loop
+       for font-spec in current-fontspec-config
+       ;; font-spec -> (font-family . fontspec)
+       do
+       (setq cjk-packages (or cjk-packages (string-match-p "^CJK" (car font-spec)))))
+
       (insert "\\usepackage{fontspec}\n")
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
+      ;; This was at the end. Move up to avoid having to place it
+      (when cjk-packages
+        (if (string= compiler "xelatex")
+            (insert "\\usepackage[CJKspace]{xeCJK}\n")
+          (warn "You need xelatex to use CJK fonts!")))
       ;;
       ;; It there are font features, generate the declaration
       ;;
@@ -2271,11 +2282,12 @@ INFO is the export communication channel."
       ;; If the CJK font families have been included
       ;; Check for polyglossia and/or babel and warn?
       ;; Or advise for these packages to be added to `org-latex-package-alist' ??
-      (when (and cjk-packages (equal compiler "xelatex"))
-        (message "Adding the CJK packages")
-        (goto-char (point-min))
-        (forward-line 2)
-        (insert "\\usepackage[CJKspace]{xeCJK}\n"))
+      ;; moved up
+      ;; (when (and cjk-packages (equal compiler "xelatex"))
+      ;;   (message "Adding the CJK packages")
+      ;;   (goto-char (point-min))
+      ;;   (forward-line 2)
+      ;;   (insert "\\usepackage[CJKspace]{xeCJK}\n"))
       (buffer-string))))
 
 (defun org-latex-fontspec-to-string (info)
