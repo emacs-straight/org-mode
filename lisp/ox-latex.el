@@ -2103,6 +2103,16 @@ else signal error."
         (plist-get lang-plist :babel-ini-only)
         lang)))
 
+(defconst jp-default-fontspec
+  '(("CJKmain" . "HaranoAjiMincho")
+    ("CJKsans" . "HaranoAjiGothic")
+    ("CJKmono" . "HaranoAjiGothic"))
+  "The default CJK fonts for Japanese.
+
+xeCJK provides default font settings for Chinese.
+They need to be set to follow Japanese convention.
+This is an abbreviated fontspec, because we don't need
+extra properties for these fonts.")
 
 (defun org-latex--utf8latex-babel-config (info)
   "Return preamble components for babel on lualatex/xelatex.
@@ -2138,10 +2148,22 @@ Use fontspec as a last resort and when defined."
               (unless (string= compiler "xelatex")
                 (error "Using xeCJK for jp and zh requires compiler xelatex."))
               (insert "\n\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
+            ;; Now the fonts:
+            ;;
+            ;; Look for CJK fonts in the font configuration
+            ;; and provide the default fonts by convention for
+            ;; Japanese documents if there none is found.
+            (when (string= main-lang "jp")
+              (unless (cl-loop for (_ . fprops) in doc-fontspec
+                               when (string-match-p "^CJK" (plist-get fprops :font))
+                               collect fprops)
+                (cl-loop for (fname . ffile) in jp-default-fontspec
+                         do (insert "\n\\set" fname "font{" ffile "}"))))
+            ;;
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))
                               (feats (plist-get fprops :features)))
-                          (insert (format "\n\\set%sfont{%s}%s" fname font (org-latex--mk-options feats)))))
+                          (insert "\n\\set" fname "font{" font "}" (org-latex--mk-options feats))))
             (when use-xecjk
               (insert "\n\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax") ;; FIXME: agree on ZWS
               (insert (format "\n\\parindent=%dem" (if (string= main-lang "jp") 1 2))) ;; FIXME: Korean?
