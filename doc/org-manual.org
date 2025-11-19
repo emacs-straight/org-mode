@@ -15529,23 +15529,12 @@ Similarly, you can typeset Japanese documents. The following header
 #+END_SRC
 
 #+texinfo: @noindent
-and the following font configuration:
-
-#+BEGIN_SRC emacs-lisp
-((org-mode .
-  ((org-latex-fontspec-config .
-    (("CJKmain" :font "HaranoAjiMincho")
-     ("CJKsans" :font "HaranoAjiGothic")
-     ("CJKmono" :font "HaranoAjiGothic"))))))
-#+END_SRC
-
-#+texinfo: @noindent
-will allow you to typeset a Japanese document. *Note* that you need to
-configure the fonts for Japanese documents.
+will allow you to typeset a Japanese document, using the
+=HaranoAjiMincho= and =HaranoAjiGothic= fonts.
 
 You can further adapt the font configuration to your needs. For
 example, the following font configuration will produce a Chinese
-document typeset with the Noto font family:
+document typeset with the =Noto= font family:
 
 #+BEGIN_SRC elisp
 ((org-mode .
@@ -15558,8 +15547,19 @@ document typeset with the Noto font family:
      ("CJKmono" :font "Noto Sans Mono CJK SC"))))))
 #+END_SRC
 
-#+texinfo: @noindent
-*Note:* use the ~Noto ... CJK JP~ fonts for a Japanese document.
+The following font configuration will produce a Japanese document
+typeset with the =Noto= font family:
+
+#+BEGIN_SRC emacs-lisp
+((org-mode .
+  ((org-latex-fontspec-config .
+    (("main" :font "Noto Serif")
+     ("sans" :font "Noto Sans")
+     ("mono" :font "Noto Sans Mono")
+     ("CJKmain" :font "Noto Serif CJK JP")
+     ("CJKsans" :font "Noto Sans CJK JP")
+     ("CJKmono" :font "Noto Sans Mono CJK JP"))))))
+#+END_SRC
 
 
 ** Markdown Export
