@@ -14185,7 +14185,7 @@ compiler[fn:48].
 The LaTeX export backend can use different LaTeX compilers, each of
 which compile LaTeX files with different packages and output
 options. It provides several additional keywords to
-customise LaTeX output.  Setting these keywords works similar to the
+customize LaTeX output.  Setting these keywords works similar to the
 general options (see [[*Export Settings]]).
 
 #+attr_texinfo: :sep ,
@@ -14195,7 +14195,7 @@ general options (see [[*Export Settings]]).
   #+vindex: org-latex-title-command
   The document's description.  The description along with author name,
   keywords, and related file metadata are inserted in the output file
-  by the hyperref package.  See ~org-latex-hyperref-template~ for
+  by the =hyperref= package.  See ~org-latex-hyperref-template~ for
   customizing metadata items.  See ~org-latex-title-command~ for
   typesetting description into the document's front matter.  Use
   multiple =DESCRIPTION= keywords for long descriptions.
@@ -14231,7 +14231,7 @@ general options (see [[*Export Settings]]).
   #+cindex: @samp{LATEX_HEADER_EXTRA}, keyword
   #+vindex: org-latex-classes
   Arbitrary lines to add to the document's preamble, before the
-  hyperref settings.  See ~org-latex-classes~ for adjusting the
+  =hyperref= settings.  See ~org-latex-classes~ for adjusting the
   structure and order of the LaTeX headers.
 
 - =LANGUAGE= ::
@@ -14254,7 +14254,7 @@ general options (see [[*Export Settings]]).
   #+vindex: org-latex-multi-lang
   #+vindex: org-export-default-language
 
-  The strategy to handle multi-lingual features.  Possible values are
+  The strategy to handle multilingual features.  Possible values are
   ~nil~ (default), ~fontspec~, ~polyglossia~ or ~babel~.  See more
   details about setting up multi-language documents in
   [[#lang-charset-latex]]. You can set the value globally by
@@ -14413,10 +14413,10 @@ include:
 - =:environment= ::
 
   #+vindex: org-latex-default-table-environment
-  Set the default LaTeX table environment for the LaTeX export
-  backend to use when exporting Org tables.  Common LaTeX table
-  environments are provided by these packages: tabularx, longtable,
-  array, tabu, and bmatrix.  For packages, such as tabularx and tabu,
+  Set the default LaTeX table environment for the LaTeX export backend
+  to use when exporting Org tables.  Common LaTeX table environments
+  are provided by these packages: =tabularx=, =longtable=, =array=,
+  =tabu=, and =bmatrix=.  For packages, such as =tabularx= and =tabu=,
   or any newer replacements, include them in the
   ~org-latex-packages-alist~ variable so the LaTeX export backend can
   insert the appropriate load package headers in the converted LaTeX
@@ -14453,16 +14453,16 @@ include:
 
 - =:options= ::
 
-  The =:options= attribute allows adding an optional argument with
-  a list of various table options (between brackets in LaTeX export),
-  since certain tabular environments, such as longtblr of the
-  tabularray LaTeX package, provides this structure.  For example:
+  The =:options= attribute allows adding an optional argument with a
+  list of various table options (between brackets in LaTeX export),
+  since certain tabular environments, such as =longtblr= of the
+  =tabularray= LaTeX package, provides this structure.  For example:
   =:options remark{Note}={note},remark{Source}={source}=.
 
 - =:spread= ::
 
   When =:spread= is non-~nil~, the LaTeX export backend spreads or
-  shrinks the table by the =:width= for tabu and longtabu
+  shrinks the table by the =:width= for =tabu= and =longtabu=
   environments.  =:spread= has no effect if =:width= is not set.
 
 - =:booktabs=, =:center=, =:rmlines= ::
@@ -14470,7 +14470,7 @@ include:
   #+vindex: org-latex-tables-booktabs
   #+vindex: org-latex-tables-centered
   All three commands are toggles.  =:booktabs= brings in modern
-  typesetting enhancements to regular tables.  The booktabs package
+  typesetting enhancements to regular tables.  The =booktabs= package
   has to be loaded through ~org-latex-packages-alist~.  =:center= is
   for centering the table.  =:rmlines= removes all but the very first
   horizontal line made of ASCII characters from "table.el" tables
@@ -14906,7 +14906,7 @@ set it to =toc=:
 #+cindex: LaTeX ToC export a la ~org~
 #+cindex: @samp{org-latex-toc-include-unnumbered}
 If you want the LaTeX exporter to behave like other exporters,
-customise the variable ~org-latex-toc-include-unnumbered~ and
+customize the variable ~org-latex-toc-include-unnumbered~ and
 set it to ~t~:
 
 #+begin_example
@@ -14939,14 +14939,14 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   appearance to the output.  Spelling out dates, section headers for
   the table of contents, etc. as well as captions for figures, tables,
   listings, etc. are defined in this context.  As long as you don't
-  need localisation (i.e. adapting or translating these to the
+  need localization (i.e. adapting or translating these to the
   document's intended linguistic environment), you can use most LaTeX
   document classes as-is with any document that uses the Latin
   character set.  Documents using non-Latin character sets will need
   font configuration, which depend on the document class, the LaTeX
   compiler and multi-language support package you use[fn:50]. Consult
   the
-  [[https://en.wikibooks.org/wiki/LaTeX/Internationalization][internationalisation
+  [[https://en.wikibooks.org/wiki/LaTeX/Internationalization][internationalization
   section]] of the
   [[https://upload.wikimedia.org/wikipedia/commons/2/2d/LaTeX.pdf][LaTeX
   Wikibook]] for more insight on font and language management in
@@ -14954,16 +14954,16 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 
   For documents that are outside the American English linguistic
   context and for multilingual documents, LaTeX provides the packages
-  =babel= and =polyglossia= to localise document features like text
+  =babel= and =polyglossia= to localize document features like text
   direction (left-to-right vs. right-to-left), the table of contents,
   dates, hyphenation, etc.
 
   Org provides the =LANGUAGE= keyword to specify the languages used in
   a document and the =LATEX_MULTI_LANG= keyword to set the way to
-  handle localisation and font configuration when exporting to LaTeX.
+  handle localization and font configuration when exporting to LaTeX.
 
   =LATEX_MULTI_LANG= is ~nil~ by default. In this case, you need to
-  handle localisation manually, configuring LaTeX language features in
+  handle localization manually, configuring LaTeX language features in
   LaTeX headers (see ~#+LATEX_HEADER~ keyword).  Use this setting when
   you must use =pdflatex= and follow the instructions in
   [[#pdflatex-fonts]] to set up fonts in your document.
@@ -15061,12 +15061,12 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 
 ~pdflatex~ uses LaTeX packages to import the fonts used in the
 PDF output. Refer to [[https://tug.org/FontCatalogue/][the LaTeX font
-catalogue]] to find the LaTeX package or packages you need for your
+catalog]] to find the LaTeX package or packages you need for your
 document and include them with the ~#+LATEX_HEADER:~ keyword.
 
 For example, if you need the
 [[https://tug.org/FontCatalogue/erewhon/][Erewhon]] font, you will find
-the following configuration in the LaTeX font catalogue:
+the following configuration in the LaTeX font catalog:
 
 #+BEGIN_SRC latex
 \usepackage[proportional,scaled=1.064]{erewhon}
@@ -15103,7 +15103,7 @@ before the actual document.
 When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the ~fontspec~.  Setting
 variable ~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to
-~fontspec~ enables optimised ~fontspec~ configuration[fn:53].
+~fontspec~ enables optimized ~fontspec~ configuration[fn:53].
 
 ~polyglossia~ and ~babel~ load ~fontspec~ internally. When using
 ~polyglossia~, you can combine ~fontspec~ and ~polyglossia~-specific
@@ -15120,12 +15120,12 @@ configuration.  Font configuration will use a different mechanism
 #+vindex: org-latex-fontspec-default-features
 
 Org mode uses the variable ~org-latex-fontspec-config~ to map your
-document's fonts to the fonts used in the document. To familiarise
+document's fonts to the fonts used in the document. To familiarize
 yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
 package manual]] Part II.  This variable should be set in your Emacs
-initialisation code, in the file local variables or in the directory
-local variable file ~.dir-locals.el~[fn:54] .
+initialization code, in the file local variables or in the directory
+local variable file ~.dir-locals.el~[fn:54].
 
 ~org-latex-fontspec-config~ maps the font name used in the
 ~\set...font{}~ commands defined by the ~fontspec~ package with the
@@ -15293,7 +15293,7 @@ If you need more features, add them to this list.
 #+cindex: polyglossia font configuration
 #+vindex: org-latex-polyglossia-font-config
 
-If you use the ~polyglossia~ package in multi-lingual documents, it
+If you use the ~polyglossia~ package in multilingual documents, it
 will load the ~fontspec~ package for you. Any general settings that
 depend on the variable ~org-latex-fontspec-config~ described
 [[#lualatex-fontspec][above]] still apply. In addition, settings
@@ -15327,8 +15327,8 @@ document with English and Hebrew text placed in a ~.dir-locals.el~ file:
 #+END_SRC
 
 As you see, ~polyglossia~ controls fonts on a per-language, per-script
-basis. For example, the document will use using the ~Miriam Mono CLM~
-script for Hebrew script in mono-spaced passages (~:variant "tt"~).
+basis. For example, the document will use the ~Miriam Mono CLM~
+script for Hebrew script in monospaced passages (~:variant "tt"~).
 You will see the following in the exported LaTeX:
 
 #+BEGIN_SRC LaTeX
@@ -15347,7 +15347,7 @@ The properties you can define are:
    Serif, ~tt~ for Mono, ~rm~ for Roman aka. Serif). The variants
    are [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter
    codes used in LaTeX for the different font families]].
-3. ~:tag~: a string that will used to define the language name in the
+3. ~:tag~: a string that will be used to define the language name in the
    font family.  For example, the language may be ~"hindi"~ but the
    name for the font family ~"devanagari"~. In this case, the latter
    can be indicated with a ~:tag~,
@@ -15422,7 +15422,7 @@ options to apply to this font.
 
 For example, for a document with text in German and Greek,
 where the main language is German, this variable could be
-initialised as follows:
+initialized as follows:
 
 #+BEGIN_SRC elisp
 (setq org-latex-babel-font-config
@@ -15445,8 +15445,8 @@ header:
 
 implying that text set in Serif (~{rm}~) will use the ~CMU Serif~ font
 unless it is in Greek, where the ~Noto Serif~ font will be used. The
-text set in mono-spaced font will use ~DejaVu Sans Mono~ regardless of
-the language. The mono-spaced text will be scaled to match the default
+text set in monospaced font will use ~DejaVu Sans Mono~ regardless of
+the language. The monospaced text will be scaled to match the default
 font size and produce a better-looking output.
 
 You can add an optional ~:provide~ property to any language mapping
@@ -15500,7 +15500,7 @@ for the Portuguese text and ~FreeSerif~ for Greek.
 :DESCRIPTION: Localisation and font management with xeCJK
 :END:
 
-When composing Chinese, Japanese or Korean documents, localisation is
+When composing Chinese, Japanese or Korean documents, localization is
 provided by ~babel~, while fonts are configured using the ~xeCJK~
 package, which provides the ~\setCKJmainfont{}~, ~\setCJKsansfont{}~
 and ~\setCJKmonofont{}~ commands.  Use ~org-latex-fontspec-config~ to
