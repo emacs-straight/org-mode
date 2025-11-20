@@ -2151,11 +2151,11 @@ additional information.  These lines may be put anywhere in the file:
 
 Most proeminent export options include:
 
-| =TITLE=    | the title to be shown                            |
-| =AUTHOR=   | the author (default taken from ~user-full-name~) |
-| =DATE=     | a date, fixed, or an Org timestamp               |
-| =EMAIL=    | email address (default from ~user-mail-address~) |
-| =LANGUAGE= | language code, e.g., =en=                        |
+| =TITLE=    | the title to be shown                                      |
+| =AUTHOR=   | the author (default taken from ~user-full-name~)           |
+| =DATE=     | a date, fixed, or an Org timestamp                         |
+| =EMAIL=    | email address (default from ~user-mail-address~)           |
+| =LANGUAGE= | language or languages in the doc, e.g., =en= or =de es it= |
 
 Option keyword sets can be inserted from the export dispatcher (see
 [[*The Export Dispatcher]]) using the =Insert template= command by
