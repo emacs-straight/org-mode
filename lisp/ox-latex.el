@@ -2067,6 +2067,8 @@ Extract the information from INFO."
                                    lang))
                    (setq lang-type "other"))))
       ;; Get fontspec fonts
+      ;; FIXME: add fallback fonts here (or call org-latex--utf8-fontspec ??)
+      ;; Polyglossia doesn't seem to choke at \direectlua{} for fallback fonts
       (cl-loop for (ftype . props) in fontspec-config do
                (let ((fname (plist-get props :font))
                      (fprops (plist-get props :features)))
