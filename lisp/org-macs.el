@@ -1208,7 +1208,14 @@ STRING width.  When REFERENCE-FACE is nil, `default' face is used."
                                           '(org-fold-drawer
                                             org-fold-block
                                             org-fold-outline))))
-                     (push el result)))
+                     (push
+                      ;; Consider ellipsis to have 0 width.
+                      ;; It is what Emacs 28+ does, but we have
+                      ;; to force it in earlier Emacs versions.
+                      (if (and (consp el) (cdr el))
+                          (list (car el))
+                        el)
+                      result)))
                  result)))
           (current-char-property-alias-alist char-property-alias-alist))
       (with-current-buffer (get-buffer-create " *Org string width*" t)
@@ -1216,16 +1223,7 @@ STRING width.  When REFERENCE-FACE is nil, `default' face is used."
         (setq-local line-prefix nil)
         (setq-local wrap-prefix nil)
         (setq-local buffer-invisibility-spec
-                    (if (listp current-invisibility-spec)
-                        (mapcar (lambda (el)
-                                  ;; Consider ellipsis to have 0 width.
-                                  ;; It is what Emacs 28+ does, but we have
-                                  ;; to force it in earlier Emacs versions.
-                                  (if (and (consp el) (cdr el))
-                                      (list (car el))
-                                    el))
-                                current-invisibility-spec)
-                      current-invisibility-spec))
+                    current-invisibility-spec)
         (setq-local char-property-alias-alist
                     current-char-property-alias-alist)
         (let (pixel-width symbol-width)
