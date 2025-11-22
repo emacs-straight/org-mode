@@ -1576,6 +1576,20 @@ nil means legacy support for babel/polyglossia."
 		 (const :tag "None" nil))
   :safe #'string-or-null-p)
 
+(defcustom org-latex-unicode-math-options nil
+  "Extra configuration for the unicode-math package.
+
+When not nil, add it to
+`\\usepackage{unicode-math}'.
+For example: \"math-style=upright\"  will make LaTeX typeset equations
+upright instead italic."
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No config" nil)
+		 (string :tag "unicode-math config" ))
+  :safe #'string-or-null-p)
+
+
 (defcustom org-latex-fontspec-config nil
   "Configuration for the fontspec package.
 When nil, generate no configuration.
@@ -2036,7 +2050,7 @@ Extract the information from INFO."
   (let* ((compiler (plist-get info :compiler))
          (polyglossia-list (plist-get info :languages))
          ;; FIXME: Read more about unicode-math and its options
-         (unicode-math-options nil)
+         (unicode-math-options org-latex-unicode-math-options)
          ;; These change inside `with-temp-buffer'
          (fontspec-config org-latex-fontspec-config)
          (current-default-features org-latex-fontspec-default-features)
@@ -2129,7 +2143,7 @@ Use fontspec as a last resort and when defined."
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
-         (unicode-math-options nil)) ;; FIXME: define document option for this
+         (unicode-math-options org-latex-unicode-math-options))
     ;; FIXME: add preliminary checks to flag potential configuration clashes
     (with-temp-buffer
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
@@ -2211,7 +2225,7 @@ INFO is the export communication channel."
         (current-default-features org-latex-fontspec-default-features)
         (doc-scripts (org-latex--get-doc-scripts))
         ;;
-        (unicode-math-options nil)                 ;; FIXME: add unicode-math features to config
+        (unicode-math-options org-latex-unicode-math-options)
         (cjk-packages nil) ;; will we need the packages to support CJK fonts?
         (directlua nil)    ;; Did we write the \\directlua{} block?
         (fallback-alist))  ;; an alist (font_name . fallback-name)

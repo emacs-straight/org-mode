@@ -363,6 +363,27 @@ A random text without emojis.
      (goto-char (point-min))
      (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
 
+(ert-deftest test-ox-latex/lualatex-unicode-math-config ()
+  "Test that the unicode-math package can be passed options using
+org-latex-unicode-math-options."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang "fontspec")
+        (org-latex-unicode-math-options "math-style=upright")
+        (org-latex-fontspec-config '(("main"
+                                      :font "FreeSans"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text without emojis.
+"
+     ;; (message "--> %s" (buffer-string))
+     (goto-char (point-min))
+     (should (search-forward "\\usepackage[math-style=upright]{unicode-math}" nil t)))))
+
 (ert-deftest test-ox-latex/lualatex-babel-langs ()
   "Test that babel is handled correctly.
 In this test we set org-latex-multi-lang to \"babel\"

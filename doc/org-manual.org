@@ -15093,6 +15093,7 @@ included manually as:
 #+cindex: latex backend
 #+vindex: org-latex-multi-lang
 #+vindex: org-latex-classes
+#+vindex: org-latex-unicode-math-options
 
 The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword
 (see ~org-latex-classes~), which acts as a placeholder for font
@@ -15109,6 +15110,21 @@ variable ~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to
 ~polyglossia~, you can combine ~fontspec~ and ~polyglossia~-specific
 configuration.  Font configuration will use a different mechanism
 [[#babel-fontconfig][when using ~babel~]].
+
+When exporting to ~lualatex~ or ~xelatex~, Org will include the
+=unicode-math= package to handle maths and allow equations to be
+composed with UTF-8 symbols directly. Use the
+~org-latex-unicode-math-options~ custom variable to adjust how this
+package handles math.
+
+Org will pass this variable as an option string to the =unicode-math=
+package.  For example, to use roman script instead of italics in
+equations, use the following settings in ~.dir-locals.el~:
+
+#+BEGIN_SRC emacs-lisp
+((org-mode
+  . ((org-latex-unicode-math-options . "math-style=upright"))))
+#+END_SRC
 
 **** Configuration of the ~fontspec~ package
 :PROPERTIES:
