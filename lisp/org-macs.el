@@ -1159,6 +1159,9 @@ delimiting S."
 	     ((= cursor end) 0)
 	     (t (string-width (substring s cursor end)))))))
 
+(defvar org-string-width--old-emacs (version< emacs-version "28")
+  "When non-nil, use fallback behavior, primarily for old Emacs versions.")
+
 (defun org--string-width-1 (string)
   "Return width of STRING when displayed in the current buffer.
 Unlike `string-width', this function takes into consideration
@@ -1173,7 +1176,7 @@ Results may be off sometimes if it cannot handle a given
 Return width in pixels when PIXELS is non-nil.
 When PIXELS is nil, DEFAULT-FACE is the face used to calculate relative
 STRING width.  When REFERENCE-FACE is nil, `default' face is used."
-  (if (and (version< emacs-version "28") (not pixels))
+  (if (and org-string-width--old-emacs (not pixels))
       ;; FIXME: Fallback to old limited version, because
       ;; `window-pixel-width' is buggy in older Emacs.
       (org--string-width-1 string)
