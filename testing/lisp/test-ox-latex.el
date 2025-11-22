@@ -371,6 +371,7 @@ org-latex-unicode-math-options."
         (org-latex-unicode-math-options "math-style=upright")
         (org-latex-fontspec-config '(("main"
                                       :font "FreeSans"))))
+    ;; (message "--> %s" (buffer-string))
     (org-test-with-exported-text
      'latex
      "#+TITLE: fontspec
