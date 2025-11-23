@@ -1646,22 +1646,32 @@ LANGUAGE is the language name as a string (e.g. \"english\") and
 LANG-PLIST is the language plist, with the following keys:
  `:font' (mandatory): a string with the system font name,
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
- `:tag': a string will substitute the language in the font definition.
+ `:tag': a string that will substitute the language in the font definition.
  `:props': a string for extra properties (e.g.\"Script=Hebrew\")
 
 Each line will be translated into a new font family definition.
 
 For example:
+
   (\"hindi\"  :font \"Noto Serif Devanagari\"
     :tag \"devanagari\"
     :props \"Script=Devanagari\")
-will eventually result in
+
+will result in the following LaTeX code:
+
   \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}
+
 in the exported LaTeX code; and
+
   (\"hebrew\" :variant \"tt\"
     :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
+
 in
-  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}"
+
+  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
+
+In the first example, the font family name uses the :tag
+and in the second it uses the language name directly."
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No polyglossia font config" nil)
