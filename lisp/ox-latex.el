@@ -1647,9 +1647,7 @@ LANG-PLIST is the language plist, with the following keys:
  `:font' (mandatory): a string with the system font name,
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
  `:props': a string for extra properties (e.g.\"Script=Hebrew\")
-
-Note: the name of the font family is taken from `org-latex-language-alist'
-using property `:script'.
+ `:script': use this name instead of the the property in `org-latex-language-alist'
 
 Each line will be translated into a new font family definition.
 
@@ -1671,8 +1669,16 @@ in
 
   \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
 
-In the first example, the font family name uses the :tag
-and in the second it uses the language name directly."
+You will need to add a specific :script tag for languages using the Latin
+script. For example, if you need to define a font family for English, you will
+need to include it as follows:
+
+(\"en\"
+  :script \"english\" :font \"Noto Serif\")
+
+will produce this LaTeX code:
+
+  \\newfontfamily{\\englishfont}{Noto Serif}"
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No polyglossia font config" nil)
