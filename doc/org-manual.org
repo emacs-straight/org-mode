@@ -15363,11 +15363,7 @@ The properties you can define are:
    Serif, ~tt~ for Mono, ~rm~ for Roman aka. Serif). The variants
    are [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter
    codes used in LaTeX for the different font families]].
-3. ~:tag~: a string that will be used to define the language name in the
-   font family.  For example, the language may be ~"hindi"~ but the
-   name for the font family ~"devanagari"~. In this case, the latter
-   can be indicated with a ~:tag~,
-4. ~:props~: a string for extra properties as defined in the
+3. ~:props~: a string for extra properties as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
 
@@ -15394,6 +15390,12 @@ will set ~CMU Serif~ and ~CMU Sans Serif~ as the fonts for text and
 ~DejaVu Sans Mono~ for listings in all documents where you use
 ~fontspec~. Additionally, if you use ~polyglossia~ and have Greek
 text, you will typeset it with the ~Noto Serif~ font.
+
+#+texinfo: @noindent
+*Note:* the ~\newfontfamily~ command will define the font family name
+based on the ~:script~ property defined in ~org-latex-languages-alist~
+font family.  For example, Hindi uses the font family name
+~"devanagari"~, derived from the entry for ~"hi~.
 
 **** Font configuration when using the ~babel~ package
 :PROPERTIES:

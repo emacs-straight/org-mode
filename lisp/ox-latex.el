@@ -1646,24 +1646,25 @@ LANGUAGE is the language name as a string (e.g. \"english\") and
 LANG-PLIST is the language plist, with the following keys:
  `:font' (mandatory): a string with the system font name,
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
- `:tag': a string that will substitute the language in the font definition.
  `:props': a string for extra properties (e.g.\"Script=Hebrew\")
+
+Note: the name of the font family is taken from `org-latex-language-alist'
+using property `:script'.
 
 Each line will be translated into a new font family definition.
 
-For example:
+For example, this mapping for Hindi
 
-  (\"hindi\"  :font \"Noto Serif Devanagari\"
-    :tag \"devanagari\"
+  (\"hi\"  :font \"Noto Serif Devanagari\"
     :props \"Script=Devanagari\")
 
 will result in the following LaTeX code:
 
   \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}
 
-in the exported LaTeX code; and
+in the exported LaTeX code; and this mapping for Hebrew
 
-  (\"hebrew\" :variant \"tt\"
+  (\"he\" :variant \"tt\"
     :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
 
 in
@@ -2171,10 +2172,7 @@ Extract the information from INFO."
     (with-temp-buffer
       (insert "\\usepackage{fontspec}\n")
       (insert "\\usepackage{polyglossia}\n")
-      (insert (format "\\usepackage%s{unicode-math}" (org-latex--mk-options unicode-math-options)))
-      (when current-default-features
-        (insert (org-latex--create-default-fontspec-features
-                 current-default-features)))
+      (insert (format "\\usepackage%s{unicode-math}\n" (org-latex--mk-options unicode-math-options)))
       (org-latex--insert-fontspec compiler
                                   fontspec-config
                                   current-default-features
@@ -2199,18 +2197,16 @@ Extract the information from INFO."
       (cl-loop for (lang . props) in polyglossia-font-config
                ;; (lang . props) --> language and its properties
                do
-               (let ((lang-tag lang))
-                 (if-let* ((lang-alist (assoc lang org-latex-language-alist))
+               (when-let* ((lang-alist (assoc lang org-latex-language-alist))
                            (lang-plist (cdr lang-alist)))
-                     (setq lang-tag (plist-get lang-plist :polyglossia)))
-                 ;; lang-tag is the polyglossia language name for lang
-                 ;; if it is defined in `org-latex-language-alist'
+                 ;; when `lang' is defined in `org-latex-language-alist'
                  (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
-                                 (or (plist-get props :tag) lang-tag)
-                                 (or (plist-get props :variant) "")
+                                 ;; lang-tag should be the language name polyglossia uses for "\\<lang>font<variant>"
+                                 (plist-get lang-plist :script)
+                                 (or (plist-get props :variant) "") ;; if rm, sf, or tt are defined
                                  (org-latex--mk-options
-                                  (plist-get props :props))
-                                 (plist-get props :font)))))
+                                  (plist-get props :props))    ;; add the additional properties
+                                 (plist-get props :font)))))   ;; last but not least the actual font.
       (buffer-string))))
 
 (defun org-latex--get-babel-lang (lang &optional default-lang)
@@ -2255,9 +2251,9 @@ Use fontspec as a last resort and when defined."
     ;; FIXME: add preliminary checks to flag potential configuration clashes
     (with-temp-buffer
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
-      (insert "\\tracinglostchars=2")
+      (insert "\\tracinglostchars=2\n")
       ;; do *not* include languages here
-      (insert (format "\n\\usepackage%s{unicode-math}"
+      (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
       ;; jp and zh support:
       ;; use fontspec to configure fonts and babel to localize
@@ -2271,7 +2267,7 @@ Use fontspec as a last resort and when defined."
             (when use-xecjk
               (unless (string= compiler "xelatex")
                 (error "Using xeCJK for jp and zh requires compiler xelatex."))
-              (insert "\n\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
+              (insert "\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
             ;; Now the fonts:
             ;;
             ;; Look for CJK fonts in the font configuration
@@ -2282,16 +2278,16 @@ Use fontspec as a last resort and when defined."
                                when (string-match-p "^CJK" (plist-get fprops :font))
                                collect fprops)
                 (cl-loop for (fname . ffile) in jp-default-fontspec
-                         do (insert "\n\\set" fname "font{" ffile "}"))))
+                         do (insert "\\set" fname "font{" ffile "}\n"))))
             ;;
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))
                               (feats (plist-get fprops :features)))
-                          (insert "\n\\set" fname "font{" font "}" (org-latex--mk-options feats))))
+                          (insert "\\set" fname "font{" font "}\n" (org-latex--mk-options feats))))
             (when use-xecjk
-              (insert "\n\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax") ;; FIXME: agree on ZWS
-              (insert (format "\n\\parindent=%dem" (if (string= main-lang "jp") 1 2))) ;; FIXME: Korean?
-              (insert "\n\\linespread{1.333}")))))
+              (insert "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax\n") ;; FIXME: agree on ZWS
+              (insert (format "\\parindent=%dem\n" (if (string= main-lang "jp") 1 2))) ;; FIXME: Korean?
+              (insert "\\linespread{1.333}")))))
       ;; FIXME: This works but needs to be fine-tuned:
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       ;; import the main language with a babelprovide
