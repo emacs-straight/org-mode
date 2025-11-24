@@ -1647,38 +1647,42 @@ LANG-PLIST is the language plist, with the following keys:
  `:font' (mandatory): a string with the system font name,
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
  `:props': a string for extra properties (e.g.\"Script=Hebrew\")
- `:script': use this name instead of the the property in `org-latex-language-alist'
+ `:script': the name for the font family. Use the :polyglossia from
+            `org-latex-language-alist' if not specified.
 
 Each line will be translated into a new font family definition.
 
-For example, this mapping for Hindi
 
-  (\"hi\"  :font \"Noto Serif Devanagari\"
-    :props \"Script=Devanagari\")
+This mapping for English
+(\"en\"
+  :script \"english\" :font \"Noto Serif\")
 
-will result in the following LaTeX code:
+will generate the followinf LaTeX code:
 
-  \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}
+  \\newfontfamily{\\englishfont}{Noto Serif}
 
-in the exported LaTeX code; and this mapping for Hebrew
+For Hebrew, you can use
 
   (\"he\" :variant \"tt\"
     :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
 
-in
+that will generate the following LaTeX code
 
   \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
 
-You will need to add a specific :script tag for languages using the Latin
-script. For example, if you need to define a font family for English, you will
-need to include it as follows:
+You will need to add a specific :script tag for languages that use a family name
+different from the :polyglossia property.
 
-(\"en\"
-  :script \"english\" :font \"Noto Serif\")
+For example, you will need the following mapping (or a similar one
+using another Devanagari font) for Hindi
 
-will produce this LaTeX code:
+  (\"hi\" :script \"devanagari\"
+    :font \"Noto Serif Devanagari\"
+    :props \"Script=Devanagari\")
 
-  \\newfontfamily{\\englishfont}{Noto Serif}"
+which will result in the following LaTeX code:
+
+  \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}"
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No polyglossia font config" nil)
@@ -2207,8 +2211,9 @@ Extract the information from INFO."
                            (lang-plist (cdr lang-alist)))
                  ;; when `lang' is defined in `org-latex-language-alist'
                  (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
-                                 ;; lang-tag should be the language name polyglossia uses for "\\<lang>font<variant>"
-                                 (plist-get lang-plist :script)
+                                 ;; use the language name polyglossia uses for "\\<lang>font<variant>"
+                                 ;; override with the user's :script choice when it is not appropriate
+                                 (or (plist-get props :script) (plist-get lang-plist :polyglossia))
                                  (or (plist-get props :variant) "") ;; if rm, sf, or tt are defined
                                  (org-latex--mk-options
                                   (plist-get props :props))    ;; add the additional properties

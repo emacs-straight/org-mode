@@ -15366,8 +15366,8 @@ The properties you can define are:
 3. ~:props~: a string for extra properties as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
-4. ~:script~: a string the family name, when the information in
-   ~org-latex-languages-alist~ is not appropriate.
+4. ~:script~: a string the family name, when the ~:polyglossia~
+   property in ~org-latex-languages-alist~ is not appropriate.
 
 When using ~polyglossia~, you can also configure the fonts used for
 the document's main language with the configuration for
@@ -15394,30 +15394,27 @@ will set ~CMU Serif~ and ~CMU Sans Serif~ as the fonts for text and
 text, you will typeset it with the ~Noto Serif~ font.
 
 The ~\newfontfamily~ command will define the font family name
-based on the ~:script~ property defined in ~org-latex-languages-alist~
-font family.  For example, Hindi uses the font family name
-~"devanagari"~, derived from the entry for ~"hi~.
+based on the ~:polyglossia~ property defined in ~org-latex-languages-alist~
+font family.  For example, Spanish uses the font family name
+~"spanish"~, derived from the entry for ~"es"~.
 
-Languages that define the ~:script~ that doesn't match the name
-expected by ~polyglossia~ need to provide a more accurate description
+Languages that define a ~:polyglossia~ property that doesn't match the name
+expected by ~polyglossia~ need to provide the expected family name
 using the ~:script~ property in
-~org-latex-polyglossia-font-config~. For example, if you need to
-[[https://tex.stackexchange.com/questions/547807/in-polyglossia-how-can-i-change-the-english-font-in-a-hebrew-document][define
-a specific font family for a language using the Latin script]], you
-will need to add it manually. The configuration for the linked example
-will translate into:
+~org-latex-polyglossia-font-config~. For example,
 
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-polyglossia-font-config
-      '(("he"
-         :font "David")
-        ("en" :script "english"
-         :font "Palatino Linotype")
-        ("en" :script "english" :variant "sf"
-         :font "Lucida Sans")
-        ("en"  :script "english" :variant "tt"
-         :font "Lucida Sans Mono")))
+      '(("hi" :script "devanagari"
+         :props "Script=Devanagari"
+         :font "Noto Serif Devanagari")))
 #+END_SRC
+
+#+texinfo: @noindent
+will allow you to typeset Hindi and Sanskrit as shown in
+[[https://www.overleaf.com/latex/examples/how-to-write-multilingual-text-with-different-scripts-in-latex/wfdxqhcyyjxz][this
+example in overleaf.com]]. Note that
+[[https://rishi.app/blog/writing-hindi-using-devanagari-package-in-overleaf/][this is not always needed]].
 
 **** Font configuration when using the ~babel~ package
 :PROPERTIES:
