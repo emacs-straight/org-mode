@@ -4627,7 +4627,7 @@ You can also use numeric values for priorities, such as
 
 When using numeric priorities, you need to set ~org-priority-highest~,
 ~org-priority-lowest~ and ~org-priority-default~ to integers, which
-must all be strictly inferior to 65.
+must all be a non-negative integer between 0 and 64, inclusive.
 
 Priorities can be attached to any heading; they do not need to be
 TODO items.
@@ -4662,8 +4662,10 @@ TODO items.
 #+vindex: org-priority-default
 You can change the range of allowed priorities by setting the
 variables ~org-priority-highest~, ~org-priority-lowest~, and
-~org-priority-default~.  For an individual buffer, you may set these
-values (highest, lowest, default) like this (please make sure that the
+~org-priority-default~.  Valid priority values are single uppercase
+Latin alphabetical characters A-Z, and non-negative integers in between 0
+and 64, inclusive.  For an individual buffer, you may set these values
+(highest, lowest, default) like this (please make sure that the
 highest priority is earlier in the alphabet than the lowest priority):
 
 #+cindex: @samp{PRIORITIES}, keyword
@@ -5403,16 +5405,17 @@ Properties can also be defined using lines like:
 #+cindex: @samp{+} suffix, in properties
 If you want to add to the value of an existing property, append a =+=
 to the property name.  The following results in the property =var=
-having the value =foo=1 bar=2=.
+having the values =foo= and =bar=.
 
 #+begin_example
-,#+PROPERTY: var  foo=1
-,#+PROPERTY: var+ bar=2
+,#+PROPERTY: var  foo
+,#+PROPERTY: var+ bar
 #+end_example
 
-It is also possible to add to the values of inherited properties.  The
-following results in the =Genres= property having the value =Classic
-Baroque= under the =Goldberg Variations= subtree.
+Using the appended =+=, it is also possible to add to the values of
+inherited properties.  The following results in the =Genres= property
+having the values =Classic=, =Baroque=, and =Keyboard music= under the
+=Goldberg Variations= subtree.
 
 #+begin_example
 ,* CD collection
@@ -5428,10 +5431,13 @@ Baroque= under the =Goldberg Variations= subtree.
     :Publisher: Deutsche Grammophon
     :NDisks:    1
     :Genres+:   Baroque
+    :Genres+:   Keyboard music
     :END:
 #+end_example
 
-Note that a property can only have one entry per drawer.
+Note that a property can only have multiple entries per drawer when
+used with the appended =+=.  When a property has multiple entries
+without =+=, the result is undefined.
 
 #+vindex: org-global-properties
 Property values set with the global variable ~org-global-properties~
@@ -12929,8 +12935,9 @@ exported.
 
 #+cindex: @samp{BEGIN_COMMENT}
 #+cindex: comment block
-Likewise, regions surrounded by =#+BEGIN_COMMENT= ... =#+END_COMMENT=
-are not exported.
+Likewise, comment blocks =#+BEGIN_COMMENT= ... =#+END_COMMENT= are not
+exported. [fn::Just like in [[*Literal Examples]], you need to escape
+leading =*= with =,= to avoid interpreting them as headings.]
 
 #+cindex: comment trees
 Finally, a =COMMENT= keyword at the beginning of an entry, but after
