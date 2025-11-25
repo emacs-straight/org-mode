@@ -4411,13 +4411,14 @@ FIELD's width.  Otherwise, it's calculated."
 	     (widths nil)
 	     (alignments nil)
 	     (columns-number 1)
+             (invisibility-spec (org-string-width-invisibility-spec))
              (cell-width-cache (make-hash-table :test 'equal))
              (get-or-compute-cell-width
               (lambda (cell)
                 (or (gethash cell cell-width-cache)
                     (puthash
                      cell
-                     (org-string-width cell nil 'org-table)
+                     (org-string-width cell nil 'org-table invisibility-spec)
                      cell-width-cache)))))
 	(if (null rows)
 	    ;; Table contains only horizontal rules.  Compute the

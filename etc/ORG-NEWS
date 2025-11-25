@@ -506,6 +506,11 @@ for source blocks where the appropriate major mode is unavailable.
 The new function is like ~org-gnus-no-new-news~, but always opens the
 link in other frame.
 
+*** New function ~org-string-width-invisibility-spec~
+
+The new function constructs an invisibility spec without folds and
+ellipses, suitable for ~org-string-width~. This can be helpful for
+performance if ~org-string-width~ is called multiple times.
 
 *** New command ~org-link-preview~ to preview Org links
 
@@ -596,6 +601,12 @@ clock string fit under the length limit. If the length limit is too small to
 accommodate even a single character of the headline, after accounting for spaces
 and the surrounding parentheses, it will omit the headline entirely and just
 show as much of the clock as fits under the limit.
+
+*** ~org-string-width~ now takes an optional ~invisibility-spec~ argument
+
+For performance, if the invisibility spec has been constructed, it can
+be passed in as ~invisibility-spec~ instead of having it be
+constructed again.
 
 ** Removed or renamed functions and variables
 

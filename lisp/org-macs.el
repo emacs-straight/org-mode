@@ -1171,11 +1171,40 @@ Results may be off sometimes if it cannot handle a given
 `display' value."
   (org--string-from-props string 'display 0 (length string)))
 
-(defun org-string-width (string &optional pixels default-face)
+(defun org-string-width-invisibility-spec ()
+  "Return the invisibility spec of this buffer without folds and ellipses."
+  ;; We need to remove the folds to make sure that folded table
+  ;; alignment is not messed up.
+  (or (and (not (listp buffer-invisibility-spec))
+           buffer-invisibility-spec)
+      (let (result)
+        (dolist (el buffer-invisibility-spec)
+          (unless (or (memq el
+                            '(org-fold-drawer
+                              org-fold-block
+                              org-fold-outline))
+                      (and (listp el)
+                           (memq (car el)
+                                 '(org-fold-drawer
+                                   org-fold-block
+                                   org-fold-outline))))
+            (push
+             ;; Consider ellipsis to have 0 width.
+             ;; It is what Emacs 28+ does, but we have
+             ;; to force it in earlier Emacs versions.
+             (if (and (consp el) (cdr el))
+                 (list (car el))
+               el)
+             result)))
+        result)))
+
+(defun org-string-width (string &optional pixels default-face invisibility-spec)
   "Return width of STRING when displayed in the current buffer.
 Return width in pixels when PIXELS is non-nil.
 When PIXELS is nil, DEFAULT-FACE is the face used to calculate relative
-STRING width.  When REFERENCE-FACE is nil, `default' face is used."
+STRING width.  When REFERENCE-FACE is nil, `default' face is used.
+Use INVISIBILITY-SPEC when non-nil, otherwise construct one without
+folds and ellipses."
   (if (and org-string-width--old-emacs (not pixels))
       ;; FIXME: Fallback to old limited version, because
       ;; `window-pixel-width' is buggy in older Emacs.
@@ -1192,31 +1221,7 @@ STRING width.  When REFERENCE-FACE is nil, `default' face is used."
     ;; when PIXELS are requested though).
     (unless pixels
       (put-text-property 0 (length string) 'face (or default-face 'default) string))
-    (let (;; We need to remove the folds to make sure that folded table
-          ;; alignment is not messed up.
-          (current-invisibility-spec
-           (or (and (not (listp buffer-invisibility-spec))
-                    buffer-invisibility-spec)
-               (let (result)
-                 (dolist (el buffer-invisibility-spec)
-                   (unless (or (memq el
-                                     '(org-fold-drawer
-                                       org-fold-block
-                                       org-fold-outline))
-                               (and (listp el)
-                                    (memq (car el)
-                                          '(org-fold-drawer
-                                            org-fold-block
-                                            org-fold-outline))))
-                     (push
-                      ;; Consider ellipsis to have 0 width.
-                      ;; It is what Emacs 28+ does, but we have
-                      ;; to force it in earlier Emacs versions.
-                      (if (and (consp el) (cdr el))
-                          (list (car el))
-                        el)
-                      result)))
-                 result)))
+    (let ((current-invisibility-spec (or invisibility-spec (org-string-width-invisibility-spec)))
           (current-char-property-alias-alist char-property-alias-alist))
       (with-current-buffer (get-buffer-create " *Org string width*" t)
         (setq-local display-line-numbers nil)
