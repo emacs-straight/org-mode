@@ -1647,27 +1647,23 @@ LANG-PLIST is the language plist, with the following keys:
  `:font' (mandatory): a string with the system font name,
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
  `:props': a string for extra properties (e.g.\"Script=Hebrew\")
- `:script': the name for the font family. Use the :polyglossia from
+ `:script': the name for the font family.  Use the :polyglossia from
             `org-latex-language-alist' if not specified.
 
 Each line will be translated into a new font family definition.
 
-
 This mapping for English
-(\"en\"
-  :script \"english\" :font \"Noto Serif\")
+  (\"en\"
+    :script \"english\" :font \"Noto Serif\")
 
 will generate the followinf LaTeX code:
-
   \\newfontfamily{\\englishfont}{Noto Serif}
 
 For Hebrew, you can use
-
   (\"he\" :variant \"tt\"
     :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
 
 that will generate the following LaTeX code
-
   \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
 
 You will need to add a specific :script tag for languages that use a family name
@@ -2077,8 +2073,7 @@ Will warn about compiler use:
  - xelatex is needed for CJK fonts
  - lualatex is needed for fallbacks
 
-This part can be reused in pure fontspec and in fontspec+polyglossia.
-"
+This part can be reused in pure fontspec and in fontspec+polyglossia."
   ;; (message "Entering unified fontspec generation")
   ;; (message " compiler: %s" compiler)
   ;; (message " fontspec config: %s" fontspec-config)
@@ -2277,7 +2272,7 @@ Use fontspec as a last resort and when defined."
                  (use-xecjk (member main-lang '("jp" "zh"))))
             (when use-xecjk
               (unless (string= compiler "xelatex")
-                (error "Using xeCJK for jp and zh requires compiler xelatex."))
+                (error "Using xeCJK for jp and zh requires compiler xelatex"))
               (insert "\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
             ;; Now the fonts:
             ;;
@@ -2355,7 +2350,7 @@ INFO is the export communication channel."
                       (org-latex--mk-options unicode-math-options)))
       (when cjk-packages
         (unless (string= compiler "xelatex")
-                (error "Using xeCJK for jp and zh requires compiler xelatex."))
+                (error "Using xeCJK for jp and zh requires compiler xelatex"))
         (insert "\\usepackage{xeCJK}\n\\usepackage{indentfirst}\n"))
       (org-latex--insert-fontspec compiler
                                   current-fontspec-config
