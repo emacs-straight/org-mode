@@ -15102,21 +15102,16 @@ included manually as:
 #+vindex: org-latex-classes
 #+vindex: org-latex-unicode-math-options
 
+When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
+control the fonts used in the PDF using the ~fontspec~ package.  To
+enable optimized ~fontspec~ configuration[fn:53], set variable
+~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to ~fontspec~
+
 The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword
 (see ~org-latex-classes~), which acts as a placeholder for font
 specification code. By default, Org mode places the font specification
 code in the LaTeX preamble, i.e. at the beginning of the LaTeX code
 before the actual document.
-
-When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
-control the fonts used in the PDF using the ~fontspec~.  Setting
-variable ~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to
-~fontspec~ enables optimized ~fontspec~ configuration[fn:53].
-
-~polyglossia~ and ~babel~ load ~fontspec~ internally. When using
-~polyglossia~, you can combine ~fontspec~ and ~polyglossia~-specific
-configuration.  Font configuration will use a different mechanism
-[[#babel-fontconfig][when using ~babel~]].
 
 When exporting to ~lualatex~ or ~xelatex~, Org will include the
 =unicode-math= package to handle maths and allow equations to be
@@ -15125,13 +15120,21 @@ composed with UTF-8 symbols directly. Use the
 package handles math.
 
 Org will pass this variable as an option string to the =unicode-math=
-package.  For example, to use roman script instead of italics in
+package.  For example, to use upright fonts instead of italics in
 equations, use the following settings in ~.dir-locals.el~:
 
 #+BEGIN_SRC emacs-lisp
 ((org-mode
   . ((org-latex-unicode-math-options . "math-style=upright"))))
 #+END_SRC
+
+You can also set ~org-latex-multi-lang~ or the ~LATEX_MULTI_LANG~
+option to either ~polyglossia~ or ~babel~. These LaTeX packages load
+~fontspec~ internally. When using ~polyglossia~, you can combine
+~fontspec~ and ~polyglossia~-specific configuration.  Font
+configuration for the ~babel~ package may also use an alternative mechanism
+[[#babel-fontconfig]].
+
 
 **** Configuration of the ~fontspec~ package
 :PROPERTIES:
@@ -15308,6 +15311,13 @@ the following LaTeX code in the file header:
 #+END_SRC
 If you need more features, add them to this list.
 
+Font configuration is a "grow as you go" process. You can keep the
+fallback definitions in your configuration, even if the document you
+work on does not use a specific script. For example, you will normally
+not use emojis in a document, but might include them in a beamer
+presentation. If you use the same font families for both, you can use
+a common font configuration for Org.
+
 **** Font configuration when using the ~polyglossia~ package
 :PROPERTIES:
 :custom_id: lualatex-polyglossia
@@ -15374,7 +15384,8 @@ The properties you can define are:
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
 4. ~:script~: a string the family name, when the ~:polyglossia~
-   property in ~org-latex-languages-alist~ is not appropriate.
+   property in ~org-latex-languages-alist~ is not appropriate (for
+   exceptional cases only, cf. Note below).
 
 When using ~polyglossia~, you can also configure the fonts used for
 the document's main language with the configuration for
@@ -15388,7 +15399,8 @@ directory-local variables:
      (org-latex-fontspec-config
       . (("main" :font "CMU Serif")
          ("sans" :font "CMU Sans Serif")
-         ("mono" :font "DejaVu Sans Mono" :features "Scale=MatchLowercase")))
+         ("mono" :font "DejaVu Sans Mono"
+                 :features "Scale=MatchLowercase")))
      (org-latex-polyglossia-font-config
       . (("el" :variant "rm" :font "Noto Serif"
                :props ("Script=Greek" "Scale=MatchLowercase")))))))
@@ -15400,15 +15412,22 @@ will set ~CMU Serif~ and ~CMU Sans Serif~ as the fonts for text and
 ~fontspec~. Additionally, if you use ~polyglossia~ and have Greek
 text, you will typeset it with the ~Noto Serif~ font.
 
-The ~\newfontfamily~ command will define the font family name
-based on the ~:polyglossia~ property defined in ~org-latex-languages-alist~
-font family.  For example, Spanish uses the font family name
+The LaTeX exporter will generate a ~\newfontfamily~ command
+(cf. Chapter 4 of the
+[[https://texdoc.org/serve/polyglossia/0][polyglossia manual]].)
+using the
+~:polyglossia~ property defined in ~org-latex-languages-alist~ for the
+font family.
+For example, Spanish uses the font family name
 ~"spanish"~, derived from the entry for ~"es"~.
 
-Languages that define a ~:polyglossia~ property that doesn't match the name
-expected by ~polyglossia~ need to provide the expected family name
-using the ~:script~ property in
-~org-latex-polyglossia-font-config~. For example,
+*Note:* The =:polyglossia= property in ~org-latex-languages-alist~ is
+used to define the font family name for the ~\newfontfamily~
+definitions.  In /exceptional cases/, this property might not provide
+the name expected by ~polyglossia~.  In this case, and _only_ in this
+case, you might need to provide the family name you need using the
+~:script~ property in ~org-latex-polyglossia-font-config~. For
+example,
 
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-polyglossia-font-config
@@ -15420,8 +15439,9 @@ using the ~:script~ property in
 #+texinfo: @noindent
 will allow you to typeset Hindi and Sanskrit as shown in
 [[https://www.overleaf.com/latex/examples/how-to-write-multilingual-text-with-different-scripts-in-latex/wfdxqhcyyjxz][this
-example in overleaf.com]]. Note that
-[[https://rishi.app/blog/writing-hindi-using-devanagari-package-in-overleaf/][this is not always needed]].
+example in overleaf.com]].  Note that
+[[https://rishi.app/blog/writing-hindi-using-devanagari-package-in-overleaf/][you
+don't /always/ need to provide the =:script= property]].
 
 **** Font configuration when using the ~babel~ package
 :PROPERTIES:
