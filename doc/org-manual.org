@@ -15146,16 +15146,16 @@ configuration for the ~babel~ package may also use an alternative mechanism
 #+vindex: org-latex-fontspec-default-features
 
 Org mode uses the variable ~org-latex-fontspec-config~ to map your
-document's fonts to the fonts used in the document. To familiarize
-yourself with fonts and options, read the
+document's fonts to the fonts used in the generated PDF document.  To
+familiarize yourself with fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
-package manual]] Part II.  This variable should be set in your Emacs
+package manual]] Part II.  This variable can be set in your Emacs
 initialization code, in the file local variables or in the directory
 local variable file ~.dir-locals.el~[fn:54].
 
 ~org-latex-fontspec-config~ maps the font name used in the
-~\set...font{}~ commands defined by the ~fontspec~ package with the
-font name and optional font features.
+~\set...font{}~ commands defined by the ~fontspec~ package to the
+font name used in the PDF and optional font features.
 
 For example, if you want to map the ~math~ font to the system font
 ~TeX Gyre Termes Math~, you should use the *mandatory* property
@@ -15172,7 +15172,7 @@ For example, if you want to map the ~math~ font to the system font
 #+RESULTS:
 
 #+texinfo: @noindent
-When generating the font prelude for ~lualatex~, the resulting commands
+When generating the font prelude for ~lualatex~, the resulting LaTeX commands
 will be:
 
 #+BEGIN_SRC latex
@@ -15181,6 +15181,12 @@ will be:
 \setmonofont{Tex Gyre Cursor}
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
+
+#+texinfo: @noindent
+and you will use the ~FreeSerif~ font as the default font, the
+~FreeSans~ font for sans-serif passages, ~TeX Gyre Cursor~ for
+teletype passages (for example, listings) and ~TeX Gyre Termes Math~
+for equations or mathematical expressions in general.
 
 If you need extra features for your font, you will need to add them
 with the property ~:features~.  For example, if you want a nicer
