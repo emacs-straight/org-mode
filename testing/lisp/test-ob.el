@@ -988,7 +988,27 @@ x
 "
             (goto-char (point-min))
             (search-forward "begin_src")
-            (org-babel-expand-noweb-references nil nil :eval)))))
+            (org-babel-expand-noweb-references nil nil :eval))))
+  ;; Test interposition of Noweb prefix under :comments noweb.
+  (should
+   (org-test-with-temp-text-in-file
+ "* H
+#+name: inner
+#+begin_src emacs-lisp
+1
+#+end_src
+
+#+header: :comments noweb :noweb yes
+#+begin_src emacs-lisp<point>
+prefix<<inner>>
+#+end_src"
+ (let ((file (file-name-nondirectory (buffer-file-name))))
+   (equal
+    (format "prefix;; [[file:%s::inner][inner]]
+prefix1
+prefix;; inner ends here"
+            file file)
+    (org-babel-expand-noweb-references nil nil :eval))))))
 
 (ert-deftest test-ob/splitting-variable-lists-in-references ()
   (org-test-with-temp-text ""
