@@ -2252,7 +2252,8 @@ Use fontspec as a last resort and when defined."
          (latex-babel-langs (plist-get info :languages))
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
-         (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
+         ;; Depending on the version of babel, "import=*" may be needed
+         (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default") ",import=*"))
          (unicode-math-options org-latex-unicode-math-options))
     ;; FIXME: add preliminary checks to flag potential configuration clashes
     (with-temp-buffer
