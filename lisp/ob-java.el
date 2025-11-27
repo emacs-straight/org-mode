@@ -367,7 +367,8 @@ is simplest to expand the code block from the inside out."
       (when (not (re-search-forward org-babel-java--class-re nil t))
         (org-babel-java--move-past org-babel-java--package-re) ; if package is defined, move past it
         (org-babel-java--move-past org-babel-java--imports-re) ; if imports are defined, move past them
-        (insert (concat "\npublic class " (file-name-base classname) " {\n"))
+        (insert (concat (when (or packagename imports) "\n")
+                        "public class " (file-name-base classname) " {\n"))
         (indent-code-rigidly (point) (point-max) 4)
         (goto-char (point-max))
         (insert "\n}"))
@@ -390,6 +391,13 @@ is simplest to expand the code block from the inside out."
       (goto-char (point-min))
       (when (and packagename (not (re-search-forward org-babel-java--package-re nil t)))
         (insert (concat "package " packagename ";\n")))
+
+      ;; Remove leading empty lines, which may have been introduced
+      ;; by the class/main wrapping when there is no package or
+      ;; imports.
+      (goto-char (point-min))
+      (skip-chars-forward "\n")
+      (delete-region (point-min) (point))
 
       ;; return expanded body
       (buffer-string))))

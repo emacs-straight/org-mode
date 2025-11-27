@@ -51,7 +51,7 @@ by `org-edit-src-code'.")
 	(print-length nil)
         (prologue (cdr (assq :prologue params)))
         (epilogue (cdr (assq :epilogue params))))
-    (if (null vars) (concat body "\n")
+    (if (null vars) body
       (format "(let (%s)\n%s%s%s\n)"
 	      (mapconcat
 	       (lambda (var)

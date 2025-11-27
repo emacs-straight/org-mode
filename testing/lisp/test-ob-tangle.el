@@ -54,6 +54,28 @@
 ;;      (should-not (exp-p "no"))
 ;;      (should (exp-p "tangle"))))))
 
+(ert-deftest ob-tangle/tangle-preserve-trailing-empty-lines ()
+  "Test tangle with trailing empty lines."
+  (should
+   (equal
+    "1
+
+"
+    (org-test-with-temp-text-in-file
+    "
+#+header: :tangle \"test-ob-tangle.el\"
+#+begin_src emacs-lisp
+1
+
+#+end_src"
+    (unwind-protect
+        (progn
+          (org-babel-tangle)
+          (with-temp-buffer
+            (insert-file-contents "test-ob-tangle.el")
+            (buffer-string)))
+      (delete-file "test-ob-tangle.el"))))))
+
 (ert-deftest ob-tangle/no-excessive-id-insertion-on-tangle ()
   "Don't add IDs to headings without tangling code blocks."
   (org-test-at-id "ef06fd7f-012b-4fde-87a2-2ae91504ea7e"
