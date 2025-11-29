@@ -15324,7 +15324,7 @@ not use emojis in a document, but might include them in a beamer
 presentation. If you use the same font families for both, you can use
 a common font configuration for Org.
 
-**** Font configuration when using the ~polyglossia~ package
+**** Configuration of the ~polyglossia~ package
 :PROPERTIES:
 :custom_id: lualatex-polyglossia
 :description: Using org-latex-polyglossia-font-config
@@ -15449,7 +15449,7 @@ example in overleaf.com]].  Note that
 [[https://rishi.app/blog/writing-hindi-using-devanagari-package-in-overleaf/][you
 don't /always/ need to provide the =:script= property]].
 
-**** Font configuration when using the ~babel~ package
+**** Configuration of the ~babel~ package
 :PROPERTIES:
 :custom_id: babel-fontconfig
 :description: Using org-latex-babel-font-config
@@ -15564,15 +15564,16 @@ it will generate the following LaTeX preamble code:
 to typeset a document in Greek and Portuguese using the ~DejaVu Sans~ font
 for the Portuguese text and ~FreeSerif~ for Greek.
 
-**** Font configuration for CJK languages with ~babel~ and ~xeCJK~.
+**** Configuration for the ~xeCJK~ package for CJK languages
 :PROPERTIES:
 :CUSTOM_ID: babel-xelatex-cjk
 :DESCRIPTION: Localisation and font management with xeCJK
 :END:
 
-When composing Chinese, Japanese or Korean documents, localization is
-provided by ~babel~, while fonts are configured using the ~xeCJK~
-package.  *Note* that this solution will /only/ work with ~xelatex~.
+When composing Chinese, Japanese or Korean (CJK) documents, fonts are
+configured using the ~xeCJK~ package , while localization is provided
+by ~babel~ .  *Note* that this solution will /only/ work with
+~xelatex~.
 
 Setting ~org-latex-fontspec-config~ to ~nil~ will produce a working
 document with the default fonts provided by the ~xeCJK~ package.
@@ -15587,16 +15588,15 @@ The following document header
 #+texinfo: @noindent
 will allow you to typeset a Chinese document.
 
-Similarly, you can typeset Japanese documents. The following header
+Similarly, you can typeset Japanese documents, just by replacing the
+~#+LANGUAGE:~ line by
 
 #+BEGIN_SRC org
 ,#+LANGUAGE: jp
-,#+LATEX_COMPILER: xelatex
-,#+LATEX_MULTI_LANG: babel
 #+END_SRC
 
 #+texinfo: @noindent
-will allow you to typeset a Japanese document, using the
+This will allow you to typeset a Japanese document, using the
 =HaranoAjiMincho= and =HaranoAjiGothic= fonts.
 
 The appearance of the PDF output can be further customised if needed.
@@ -15611,24 +15611,18 @@ font family:
 #+BEGIN_SRC elisp
 ((org-mode .
   ((org-latex-fontspec-config .
-    (("main" :font "Noto Serif")
-     ("sans" :font "Noto Sans")
-     ("mono" :font "Noto Sans Mono")
-     ("CJKmain" :font "Noto Serif CJK SC")
+    (("CJKmain" :font "Noto Serif CJK SC")
      ("CJKsans" :font "Noto Sans CJK SC")
      ("CJKmono" :font "Noto Sans Mono CJK SC"))))))
 #+END_SRC
 
-The following font configuration will produce a Japanese document
-typeset with the =Noto= font family:
+Changing the ~Noto * SC~ fonts with fonts from the ~Noto * JP~ family will
+produce a Japanese document typeset with the =Noto= font family:
 
 #+BEGIN_SRC emacs-lisp
 ((org-mode .
   ((org-latex-fontspec-config .
-    (("main" :font "Noto Serif")
-     ("sans" :font "Noto Sans")
-     ("mono" :font "Noto Sans Mono")
-     ("CJKmain" :font "Noto Serif CJK JP")
+    (("CJKmain" :font "Noto Serif CJK JP")
      ("CJKsans" :font "Noto Sans CJK JP")
      ("CJKmono" :font "Noto Sans Mono CJK JP"))))))
 #+END_SRC
