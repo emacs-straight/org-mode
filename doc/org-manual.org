@@ -15350,18 +15350,15 @@ document with English and Hebrew text placed in a ~.dir-locals.el~ file:
 #+BEGIN_SRC emacs-lisp
 ((org-mode
   . ((org-latex-polyglossia-font-config
-      . (("en"
-          :font "FreeSerif")
-         ("en" :variant "sf"
-          :font "FreeSans")
-         ("en" :variant "tt"
-          :font "FreeMono")
-         ("he"
-          :props "Script=Hebrew" :font "Hadasim CLM")
-         ("he" :variant "tt"
-          :props "Script=Hebrew" :font "Miriam Mono CLM")
-         ("he" :variant "sf"
-          :props "Script=Hebrew" :font "Miriam CLM"))))))
+      . (("en" :font "FreeSerif")
+         ("en" :variant "sf" :font "FreeSans")
+         ("en" :variant "tt" :font "FreeMono")
+         ("he" :font "Hadasim CLM"
+          :props "Script=Hebrew")
+         ("he" :variant "tt" :font "Miriam Mono CLM"
+          :props "Script=Hebrew")
+         ("he" :variant "sf" :font "Miriam CLM"
+          :props "Script=Hebrew"))))))
 
 #+END_SRC
 
