@@ -2053,10 +2053,8 @@ Using babel is only possible when ldf method can be used."
 
 (defun org-latex--create-default-fontspec-features (default-features)
   "Return the default fontspec features in DEFAULT-FEATURES as a string."
-  (format "\\defaultfontfeatures{\n  %s\n}\n"
-          (cl-loop for (feat . val) in default-features
-                   collect (concat feat "=" val) into result
-                   finally return (mapconcat #'identity result ",\n  "))))
+  (if (null default-features) ""
+    (concat "\\defaultfontfeatures{" default-features "}\n")))
 
 (defun org-latex--insert-fontspec (compiler fontspec-config default-features doc-scripts)
   "Insert the font configuration used by the fontspec package.
