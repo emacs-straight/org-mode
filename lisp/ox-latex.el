@@ -1623,19 +1623,16 @@ For example, this could be placed in your .dir-locals.el:
 
 (defcustom org-latex-fontspec-default-features nil
   "List of default features for the fontspec package.
-When nil, no default features are assumed.
-When non-nil, the value should be an alist of (FEATURE . VALUE) that is
-used to generate:
+A string with one or more feature=value pairs separated by commas or nil.
 
-\\defaultfontfeatures{FEATURE=VALUE,...}
+This string will be inserted in the \\defaultfontfeatures{} command.
+See URL `https://latex3.github.io/fontspec/user.html'."
 
-in the LaTeX header.
-FEATURE and VALUE should be strings."
   :group 'org-export-latex
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "No template" nil)
-		 (alist :tag "Default font features"))
-  :safe #'listp)
+		 (string :tag "Default font features"))
+  :safe #'string-or-null-p)
 
 (defcustom org-latex-polyglossia-font-config nil
   "Font specifications for polyglossia.

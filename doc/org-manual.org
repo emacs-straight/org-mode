@@ -15299,23 +15299,23 @@ You may use any font name used in the ~\set..font{}~ command by the
 Additionally, you can define common features for all fonts using the
 ~org-latex-fontspec-default-features~ variable. Its default value is
 ~nil~ meaning that no defaults are defined. If you need to default
-common features for all fonts, you can define them as an associative
-list of strings (FEATURE . VALUE) in this variable. For example:
+common features for all fonts, you can define them in a string
+in this variable. For example:
 
 #+BEGIN_SRC elisp
-(setq org-latex-fontspec-default-features
-      '(("Numbers". "OldStyle")))
+(setq org-latex-fontspec-default-features "Numbers=OldStyle")
 #+END_SRC
 
 or its equivalent as a file or directory local variable will generate
 the following LaTeX code in the file header:
 
 #+BEGIN_SRC latex
-\defaultfontfeatures{
-  Numbers=OldStyle
-}
+\defaultfontfeatures{Numbers=OldStyle}
 #+END_SRC
-If you need more features, add them to this list.
+If you need more features, add them to this string to create a
+comma-separated list. (See
+[[https://latex3.github.io/fontspec/user.html][the summary of
+~fontspec~ commands]] in the ~babel~ guide.)
 
 Font configuration is a "grow as you go" process. You can keep the
 fallback definitions in your configuration, even if the document you
