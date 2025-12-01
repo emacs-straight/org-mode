@@ -1682,6 +1682,31 @@ which will result in the following LaTeX code:
 		 (alist :tag "polyglossia font config"))
   :safe #'listp)
 
+(defcustom org-latex-babel-provides-alist nil
+  "Mapping of language names to parameters passed to \\babelprovides{}.
+A list of entries that maps a language to a `:provides' property for
+that language.
+
+When no mapping is available for a language, Org assumes it is \"import\".
+
+For example:
+\(setq `org-latex-babel-provides-alist'
+       \='\(\(\"pt\"  :provide \"import,onchar=ids fonts\")))
+
+will generate
+
+\\babelprovide[import,onchar=ids fonts]{portuguese}
+
+In the LaTeX preamble, when using babel to handle languages.
+The main language in a document will always be tagged as \"main,import\"
+regardless of the cunfiguration you provide in this variable."
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No babel provides" nil)
+		 (alist :tag "babel provides list"))
+  :safe #'listp)
+
+
 (defcustom org-latex-babel-font-config nil
   "Mapping of language names to fonts when using babel.
 Each entry maps a string with the
@@ -2247,6 +2272,7 @@ Use fontspec as a last resort and when defined."
          (latex-babel-langs (plist-get info :languages))
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
+         (doc-babel-provides org-latex-babel-provides-alist)
          ;; Depending on the version of babel, "import=*" may be needed
          (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default") ",import=*"))
          (unicode-math-options org-latex-unicode-math-options))
@@ -2296,15 +2322,14 @@ Use fontspec as a last resort and when defined."
       ;; it is the fist language in the list.
       ;; FIXME: plain "import" or "import=*" ?
       (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
-      ;; For the other languages, generate babelprovide based on :provide atribute, default to "import"
-      ;; for that we have to loop the languages
+      ;; For the other languages, generate babelprovide based on the :provide atribute, default to "import"
+      ;; for that we have to loop over the secondary languages (the rest)
       (cl-loop for bab-lang in (cdr latex-babel-langs)
-               do (let* ((props (alist-get bab-lang doc-babel-font-config nil nil #'string=))
-                         (provide (or (plist-get props :provide) "import")))
+               do (let* ((props (alist-get bab-lang doc-babel-provides nil nil #'string=))
+                         (provide-string (or (plist-get props :provide) "import")))
                     ;; \\babelprovide needs language and provide
-                    ;; it doesn't work on the default language
                     (insert (format "\n\\babelprovide%s{%s}"
-                                    (org-latex--mk-options provide)
+                                    (org-latex--mk-options provide-string)
                                     (org-latex--get-babel-lang bab-lang)))))
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html

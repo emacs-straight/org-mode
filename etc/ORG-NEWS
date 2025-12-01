@@ -472,6 +472,11 @@ package.
 This variable controls the fonts used in the LaTeX export when the
 ~polyglossia~ package is used in multilingual documents.
 
+*** New option ~org-latex-babel-provides-alist~
+
+This variable controls the configurations for the languages when the
+~babel~ package is used in multi-lingual documents.
+
 *** New option ~org-latex-babel-font-config~
 
 This variable controls the fonts used in the LaTeX export when the

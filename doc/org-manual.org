@@ -15453,6 +15453,7 @@ don't /always/ need to provide the =:script= property]].
 :END:
 #+cindex: babel font configuration
 #+vindex: org-latex-babel-font-config
+#+vindex: org-latex-babel-provides-alist
 
 Org mode will control the fonts used for multilingual documents when
 using the ~babel~ package with the ~org-latex-babel-font-config~
@@ -15516,30 +15517,30 @@ text set in monospaced font will use ~DejaVu Sans Mono~ regardless of
 the language. The monospaced text will be scaled to match the default
 font size and produce a better-looking output.
 
-You can add an optional ~:provide~ property to any language mapping
-except the default mapping. The ~:provide~ property is a string. It is
-always ~"import,main"~ for the main language and defaults for other
-languages to ~"import"~ if not present in the configuration; it will
-generate a line
+Additionally, you can add extra properties to any language except the
+default language in your document with the
+~org-latex-babel-provdes-alist~ variable, which maps languages to a
+~:provide~ property. This property is a string. It is always ~"import,main"~ for the
+main language and defaults for other languages to ~"import"~ if not
+present in the configuration; it will generate a line
 
 #+begin_example
 \babelprovide[provide]{lang}
 #+end_example
 #+texinfo: @noindent
-per language listed in ~#+LANGUAGE~. For example, if you can detect
-the language a passage is written by the characters, you can use the
-babel option ~onchar=ids fonts~:
+per language listed in ~#+LANGUAGE~. For example, if you need to
+detect the language a passage is written by the script, you can use
+the babel option ~import,onchar=ids fonts~.
+
+The following settings:
 
 #+BEGIN_SRC emacs-lisp
-(setq org-latex-babel-font-config
-      '((nil
-         :fonts (("rm" :font "FreeSerif")))
-        ("pt"
-         :fonts (("rm" :font "DejaVu Sans"))
-         :provide "onchar=ids fonts")))
+(setq org-latex-babel-provides-alist
+      '(("el" :provide "import,onchar=ids fonts")
+        ("pt" :provide "import,onchar=ids fonts")))
 #+END_SRC
 #+texinfo: @noindent
-When applied to an Org file with the following settings in the header
+applied to an Org file with the following header:
 
 #+BEGIN_SRC org
 ,#+LATEX_COMPILER: lualatex
@@ -15547,7 +15548,7 @@ When applied to an Org file with the following settings in the header
 ,#+LATEX_MULTI_LANG: babel
 #+END_SRC
 #+texinfo: @noindent
-it will generate the following LaTeX preamble code:
+will generate the following LaTeX preamble code:
 
 #+BEGIN_SRC latex
 \usepackage[bidi=basic]{babel}
@@ -15558,8 +15559,11 @@ it will generate the following LaTeX preamble code:
 \babelfont[portuguese]{rm}{DejaVu Sans}
 #+END_SRC
 #+texinfo: @noindent
-to typeset a document in Greek and Portuguese using the ~DejaVu Sans~ font
-for the Portuguese text and ~FreeSerif~ for Greek.
+assuming you have configured ~FreeSerif~ as the main font and want to
+use ~DejaVu Sans~ for Portuguese with ~org-latex-babel-font-config~.
+
+*Note* that the property for the main language (Greek in the example),
+is /always/ ~import,main~.
 
 **** Configuration for the ~xeCJK~ package for CJK languages
 :PROPERTIES:

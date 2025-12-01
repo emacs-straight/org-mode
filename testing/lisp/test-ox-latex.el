@@ -387,15 +387,16 @@ A random text without emojis.
 (ert-deftest test-ox-latex/lualatex-babel-langs ()
   "Test that babel is handled correctly.
 In this test we set org-latex-multi-lang to \"babel\"
-in the document header and test that the default can be overwritten
-"
+in the document header and test that the default can be overwritten.
+We are NOT including anything in org-latex-babel-provides.
+Test that the default provides are generated."
   (let ((org-latex-compiler "lualatex")
         (org-latex-multi-lang "fontspec"))
     (org-test-with-exported-text
      'latex
      "#+TITLE: fontspec
 #+OPTIONS: toc:nil H:3 num:nil
-#+LANGUAGE: de greek
+#+LANGUAGE: de el
 #+LATEX_MULTI_LANG: babel
 
 * Einleitung
@@ -408,6 +409,34 @@ Irgend etwas.
        (should  (search-forward "\\babelprovide[main,import]{german}" nil t)))
      (save-excursion
        (should (search-forward "\\babelprovide[import]{greek}" nil t))))))
+
+(ert-deftest test-ox-latex/lualatex-babel-provides ()
+  "Test that babelprovides is handled correctly.
+In this test we set org-latex-multi-lang to \"babel\"
+and add some babelprovides. Test that the main language is \"import,main\"
+despite settings and that the settings for the secondary language are taken.
+We are NOT including anything in org-latex-babel-provides.
+Test that the default provides are generated."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-babel-provides-alist '(("de" :provide "onchar=ids fonts")
+                                          ("el" :provide "onchar=ids fonts"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: babel provides
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: de el
+#+LATEX_MULTI_LANG: babel
+
+* Einleitung
+
+Irgend etwas.
+"
+     (goto-char (point-min))
+     (should (re-search-forward "\\\\usepackage\\[[^]]+\\]{babel}" nil t))
+     (save-excursion
+       (should  (search-forward "\\babelprovide[main,import]{german}" nil t)))
+     (save-excursion
+       (should (search-forward "\\babelprovide[onchar=ids fonts]{greek}" nil t))))))
 
 (ert-deftest test-ox-latex/math-in-alt-title ()
   "Test math wrapping in ALT_TITLE properties."
