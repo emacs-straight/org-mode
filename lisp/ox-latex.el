@@ -1709,25 +1709,23 @@ regardless of the cunfiguration you provide in this variable."
 
 (defcustom org-latex-babel-font-config nil
   "Mapping of language names to fonts when using babel.
-Each entry maps a string with the
-language name to a `:fonts' property list: (ORG-LANG :fonts FONTS)
-ORG-LANG is a language name as defined in `org-latex-language-alist'.
-ORG-LANG can also be nil for the document's default fonts.
 
-Each element in FONTS is (SCRIPT . FONT-PLIST).
-SCRIPT is one of the script codes:
+Each entry maps an Org language name with a properties list.
+The language name can be `nil' to map to the (unnamed) default language.
+
+Property `:script' (madatory) is one of the script codes:
    \"rm\" for the roman (serif) font
    \"sf\" for the sans serif font
    \"tt\" for the teletype (monospaced) font.
-FONT-PLIST is a property list containing a mandatory property `:font'
-with a system font name and an optional property `:props' which is
-either a string or a list of strings storing extra properties to
-control the font's appearance.  For example:
+Property `:font' (mandatory) property designates the font
+with a system font name and an optional property
+Property `:props' (optional) is a string that stores
+extra properties to control the font's appearance.
 
-\\((nil
-  :fonts
-  ((\"rm\" :font \"CMU Serif\")
-   (\"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))))
+For example:
+
+\((nil :script \"rm\" :font \"CMU Serif\")
+  (nil :script \"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))
 
 indicates that the default roman font is CMU Serif and that the default
 monotype font, DejaVu Sans Mono, needs to be scaled to better match the
@@ -2334,16 +2332,24 @@ Use fontspec as a last resort and when defined."
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
-               do (let* ((font-list (plist-get babel-fontlist :fonts)))
-                    (cl-loop for (script . prop-list) in font-list
-                             do (let ((font  (plist-get prop-list :font))
-                                      (props (plist-get prop-list :props)))
-                                  (when (null font)
-                                    (error "Babel: font name missing for script %s in lang %s" script lang))
-                                  (insert (format "\n\\babelfont%s{%s}%s{%s}"
-                                                  (org-latex--mk-options (org-latex--get-babel-lang lang)) script
-                                                  (org-latex--mk-options props)
-                                                  font))))))
+               do (let* ((font-list (plist-get babel-fontlist :fonts))
+                         (script (plist-get babel-fontlist :script))
+                         (font (plist-get babel-fontlist :font))
+                         (props (plist-get babel-fontlist :props)))
+                    (when (null font)
+                      (error "Babel: font name missing for script %s for lang %s" script (or lang "<default>")))
+                    ;; if it is the main language, ignore. This is only used
+                    ;; when lang is the secondary language
+                    (unless (string= lang (car latex-babel-langs))
+                      ;; Two examples (with and w/o lang)
+                      ;; Source: URL https://github.com/latex3/babel/blob/main/samples/harf-farsi-malayalam.tex
+                      ;; \\babelfont{rm}[Renderer=Harfbuzz]{Amiri}
+                      ;; \\babelfont[malayalam]{rm}[Renderer=Harfbuzz]{FreeSerif}
+                      (insert (format "\n\\babelfont%s{%s}%s{%s}"
+                                      (org-latex--mk-options (and lang (org-latex--get-babel-lang lang)))
+                                      script
+                                      (org-latex--mk-options props)
+                                      font)))))
       (buffer-string))))
 
 

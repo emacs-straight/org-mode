@@ -15398,7 +15398,7 @@ directory-local variables:
 #+BEGIN_SRC emacs-lisp
 ((org-mode
   . ((org-latex-fontspec-default-features
-      . (("Ligatures" . "TeX")))
+      . (("Ligatures=TeX")))
      (org-latex-fontspec-config
       . (("main" :font "CMU Serif")
          ("sans" :font "CMU Sans Serif")
@@ -15406,7 +15406,7 @@ directory-local variables:
                  :features "Scale=MatchLowercase")))
      (org-latex-polyglossia-font-config
       . (("el" :variant "rm" :font "Noto Serif"
-               :props ("Script=Greek" "Scale=MatchLowercase")))))))
+               :props "Script=Greek,Scale=MatchLowercase"))))))
 #+END_SRC
 
 #+texinfo: @noindent
@@ -15462,31 +15462,18 @@ font configuration will be generated.
 
 To generate a babel font configuration, this variable needs to hold a
 property list array mapping Org language names to the fonts used
-when exporting to babel.  Each entry maps a language name to a
-~:fonts~ property.  Use ~nil~ as the language name for the fonts
-used by the default language:
+when exporting to babel.  Each entry maps a language name to a list of
+properties.  Use ~nil~ as the language name for the fonts
+used by the default language.
 
-#+begin_example
-(ORG-LANG :fonts FONTS)
-#+end_example
-
-The ~:fonts~ property list has the form of an associative list, where
-each element has the form:
-
-#+begin_example
-(SCRIPT FONT-PLIST)
-#+end_example
-
-~SCRIPT~ is one of the script codes:
-- ~"rm"~ for the roman (serif) font (this is normally the default font
-  for text passages),
-- ~"sf"~ for the sans serif font, and
-- ~"tt"~ for the teletype (monospaced) font.
-
-and ~FONT-PLIST~ is a property list, with a mandatory property ~:font~
-for the system font name for that script and an optional property ~:props~.
-The property ~:props~ is either a string or a list of strings that represent
-options to apply to this font.
+The properties are defined as follows:
+1. ~:script~ (mandatory) is one of the script codes:
+   - ~"rm"~ for the roman (serif) font (this is normally the default
+     font for text passages).
+   - ~"sf"~ for the sans serif font, and
+   - ~"tt"~ for the teletype (monospaced) font.
+2. ~:font~ (mandatory) is the system font name
+3. ~:props~ (optional) is a string holding the options to apply to this font.
 
 For example, for a document with text in German and Greek,
 where the main language is German, this variable could be
@@ -15494,12 +15481,10 @@ initialized as follows:
 
 #+BEGIN_SRC elisp
 (setq org-latex-babel-font-config
-      '(("el-polyton"
-         :fonts (("rm" :font "Noto Serif")))
-        (nil
-         :fonts (("rm" :font "CMU Serif")
-                 ("tt" :font "DejaVu Sans Mono"
-                  :props "Scale=Matchlocase")))))
+      '(("el-polyton" :variant "rm" :font "Noto Serif")
+        (nil :variant "rm" :font "CMU Serif")
+        (nil :variant "tt" :font "DejaVu Sans Mono"
+             :props "Scale=Matchlocase")))
 #+END_SRC
 
 This setting will produce the following code in the LaTeX export
@@ -15517,9 +15502,15 @@ text set in monospaced font will use ~DejaVu Sans Mono~ regardless of
 the language. The monospaced text will be scaled to match the default
 font size and produce a better-looking output.
 
+*Note* that the definitions for the default language (~nil~) will
+apply to any document regardless of the default language it declares
+to use. If you need to change the font when a specific language is
+used as a secondary language, you will need to add the corresponding
+entries for it.
+
 Additionally, you can add extra properties to any language except the
 default language in your document with the
-~org-latex-babel-provdes-alist~ variable, which maps languages to a
+~org-latex-babel-provides-alist~ variable, which maps languages to a
 ~:provide~ property. This property is a string. It is always ~"import,main"~ for the
 main language and defaults for other languages to ~"import"~ if not
 present in the configuration; it will generate a line

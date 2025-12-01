@@ -410,6 +410,38 @@ Irgend etwas.
      (save-excursion
        (should (search-forward "\\babelprovide[import]{greek}" nil t))))))
 
+(ert-deftest test-ox-latex/lualatex-babel-fonts ()
+  "Test that babelfont is handled correctly.
+The font specs for the main (nil) and the secondary language (el) are generated correctly.
+The font spec for a secondary language that is being used as primary is ignored."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-babel-font-config '((nil :script "rm" :font "DejaVu Serif")
+                                       ;; This one should be ignored because "de" is the main language
+                                       ("de" :script "rm" :font "CMU Serif")
+                                       ("el" :script "rm" :font "FreeSerif")
+                                       ("el" :script "sf" :font "FreeSans" :props "Scale=MatchLowercase")))
+        (org-latex-babel-provides-alist '(("de" :provide "onchar=ids fonts")
+                                          ("el" :provide "onchar=ids fonts"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: babel provides
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: de el
+#+LATEX_MULTI_LANG: babel
+
+* Einleitung
+
+Irgend etwas.
+"
+     (goto-char (point-min))
+     (should (re-search-forward "\\\\usepackage\\[[^]]+\\]{babel}" nil t))
+     (save-excursion
+       (should  (search-forward "\\babelfont{rm}{DejaVu Serif}" nil t)))
+     (save-excursion
+       (should (search-forward "\\babelfont[greek]{rm}{FreeSerif}" nil t)))
+     (save-excursion
+       (should (search-forward "\\babelfont[greek]{sf}[Scale=MatchLowercase]{FreeSans}" nil t))))))
+
 (ert-deftest test-ox-latex/lualatex-babel-provides ()
   "Test that babelprovides is handled correctly.
 In this test we set org-latex-multi-lang to \"babel\"
