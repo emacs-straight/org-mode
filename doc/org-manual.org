@@ -15397,8 +15397,7 @@ directory-local variables:
 
 #+BEGIN_SRC emacs-lisp
 ((org-mode
-  . ((org-latex-fontspec-default-features
-      . (("Ligatures=TeX")))
+  . ((org-latex-fontspec-default-features . "Ligatures=TeX")
      (org-latex-fontspec-config
       . (("main" :font "CMU Serif")
          ("sans" :font "CMU Sans Serif")
