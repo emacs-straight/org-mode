@@ -9448,6 +9448,13 @@ CLOSED: %s
   "Test `org-timestamp-translate' specifications."
   ;; Translate whole date range.
   (should
+   (equal "29"
+	  (org-test-with-temp-text "<2012-03-29 Thu>"
+	    (let ((org-display-custom-times t)
+		  (org-timestamp-custom-formats '("%d" . "%d")))
+	      (org-timestamp-translate (org-element-context))))))
+  ;; Translate whole date range.
+  (should
    (equal "<29>--<30>"
 	  (org-test-with-temp-text "<2012-03-29 Thu>--<2012-03-30 Fri>"
 	    (let ((org-display-custom-times t)
@@ -10151,6 +10158,15 @@ two
          (org-priority-lowest ?K))
      (seq-every-p (lambda (pv) (org-priority-valid-value-p pv t))
                   '(?A ?L ?N ?Z)))))
+
+(ert-deftest test-org/priority-parsing ()
+  "Test parsing of priority values."
+  ;; single digit
+  (should (eq 7 (org-priority-to-value "7")))
+  ;; double digit
+  (should (eq 42 (org-priority-to-value "42")))
+  ;; alphabetic
+  (should (eq ?G (org-priority-to-value "G"))))
 
 (provide 'test-org)
 

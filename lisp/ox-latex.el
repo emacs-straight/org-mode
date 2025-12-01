@@ -3126,7 +3126,7 @@ holding contextual information."
 See `org-latex-format-headline-function' for details."
   (concat
    (and todo (format "{\\bfseries\\sffamily %s} " todo))
-   (and priority (format "\\framebox{\\#%c} " priority))
+   (and priority (format "\\framebox{\\#%s} " (org-priority-to-string priority)))
    text
    (and tags
 	(format "\\hfill{}\\textsc{%s}"
