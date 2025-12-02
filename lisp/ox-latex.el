@@ -1713,7 +1713,7 @@ regardless of the cunfiguration you provide in this variable."
 Each entry maps an Org language name with a properties list.
 The language name can be `nil' to map to the (unnamed) default language.
 
-Property `:script' (madatory) is one of the script codes:
+Property `:variant' (mandatory) is one of the script codes:
    \"rm\" for the roman (serif) font
    \"sf\" for the sans serif font
    \"tt\" for the teletype (monospaced) font.
@@ -1724,8 +1724,8 @@ extra properties to control the font's appearance.
 
 For example:
 
-\((nil :script \"rm\" :font \"CMU Serif\")
-  (nil :script \"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))
+\((nil :variant \"rm\" :font \"CMU Serif\")
+  (nil :variant \"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))
 
 indicates that the default roman font is CMU Serif and that the default
 monotype font, DejaVu Sans Mono, needs to be scaled to better match the
@@ -2226,8 +2226,8 @@ Extract the information from INFO."
                  (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
                                  ;; use the language name polyglossia uses for "\\<lang>font<variant>"
                                  ;; override with the user's :script choice when it is not appropriate
-                                 (or (plist-get props :script) (plist-get lang-plist :polyglossia))
                                  (or (plist-get props :variant) "") ;; if rm, sf, or tt are defined
+                                 (or (plist-get props :script) (plist-get lang-plist :polyglossia))
                                  (org-latex--mk-options
                                   (plist-get props :props))    ;; add the additional properties
                                  (plist-get props :font)))))   ;; last but not least the actual font.
@@ -2333,11 +2333,11 @@ Use fontspec as a last resort and when defined."
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* ((font-list (plist-get babel-fontlist :fonts))
-                         (script (plist-get babel-fontlist :script))
+                         (variant (plist-get babel-fontlist :variant))
                          (font (plist-get babel-fontlist :font))
                          (props (plist-get babel-fontlist :props)))
                     (when (null font)
-                      (error "Babel: font name missing for script %s for lang %s" script (or lang "<default>")))
+                      (error "Babel: font name missing for variant %s for lang %s" variant (or lang "<default>")))
                     ;; if it is the main language, ignore. This is only used
                     ;; when lang is the secondary language
                     (unless (string= lang (car latex-babel-langs))
@@ -2347,7 +2347,7 @@ Use fontspec as a last resort and when defined."
                       ;; \\babelfont[malayalam]{rm}[Renderer=Harfbuzz]{FreeSerif}
                       (insert (format "\n\\babelfont%s{%s}%s{%s}"
                                       (org-latex--mk-options (and lang (org-latex--get-babel-lang lang)))
-                                      script
+                                      variant
                                       (org-latex--mk-options props)
                                       font)))))
       (buffer-string))))
