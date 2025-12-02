@@ -15466,7 +15466,7 @@ properties.  Use ~nil~ as the language name for the fonts
 used by the default language.
 
 The properties are defined as follows:
-1. ~:script~ (mandatory) is one of the script codes:
+1. ~:variant~ (mandatory) is one of the script codes:
    - ~"rm"~ for the roman (serif) font (this is normally the default
      font for text passages).
    - ~"sf"~ for the sans serif font, and

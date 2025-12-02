@@ -415,11 +415,11 @@ Irgend etwas.
 The font specs for the main (nil) and the secondary language (el) are generated correctly.
 The font spec for a secondary language that is being used as primary is ignored."
   (let ((org-latex-compiler "lualatex")
-        (org-latex-babel-font-config '((nil :script "rm" :font "DejaVu Serif")
+        (org-latex-babel-font-config '((nil :variant "rm" :font "DejaVu Serif")
                                        ;; This one should be ignored because "de" is the main language
-                                       ("de" :script "rm" :font "CMU Serif")
-                                       ("el" :script "rm" :font "FreeSerif")
-                                       ("el" :script "sf" :font "FreeSans" :props "Scale=MatchLowercase")))
+                                       ("de" :variant "rm" :font "CMU Serif")
+                                       ("el" :variant "rm" :font "FreeSerif")
+                                       ("el" :variant "sf" :font "FreeSans" :props "Scale=MatchLowercase")))
         (org-latex-babel-provides-alist '(("de" :provide "onchar=ids fonts")
                                           ("el" :provide "onchar=ids fonts"))))
     (org-test-with-exported-text
