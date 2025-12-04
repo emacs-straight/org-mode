@@ -5932,6 +5932,16 @@ Also ensure undo works as expected."
     (test-move-subtree 'up
                        "* H1\n** H1.2<point>\n"
                        'error)
+    ;; Local variables
+    (let ((local-variable-string "# Local Variables:
+# fill-column: 120
+# End:\n"))
+      (test-move-subtree 'down
+                         (concat "* H1<point>\n* H2\n" local-variable-string)
+                         (concat "* H2\n* H1\n" local-variable-string))
+      (test-move-subtree 'down
+                         (concat "* H1<point>\n* H2\n" local-variable-string "* H3\n")
+                         (concat "* H2\n* H1\n* H3\n" local-variable-string)))
     ;; With selection
     (test-move-subtree 'down
                        "* T\n** <point>H1\n** H2\n** H3\n"
