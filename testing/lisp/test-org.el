@@ -1889,6 +1889,20 @@ CLOCK: [2022-09-17 sam. 11:00]--[2022-09-17 sam. 11:46] =>  0:46"
 	  (org-test-with-temp-text "<point>P"
 	    (org-insert-heading)
 	    (buffer-string))))
+  ;; Move local variable string to end when we respect the content
+  (let ((local-variable-string "# Local Variables:
+# fill-column: 120
+# End:\n"))
+    (should
+     (equal (concat "* \n" local-variable-string)
+            (org-test-with-temp-text local-variable-string
+              (org-insert-heading-respect-content)
+              (buffer-string))))
+    (should
+     (equal (concat "* H\n* \n" local-variable-string)
+            (org-test-with-temp-text (concat "* H<point>\n" local-variable-string)
+              (org-insert-heading-respect-content)
+              (buffer-string)))))
   ;; In the middle of a line, split the line if allowed, otherwise,
   ;; insert the headline at its end.
   (should
