@@ -6637,44 +6637,45 @@ Assume that point is on the inserted heading."
 	       (invisible-p (max (1- (point)) (point-min)))))
       ;; Position point at the location of insertion.  Make sure we
       ;; end up on a visible headline if INVISIBLE-OK is nil.
-      (org-with-limited-levels
-       (if (not current-level) (outline-next-heading) ;before first headline
-	 (org-back-to-heading invisible-ok)
-	 (when (equal arg '(16)) (org-up-heading-safe))
-	 (org-end-of-subtree invisible-ok 'to-heading)))
-      ;; At `point-max', if the file does not have ending newline,
-      ;; create one, so that we are not appending stars at non-empty
-      ;; line.
-      (unless (bolp) (insert "\n"))
-      (when (and blank? (save-excursion
-                          (backward-char)
-                          (org-before-first-heading-p)))
-        (insert "\n")
-        (backward-char))
-      (when (and (not current-level) (not (eobp)) (not (bobp)))
-        (when (org-at-heading-p) (insert "\n"))
-        (backward-char))
-      (unless (and blank? (org-previous-line-empty-p))
-	(org-N-empty-lines-before-current (if blank? 1 0)))
-      (insert stars " " "\n")
-      ;; Move point after stars.
-      (backward-char)
-      ;; Retain blank lines before next heading.
-      (funcall maybe-add-blank-after blank?)
-      ;; When INVISIBLE-OK is non-nil, ensure newly created headline
-      ;; is visible.
-      (unless invisible-ok
-        (if (eq org-fold-core-style 'text-properties)
-	    (cond
-	     ((org-fold-folded-p
-               (max (point-min)
-                    (1- (line-beginning-position))))
-	      (org-fold-region (line-end-position 0) (line-end-position) nil))
-	     (t nil))
-          (pcase (get-char-property-and-overlay (point) 'invisible)
-	    (`(outline . ,o)
-	     (move-overlay o (overlay-start o) (line-end-position 0)))
-	    (_ nil)))))
+      (org-preserve-local-variables
+       (org-with-limited-levels
+        (if (not current-level) (outline-next-heading) ;before first headline
+          (org-back-to-heading invisible-ok)
+          (when (equal arg '(16)) (org-up-heading-safe))
+          (org-end-of-subtree invisible-ok 'to-heading)))
+       ;; At `point-max', if the file does not have ending newline,
+       ;; create one, so that we are not appending stars at non-empty
+       ;; line.
+       (unless (bolp) (insert "\n"))
+       (when (and blank? (save-excursion
+                           (backward-char)
+                           (org-before-first-heading-p)))
+         (insert "\n")
+         (backward-char))
+       (when (and (not current-level) (not (eobp)) (not (bobp)))
+         (when (org-at-heading-p) (insert "\n"))
+         (backward-char))
+       (unless (and blank? (org-previous-line-empty-p))
+         (org-N-empty-lines-before-current (if blank? 1 0)))
+       (insert stars " " "\n")
+       ;; Move point after stars.
+       (backward-char)
+       ;; Retain blank lines before next heading.
+       (funcall maybe-add-blank-after blank?)
+       ;; When INVISIBLE-OK is non-nil, ensure newly created headline
+       ;; is visible.
+       (unless invisible-ok
+         (if (eq org-fold-core-style 'text-properties)
+             (cond
+              ((org-fold-folded-p
+                (max (point-min)
+                     (1- (line-beginning-position))))
+               (org-fold-region (line-end-position 0) (line-end-position) nil))
+              (t nil))
+           (pcase (get-char-property-and-overlay (point) 'invisible)
+             (`(outline . ,o)
+              (move-overlay o (overlay-start o) (line-end-position 0)))
+             (_ nil))))))
      ;; At a headline...
      ((org-at-heading-p)
       (cond ((bolp)
