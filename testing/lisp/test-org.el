@@ -9462,43 +9462,48 @@ Behavior can be modified by setting `org-log-into-drawer', by keywords in
 
 (ert-deftest test-org/org-timestamp-change ()
   "Test `org-timestamp-change' specifications."
-  (org-test-at-time "2026-01-15"
-    (let ((now (current-time)) now-ts point)
-      (message "Testing with timestamps <%s> and <%s>"
-               (format-time-string (car org-timestamp-formats) now)
-               (format-time-string (cdr org-timestamp-formats) now))
-      ;; loop over regular timestamp formats and weekday-less timestamp
-      ;; formats
-      (dolist (org-timestamp-formats
-               (list org-timestamp-formats
-                     (cons (replace-regexp-in-string
-                            " %a" "" (car org-timestamp-formats))
-                           (replace-regexp-in-string
-                            " %a" "" (cdr org-timestamp-formats)))))
-        ;; loop over timestamps that do not and do contain time
-        (dolist (format (list (car org-timestamp-formats)
-                              (cdr org-timestamp-formats)))
-          (setq now-ts
-                (concat "<" (format-time-string format now) ">"))
-          (org-test-with-temp-text now-ts
-            (forward-char 1)
-            (while (not (eq (char-after) ?>))
-              (skip-syntax-forward "-")
-              ;; change the timestamp unit at point one down, two up,
-              ;; one down, which should give us the original timestamp
-              ;; again.  However, point can move backward during that
-              ;; operation, so take care of that.  *Not* using
-              ;; `save-excursion', which fails to restore point since
-              ;; the timestamp gets completely replaced.
-              (setq point (point))
-              (org-timestamp-change -1 nil nil nil)
-              (org-timestamp-change  2 nil nil nil)
-              (org-timestamp-change -1 nil nil nil)
-              (goto-char point)
-              (should (string=
-                       (buffer-substring (point-min) (point-max))
-                       now-ts))
-              (forward-char 1)))))))
+  (let ((now (decode-time)) now-ts point)
+    ;; Decrementing a month from March 31st yields February
+    ;; 28th.  This particular test is easier to write if the
+    ;; days don't change when modifying the month
+    (setf (decoded-time-day now)
+          (min (decoded-time-day now) 28))
+    (setq now (encode-time now))
+    (message "Testing with timestamps <%s> and <%s>"
+             (format-time-string (car org-timestamp-formats) now)
+             (format-time-string (cdr org-timestamp-formats) now))
+    ;; loop over regular timestamp formats and weekday-less timestamp
+    ;; formats
+    (dolist (org-timestamp-formats
+             (list org-timestamp-formats
+                   (cons (replace-regexp-in-string
+                          " %a" "" (car org-timestamp-formats))
+                         (replace-regexp-in-string
+                           " %a" "" (cdr org-timestamp-formats)))))
+      ;; loop over timestamps that do not and do contain time
+      (dolist (format (list (car org-timestamp-formats)
+                            (cdr org-timestamp-formats)))
+        (setq now-ts
+              (concat "<" (format-time-string format now) ">"))
+        (org-test-with-temp-text now-ts
+          (forward-char 1)
+          (while (not (eq (char-after) ?>))
+            (skip-syntax-forward "-")
+            ;; change the timestamp unit at point one down, two up,
+            ;; one down, which should give us the original timestamp
+            ;; again.  However, point can move backward during that
+            ;; operation, so take care of that.  *Not* using
+            ;; `save-excursion', which fails to restore point since
+            ;; the timestamp gets completely replaced.
+            (setq point (point))
+            (org-timestamp-change -1 nil nil nil)
+            (org-timestamp-change  2 nil nil nil)
+            (org-timestamp-change -1 nil nil nil)
+            (goto-char point)
+            (should (string=
+                     (buffer-substring (point-min) (point-max))
+                     now-ts))
+            (forward-char 1))))))
   ;; Corner cases
   (let ((org-timestamp-formats
          (cons (replace-regexp-in-string
