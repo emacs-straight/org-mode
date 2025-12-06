@@ -2332,7 +2332,7 @@ Use fontspec as a last resort and when defined."
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
-               do (let* ((font-list (plist-get babel-fontlist :fonts))
+               do (let* (;; (font-list (plist-get babel-fontlist :fonts))
                          (variant (plist-get babel-fontlist :variant))
                          (font (plist-get babel-fontlist :font))
                          (props (plist-get babel-fontlist :props)))
