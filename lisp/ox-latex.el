@@ -2100,7 +2100,7 @@ DEFAULT-FEATURES is the default features for all fonts
 DOC-SCRIPTS are the scripts detected in the buffer
 
 Will warn about compiler use:
- - xelatex is needed for CJK fonts
+ - xelatex or lualatex is needed for CJK fonts
  - lualatex is needed for fallbacks
 
 This part can be reused in pure fontspec and in fontspec+polyglossia."
@@ -2119,9 +2119,12 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
        do
        (setq cjk-packages (or cjk-packages (string-match-p "^CJK" (car font-spec)))))
     (when cjk-packages
-      (if (string= compiler "xelatex")
-          (insert "\\usepackage{xeCJK}\n")
-        (warn "You need xelatex to use CJK fonts!")))
+      (insert "\\usepackage{indentfirst}\n")
+      (cond ((string= compiler "xelatex")
+             (insert "\\usepackage{xeCJK}\n"))
+            ((string= compiler "lualatex")
+             (insert "\\usepackage{luatexja}\n"))
+            (t (warn "You need xelatex or lualatex to use CJK fonts!"))))
     ;; If there are font features, include them
     (when default-features
       (insert (org-latex--create-default-fontspec-features
@@ -2259,6 +2262,15 @@ else signal error."
         (plist-get lang-plist :babel-ini-only)
         lang)))
 
+(defconst zh-default-fontspec
+  '(("CJKmain" . "FandolSong")
+    ("CJKsans" . "FandolHei"))
+  "The default CJK fonts for Chinese.
+
+luatexja provides default font settings for Japanese.
+They need to be set to follow Chinese convention.
+They corresponds to luatexja's Mincho and Gothic font.")
+
 (defconst jp-default-fontspec
   '(("CJKmain" . "HaranoAjiMincho")
     ("CJKsans" . "HaranoAjiGothic")
@@ -2301,28 +2313,44 @@ Use fontspec as a last resort and when defined."
         (save-match-data
           ;; FIXME: Korean?
           (let* ((main-lang (car-safe latex-babel-langs))
-                 (use-xecjk (member main-lang '("jp" "zh"))))
-            (when use-xecjk
-              (unless (string= compiler "xelatex")
-                (error "Using xeCJK for jp and zh requires compiler xelatex"))
-              (insert "\\usepackage{xeCJK}\n\\usepackage{indentfirst}"))
+                 (with-cjk (member main-lang '("jp" "zh"))))
+            (when with-cjk
+              (cond ((string= compiler "xelatex")
+                     (insert "\\usepackage{xeCJK}\n"))
+                    ((string= compiler "lualatex")
+                     ;; Mimic xeCJK's font interface without relying on luatexja-fontspec.
+                     ;; Note that luatexja does not distinguish mono font and sans font.
+                     (insert "\\makeatletter
+\\def\\setCJKmainfont#1{\\def\\ltj@stdmcfont{#1}}
+\\def\\setCJKsansfont#1{\\def\\ltj@stdgtfont{#1}}
+\\def\\setCJKmonofont#1{}\n"))
+                    (t (error "Using xeCJK or luatexja for jp and zh requires compiler xelatex or lualatex")))
+              (insert "\\usepackage{indentfirst}\n"))
             ;; Now the fonts:
             ;;
-            ;; Look for CJK fonts in the font configuration
-            ;; and provide the default fonts by convention for
+            ;; Look for CJK fonts in the font configuration and
+            ;; provide the default fonts by convention for Chinese or
             ;; Japanese documents if there none is found.
-            (when (string= main-lang "jp")
+            (when (or (and (string= compiler "xelatex")
+                           (string= main-lang "jp"))
+                      (and (string= compiler "lualatex")
+                           (string= main-lang "zh")))
               (unless (cl-loop for (_ . fprops) in doc-fontspec
                                when (string-match-p "^CJK" (plist-get fprops :font))
                                collect fprops)
-                (cl-loop for (fname . ffile) in jp-default-fontspec
+                (cl-loop for (fname . ffile) in
+                         (symbol-value (intern (concat main-lang "-default-fontspec")))
                          do (insert "\\set" fname "font{" ffile "}\n"))))
             ;;
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))
                               (feats (plist-get fprops :features)))
                           (insert "\\set" fname "font{" font "}\n" (org-latex--mk-options feats))))
-            (when use-xecjk
+            (when with-cjk
+              (when (string= compiler "lualatex")
+                (when (string= main-lang "zh")
+                  (insert "\\def\\ltj@stdyokojfm{quanjiao}\n"))
+                (insert "\\makeatother\n\\usepackage{luatexja}\n"))
               (insert "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax\n") ;; FIXME: agree on ZWS
               (insert (format "\\parindent=%dem\n" (if (string= main-lang "jp") 1 2))) ;; FIXME: Korean?
               (insert "\\linespread{1.333}")))))
@@ -2387,10 +2415,6 @@ INFO is the export communication channel."
       (insert "\\usepackage{fontspec}\n")
       (insert (format "\\usepackage%s{unicode-math}\n"
                       (org-latex--mk-options unicode-math-options)))
-      (when cjk-packages
-        (unless (string= compiler "xelatex")
-                (error "Using xeCJK for jp and zh requires compiler xelatex"))
-        (insert "\\usepackage{xeCJK}\n\\usepackage{indentfirst}\n"))
       (org-latex--insert-fontspec compiler
                                   current-fontspec-config
                                   current-default-features
