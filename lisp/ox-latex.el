@@ -557,7 +557,9 @@ a format string in which the section title will be added."
 			       (string :tag "Closing   (numbered)")
 			       (string :tag "Opening (unnumbered)")
 			       (string :tag "Closing (unnumbered)"))
-			 (function :tag "Hook computing sectioning"))))))
+			 (function :tag "Hook computing sectioning")))))
+  :safe #'listp)
+
 
 (defcustom org-latex-inputenc-alist nil
   "Alist of inputenc coding system names, and what should really be used.
