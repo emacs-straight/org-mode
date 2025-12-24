@@ -1601,15 +1601,20 @@ upright instead italic."
   "Configuration for the fontspec package.
 When nil, generate no configuration.
 When non-nil, should be an alist with elements defined as
-\\(FONT-NAME . FONT-PLIST)
-FONT-NAME is a string - is the name in `\\set...font{}'
+\\(FONT-FAMILY . FONT-PLIST)
+FONT-FAMILY is one of the LaTeX font families:
+   `main', `sans', `mono' or `math'
 FONT-PLIST is a plist.  The keys for this plist are
   `:font' (mandatory): system font name
   `:features': string or list of strings with font features.
                A potential fallback will be appended.
                CAVEAT: features may be overwritten by fallback.
-  `:fallback': an alist of (`script' . `mapping') to map scripts in the buffer
-               to their fallback font (optional).
+  `:fallback': an alist of (`script' . `mapping')
+               to map Emacs script names detected in the buffer to
+               their mapping. A mapping is either a font name or
+               a font named followed by a colon and additional features.
+               Org mode shows a list of detected scripts in the *Messages*
+               buffer when exporting to LaTeX (or PDF).
 
 For example, this could be placed in your .dir-locals.el:
 
