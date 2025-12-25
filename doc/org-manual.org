@@ -15163,10 +15163,7 @@ knows four font families, namely: =main= as the default (Serif) font,
 text (for example, listings) and =math= to typeset mathematical
 expressions.
 
-For example, if you want to map the ~math~ font to the system font
-~TeX Gyre Termes Math~, you should use the *mandatory* property
-~:font~. Consider the following definition for
-~org-latex-fontspec-config~:
+Consider the following definition for ~org-latex-fontspec-config~:
 
 #+BEGIN_SRC elisp
 (setq-default org-latex-fontspec-config
@@ -15178,8 +15175,10 @@ For example, if you want to map the ~math~ font to the system font
 #+RESULTS:
 
 #+texinfo: @noindent
-When generating the font prelude for ~lualatex~, the resulting LaTeX commands
-will be:
+In this examples, you are mapping the ~math~ font used by LaTeX for
+mathematical expressions to the system font ~TeX Gyre Termes Math~,
+using the *mandatory* property ~:font~. When generating the font
+prelude for ~lualatex~, the resulting LaTeX commands will be:
 
 #+BEGIN_SRC latex
 \setmainfont{FreeSerif}
@@ -15189,9 +15188,10 @@ will be:
 #+END_SRC
 
 #+texinfo: @noindent
-and you will use the ~FreeSerif~ font as the default font, the
-~FreeSans~ font for sans-serif passages, ~TeX Gyre Cursor~ for
-teletype passages (for example, listings) and ~TeX Gyre Termes Math~
+The complete configuration reads like this: you will use the
+~FreeSerif~ system font as the default font set in serif, the
+~FreeSans~ system font for sans-serif passages, ~TeX Gyre Cursor~ for
+monospaced passages (for example, listings) and ~TeX Gyre Termes Math~
 for equations or mathematical expressions in general.
 
 If you need extra features for your font, you will need to add them
@@ -15242,14 +15242,14 @@ configuration.  If you are using =lualatex= as your LaTeX compiler,
 you can also declare fallback fonts for specific scripts that are not
 included in the fonts used for your document.
 
-When this is the case, the LaTeX process will complain and Emacs will
-warn you. When exporting to LaTeX, the export process will always print
-a list of scripts in the *~*Messages*~* buffer.
+In this case, the LaTeX compiler will fail and Emacs will warn you. To
+help you, the LaTeX export process always prints a list of scripts in
+the *~*Messages*~* buffer.
 
-You can declare the fallback fonts for missing scripts based on this
-list and using ~:fallback~ property for this purpose.  It links to an
+You can declare the fallback fonts for missing scripts in the
+~:fallback~ property based on this list.  It consists of an
 associative list that maps the script names as detected by Emacs with
-their fallback configuration.
+their fallback system font and optional extra configuration.
 
 For example, assume your ~init.el~ configures the ~main~ font in
 ~org-latex-fontspec-config~ as:
@@ -15279,7 +15279,8 @@ will include the following fallback definition for the ~main~ font[fn:55]:
 }
 #+END_SRC
 
-and, then, generate the following font specification for =main=.
+(note that the ~emoji~ script is not mentioned) and, then, generate
+the following font specification for =main=.
 
 #+BEGIN_SRC latex
 \setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
@@ -15291,15 +15292,15 @@ and, then, generate the following font specification for =main=.
 This will enable you to include emojis in parts of the document that
 are printed with the main document font.
 
-Note that when you specify ~:features~ for a font, the fallback
-definition is appended as another feature to the font definition.
-The format for the specification is
-1. ~("<script>" . "<font name>")~ to activate a font for a specific
-   script, or
+The format for the ~:fallback~ specification is:
+1. ~("<script>" . "<font name>")~ to activate font when a specific
+   Emacs script is detected in the buffer, or
 2. ~("<script>" . "<font name>:<extra options>")~ to activate a font
-   with a set of options for a specific script
+   with a set of options when a specific Emacs script is detected.
 
 You may use any font family defined in ~org-latex-fontspec-config~.
+When you specify ~:features~ for a font family, the fallback
+definition is appended as another feature to the font definition.
 
 #+vindex: org-latex-fontspec-default-features
 Additionally, you can define common features for all fonts using the
@@ -15318,7 +15319,7 @@ the following LaTeX code in the file header:
 #+BEGIN_SRC latex
 \defaultfontfeatures{Numbers=OldStyle}
 #+END_SRC
-If you need more features, add them to this string to create a
+If you need more features, add them to this string creating a
 comma-separated list. (See
 [[https://latex3.github.io/fontspec/user.html][the summary of
 ~fontspec~ commands]] in the ~babel~ guide.)
@@ -15327,8 +15328,8 @@ Font configuration is a "grow as you go" process. You can keep the
 fallback definitions in your configuration, even if the document you
 work on does not use a specific script. For example, you will normally
 not use emojis in a document, but might include them in a beamer
-presentation. If you use the same font families for both, you can use
-a common font configuration for Org.
+presentation. If you use the same system fonts in both, you can use a
+common font configuration for Org.
 
 **** Configuration of the ~polyglossia~ package
 :PROPERTIES:
@@ -15388,7 +15389,10 @@ The properties you can define are:
 2. ~:variant~: a string for the font variant (e.g. ~sf~ for Sans
    Serif, ~tt~ for Mono, ~rm~ for Roman aka. Serif). The variants
    are [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter
-   codes used in LaTeX for the different font families]].
+   codes used in LaTeX for the different font families]]. When no
+   variant is indicated, it is assumed that the serif font family
+   (~:variant "rm"~) is implied. It is recommended that you always add
+   variant =rm= *explicitly*.
 3. ~:props~: a string for extra properties as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
