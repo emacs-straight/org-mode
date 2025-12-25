@@ -188,8 +188,7 @@ exhaustive.
 #+cindex: key bindings, global
 
 Org mode buffers need Font Lock to be turned on: this is the default
-in Emacs[fn:: If you do not use Font Lock globally turn it on in Org
-buffer with =(add-hook 'org-mode-hook #'turn-on-font-lock)=.].
+in Emacs[fn:1].
 
 There are compatibility issues between Org mode and some other Elisp
 packages (see [[*Packages that conflict with Org mode]]).  Please take the
@@ -248,9 +247,7 @@ ideas about it, please send an email to the Org mailing list
 [[mailto:emacs-orgmode@gnu.org]].  You can subscribe to the list
 [[https://lists.gnu.org/mailman/listinfo/emacs-orgmode][from this web
 page]].  If you are not a member of the mailing list, your mail will
-be passed to the list after a moderator has approved it[fn:: Please
-consider subscribing to the mailing list in order to minimize the work
-the mailing list moderators have to do.].  We ask you to read and
+be passed to the list after a moderator has approved it[fn:2].  We ask you to read and
 respect the
 [[https://www.gnu.org/philosophy/kind-communication.html][GNU Kind
 Communications Guidelines]] when sending messages on this mailing
@@ -504,7 +501,7 @@ the entire show and hide functionalities into a single command,
 #+vindex: org-ctrl-k-protect-subtree
 
 Headlines define the structure of an outline tree.  Org headlines
-start on the left margin[fn:1] with one or more stars followed by
+start on the left margin[fn:3] with one or more stars followed by
 a space.  For example:
 
 #+begin_example
@@ -573,8 +570,7 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
   #+end_example
 
   #+vindex: org-cycle-emulate-tab
-  Point must be on a headline for this to work[fn:: See, however, the
-  option ~org-cycle-emulate-tab~.].
+  Point must be on a headline for this to work[fn:4].
 
 - {{{kbd(S-TAB)}}} (~org-global-cycle~), {{{kbd(C-u TAB)}}} ::
 
@@ -653,7 +649,7 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
 
   #+kindex: C-c C-x b
   #+findex: org-tree-to-indirect-buffer
-  Show the current subtree in an indirect buffer[fn:2].  With
+  Show the current subtree in an indirect buffer[fn:5].  With
   a numeric prefix argument {{{var(N)}}}, go up to level {{{var(N)}}}
   and then take that tree.  If {{{var(N)}}} is negative then go up
   that many levels.  With a {{{kbd(C-u)}}} prefix, do not remove the
@@ -672,10 +668,7 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
 
 #+vindex: org-startup-folded
 When Emacs first visits an Org file, the global state is set to
-~showeverything~, i.e., all file content is visible[fn:: When
-~org-agenda-inhibit-startup~ is non-~nil~, Org does not honor the
-default visibility state when first opening a file for the agenda (see
-[[*Speeding Up Your Agendas]]).].  This can be configured through the
+~showeverything~, i.e., all file content is visible[fn:6].  This can be configured through the
 variable ~org-startup-folded~, or on a per-file basis by adding one of
 the following lines anywhere in the buffer:
 
@@ -1033,9 +1026,7 @@ keys have different functionality.
 An important feature of Org mode is the ability to construct /sparse
 trees/ for selected information in an outline tree, so that the entire
 document is folded as much as possible, but the selected information
-is made visible along with the headline structure above it[fn:: See
-also the variable ~org-fold-show-context-detail~ to decide how much context
-is shown around each match.].  Just try it out and you will see
+is made visible along with the headline structure above it[fn:7].  Just try it out and you will see
 immediately how it works.
 
 Org mode contains several commands creating such trees, all these
@@ -1062,8 +1053,7 @@ commands can be accessed through a dispatcher:
   shown, as well as the headline following the match.  Each match is
   also highlighted; the highlights disappear when the buffer is
   changed by an editing command, or by pressing {{{kbd(C-c
-  C-c)}}}[fn:: This depends on the option
-  ~org-remove-highlights-with-change~.].  When called with a
+  C-c)}}}[fn:8].  When called with a
   {{{kbd(C-u)}}} prefix argument, previous highlights are kept, so
   several calls to this command can be stacked.
 
@@ -1126,16 +1116,15 @@ every exporter (see [[*Exporting]]) can parse and format them.
 Org knows ordered lists, unordered lists, and description lists.
 
 #+attr_texinfo: :indic @bullet
-- /Unordered/ list items start with =-=, =+=, or =*=[fn:3] as bullets.
+- /Unordered/ list items start with =-=, =+=, or =*=[fn:9] as bullets.
 
 -
   #+vindex: org-plain-list-ordered-item-terminator
   #+vindex: org-alphabetical-lists
   /Ordered/ list items start with a numeral followed by either a
-  period or a right parenthesis[fn:: You can filter out any of them by
-  configuring ~org-plain-list-ordered-item-terminator~.], such as =1.=
-  or =1)=[fn:4] If you want a list to start with a different
-  value---e.g., 20---start the text of the item with =[@20]=[fn:5].
+  period or a right parenthesis[fn:10], such as =1.=
+  or =1)=[fn:11] If you want a list to start with a different
+  value---e.g., 20---start the text of the item with =[@20]=[fn:12].
   Those constructs can be used in any item of the list in order to
   enforce a particular numbering.
 
@@ -1221,8 +1210,7 @@ to disable them individually.
   Insert new item at current level.  With a prefix argument, force a
   new heading (see [[*Structure Editing]]).  If this command is used
   in the middle of an item, that item is /split/ in two, and the
-  second part becomes the new item[fn:: If you do not want the item to
-  be split, customize the variable ~org-M-RET-may-split-line~.].  If
+  second part becomes the new item[fn:13].  If
   this command is executed /before item's body/, the new item is
   created /before/ the current one.
 
@@ -1239,8 +1227,7 @@ to disable them individually.
   #+vindex: org-support-shift-select
   #+vindex: org-list-use-circular-motion
   Jump to the previous/next item in the current list, but only if
-  ~org-support-shift-select~ is off[fn:: If you want to cycle around
-  items that way, you may customize ~org-list-use-circular-motion~.].
+  ~org-support-shift-select~ is off[fn:14].
   If not, you can still use paragraph jumping commands like
   {{{kbd(C-UP)}}} and {{{kbd(C-DOWN)}}} to quite similar effect.
 
@@ -1248,8 +1235,7 @@ to disable them individually.
 
   #+kindex: M-UP
   #+kindex: M-DOWN
-  Move the item including sub-items up/down[fn:: See
-  ~org-list-use-circular-motion~ for a cyclic behavior.], i.e., swap
+  Move the item including sub-items up/down[fn:15], i.e., swap
   with previous/next item of same indentation.  If the list is
   ordered, renumbering is automatic.
 
@@ -1361,7 +1347,7 @@ for storing properties (see [[*Properties and Columns]]).  You cannot use
 it for anything else.
 
 Completion over drawer keywords is also possible using
-{{{kbd(M-TAB)}}}[fn:6].
+{{{kbd(M-TAB)}}}[fn:16].
 
 Visibility cycling (see [[*Visibility Cycling]]) on the headline hides and
 shows the entry, but keep the drawer collapsed to a single line.  In
@@ -1421,8 +1407,7 @@ Calculator Manual]]).
 #+cindex: table syntax
 Org makes it easy to format tables in plain ASCII.  Any line with =|=
 as the first non-whitespace character is considered part of a table.
-=|= is also the column separator[fn:: To insert a vertical bar into a
-table field, use =\vert= or, inside a word =abc\vert{}def=.].
+=|= is also the column separator[fn:17].
 Moreover, a line starting with =|-= is a horizontal rule.  It
 separates rows explicitly.  Rows before the first horizontal rule are
 header lines.  A table might look like this:
@@ -1987,7 +1972,7 @@ Formulas can reference the value of another field in two ways.  Like
 in any other spreadsheet, you may reference fields with
 a letter/number combination like =B3=, meaning the second field in the
 third row.  However, Org prefers to use another, more general
-representation that looks like this:[fn:7]
+representation that looks like this:[fn:18]
 
 : @ROW$COLUMN
 
@@ -2094,8 +2079,7 @@ and ~org-table-current-column~.  Examples:
 #+texinfo: @noindent
 For the second and third examples, table {{{var(FOO)}}} must have at
 least as many rows or columns as the current table.  Note that this is
-inefficient[fn:: The computation time scales as O(N^2) because table
-{{{var(FOO)}}} is parsed for each field to be copied.] for large
+inefficient[fn:19] for large
 number of rows.
 
 **** Named references
@@ -2124,7 +2108,7 @@ constants in table formulas: for a property =Xyz= use the name
 entry and in the hierarchy above it.  If you have the =constants.el=
 package, it will also be used to resolve constants, including natural
 constants like =$h= for Planck's constant, and units like =$km= for
-kilometers[fn:8].  Column names and parameters can be specified in
+kilometers[fn:20].  Column names and parameters can be specified in
 special table lines.  These are described below, see [[*Advanced
 features]].  All names must start with a letter, and further consist
 of letters and numbers.
@@ -2841,9 +2825,7 @@ following commands:
 :END:
 
 If you want the recalculation of fields to happen automatically, or if
-you want to be able to assign /names/[fn:: Such names must start with
-an alphabetic character and use only alphanumeric/underscore
-characters.] to fields and columns, you need to reserve the first
+you want to be able to assign /names/[fn:21] to fields and columns, you need to reserve the first
 column of the table for special marking characters.
 
 - {{{kbd(C-#)}}} (~org-table-rotate-recalc-marks~) ::
@@ -3156,7 +3138,7 @@ links to other files, Usenet articles, emails, and much more.
 #+cindex: angle bracket links
 #+cindex: plain links
 Org recognizes plain URIs, possibly wrapped within angle
-brackets[fn:9], and activate them as clickable links.
+brackets[fn:22], and activate them as clickable links.
 
 #+cindex: bracket links
 The general link format, however, looks like this:
@@ -3200,9 +3182,7 @@ the {{{var(LINK)}}} part, if there is no description, or the
 
 If you place point at the beginning or just behind the end of the
 displayed text and press {{{kbd(BS)}}}, you remove
-the---invisible---bracket at that location[fn:: More accurately, the
-precise behavior depends on how point arrived there---see
-[[info:elisp#Invisible Text][Invisible Text]].].  This makes the link
+the---invisible---bracket at that location[fn:23].  This makes the link
 incomplete and the internals are again displayed as plain text.
 Inserting the missing bracket hides the link internals again.  To show
 the internal structure of all links, use the menu: Org \rarr
@@ -3226,7 +3206,7 @@ Org provides several refinements to internal navigation within
 a document.  Most notably, a construct like =[[#my-custom-id]]=
 specifically targets the entry with the =CUSTOM_ID= property set to
 =my-custom-id=.  Also, an internal link looking like =[[*Some
-section]]= points to a headline with the name =Some section=[fn:10].
+section]]= points to a headline with the name =Some section=[fn:24].
 
 #+cindex: targets, for links
 When the link does not belong to any of the cases above, Org looks for
@@ -3259,9 +3239,7 @@ you in the process, if needed.  See [[*Org Syntax]].
 During export, internal links are used to mark objects and assign them
 a number.  Marked objects are then referenced by links pointing to
 them.  In particular, links without a description appear as the number
-assigned to the marked object[fn:: When targeting a =NAME= keyword,
-the =CAPTION= keyword is mandatory in order to get proper numbering
-(see [[*Captions]]).].  In the following excerpt from an Org buffer
+assigned to the marked object[fn:25].  In the following excerpt from an Org buffer
 
 #+begin_example
 1. one item
@@ -3397,8 +3375,7 @@ Here is the full set of built-in link types:
 - =shortdoc= ::
 
   Link to short documentation summary for an Emacs Lisp function group.
-  [fn::You can run =M-x shortdoc-display-group= to list all known
-  documentation groups.]
+  [fn:26]
 
   For more information, see [[info:emacs#Name Help][Name Help]]
   and [[info:elisp#Documentation Groups][Documentation Groups]].
@@ -3424,7 +3401,7 @@ options:
 |            | =/ssh:me@some.where:papers/last.pdf= (same as above)               |
 |            | =file:sometextfile::NNN= (jump to line number)                     |
 |            | =file:projects.org=                                                |
-|            | =file:projects.org::some words= (text search)[fn:11]               |
+|            | =file:projects.org::some words= (text search)[fn:27]               |
 |            | =file:projects.org::*task title= (headline search)                 |
 |            | =file:projects.org::#custom-id= (headline search)                  |
 | attachment | =attachment:projects.org=                                          |
@@ -3519,10 +3496,7 @@ current buffer:
   If the headline has a =CUSTOM_ID= property, store a link to this
   custom ID.  In addition or alternatively, depending on the value of
   ~org-id-link-to-org-use-id~, create and/or use a globally unique
-  =ID= property for the link[fn:: The ~org-id~ library must first be
-  loaded, either through ~org-customize~, by enabling ~id~ in
-  ~org-modules~, or by adding =(require 'org-id)= in your Emacs init
-  file.].  So using this command in Org buffers potentially creates
+  =ID= property for the link[fn:28].  So using this command in Org buffers potentially creates
   two links: a human-readable link from the custom ID, and one that is
   globally unique and works even if the entry is moved from file to
   file.  The =ID= property can be either a UUID (default) or a
@@ -3532,9 +3506,7 @@ current buffer:
   #+vindex: org-id-link-consider-parent-id
   #+vindex: org-id-link-use-context
   #+vindex: org-link-context-for-files
-  When ~org-id-link-consider-parent-id~ is ~t~[fn:: Also,
-  ~org-link-context-for-files~ and ~org-id-link-use-context~ should be
-  both enabled (which they are, by default).], parent =ID= properties
+  When ~org-id-link-consider-parent-id~ is ~t~[fn:29], parent =ID= properties
   are considered.  This allows linking to specific targets, named
   blocks, or headlines (which may not have a globally unique =ID=
   themselves) within the context of a parent headline or file which
@@ -3610,11 +3582,11 @@ generally, act on links.
   #+cindex: completion, of links
   #+cindex: inserting links
   #+vindex: org-link-keep-stored-after-insertion
-  Insert a link[fn:12].  This prompts for a link to be inserted into
+  Insert a link[fn:30].  This prompts for a link to be inserted into
   the buffer.  You can just type a link, using text for an internal
   link, or one of the link type prefixes mentioned in the examples
   above.  The link is inserted into the buffer, along with
-  a descriptive text[fn:13].  If some text was selected at this time,
+  a descriptive text[fn:31].  If some text was selected at this time,
   it becomes the default description.
 
   - /Inserting stored links/ ::
@@ -3629,9 +3601,7 @@ generally, act on links.
     prefixes like =http= or =ftp=, including the prefixes defined
     through link abbreviations (see [[*Link Abbreviations]]).  If you
     press {{{kbd(RET)}}} after inserting only the prefix, Org offers
-    specific completion support for some link types[fn:: This works if
-    a function has been defined in the ~:complete~ property of a link
-    in ~org-link-parameters~.].  For example, if you type {{{kbd(f i l
+    specific completion support for some link types[fn:32].  For example, if you type {{{kbd(f i l
     e RET)}}}---alternative access: {{{kbd(C-u C-c C-l)}}}, see
     below---Org offers file name completion, and after {{{kbd(b b d b
     RET)}}} you can complete contact names.
@@ -3701,8 +3671,7 @@ generally, act on links.
   #+vindex: org-link-use-indirect-buffer-for-internals
   #+kindex: mouse-3
   Like {{{kbd(mouse-2)}}}, but force file links to be opened with
-  Emacs, and internal links to be displayed in another window[fn:: See
-  the variable ~org-link-use-indirect-buffer-for-internals~.].
+  Emacs, and internal links to be displayed in another window[fn:33].
 
 - {{{kbd(C-c %)}}} (~org-mark-ring-push~) ::
 
@@ -3841,8 +3810,7 @@ the link completion function like this:
 
 File links can contain additional information to make Emacs jump to a
 particular location in the file when following a link.  This can be a
-line number or a search option after a double colon[fn:: For backward
-compatibility, line numbers can also follow a single colon.].  For
+line number or a search option after a double colon[fn:34].  For
 example, when the command ~org-store-link~ creates a link (see
 [[*Handling Links]]) to a file, it encodes the words in the current
 line as a search string that can be used to find this line back later
@@ -3926,9 +3894,7 @@ implementation example.  See the file =ol-bibtex.el=.
 :END:
 #+cindex: TODO items
 
-Org mode does not maintain TODO lists as separate documents[fn:: Of
-course, you can make a document that contains only long lists of TODO
-items, but this is not required.].  Instead, TODO items are an
+Org mode does not maintain TODO lists as separate documents[fn:35].  Instead, TODO items are an
 integral part of the notes file, because TODO items usually come up
 while taking notes!  With Org mode, simply mark any entry in a tree as
 being a TODO item.  In this way, information is not duplicated, and
@@ -4046,9 +4012,7 @@ TODO items in particular (see [[*Tags]]).
 #+cindex: workflow states as TODO keywords
 
 You can use TODO keywords to indicate different, possibly /sequential/
-states in the process of working on an item, for example[fn:: Changing
-the variable ~org-todo-keywords~ only becomes effective after
-restarting Org mode in a buffer.]:
+states in the process of working on an item, for example[fn:36]:
 
 #+begin_src emacs-lisp
 (setq org-todo-keywords
@@ -4100,8 +4064,7 @@ Using TODO types, it would be set up like this:
 In this case, different keywords do not indicate states, but rather
 different types.  So the normal work flow would be to assign a task to
 a person, and later to mark it DONE.  Org mode supports this style by
-adapting the workings of the command {{{kbd(C-c C-t)}}}[fn:: This is
-also true for the {{{kbd(t)}}} command in the agenda buffer.].  When
+adapting the workings of the command {{{kbd(C-c C-t)}}}[fn:37].  When
 used several times in succession, it still cycles through all names,
 in order to first select the right type for a task.  But when you
 return to the item after some time and execute {{{kbd(C-c C-t)}}}
@@ -4173,9 +4136,7 @@ correct sequence.  In addition to typing a keyword or using completion
 If you would like to quickly change an entry to an arbitrary TODO
 state instead of cycling through the states, you can set up keys for
 single-letter access to the states.  This is done by adding the
-selection character after each keyword, in parentheses[fn:: All
-characters are allowed except =@=, =^= and =!=, which have a special
-meaning here.].  For example:
+selection character after each keyword, in parentheses[fn:38].  For example:
 
 #+begin_src emacs-lisp
 (setq org-todo-keywords
@@ -4231,10 +4192,7 @@ Remember that the keywords after the vertical bar---or the last
 keyword if no bar is there---must always mean that the item is DONE,
 although you may use a different word.  After changing one of these
 lines, use {{{kbd(C-c C-c)}}} with point still in the line to make the
-changes known to Org mode[fn:: Org mode parses these lines only when
-Org mode is activated after visiting a file. {{{kbd(C-c C-c)}}} with
-point in a line starting with =#+= is simply restarting Org mode for
-the current buffer.].
+changes known to Org mode[fn:39].
 
 *** Faces for TODO keywords
 :PROPERTIES:
@@ -4377,8 +4335,7 @@ clock working time for a task, see [[*Clocking Work Time]].
 :END:
 
 The most basic automatic logging is to keep track of /when/ a certain
-TODO item was marked as done.  This can be achieved with[fn:: The
-corresponding in-buffer setting is: =#+STARTUP: logdone=.]
+TODO item was marked as done.  This can be achieved with[fn:40]
 
 #+begin_src emacs-lisp
 (setq org-log-done 'time)
@@ -4393,8 +4350,7 @@ through further state cycling, that line is removed again.  If you
 turn the entry back to a non-TODO state (by pressing {{{kbd(C-c C-t
 SPC)}}} for example), that line is also removed, unless you set
 ~org-closed-keep-when-no-todo~ to non-~nil~.  If you want to record a
-note along with the timestamp, use[fn:: The corresponding in-buffer
-setting is: =#+STARTUP: lognotedone=.]
+note along with the timestamp, use[fn:41]
 
 #+begin_src emacs-lisp
 (setq org-log-done 'note)
@@ -4416,14 +4372,11 @@ entry with a =Closing Note= heading.
 You might want to automatically keep track of when a state change
 occurred and maybe take a note about this change.  You can either
 record just a timestamp, or a time-stamped note.  These records are
-inserted after the headline as an itemized list, the newest first[fn::
-See the variable ~org-log-states-order-reversed~.].  When taking a lot
+inserted after the headline as an itemized list, the newest first[fn:42].  When taking a lot
 of notes, you might want to get the notes out of the way into a drawer
 (see [[*Drawers]]).  Customize the variable ~org-log-into-drawer~ to
 get this behavior---the recommended drawer for this is called
-=LOGBOOK=[fn:: Note that the =LOGBOOK= drawer is unfolded when
-pressing {{{kbd(SPC)}}} in the agenda to show an entry---use
-{{{kbd(C-u SPC)}}} to keep it folded here.].  You can also overrule
+=LOGBOOK=[fn:43].  You can also overrule
 the setting of this variable for a subtree by setting a
 =LOG_INTO_DRAWER= property.
 
@@ -4442,7 +4395,7 @@ example, with the setting
 You not only define global TODO keywords and fast access keys, but
 also request that a time is recorded when the entry is set to =DONE=,
 and that a note is recorded when switching to =WAIT= or
-=CANCELED=[fn:14].  The setting for =WAIT= is even more special: the
+=CANCELED=[fn:44].  The setting for =WAIT= is even more special: the
 =!= after the slash means that in addition to the note taken when
 entering the state, a timestamp should be recorded when /leaving/ the
 =WAIT= state, if and only if the /target/ state does not configure
@@ -4649,8 +4602,7 @@ TODO items.
   #+findex: org-priority-up
   #+findex: org-priority-down
   #+vindex: org-priority-start-cycle-with-default
-  Increase/decrease the priority of the current headline[fn:: See also
-  the option ~org-priority-start-cycle-with-default~.].  Note that
+  Increase/decrease the priority of the current headline[fn:45].  Note that
   these keys are also used to modify timestamps (see [[*Creating
   Timestamps]]).  See also [[*Packages that conflict with Org mode]],
   for a discussion of the interaction with shift-selection.
@@ -4684,9 +4636,7 @@ Or, using numeric values:
 #+vindex: org-agenda-todo-list-sublevels
 It is often advisable to break down large tasks into smaller,
 manageable subtasks.  You can do this by creating an outline tree
-below a TODO item, with detailed subtasks on the tree[fn:: To keep
-subtasks out of the global TODO list, see the option
-~org-agenda-todo-list-sublevels~.].  To keep an overview of the
+below a TODO item, with detailed subtasks on the tree[fn:46].  To keep an overview of the
 fraction of subtasks that have already been marked as done, insert
 either =[/]= or =[%]= anywhere in the headline.  These cookies are
 updated each time the TODO status of a child changes, or when pressing
@@ -4742,7 +4692,7 @@ of) subtasks (see [[*Checkboxes]]).
 #+cindex: checkboxes
 
 #+vindex: org-list-automatic-rules
-Every item in a plain list[fn:15] (see [[*Plain Lists]]) can be made into
+Every item in a plain list[fn:47] (see [[*Plain Lists]]) can be made into
 a checkbox by starting it with the string =[ ]=.  This feature is
 similar to TODO items (see [[*TODO Items]]), but is more lightweight.
 Checkboxes are not included into the global TODO list, so they are
@@ -4773,9 +4723,7 @@ idea on how many checkboxes remain, even without opening a folded
 entry.  The cookies can be placed into a headline or into (the first
 line of) a plain list item.  Each cookie covers checkboxes of direct
 children structurally below the headline/item on which the cookie
-appears[fn:: Set the variable ~org-checkbox-hierarchical-statistics~
-if you want such cookies to count all checkboxes below the cookie, not
-just those belonging to direct children.].  You have to insert the
+appears[fn:48].  You have to insert the
 cookie yourself by typing either =[/]= or =[%]=.  With =[/]= you get
 an =n out of m= result, as in the examples above.  With =[%]= you get
 information about the percentage of checkboxes checked (in the above
@@ -4831,9 +4779,7 @@ The following commands work with checkboxes:
   #+findex: org-toggle-checkbox
   Toggle checkbox status or---with prefix argument---checkbox presence
   at point.  With a single prefix argument, add an empty checkbox or
-  remove the current one[fn:: {{{kbd(C-u C-c C-c)}}} on the /first/
-  item of a list with no checkbox adds checkboxes to the rest of the
-  list.].  With a double prefix argument, set it to =[-]=, which is
+  remove the current one[fn:49].  With a double prefix argument, set it to =[-]=, which is
   considered to be an intermediate state.
 
 - {{{kbd(C-c C-x C-b)}}} (~org-toggle-checkbox~) ::
@@ -4946,9 +4892,7 @@ the final heading has the tags =work=, =boss=, =notes=, and =action=
 even though the final heading is not explicitly marked with those
 tags.  You can also set tags that all entries in a file should inherit
 just as if these tags were defined in a hypothetical level zero that
-surrounds the entire file.  Use a line like this[fn:: As with all
-these in-buffer settings, pressing {{{kbd(C-c C-c)}}} activates any
-changes in the line.]
+surrounds the entire file.  Use a line like this[fn:50]
 
 #+cindex: @samp{FILETAGS}, keyword
 : #+FILETAGS: :Peter:Boss:Secret:
@@ -5007,9 +4951,7 @@ also a special command for inserting tags:
 #+cindex: @samp{TAGS}, keyword
 Org supports tag insertion based on a /list of tags/.  By default, this
 list is constructed dynamically, containing all tags currently used in
-the buffer[fn:: To extend this default list to all tags used in all
-agenda files (see [[*Agenda Views]]), customize the variable
-~org-complete-tags-always-offer-all-agenda-tags~.].  You may also
+the buffer[fn:51].  You may also
 globally specify a hard list of tags with the variable
 ~org-tag-alist~.  Finally, you can set the default tags for a given
 file using the =TAGS= keyword, like
@@ -5096,8 +5038,7 @@ by the following configuration:
 If at least one tag has a selection key then pressing {{{kbd(C-c
 C-c)}}} automatically presents you with a special interface, listing
 inherited tags, the tags of the current headline, and a list of all
-valid tags with corresponding keys[fn:: Keys are automatically
-assigned to tags that have no configured keys.].
+valid tags with corresponding keys[fn:52].
 
 Pressing keys assigned to tags adds or removes them from the list of
 tags in the current line.  Selecting a tag in a group of mutually
@@ -5546,7 +5487,7 @@ not be used as keys in the properties drawer:
 | =PRIORITY=     | The priority of the entry, a string with a single letter.      |
 | =SCHEDULED=    | The scheduling timestamp.                                      |
 | =TAGS=         | The tags defined directly in the headline.                     |
-| =TIMESTAMP=    | The first active keyword-less timestamp in the entry.[fn:16]   |
+| =TIMESTAMP=    | The first active keyword-less timestamp in the entry.[fn:53]   |
 | =TIMESTAMP_IA= | The first inactive keyword-less timestamp in the entry.        |
 | =TODO=         | The TODO keyword of the entry.                                 |
 
@@ -5748,13 +5689,7 @@ optional.  The individual parts have the following meaning:
 
   When there is an existing property in parent heading, Org does not
   only overlay the computed value in the column view, but also
-  overwrites the property value in parent's property drawer[fn:: If
-  more than column definition is requested for the same property, only
-  the first definition will trigger writing to the property drawer.
-  For example, =%EFFORT{mean} %EFFORT(Sum){:}= will write the mean
-  value of =EFFORT= property; not the sum.  If the first column
-  definition does not have summary type (=%EFFORT %EFFORT{mean}=),
-  nothing will be written to the property drawer].
+  overwrites the property value in parent's property drawer[fn:54].
 
   Summary type is ignored for special properties.
 
@@ -5773,7 +5708,7 @@ optional.  The individual parts have the following meaning:
   | =:min=   | Smallest time value in column.                        |
   | =:max=   | Largest time value.                                   |
   | =:mean=  | Arithmetic mean of time values.                       |
-  | =@min=   | Minimum age[fn:17] (in days/hours/mins/seconds).      |
+  | =@min=   | Minimum age[fn:55] (in days/hours/mins/seconds).      |
   | =@max=   | Maximum age (in days/hours/mins/seconds).             |
   | =@mean=  | Arithmetic mean of ages (in days/hours/mins/seconds). |
   | =est+=   | Add low-high estimates.                               |
@@ -5801,9 +5736,7 @@ contrast, =est+= estimates the full job more realistically, at 10--15
 days.
 
 Here is an example for a complete columns definition, along with
-allowed values[fn:: Please note that the =COLUMNS= definition must be
-on a single line; it is wrapped here only because of formatting
-constraints.].
+allowed values[fn:56].
 
 #+begin_example
 :COLUMNS:  %25ITEM %9Approved(Approved?){X} %Owner %11Status \
@@ -6158,9 +6091,7 @@ recalculated automatically after an update.
 
 An alternative way to capture and process property values into a table
 is provided by Eric Schulte's =org-collector.el=, which is a package
-in =org-contrib=[fn:: Contributed packages are not part of Emacs, but
-are distributed with the main distribution of Org---visit
-[[https://orgmode.org]].].  It provides a general API to collect
+in =org-contrib=[fn:57].  It provides a general API to collect
 properties from entries in a certain scope, and arbitrary Lisp
 expressions to process these values before inserting them into a table
 or a dynamic block.
@@ -6198,7 +6129,7 @@ use cases dealing with time and time intervals.
 
 A timestamp is a specification of a date---possibly with a time or
 time range---in a special format, either =<2003-09-16 Tue>= or
-=<2003-09-16 Tue 09:39>= or =<2003-09-16 Tue 12:00-12:30>=[fn:18].
+=<2003-09-16 Tue 09:39>= or =<2003-09-16 Tue 12:00-12:30>=[fn:58].
 A timestamp can appear anywhere in the headline or body of an Org tree
 entry.  Its presence causes entries to be shown on specific dates in
 the agenda (see [[*Weekly/daily agenda]]).  We distinguish:
@@ -6248,7 +6179,7 @@ the agenda (see [[*Weekly/daily agenda]]).  We distinguish:
 
   For more complex date specifications, Org mode supports using the
   special expression diary entries implemented in the
-  [[info:emacs#Special Diary Entries][Emacs Calendar package]][fn:19].
+  [[info:emacs#Special Diary Entries][Emacs Calendar package]][fn:59].
   For example, with optional time:
 
   #+begin_example
@@ -6418,7 +6349,7 @@ a range, it is taken from the stamp in the buffer.  When filling in
 information, Org mode assumes that most of the time you want to enter
 a date in the future: if you omit the month/year and the given
 day/month is /before/ today, it assumes that you mean a future
-date[fn:20].  If the date has been automatically shifted into the
+date[fn:60].  If the date has been automatically shifted into the
 future, the time prompt shows this with =(=>F)=.
 
 For example, let's assume that today is *June 13, 2006*.  Here is how
@@ -14172,7 +14103,7 @@ The LaTeX export backend finds the compiler version to use from
 Org file.  See the docstring for ~org-latex-default-packages-alist~
 for loading packages with certain compilers. Also see the docstring
 for ~org-latex-bibtex-compiler~ to set the bibliography
-compiler[fn:48].
+compiler[fn:47].
 
 #+vindex: org-latex-compiler
 #+vindex: org-latex-bibtex-compiler
@@ -15066,12 +14997,12 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 
 ~pdflatex~ uses LaTeX packages to import the fonts used in the
 PDF output. Refer to [[https://tug.org/FontCatalogue/][the LaTeX font
-catalog]] to find the LaTeX package or packages you need for your
+catalogue]] to find the LaTeX package or packages you need for your
 document and include them with the ~#+LATEX_HEADER:~ keyword.
 
 For example, if you need the
 [[https://tug.org/FontCatalogue/erewhon/][Erewhon]] font, you will find
-the following configuration in the LaTeX font catalog:
+the following configuration in the LaTeX font catalogue:
 
 #+BEGIN_SRC latex
 \usepackage[proportional,scaled=1.064]{erewhon}
@@ -15143,11 +15074,14 @@ configuration for the ~babel~ package may also use an alternative mechanism
 #+vindex: org-latex-fontspec-config
 #+vindex: org-latex-fontspec-default-features
 
-Org mode uses the variable ~org-latex-fontspec-config~ to map your
-document's fonts to the fonts used in the generated PDF document.  To
-familiarize yourself with fonts and options, read the
+Org mode uses the variable ~org-latex-fontspec-config~ to map the
+LaTeX font families in your document to the fonts used in the
+generated PDF document.  To familiarize yourself with font families,
+fonts and options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
-package manual]] Part II.  This variable can be set in your Emacs
+package manual]] Part II.
+
+~org-latex-fontspec-config~ can be set in your Emacs
 initialization code, in the file local variables or in the directory
 local variable file ~.dir-locals.el~[fn:54].
 
@@ -15158,9 +15092,7 @@ knows four font families, namely: =main= as the default (Serif) font,
 text (for example, listings) and =math= to typeset mathematical
 expressions.
 
-For example, if you want to map the ~math~ font to the system font
-~TeX Gyre Termes Math~, you should use the *mandatory* property
-~:font~. Consider the following definition for
+For example, consider the following definition for
 ~org-latex-fontspec-config~:
 
 #+BEGIN_SRC elisp
@@ -15172,7 +15104,7 @@ For example, if you want to map the ~math~ font to the system font
 #+END_SRC
 #+RESULTS:
 
-#+texinfo: @noindent
+# +texinfo: @noindent
 When generating the font prelude for ~lualatex~, the resulting LaTeX commands
 will be:
 
@@ -15189,9 +15121,10 @@ and you will use the ~FreeSerif~ font as the default font, the
 teletype passages (for example, listings) and ~TeX Gyre Termes Math~
 for equations or mathematical expressions in general.
 
-If you need extra features for your font, you will need to add them
-with the property ~:features~.  For example, if you want a nicer
-scaling for the monotype font you could define the ~mono~ font as:
+If you need extra features for any of these font families, you will
+need to add them using the property ~:features~.  For example, if you
+want a nicer scaling for the monotype font you could define the ~mono~
+font mapping as:
 
 #+BEGIN_SRC elisp
 (setq-default org-latex-fontspec-config
@@ -15212,9 +15145,9 @@ This is translated as:
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
-The ~:features~ property can be a string or a list of strings to improve
-readability.  For example, to make the ~mono~ font appear in blue and
-scaled, you could specify it as:
+The ~:features~ property can be a string or a list of strings to
+improve readability.  For example, to make the ~mono~ font family
+appear in blue and scaled, you could specify it as:
 
 #+BEGIN_SRC elisp
 ("mono" :font "TeX Gyre Cursor"
@@ -15224,7 +15157,7 @@ scaled, you could specify it as:
 #+texinfo: @noindent
 When you have more than one feature to add, you can also provide them
 as a comma-separated list in a string. The following code also would
-also define the ~mono~ font as blue and scaled:
+also define the ~mono~ font family as blue and scaled:
 
 #+BEGIN_SRC emacs-lisp
 ("mono" :font "TeX Gyre Cursor"
@@ -15233,20 +15166,25 @@ also define the ~mono~ font as blue and scaled:
 
 As mentioned earlier, it is always advisable to use (Unicode) fonts
 that cover all scripts in your document to simplify font
-configuration.  If you are using =lualatex= as your LaTeX compiler,
-you can also declare fallback fonts for specific scripts that are not
-included in the fonts used for your document.
+configuration.  If you are using ~lualatex~ as your LaTeX compiler,
+you can also declare fallback fonts.  ~lualatex~ will then try to use
+them for glyphs (characters) that are not included in the fonts you
+use in your document.  When this happens, the LaTeX process will
+complain and Emacs will warn you.
 
-When this is the case, the LaTeX process will complain and Emacs will
-warn you. When exporting to LaTeX, the export process will always print
-a list of scripts in the *~*Messages*~* buffer.
+When exporting to LaTeX, the export process will always print a list
+of scripts in the *~*Messages*~* buffer.  You can declare the fallback
+fonts for missing glyphs based on this list, using the ~:fallback~
+property for this purpose.  This property maps Emacs script names to
+font declarations.
 
-You can declare the fallback fonts for missing scripts based on this
-list and using ~:fallback~ property for this purpose.  It links to an
-associative list that maps the script names as detected by Emacs with
-their fallback configuration.
+The format for the specification is
+- ~("<script>" . "<font name>")~ to include a font when a specific
+  Emacs script is detected in the document, or
+- ~("<script>" . "<font name>:<extra options>")~ to include a font
+  with a set of options, when a script is detected.
 
-For example, assume your ~init.el~ configures the ~main~ font in
+For example, assume your ~init.el~ file configures the ~main~ font in
 ~org-latex-fontspec-config~ as:
 
 #+BEGIN_SRC emacs-lisp
@@ -15263,8 +15201,19 @@ For example, assume your ~init.el~ configures the ~main~ font in
                 ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
-If Emacs detects characters belonging to the ~emoji~ character set, it
-will include the following fallback definition for the ~main~ font[fn:55]:
+
+#+texinfo: @noindent
+If Emacs detects characters using what it defines as the ~emoji~ script in the buffer, it
+will print a message similar to[fn:61]:
+
+#+BEGIN_EXAMPLE
+=> Scripts used in document: (greek symbol emoji)
+#+END_EXAMPLE
+
+
+#+texinfo: @noindent
+and using ~org-latex-fontspec-config~ as defined above, it will include
+the following fallback definition for the ~main~ font[fn:55]:
 
 #+BEGIN_SRC latex
 \directlua{
@@ -15274,7 +15223,8 @@ will include the following fallback definition for the ~main~ font[fn:55]:
 }
 #+END_SRC
 
-and, then, generate the following font specification for =main=.
+which will result in the following font specification for =main= in
+the LaTeX preamble:
 
 #+BEGIN_SRC latex
 \setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
@@ -15283,18 +15233,20 @@ and, then, generate the following font specification for =main=.
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
-This will enable you to include emojis in parts of the document that
-are printed with the main document font.
+Using this fallback definition will enable you to include emojis in
+parts of the document that are printed with the main document font.
+You may use fallbacks for any font family defined in
+~org-latex-fontspec-config~. For example, if your document uses emojis
+in the listings only , you need to include the fallback definition for
+the =mono= font family, but can omit it for the rest.
 
-Note that when you specify ~:features~ for a font, the fallback
-definition is appended as another feature to the font definition.
-The format for the specification is
-1. ~("<script>" . "<font name>")~ to activate a font for a specific
-   script, or
-2. ~("<script>" . "<font name>:<extra options>")~ to activate a font
-   with a set of options for a specific script
-
-You may use any font family defined in ~org-latex-fontspec-config~.
+Note that:
+- you do not need to provide fallback definitions for glyph families
+  included in the system fonts you use.
+- the script name is a /hint/ provided by Emacs and that it does not
+  appear anywhere in the LaTeX preamble.
+- when you specify ~:features~ for a font, the fallback definition is
+  appended as another feature to the font definition.
 
 #+vindex: org-latex-fontspec-default-features
 Additionally, you can define common features for all fonts using the
@@ -15314,9 +15266,9 @@ the following LaTeX code in the file header:
 \defaultfontfeatures{Numbers=OldStyle}
 #+END_SRC
 If you need more features, add them to this string to create a
-comma-separated list. (See
+comma-separated list. (Cf.
 [[https://latex3.github.io/fontspec/user.html][the summary of
-~fontspec~ commands]] in the ~babel~ guide.)
+~fontspec~ commands]].)
 
 Font configuration is a "grow as you go" process. You can keep the
 fallback definitions in your configuration, even if the document you
@@ -22345,7 +22297,7 @@ Tags]]) only for those set in these variables.
 
 #+vindex: org-mobile-directory
 The mobile application needs access to a file directory on
-a server[fn:61] to interact with Emacs.  Pass its location through
+a server[fn:62] to interact with Emacs.  Pass its location through
 the ~org-mobile-directory~ variable.  If you can mount that directory
 locally just set the variable to point to that directory:
 
@@ -22389,7 +22341,7 @@ Symbolic links in ~org-directory~ need to have the same name as their
 targets.].
 
 Push creates a special Org file =agendas.org= with custom agenda views
-defined by the user[fn:62].
+defined by the user[fn:63].
 
 Finally, Org writes the file =index.org=, containing links to other
 files.  The mobile application reads this file first from the server
@@ -22864,7 +22816,7 @@ of these strategies:
 To wrap a source table in LaTeX, use the =comment= environment
 provided by =comment.sty=[fn:: https://www.ctan.org/pkg/comment].  To
 activate it, put ~\usepackage{comment}~ in the document header.
-Orgtbl mode inserts a radio table skeleton[fn:63] with the command
+Orgtbl mode inserts a radio table skeleton[fn:64] with the command
 {{{kbd(M-x orgtbl-insert-radio-table)}}}, which prompts for a table
 name.  For example, if =salesfigures= is the name, the template
 inserts:
@@ -22884,7 +22836,7 @@ The line =#+ORGTBL: SEND= tells Orgtbl mode to use the function
 ~orgtbl-to-latex~ to convert the table to LaTeX format, then insert
 the table at the target (receive) location named =salesfigures=.  Now
 the table is ready for data entry.  It can even use spreadsheet
-features[fn:64]:
+features[fn:65]:
 
 #+begin_example
 % BEGIN RECEIVE ORGTBL salesfigures
@@ -24304,6 +24256,8 @@ meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-
 for different files.  However, "smart" LaTeX compilation systems, such
 as ~latexmk~, can select the correct bibliography compiler.
 
+[fn:48] DEFINITION NOT FOUND.
+
 [fn:49] Note that ~beamer~ is yet another LaTeX class. Org provides a
 specific Beamer exporter to map the Org document structure
 correctly. All considerations for language and font management in
@@ -24330,7 +24284,9 @@ output. This can be remedied by using ~fontspec~ and specifying a
 =math= font in ~org-latex-fontspec-config~.
 
 [fn:54] Consult [[info:emacs#Directory Variables][Directory Variables]]
-to learn to define and use directory local variables.
+to learn to define and use directory local variables. Local variables
+supersede your Emacs configuration and are useful to ensure that
+everyone is on the same page when collaborating with other people.
 
 [fn:55] Any font in ~org-latex-fontspec-config~ which includes a
 fallback for the =emoji= character set will produce equivalent code
@@ -24381,21 +24337,24 @@ through ~word-wrap~.
 [fn:60] This works, but requires extra effort.  Org Indent mode is
 more convenient for most applications.
 
-[fn:61] For a server to host files, consider using a WebDAV server,
+[fn:61] In this example, the buffer also contained some Greek text and
+a couple of equations.
+
+[fn:62] For a server to host files, consider using a WebDAV server,
 such as [[https://nextcloud.com][Nextcloud]].  Additional help is at this [[https://orgmode.org/worg/org-faq.html#mobileorg_webdav][FAQ entry]].
 
-[fn:62] While creating the agendas, Org mode forces =ID= properties
+[fn:63] While creating the agendas, Org mode forces =ID= properties
 on all referenced entries, so that these entries can be uniquely
 identified if Org Mobile flags them for further action.  To avoid
 setting properties configure the variable
 ~org-mobile-force-id-on-agenda-items~ to ~nil~.  Org mode then relies
 on outline paths, assuming they are unique.
 
-[fn:63] By default this works only for LaTeX, HTML, and Texinfo.
+[fn:64] By default this works only for LaTeX, HTML, and Texinfo.
 Configure the variable ~orgtbl-radio-table-templates~ to install
 templates for other modes.
 
-[fn:64] If the =TBLFM= keyword contains an odd number of dollar
+[fn:65] If the =TBLFM= keyword contains an odd number of dollar
 characters, this may cause problems with Font Lock in LaTeX mode.  As
 shown in the example you can fix this by adding an extra line inside
 the =comment= environment that is used to balance the dollar

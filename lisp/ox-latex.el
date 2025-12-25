@@ -2183,6 +2183,7 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
        (when-let* ((font (plist-get font-config :font)))
          (insert "\\set" font-family "font{" font "}")
          ;; add the extra features
+         ;; which are a string or a list of strings
          (let ((features (plist-get font-config :features)))
            (when (stringp features)
              (setq features (list features))) ;; needs to be a list to concat a possible fallback
