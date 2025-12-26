@@ -13531,7 +13531,7 @@ decreases scheduled or deadline date by one day."
 	 (org-todo value)
 	 (when org-auto-align-tags (org-align-tags)))
         ((equal property "PRIORITY")
-	 (org-priority (if (org-string-nw-p value) (string-to-char value) 'remove))
+	 (org-priority (if (org-string-nw-p value) (org-priority-to-value value) 'remove))
 	 (when org-auto-align-tags (org-align-tags)))
         ((equal property "SCHEDULED")
 	 (forward-line)
