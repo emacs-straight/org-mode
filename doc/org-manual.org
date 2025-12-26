@@ -15050,13 +15050,16 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
   English context (i.e. header, figure, table names and typesetting
   options will be set for American English).
 
-  ~fontspec~ distinguishes between the Roman (=main=), the Sans-Serif
-  (=sans=) and the Monotype (=mono=) font, and can provide fall-backs for
-  character sets (for example, ~emoji~, ~han~, ~kana~, etc.) that are
-  not provided by the fonts you use in your document.  See
-  [[#lualatex-fontspec]] for more details.  Note that ~fontspec~ does
-  not work with =pdflatex= compiler. For =pdflatex=, you can control
-  fonts using font packages (cf. [[#pdflatex-fonts]]).
+  ~fontspec~ distinguishes between four font families: Roman (=main=),
+  Sans-Serif (=sans=), Monotype (=mono=) and Mathematical (=math=).
+  These are normally mapped to system fonts in the document class you
+  use. However, you may need to change them, for example if the
+  default fonts don't support the character set or sets used in your
+  document. Additionally, you can also provide fall-backs in specific
+  cases.  See [[#lualatex-fontspec]] for more details.  Note that
+  ~fontspec~ does not work with the =pdflatex= compiler. For =pdflatex=,
+  you only can control fonts using font packages provided with your
+  LaTeX distribution (cf. [[#pdflatex-fonts]]).
 
   We recommend using =lualatex= or =xelatex= for reliable non-Latin
   language support and using Unicode fonts that include
@@ -15105,10 +15108,10 @@ included manually as:
 #+vindex: org-latex-classes
 #+vindex: org-latex-unicode-math-options
 
-When using ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
+When you use ~lualatex~ or ~xelatex~ as your =LATEX_COMPILER=, you can
 control the fonts used in the PDF using the ~fontspec~ package.  To
 enable optimized ~fontspec~ configuration[fn:53], set variable
-~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to ~fontspec~
+~org-latex-multi-lang~ or the =LATEX_MULTI_LANG= option to ~fontspec~.
 
 The LaTeX templates in Org mode may include the =[FONTSPEC]= keyword
 (see ~org-latex-classes~), which acts as a placeholder for font
