@@ -15247,12 +15247,23 @@ you can also declare fallback fonts for specific scripts that are not
 included in the fonts used for your document.
 
 In this case, the LaTeX compiler will fail and Emacs will warn you. To
-help you, the LaTeX export process always prints a list of scripts in
-the *~*Messages*~* buffer.
+help you, the LaTeX export process prints the list of scripts used in
+the document that are outside the ~latin-1~ character set in
+the *~*Messages*~* buffer. For example, when you include Cyrillic
+text, you will see:
 
-You can declare the fallback fonts for missing scripts in the
+#+begin_example
+=> Scripts used in document: (cyrillic)
+#+end_example
+
+At this point, you will need to check, which of the fonts you use does
+not include the /offending/ script ad try to substitute it by a
+Unicode font that includes it (see above).
+
+When including a font supporting the missing script(s) is not enough,
+you can declare the fallback fonts for missing scripts in the
 ~:fallback~ property based on this list.  It consists of an
-associative list that maps the script names as detected by Emacs with
+property list that maps the script names as detected by Emacs with
 their fallback system font and optional extra configuration.
 
 For example, assume your ~init.el~ configures the ~main~ font in
@@ -15262,9 +15273,9 @@ For example, assume your ~init.el~ configures the ~main~ font in
 (setq-default org-latex-fontspec-config
               '(("main"
                  :font "TeX Gyre Termes"
-                 :fallback (("emoji" . "Noto Color Emoji:mode=harf")
-                            ("han"   . "Noto Serif CJK JP")
-                            ("kana"  . "Noto Serif CJK JP")))
+                 :fallback (("emoji" :font "Noto Color Emoji:mode=harf")
+                            ("han"   :font "Noto Serif CJK JP")
+                            ("kana"  :font "Noto Serif CJK JP")))
                 ("sans" :font "FreeSans")
                 ("mono"
                  :font "TeX Gyre Cursor"
@@ -15297,9 +15308,9 @@ This will enable you to include emojis in parts of the document that
 are printed with the main document font.
 
 The format for the ~:fallback~ specification is:
-1. ~("<script>" . "<font name>")~ to activate font when a specific
+1. ~("<script>" :font "<font name>")~ to activate font when a specific
    Emacs script is detected in the buffer, or
-2. ~("<script>" . "<font name>:<extra options>")~ to activate a font
+2. ~("<script>" :font "<font name>:<extra options>")~ to activate a font
    with a set of options when a specific Emacs script is detected.
 
 You may use any font family defined in ~org-latex-fontspec-config~.
