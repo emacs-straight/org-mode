@@ -296,6 +296,26 @@ A random text.
      (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-features ()
+  "Test that font features are generated when declared."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang "fontspec")
+        (org-latex-fontspec-config '(("main" :font "FreeSans")
+                                     ("mono" :font "FreeMono" :props "Scale=MatchLowercase"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec-features
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text.
+"
+     (goto-char (point-min))
+     (should (search-forward "\\setmainfont{FreeSans}" nil t))
+     (goto-char (point-min))
+     (should (search-forward "\\setmonofont{FreeMono}[Scale=MatchLowercase]" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-default-features ()
   "Test that defaultfontfeatures is generated
 when org-latex-fontspec-default-features are defined."
   (let ((org-latex-compiler "lualatex")
@@ -304,7 +324,7 @@ when org-latex-fontspec-default-features are defined."
         (org-latex-fontspec-config '(("main" :font "FreeSans"))))
     (org-test-with-exported-text
      'latex
-     "#+TITLE: fontspec-features
+     "#+TITLE: fontspec-default-features
 #+OPTIONS: toc:nil H:3 num:nil
 
 * Heading
