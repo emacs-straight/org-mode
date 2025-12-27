@@ -1609,7 +1609,7 @@ FONT-PLIST is a plist.  The keys for this plist are
   `:features': string or list of strings with font features.
                A potential fallback will be appended.
                CAVEAT: features may be overwritten by fallback.
-  `:fallback': an alist of (`script' . `mapping')
+  `:fallback': an plist of (`script' :font `mapping')
                to map Emacs script names detected in the buffer to
                their mapping. A mapping is either a font name or
                a font named followed by a colon and additional features.
@@ -1623,7 +1623,7 @@ For example, this could be placed in your .dir-locals.el:
       . ((\"main\" :font \"TeXGyreSchola\")
          (\"sans\" :font \"TeXGyreHeros\"
           :fallback
-          ((\"emoji\" . \"AppleColorEmoji:mode=harf\")))
+          ((\"emoji\" :font \"AppleColorEmoji:mode=harf\")))
          (\"math\" :font \"Stix Two Math\")
          (\"mono\" :font \"DejaVu Sans Mono\"))))))"
 
@@ -2168,6 +2168,9 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
                (insert (format " luaotfload.add_fallback (\"%s\",{\n" fallback-name))
                ;; Here we get the font fallbacks list
                (dolist (fallback-font fallback-fonts)
+                 (unless (stringp fallback-font)  ; unless using the original alist
+                   ;; get the fallback font from the properties
+                   (setq fallback-font (plist-get fallback-font :font)))
                  ;; If the string doesn't contain a ":"
                  ;; it is assumed to be a font name that needs it at the end
                  (unless (string-match-p ":" fallback-font)
