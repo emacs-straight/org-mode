@@ -123,6 +123,24 @@ sure that we are at the beginning of the line.")
   "Matches a headline, putting stars and text into groups.
 Stars are put in group 1 and the trimmed body in group 2.")
 
+(defvar org-priority-value-regexp "[A-Z]\\|[0-9]\\|[1-5][0-9]\\|6[0-4]"
+  "Regular expression matching valid priority values.
+The priority value must be a capital Latin
+alphabetic character, A through Z, or can be an integer value in the range 0
+through 64.")
+
+(defvar org-priority-regexp
+  (format ".*?\\(\\[#\\(%s\\)\\] ?\\)" org-priority-value-regexp)
+  "Regular expression matching the priority indicator.
+A priority indicator can be e.g. [#A] or [#1].
+The value of the priority cookie must be a capital Latin
+alphabetic character, A through Z, or can be an integer value in
+the range 0 through 64.
+This regular expression matches these groups:
+0 : the whole match, e.g. \"TODO [#A] Hack\"
+1 : the priority cookie, e.g. \"[#A]\"
+2 : the value of the priority cookie, e.g. \"A\".")
+
 (declare-function calendar-check-holidays "holidays" (date))
 (declare-function cdlatex-environment "ext:cdlatex" (environment item))
 (declare-function cdlatex-math-symbol "ext:cdlatex")
@@ -4591,14 +4609,14 @@ related expressions."
 	      org-complex-heading-regexp
 	      (concat "^\\(\\*+\\)"
 		      "\\(?: +" org-todo-regexp "\\)?"
-		      "\\(?: +\\(\\[#.\\]\\)\\)?"
+		      (format "\\(?: +\\(\\[#\\(?:%s\\)\\]\\)\\)?" org-priority-value-regexp)
 		      "\\(?: +\\(.*?\\)\\)??"
 		      "\\(?:[ \t]+\\(:[[:alnum:]_@#%:]+:\\)\\)?"
 		      "[ \t]*$")
 	      org-complex-heading-regexp-format
 	      (concat "^\\(\\*+\\)"
 		      "\\(?: +" org-todo-regexp "\\)?"
-		      "\\(?: +\\(\\[#.\\]\\)\\)?"
+		      (format "\\(?: +\\(\\[#\\(?:%s\\)\\]\\)\\)?" org-priority-value-regexp)
 		      "\\(?: +"
                       ;; Headline might be commented
                       "\\(?:" org-comment-string " +\\)?"
@@ -11301,24 +11319,6 @@ from the `before-change-functions' in the current buffer."
 		   'org-remove-occur-highlights 'local))))
 
 ;;;; Priorities
-
-(defvar org-priority-value-regexp "[A-Z]\\|[0-9]\\|[1-5][0-9]\\|6[0-4]"
-  "Regular expression matching valid priority values.
-The priority value must be a capital Latin
-alphabetic character, A through Z, or can be an integer value in the range 0
-through 64.")
-
-(defvar org-priority-regexp
-  (format ".*?\\(\\[#\\(%s\\)\\] ?\\)" org-priority-value-regexp)
-  "Regular expression matching the priority indicator.
-A priority indicator can be e.g. [#A] or [#1].
-The value of the priority cookie must be a capital Latin
-alphabetic character, A through Z, or can be an integer value in
-the range 0 through 64.
-This regular expression matches these groups:
-0 : the whole match, e.g. \"TODO [#A] Hack\"
-1 : the priority cookie, e.g. \"[#A]\"
-2 : the value of the priority cookie, e.g. \"A\".")
 
 (defun org-priority-valid-cookie-string-p (priority)
   "Return t if the PRIORITY is a valid priority cookie, nil otherwise."
