@@ -15134,7 +15134,7 @@ equations, use the following settings in ~.dir-locals.el~:
   . ((org-latex-unicode-math-options . "math-style=upright"))))
 #+END_SRC
 
-You can also set ~org-latex-multi-lang~ or the ~LATEX_MULTI_LANG~
+You can also set ~org-latex-multi-lang~ or the =LATEX_MULTI_LANG=
 option to either ~polyglossia~ or ~babel~. These LaTeX packages load
 ~fontspec~ internally. When using ~polyglossia~, you can combine
 ~fontspec~ and ~polyglossia~-specific configuration.  Font
@@ -15152,12 +15152,13 @@ configuration for the ~babel~ package may also use an alternative mechanism
 #+vindex: org-latex-fontspec-default-features
 
 Org mode uses the variable ~org-latex-fontspec-config~ to map your
-document's fonts to the fonts used in the generated PDF document.  To
-familiarize yourself with fonts and options, read the
+document's fonts to the fonts used in the generated PDF document.This
+variable can be set in your Emacs initialization code, in the file
+local variables or in the directory local variable file
+~.dir-locals.el~[fn:54].  To familiarize yourself with fonts and
+options, read the
 [[http://mirrors.ctan.org/macros/unicodetex/latex/fontspec/fontspec.pdf][~fontspec~
-package manual]] Part II.  This variable can be set in your Emacs
-initialization code, in the file local variables or in the directory
-local variable file ~.dir-locals.el~[fn:54].
+package manual]] Part II.
 
 ~org-latex-fontspec-config~ maps the font family name used by LaTeX to
 the font used in the PDF output and optional font features. LaTeX
