@@ -15199,15 +15199,17 @@ monospaced passages (for example, listings) and ~TeX Gyre Termes Math~
 for equations or mathematical expressions in general.
 
 If you need extra features for your font, you will need to add them
-with the property ~:features~.  For example, if you want a nicer
-scaling for the monotype font you could define the ~mono~ font as:
+with the property ~:props~ [fn:: You may also use ~:features~ for
+~:props~. (cf. ~org-latex-fontspec-default-features~ below)].  For
+example, if you want a nicer scaling for the monotype font you could
+define the ~mono~ font as:
 
 #+BEGIN_SRC elisp
 (setq-default org-latex-fontspec-config
               '(("main" :font "FreeSerif")
                 ("sans" :font "FreeSans")
                 ("mono" :font "TeX Gyre Cursor"
-                 :features "Scale=MatchLowercase")
+                 :props "Scale=MatchLowercase")
                 ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
@@ -15221,13 +15223,13 @@ This is translated as:
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
-The ~:features~ property can be a string or a list of strings to improve
+The ~:props~ property can be a string or a list of strings to improve
 readability.  For example, to make the ~mono~ font appear in blue and
 scaled, you could specify it as:
 
 #+BEGIN_SRC elisp
 ("mono" :font "TeX Gyre Cursor"
-        :features ("Color=blue"
+        :props ("Color=blue"
                    "Scale=MatchLowercase"))
 #+END_SRC
 #+texinfo: @noindent
@@ -15237,7 +15239,7 @@ also define the ~mono~ font as blue and scaled:
 
 #+BEGIN_SRC emacs-lisp
 ("mono" :font "TeX Gyre Cursor"
-        :features "Color=blue,Scale=MatchLowercase")
+        :props "Color=blue,Scale=MatchLowercase")
 #+END_SRC
 
 As mentioned earlier, it is always advisable to use (Unicode) fonts
@@ -15279,7 +15281,7 @@ For example, assume your ~init.el~ configures the ~main~ font in
                 ("sans" :font "FreeSans")
                 ("mono"
                  :font "TeX Gyre Cursor"
-                 :features "Scale=MatchLowercase")
+                 :props "Scale=MatchLowercase")
                 ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
@@ -15314,22 +15316,23 @@ The format for the ~:fallback~ specification is:
    with a set of options when a specific Emacs script is detected.
 
 You may use any font family defined in ~org-latex-fontspec-config~.
-When you specify ~:features~ for a font family, the fallback
+When you specify ~:props~ for a font family, the fallback
 definition is appended as another feature to the font definition.
 
 #+vindex: org-latex-fontspec-default-features
-Additionally, you can define common features for all fonts using the
-~org-latex-fontspec-default-features~ variable. Its default value is
-~nil~ meaning that no defaults are defined. If you need to default
-common features for all fonts, you can define them in a string
-in this variable. For example:
+Additionally, you can define common features (cf. ~:props~ above) for
+all fonts using the ~org-latex-fontspec-default-features~
+variable. Its default value is ~nil~ meaning that no defaults are
+defined. If you need default common features for all font families,
+you can define them in a string in this variable. For example:
 
 #+BEGIN_SRC elisp
 (setq org-latex-fontspec-default-features "Numbers=OldStyle")
 #+END_SRC
 
-or its equivalent as a file or directory local variable will generate
-the following LaTeX code in the file header:
+#+texinfo: @noindent
+(or its equivalent as a file or directory local variable) will generate
+the following line in the LaTeX preamble:
 
 #+BEGIN_SRC latex
 \defaultfontfeatures{Numbers=OldStyle}
@@ -15427,7 +15430,7 @@ directory-local variables:
       . (("main" :font "CMU Serif")
          ("sans" :font "CMU Sans Serif")
          ("mono" :font "DejaVu Sans Mono"
-                 :features "Scale=MatchLowercase")))
+                 :props "Scale=MatchLowercase")))
      (org-latex-polyglossia-font-config
       . (("el" :variant "rm" :font "Noto Serif"
                :props "Script=Greek,Scale=MatchLowercase"))))))

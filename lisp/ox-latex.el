@@ -1607,6 +1607,7 @@ FONT-FAMILY is one of the LaTeX font families:
 FONT-PLIST is a plist.  The keys for this plist are
   `:font' (mandatory): system font name
   `:features': string or list of strings with font features.
+  `:props':    alias for `:features'
                A potential fallback will be appended.
                CAVEAT: features may be overwritten by fallback.
   `:fallback': an plist of (`script' :font `mapping')
@@ -2186,7 +2187,10 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
        (when-let* ((font (plist-get font-config :font)))
          (insert "\\set" font-family "font{" font "}")
          ;; add the extra features
-         (let ((features (plist-get font-config :features)))
+         ;;  :props is an alias to align with babel/polyglossia
+         ;;  :features is closer to fontspec
+         (let ((features (or (plist-get font-config :props)
+                             (plist-get font-config :features))))
            (when (stringp features)
              (setq features (list features))) ;; needs to be a list to concat a possible fallback
            (when-let* ((fallback-name (alist-get font-family fallback-alist nil nil #'string=))
