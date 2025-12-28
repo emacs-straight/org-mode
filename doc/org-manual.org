@@ -15199,11 +15199,11 @@ The complete configuration reads like this: you will use the
 monospaced passages (for example, listings) and ~TeX Gyre Termes Math~
 for equations or mathematical expressions in general.
 
-If you need extra features for your font, you will need to add them
-with the property ~:props~ [fn:: You may also use ~:features~ for
-~:props~. (cf. ~org-latex-fontspec-default-features~ below)].  For
-example, if you want a nicer scaling for the monotype font you could
-define the ~mono~ font as:
+If you need extra features for any of the fonts, you need to add them
+with the property ~:props~ [fn:: You may also use ~:features~ as an
+alias for ~:props~. (cf. ~org-latex-fontspec-default-features~
+below)].  For example, if you want a nicer scaling for the monotype
+font you can define the ~mono~ font as:
 
 #+BEGIN_SRC elisp
 (setq-default org-latex-fontspec-config
@@ -15226,7 +15226,7 @@ This is translated as:
 
 The ~:props~ property can be a string or a list of strings to improve
 readability.  For example, to make the ~mono~ font appear in blue and
-scaled, you could specify it as:
+scaled, you can specify it as:
 
 #+BEGIN_SRC elisp
 ("mono" :font "TeX Gyre Cursor"
@@ -15235,8 +15235,8 @@ scaled, you could specify it as:
 #+END_SRC
 #+texinfo: @noindent
 When you have more than one feature to add, you can also provide them
-as a comma-separated list in a string. The following code also would
-also define the ~mono~ font as blue and scaled:
+as a comma-separated list in a single string. The following code also
+would also define the ~mono~ font as blue and scaled:
 
 #+BEGIN_SRC emacs-lisp
 ("mono" :font "TeX Gyre Cursor"
@@ -15249,19 +15249,20 @@ configuration.  If you are using =lualatex= as your LaTeX compiler,
 you can also declare fallback fonts for specific scripts that are not
 included in the fonts used for your document.
 
-When using =lualatex=, the LaTeX export process prints the list of
-scripts used in the document that are outside the ~latin-1~ character
-set in the *~*Messages*~* buffer. For example, when you include
-Cyrillic text, you will see:
+# When using =lualatex=, the LaTeX export process prints the list of
+# scripts used in the document that are outside the ~latin-1~ character
+# set in the *~*Messages*~* buffer. For example, when you include
+# Cyrillic text, you will see:
 
-#+begin_example
-=> Scripts used in document: (cyrillic)
-#+end_example
+# #+begin_example
+# => Scripts used in document: (cyrillic)
+# #+end_example
 
 If the system fonts you use to produce the PDF output don't support a
 specific script, the LaTeX compiler will fail and Emacs will warn
-you. To help you, Org will include a list of /problematic/ fonts with
-the Emacs scripts they don't support. For example:
+you. To help you fix the font setup, Org will include a list of
+/problematic/ fonts with the Emacs scripts they don't support. For
+example:
 
 #+begin_example
 Scripts missing:
@@ -15270,30 +15271,30 @@ For font lmroman10-regular: cyrillic
 For font lmsans10-regular: emoji
 #+end_example
 
-Most LaTeX document classes include the ~lm...~ fonts by
-default. These fonts are installed with your LaTeX distribution. Most
-of the times, replacing these fonts by system fonts supporting the
-missing scripts will be enough (the Cyrillic script in the example
-above)[fn::Replace Cyrillic with your specific needs. You just need to
-find a Unicode font supporting your needs.].
+Most LaTeX document classes use the ~lm...~ fonts by default. These
+fonts are installed with your LaTeX distribution. Most of the times,
+replacing these fonts by system fonts supporting the missing scripts
+will be enough (the Cyrillic script in the example above)[fn::Replace
+Cyrillic with your specific needs. You just need to find a Unicode
+font supporting the scripts you use in the document.].
 
 When one or more scripts are not supported by your default choice (for
 example, the ~emoji~ script in the example above), you can declare
 fallback fonts with the ~:fallback~ property for the specific font
 family based on this list.
 
-The ~:fallback~ property is list that maps Emacs script names to their
-fallback system font and optional extra configuration.
+The ~:fallback~ property maps Emacs script names to their fallback
+system font and optional extra configuration.
 
 For the example above, you would need to find Unicode font substitutes
 for the ~lmroman...~ and ~lmmono...~ fonts, because then lack the
 Cyrillic script. In the case of the ~lmsans...~ font, you need to add
 a fallback font for the ~emoji~ script. In order to allow fallback
-fonts, that you need a substitute font too.
+fonts, you need a substitute font for the family that needs them.
 
-The ~Free...~ fonts provide reasonable substitutes for the default
-~lm...~ fonts. With this in mind you could define
-~org-latex-fontspec-config~ as follows:
+Turning back to the example above. The ~Free...~ fonts provide
+reasonable substitutes for the default ~lm...~ fonts. With this in
+mind you could define ~org-latex-fontspec-config~ as follows:
 
 #+BEGIN_SRC emacs-lisp
 (setq-default org-latex-fontspec-config
@@ -15330,7 +15331,8 @@ the following font specification for =sans=.
 #+END_SRC
 
 This will enable you to include emojis in parts of the document that
-are printed with the main document font.
+are typeset in Sans-Serif. If you have emojis in passages typeset in
+Serif, you will need to add the fallback to ~main~.
 
 The format for the ~:fallback~ specification is:
 1. ~("<script>" :font "<font name>")~ to activate font when a specific

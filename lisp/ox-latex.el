@@ -2003,7 +2003,7 @@ See initial version proposed by Juan Manuel Macías in URL
         (let ((script (aref char-script-table
                             (string-to-char (match-string 1)))))
           (cl-pushnew (prin1-to-string script) scripts :test #'equal))))
-    (message "=> Scripts used in document: %s" scripts)
+    ;; (message "=> Scripts used in document: %s" scripts)
     scripts))
 
 (defun org-latex--mk-options (opts)
