@@ -473,7 +473,7 @@ In this test we default to Fandol font for Chinese."
      (save-excursion
        (should (search-forward "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax")))
      (save-excursion
-       (should (search-forward "\\parindent=2em")))
+       (should (search-forward "\\normalsize\\parindent=2\\zw")))
      (save-excursion
        (should (search-forward "\\linespread{1.333}")))
      ;; Not wrapped in `save-excursion' since they must follow this specific sequence

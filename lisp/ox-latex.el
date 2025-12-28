@@ -2359,7 +2359,9 @@ Use fontspec as a last resort and when defined."
                   (insert "\\def\\ltj@stdyokojfm{quanjiao}\n"))
                 (insert "\\makeatother\n\\usepackage{luatexja}\n"))
               (insert "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax\n") ;; FIXME: agree on ZWS
-              (insert (format "\\parindent=%dem\n" (if (string= main-lang "jp") 1 2))) ;; FIXME: Korean?
+              (insert (format "\\normalsize\\parindent=%d%s\n"
+                              (if (string= main-lang "jp") 1 2)
+                              (if (string= compiler "lualatex") "\\zw" "em"))) ;; FIXME: Korean?
               (insert "\\linespread{1.333}")))))
       ;; FIXME: This works but needs to be fine-tuned:
       (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
