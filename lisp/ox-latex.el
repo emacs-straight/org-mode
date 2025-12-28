@@ -5227,6 +5227,9 @@ log files (as specified by `org-latex-logfiles-extensions') are deleted."
                      (regexp-opt org-latex-logfiles-extensions))
              t)))
     (let ((warnings (org-latex--collect-warnings log-buf)))
+      ;; We collect and print font misses first
+      (org-latex--parse-font-misses log-buf)
+      ;; Then we display the errors and warnings
       (funcall
        (if warnings
            (apply-partially
@@ -5259,6 +5262,42 @@ encountered or nil if there was none."
 	      (when (save-excursion (re-search-forward (car warning) nil t))
 		(setq warnings (concat warnings " " (cdr warning)))))
 	    (org-string-nw-p (org-trim warnings))))))))
+
+(defun org-latex--parse-font-misses (buffer)
+  "Print missing font information in the Messages buffer.
+BUFFER is the buffer containing output.
+Print a list fonts and the _Emacs_ scripts they don't support.
+This list can be then used to provide/improve the font configurations."
+  (with-current-buffer buffer
+    (save-excursion
+      (goto-char (point-max))
+      (when (re-search-backward "^[ \t]*This is .*?TeX.*?Version" nil t)
+        (let ((font-script nil))
+          ;; Create a flat alist with (FONT . EMACS_SCRIPT) for each miss detected
+          (while (search-forward-regexp "^[A-Za-z :]+ is no \\(.\\).+ in font \\[\\([^]]+\\)" nil t)
+            (let ((failed-font (match-string 2))
+                  (emacs-script (symbol-name (aref char-script-table (string-to-char (match-string 1))))))
+              (if (length= font-script 0)
+                  (setq font-script (list (cons failed-font emacs-script)))
+                (progn
+                  (push (cons failed-font emacs-script) font-script)))))
+          ;; Sort the list by FONT
+          (sort font-script #'(lambda (s1 s2)
+                                (string< (car s1) (car s2))))
+          ;; Remove duplicates
+          (delete-dups font-script)
+          (let ((current-font "")
+                (result "Scripts missing:"))
+            (cl-loop for (font . script) in font-script
+                     do
+                     (if (string= current-font font)
+                         ;; Collect the EMACS_SCRIPT
+                         (setq result (concat result " " script))
+                       (progn
+                         (setq current-font font)
+                         ;; New line for each new FONT
+                         (setq result (concat result "\nFor font " font ": " script)))))
+            (message result)))))))
 
 ;;;###autoload
 (defun org-latex-publish-to-latex (plist filename pub-dir)

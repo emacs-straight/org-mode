@@ -15248,61 +15248,83 @@ configuration.  If you are using =lualatex= as your LaTeX compiler,
 you can also declare fallback fonts for specific scripts that are not
 included in the fonts used for your document.
 
-In this case, the LaTeX compiler will fail and Emacs will warn you. To
-help you, the LaTeX export process prints the list of scripts used in
-the document that are outside the ~latin-1~ character set in
-the *~*Messages*~* buffer. For example, when you include Cyrillic
-text, you will see:
+When using =lualatex=, the LaTeX export process prints the list of
+scripts used in the document that are outside the ~latin-1~ character
+set in the *~*Messages*~* buffer. For example, when you include
+Cyrillic text, you will see:
 
 #+begin_example
 => Scripts used in document: (cyrillic)
 #+end_example
 
-At this point, you will need to check, which of the fonts you use does
-not include the /offending/ script ad try to substitute it by a
-Unicode font that includes it (see above).
+If the system fonts you use to produce the PDF output don't support a
+specific script, the LaTeX compiler will fail and Emacs will warn
+you. To help you, Org will include a list of /problematic/ fonts with
+the Emacs scripts they don't support. For example:
 
-When including a font supporting the missing script(s) is not enough,
-you can declare the fallback fonts for missing scripts in the
-~:fallback~ property based on this list.  It consists of an
-property list that maps the script names as detected by Emacs with
-their fallback system font and optional extra configuration.
+#+begin_example
+Scripts missing:
+For font lmmono10-regular: cyrillic
+For font lmroman10-regular: cyrillic
+For font lmsans10-regular: emoji
+#+end_example
 
-For example, assume your ~init.el~ configures the ~main~ font in
-~org-latex-fontspec-config~ as:
+Most LaTeX document classes include the ~lm...~ fonts by
+default. These fonts are installed with your LaTeX distribution. Most
+of the times, replacing these fonts by system fonts supporting the
+missing scripts will be enough (the Cyrillic script in the example
+above)[fn::Replace Cyrillic with your specific needs. You just need to
+find a Unicode font supporting your needs.].
+
+When one or more scripts are not supported by your default choice (for
+example, the ~emoji~ script in the example above), you can declare
+fallback fonts with the ~:fallback~ property for the specific font
+family based on this list.
+
+The ~:fallback~ property is list that maps Emacs script names to their
+fallback system font and optional extra configuration.
+
+For the example above, you would need to find Unicode font substitutes
+for the ~lmroman...~ and ~lmmono...~ fonts, because then lack the
+Cyrillic script. In the case of the ~lmsans...~ font, you need to add
+a fallback font for the ~emoji~ script. In order to allow fallback
+fonts, that you need a substitute font too.
+
+The ~Free...~ fonts provide reasonable substitutes for the default
+~lm...~ fonts. With this in mind you could define
+~org-latex-fontspec-config~ as follows:
 
 #+BEGIN_SRC emacs-lisp
 (setq-default org-latex-fontspec-config
               '(("main"
-                 :font "TeX Gyre Termes"
-                 :fallback (("emoji" :font "Noto Color Emoji:mode=harf")
-                            ("han"   :font "Noto Serif CJK JP")
-                            ("kana"  :font "Noto Serif CJK JP")))
-                ("sans" :font "FreeSans")
+                 :font "FreeSerif")
+                ("sans" :font "FreeSans"
+                 :fallback (("emoji" :font "Noto Color Emoji:mode=harf")))
                 ("mono"
-                 :font "TeX Gyre Cursor"
+                 :font "FreeMono"
                  :props "Scale=MatchLowercase")
                 ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
-If Emacs detects characters belonging to the ~emoji~ character set, it
-will include the following fallback definition for the ~main~ font[fn:55]:
+When Emacs detects characters belonging to the ~emoji~ character set,
+it will include the following fallback definition for the ~sans~
+font[fn:55]:
 
 #+BEGIN_SRC latex
 \directlua{
- luaotfload.add_fallback ("fallback_main",{
+ luaotfload.add_fallback ("fallback_sans",{
   "Noto Color Emoji:mode=harf",
  })
 }
 #+END_SRC
 
 (note that the ~emoji~ script is not mentioned) and, then, generate
-the following font specification for =main=.
+the following font specification for =sans=.
 
 #+BEGIN_SRC latex
-\setmainfont{TeX Gyre Termes}[RawFeature={fallback=fallback_main}]
-\setsansfont{FreeSans}
-\setmonofont{TeX Gyre Cursor}[Scale=MatchLowercase]
+\setmainfont{FreeSerif}
+\setsansfont{FreeSans}[RawFeature={fallback=fallback_sans}]
+\setmonofont{FreeMono}[Scale=MatchLowercase]
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
@@ -15318,6 +15340,9 @@ The format for the ~:fallback~ specification is:
 You may use any font family defined in ~org-latex-fontspec-config~.
 When you specify ~:props~ for a font family, the fallback
 definition is appended as another feature to the font definition.
+
+Make sure to the fallback fonts for the LaTeX font families that need
+them.
 
 #+vindex: org-latex-fontspec-default-features
 Additionally, you can define common features (cf. ~:props~ above) for
