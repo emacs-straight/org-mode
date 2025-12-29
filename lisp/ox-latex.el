@@ -1749,6 +1749,15 @@ roman font's appearance."
 		 (alist :tag "babel font configuration"))
   :safe #'listp)
 
+(defconst org-latex--long2short-family
+  '(("main" . "rm")
+    ("sans" . "sf")
+    ("mono" . "tt"))
+  "An alist to allow \"main\", \"sans\" and \"mono\" when
+defining font mappings for polyglossia or babel.
+
+*CAVEAT*: using long names will not map font families as cleanly as using
+          the native names.")
 
 ;;; Internal Functions
 
@@ -2243,12 +2252,15 @@ Extract the information from INFO."
                ;; (lang . props) --> language and its properties
                do
                (when-let* ((lang-alist (assoc lang org-latex-language-alist))
-                           (lang-plist (cdr lang-alist)))
+                           (lang-plist (cdr lang-alist))
+                           (font-family (or (plist-get props :variant) "")))
                  ;; when `lang' is defined in `org-latex-language-alist'
+                 ;; first translate family to something polyglossia can understand
+                 (setq font-family (alist-get font-family org-latex--long2short-family font-family nil #'string=))
                  (insert (format "\n\\newfontfamily{\\%sfont%s}%s{%s}"
                                  ;; use the language name polyglossia uses for "\\<lang>font<variant>"
                                  ;; override with the user's :script choice when it is not appropriate
-                                 (or (plist-get props :variant) "") ;; if rm, sf, or tt are defined
+                                 font-family ;; if rm, sf, or tt are defined
                                  (or (plist-get props :script) (plist-get lang-plist :polyglossia))
                                  (org-latex--mk-options
                                   (plist-get props :props))    ;; add the additional properties
@@ -2382,7 +2394,7 @@ Use fontspec as a last resort and when defined."
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* (;; (font-list (plist-get babel-fontlist :fonts))
-                         (variant (plist-get babel-fontlist :variant))
+                         (variant (plist-get babel-fontlist :variant)) 
                          (font (plist-get babel-fontlist :font))
                          (props (plist-get babel-fontlist :props)))
                     (when (null font)
@@ -2396,7 +2408,7 @@ Use fontspec as a last resort and when defined."
                       ;; \\babelfont[malayalam]{rm}[Renderer=Harfbuzz]{FreeSerif}
                       (insert (format "\n\\babelfont%s{%s}%s{%s}"
                                       (org-latex--mk-options (and lang (org-latex--get-babel-lang lang)))
-                                      variant
+                                      (alist-get variant org-latex--long2short-family variant nil #'string=)
                                       (org-latex--mk-options props)
                                       font)))))
       (buffer-string))))

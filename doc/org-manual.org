@@ -15403,21 +15403,21 @@ document with English and Hebrew text placed in a ~.dir-locals.el~ file:
 #+BEGIN_SRC emacs-lisp
 ((org-mode
   . ((org-latex-polyglossia-font-config
-      . (("en" :font "FreeSerif")
-         ("en" :variant "sf" :font "FreeSans")
-         ("en" :variant "tt" :font "FreeMono")
-         ("he" :font "Hadasim CLM"
+      . (("en" :variant "main" :font "FreeSerif")
+         ("en" :variant "sans" :font "FreeSans")
+         ("en" :variant "mono" :font "FreeMono")
+         ("he" :variant "main" :font "Hadasim CLM"
           :props "Script=Hebrew")
-         ("he" :variant "tt" :font "Miriam Mono CLM"
+         ("he" :variant "mono" :font "Miriam Mono CLM"
           :props "Script=Hebrew")
-         ("he" :variant "sf" :font "Miriam CLM"
+         ("he" :variant "sans" :font "Miriam CLM"
           :props "Script=Hebrew"))))))
 
 #+END_SRC
 
 As you see, ~polyglossia~ controls fonts on a per-language, per-script
 basis. For example, the document will use the ~Miriam Mono CLM~
-script for Hebrew script in monospaced passages (~:variant "tt"~).
+script for Hebrew script in monospaced passages (~:variant "mono"~).
 You will see the following in the exported LaTeX:
 
 #+BEGIN_SRC LaTeX
@@ -15430,25 +15430,29 @@ of properties.
 
 The properties you can define are:
 
-1. ~:font~: a string with the system font name. This property is
+1. ~:font~ : a string with the system font name. This property is
    *mandatory*.
-2. ~:variant~: a string for the font variant (e.g. ~sf~ for Sans
-   Serif, ~tt~ for Mono, ~rm~ for Roman aka. Serif). The variants
-   are [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter
-   codes used in LaTeX for the different font families]]. When no
+2. ~:variant~ : a string for the font variant (e.g. ~"main"~ or ~"rm"~
+   for the Serif font family, ~"sans"~ or ~"sf"~ for Sans Serif, and
+   ~"mono"~ or ~"tt"~ for Monospace).  The four-letter version for the
+   variant corresponds to the family used above for ~fontspec~.  It
+   will be translated to
+   [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter codes
+   used in LaTeX for the different font families]][fn::Reference
+   sources in the Internet always use the two-letter code].  When no
    variant is indicated, it is assumed that the serif font family
-   (~:variant "rm"~) is implied. It is recommended that you always add
-   variant =rm= *explicitly*.
-3. ~:props~: a string for extra properties as defined in the
+   (variant ~"main"~ or ~"rm"~) is implied.  It is recommended that
+   you always add the variant *explicitly*.
+3. ~:props~ : a string for extra properties as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
-4. ~:script~: a string the family name, when the ~:polyglossia~
+4. ~:script~ : a string the family name, when the ~:polyglossia~
    property in ~org-latex-languages-alist~ is not appropriate (for
    exceptional cases only, cf. Note below).
 
 When using ~polyglossia~, you can also configure the fonts used for
 the document's main language with the configuration for
-~fontspec~. For example, the following settings in you
+~fontspec~.  For example, the following settings in you
 directory-local variables:
 
 #+BEGIN_SRC emacs-lisp
@@ -15467,7 +15471,7 @@ directory-local variables:
 #+texinfo: @noindent
 will set ~CMU Serif~ and ~CMU Sans Serif~ as the fonts for text and
 ~DejaVu Sans Mono~ for listings in all documents where you use
-~fontspec~. Additionally, if you use ~polyglossia~ and have Greek
+~fontspec~.  Additionally, if you use ~polyglossia~ and have Greek
 text, you will typeset it with the ~Noto Serif~ font.
 
 The LaTeX exporter will generate a ~\newfontfamily~ command
@@ -15522,17 +15526,21 @@ properties.  Use ~nil~ as the language name for the fonts
 used by the default language.
 
 The properties are defined as follows:
-1. ~:variant~ (mandatory) is one of the script codes:
-   - ~"rm"~ for the roman (serif) font (this is normally the default
+1. ~:variant~ (mandatory) is one of the script codes. As in
+   [[#lualatex-polyglossia]], they can be[fn::~babel~ uses two-letter
+   codes and Org will translate four-letter codes to these two-letter
+   codes as well.]:
+   - ~"main"~ or ~"rm"~ for the roman (serif) font (this is normally the default
      font for text passages).
-   - ~"sf"~ for the sans serif font, and
-   - ~"tt"~ for the teletype (monospaced) font.
+   - ~"sans"~ or ~"sf"~ for the sans serif font, and
+   - ~"mono"~ or ~"tt"~ for the teletype (monospaced) font.
 2. ~:font~ (mandatory) is the system font name
 3. ~:props~ (optional) is a string holding the options to apply to this font.
 
 For example, for a document with text in German and Greek,
 where the main language is German, this variable could be
-initialized as follows:
+initialized as follows[fn::Using two-letter codes you will most
+probably find in examples in the Internet.]:
 
 #+BEGIN_SRC elisp
 (setq org-latex-babel-font-config
@@ -15566,9 +15574,10 @@ entries for it.
 Additionally, you can add extra properties to any language except the
 default language in your document with the
 ~org-latex-babel-provides-alist~ variable, which maps languages to a
-~:provide~ property. This property is a string. It is always ~"import,main"~ for the
-main language and defaults for other languages to ~"import"~ if not
-present in the configuration; it will generate a line
+~:provide~ property. This property is a string. It is always
+~"import,main"~ for the main language and defaults for other languages
+to ~"import"~ if not present in the configuration; it will generate a
+line
 
 #+begin_example
 \babelprovide[provide]{lang}
