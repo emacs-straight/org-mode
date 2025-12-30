@@ -315,32 +315,12 @@ A random text.
      (goto-char (point-min))
      (should (search-forward "\\setmonofont{FreeMono}[Scale=MatchLowercase]" nil t)))))
 
-(ert-deftest test-ox-latex/lualatex-fontspec-default-features ()
-  "Test that defaultfontfeatures is generated
-when org-latex-fontspec-default-features are defined."
-  (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang "fontspec")
-        (org-latex-fontspec-default-features "Numbers=OldStyle")
-        (org-latex-fontspec-config '(("main" :font "FreeSans"))))
-    (org-test-with-exported-text
-     'latex
-     "#+TITLE: fontspec-default-features
-#+OPTIONS: toc:nil H:3 num:nil
-
-* Heading
-
-A random text.
-"
-     (goto-char (point-min))
-     (should (search-forward "\\defaultfontfeatures{Numbers=OldStyle}" nil t))
-     (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
-
 (ert-deftest test-ox-latex/lualatex-fontspec-directlua ()
   "Test that directlua block is created"
   (let ((org-latex-compiler "lualatex")
         (org-latex-multi-lang "fontspec")
         (org-latex-fontspec-config '(("main"
-                                      :font "FreeSans"
+                                      :font "FreeSerif"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
     (org-test-with-exported-text
      'latex
@@ -355,14 +335,14 @@ A random text with emoji: 👍
      (goto-char (point-min))
      (should (search-forward "\\directlua" nil t))
      (should (search-forward "Noto Color Emoji" nil t))
-     (should (search-forward "\\setmainfont{FreeSans}[RawFeature={fallback=fallback_main}]" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-fallback-plist ()
   "Test that directlua block is created"
   (let ((org-latex-compiler "lualatex")
         (org-latex-multi-lang "fontspec")
         (org-latex-fontspec-config '(("main"
-                                      :font "FreeSans"
+                                      :font "FreeSerif"
                                       :fallback (("emoji" :font "Noto Color Emoji:mode=harf"))))))
     (org-test-with-exported-text
      'latex
@@ -377,7 +357,7 @@ A random text with emoji: 👍
      (goto-char (point-min))
      (should (search-forward "\\directlua" nil t))
      (should (search-forward "Noto Color Emoji" nil t))
-     (should (search-forward "\\setmainfont{FreeSans}[RawFeature={fallback=fallback_main}]" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-noemoji ()
   "Test that directlua block is not created because it is not needed
@@ -385,7 +365,7 @@ no emojis detected"
   (let ((org-latex-compiler "lualatex")
         (org-latex-multi-lang "fontspec")
         (org-latex-fontspec-config '(("main"
-                                      :font "FreeSans"
+                                      :font "FreeSerif"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
     (org-test-with-exported-text
      'latex
@@ -402,7 +382,7 @@ A random text without emojis.
      (goto-char (point-min))
      (should-not (search-forward "Noto Color Emoji" nil t))
      (goto-char (point-min))
-     (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-unicode-math-config ()
   "Test that the unicode-math package can be passed options using
@@ -411,8 +391,49 @@ org-latex-unicode-math-options."
         (org-latex-multi-lang "fontspec")
         (org-latex-unicode-math-options "math-style=upright")
         (org-latex-fontspec-config '(("main"
-                                      :font "FreeSans"))))
-    ;; (message "--> %s" (buffer-string))
+                                      :font "FreeSerif"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text without emojis.
+"
+     (goto-char (point-min))
+     (should (search-forward "\\usepackage[math-style=upright]{unicode-math}" nil t)))))
+(ert-deftest test-ox-latex/lualatex-fontspec-default-features ()
+  "Test that defaultfontfeatures is generated
+when org-latex-fontspec-default-features is defined as a string.
+
+Note: One or more features as a comma separated string are functionally the same."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang "fontspec")
+        (org-latex-fontspec-default-features "Numbers=OldStyle")
+        (org-latex-fontspec-config '(("main" :font "FreeSerif"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec-default-features
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text.
+"
+     (goto-char (point-min))
+     (should (search-forward "\\defaultfontfeatures{Numbers=OldStyle}" nil t))
+     (should (search-forward "\\setmainfont{FreeSerif}" nil t)))))
+
+
+(ert-deftest test-ox-latex/lualatex-long-default-features ()
+  "Test that the default font features as a list of strings are handled correctly."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-multi-lang "fontspec")
+        (org-latex-fontspec-default-features  '("Ligatures=TeX"
+                                                "Numbers=OldStyle"))
+        (org-latex-fontspec-config '(("main"
+                                      :font "FreeSerif"))))
     (org-test-with-exported-text
      'latex
      "#+TITLE: fontspec
@@ -424,7 +445,8 @@ A random text without emojis.
 "
      ;; (message "--> %s" (buffer-string))
      (goto-char (point-min))
-     (should (search-forward "\\usepackage[math-style=upright]{unicode-math}" nil t)))))
+     (should (search-forward "\\defaultfontfeatures{Ligatures=TeX,Numbers=OldStyle}" nil t))
+     (should (search-forward "\\setmainfont{FreeSerif}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-babel-langs ()
   "Test that babel is handled correctly.
