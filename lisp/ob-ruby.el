@@ -213,20 +213,18 @@ Session settings (`:ruby' header arg value) are taken from PARAMS."
 
 (defvar org-babel-ruby-wrapper-method
   "
-def main()
+results = (lambda do
 %s
-end
-results = main()
+end).call
 File.open('%s', 'w'){ |f| f.write((results.class == String) ? results : results.inspect) }
 ")
 
 (defvar org-babel-ruby-pp-wrapper-method
   "
 require 'pp'
-def main()
+results = (lambda do
 %s
-end
-results = main()
+end).call
 File.open('%s', 'w') do |f|
   $stdout = f
   pp results
