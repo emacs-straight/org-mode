@@ -1,6 +1,6 @@
 ;;; ob-csharp.el --- org-babel functions for csharp evaluation -*- lexical-binding: t -*-
 
-;; Copyright (C) 2024-2025 Free Software Foundation, Inc.
+;; Copyright (C) 2024-2026 Free Software Foundation, Inc.
 
 ;; Author:     Maximilian Kueffner
 ;; Maintainer: Maximilian Kueffner <poverobuosodonati@gmail.com>
