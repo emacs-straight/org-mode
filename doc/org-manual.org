@@ -12948,9 +12948,9 @@ leading =*= with =,= to avoid interpreting them as headings.]
 Finally, a =COMMENT= keyword at the beginning of an entry, but after
 any other keyword or priority cookie, comments out the entire subtree.
 In this case, the subtree is not exported and no code block within it
-is executed either[fn:: For a less drastic behavior, consider using a
-select tag (see [[*Export Settings]]) instead.].  The command below
-helps to change the comment status of a headline.
+is executed or tangled[fn:: For less restrictive export limitations,
+consider using a select tag (see [[*Export Settings]]) instead.].  The
+command below helps to change the comment status of a headline.
 
 - {{{kbd(C-c ;)}}} (~org-toggle-comment~) ::
   #+kindex: C-c ;
