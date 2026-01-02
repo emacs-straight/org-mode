@@ -1,6 +1,6 @@
 # Check the file list of Org mode change log entries for each commit SHA.
 
-# Copyright 2023-2025 Free Software Foundation, Inc.
+# Copyright 2023-2026 Free Software Foundation, Inc.
 
 # This file is part of Org mode.
 
