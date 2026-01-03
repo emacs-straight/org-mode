@@ -4113,7 +4113,8 @@ Otherwise, these types are allowed:
   :package-version '(Org . "8.3")
   :group 'org-sparse-trees)
 
-(defalias 'org-advertized-archive-subtree 'org-archive-subtree)
+(define-obsolete-function-alias 'org-advertized-archive-subtree
+  #'org-archive-subtree "9.8")
 
 ;; Declare Column View Code
 
