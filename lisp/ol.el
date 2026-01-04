@@ -1717,6 +1717,9 @@ Optional argument ARG is passed to `org-open-file' when S is a
 	     (goto-char (point-min))
 	     (org-element-link-parser)))
     (`nil (user-error "No valid link in %S" s))
+    ((and link (guard (not (equal (org-element-end link) (1+ (length s))))))
+     (user-error "Garbage after link in %S (%S)"
+                 s (substring s (1- (org-element-end link)))))
     (link (org-link-open link arg))))
 
 (defun org-link-search (s &optional avoid-pos stealth new-heading-container)
