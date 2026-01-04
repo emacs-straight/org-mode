@@ -19905,6 +19905,24 @@ Signal an error when not at a block."
   ;; parenthesis can end up being parsed as a new list item.
   (looking-at-p "[ \t]*{{{n\\(?:([^\n)]*)\\)?}}}[.)]\\(?:$\\| \\)"))
 
+(defun org-adaptive-fill-paragraph-function ()
+  "Compute a fill prefix for the current line in paragraph.
+Return fill prefix, as a string, or nil if current line isn't meant to
+be filled.  Use `adaptive-fill-regexp', but ignore Org markup at the
+beginning of the line."
+  (let ((context (org-element-context)))
+    ;; Skip over markup symbols, if any.
+    (defvar org-element-all-objects) ; org-element.el
+    (when (and (org-element-type-p context org-element-all-objects)
+               (org-element-contents-begin context)
+               (> (org-element-contents-begin context)
+                  (org-element-begin context)))
+      (goto-char (org-element-contents-begin context)))
+    ;; Delegate to `fill-match-adaptive-prefix' to handle
+    ;; `adaptive-fill-regexp'.  *Assume* that
+    ;; `fill-match-adaptive-prefix' matches at point.
+    (let (adaptive-fill-function) (fill-match-adaptive-prefix))))
+
 (defun org-adaptive-fill-function ()
   "Compute a fill prefix for the current line.
 Return fill prefix, as a string, or nil if current line isn't
@@ -19939,11 +19957,12 @@ matches in paragraphs or comments, use it."
 				     (org-element-begin parent))
 				    ?\s))
 		      ((and adaptive-fill-regexp
-			    ;; Locally disable
+			    ;; Locally override
 			    ;; `adaptive-fill-function' to let
 			    ;; `fill-context-prefix' handle
-			    ;; `adaptive-fill-regexp' variable.
-			    (let (adaptive-fill-function)
+			    ;; `adaptive-fill-regexp' variable, but
+                            ;; ignore Org markup, like "*" at bol.
+			    (let ((adaptive-fill-function #'org-adaptive-fill-paragraph-function))
 			      (fill-context-prefix
 			       post-affiliated
 			       (org-element-end element)))))
