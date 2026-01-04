@@ -752,6 +752,15 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 		  (adaptive-fill-regexp "[ \t]*>+[ \t]*"))
 	      (org-fill-element)
 	      (buffer-string)))))
+  ;; But do not fill markup
+  (should
+   (equal "*The* quick brown fox jumps over the lazy dog
+while the sphinx of black quartz judges my vow."
+	  (org-test-with-temp-text "*The* quick brown fox jumps over the lazy dog while the sphinx of black quartz judges my vow."
+	    (let ((fill-column 50)
+		  (adaptive-fill-regexp "[* 	]*"))
+	      (org-fill-element)
+	      (buffer-string)))))
   ;; Special case: Fill first paragraph when point is at an item or
   ;; a plain-list or a footnote reference.
   (should
@@ -7437,6 +7446,13 @@ Paragraph<point>"
 	  (org-test-with-temp-text "* [#B] H"
 	    (org-entry-put (point) "PRIORITY" nil)
 	    (buffer-string))))
+  (should
+   (equal "* [#42] H"
+          (let ((org-priority-highest 40)
+                (org-priority-lowest 50))
+            (org-test-with-temp-text "* H"
+	    (org-entry-put (point) "PRIORITY" "42")
+	    (buffer-string)))))
   ;; Set "SCHEDULED" property.
   (should
    (string-match "* H\n *SCHEDULED: <2014-03-04 .*?>"

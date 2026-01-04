@@ -123,6 +123,24 @@ sure that we are at the beginning of the line.")
   "Matches a headline, putting stars and text into groups.
 Stars are put in group 1 and the trimmed body in group 2.")
 
+(defvar org-priority-value-regexp "[A-Z]\\|[0-9]\\|[1-5][0-9]\\|6[0-4]"
+  "Regular expression matching valid priority values.
+The priority value must be a capital Latin
+alphabetic character, A through Z, or can be an integer value in the range 0
+through 64.")
+
+(defvar org-priority-regexp
+  (format ".*?\\(\\[#\\(%s\\)\\] ?\\)" org-priority-value-regexp)
+  "Regular expression matching the priority indicator.
+A priority indicator can be e.g. [#A] or [#1].
+The value of the priority cookie must be a capital Latin
+alphabetic character, A through Z, or can be an integer value in
+the range 0 through 64.
+This regular expression matches these groups:
+0 : the whole match, e.g. \"TODO [#A] Hack\"
+1 : the priority cookie, e.g. \"[#A]\"
+2 : the value of the priority cookie, e.g. \"A\".")
+
 (declare-function calendar-check-holidays "holidays" (date))
 (declare-function cdlatex-environment "ext:cdlatex" (environment item))
 (declare-function cdlatex-math-symbol "ext:cdlatex")
@@ -4116,7 +4134,8 @@ Otherwise, these types are allowed:
   :package-version '(Org . "8.3")
   :group 'org-sparse-trees)
 
-(defalias 'org-advertized-archive-subtree 'org-archive-subtree)
+(define-obsolete-function-alias 'org-advertized-archive-subtree
+  #'org-archive-subtree "9.8")
 
 ;; Declare Column View Code
 
@@ -4593,14 +4612,14 @@ related expressions."
 	      org-complex-heading-regexp
 	      (concat "^\\(\\*+\\)"
 		      "\\(?: +" org-todo-regexp "\\)?"
-		      "\\(?: +\\(\\[#.\\]\\)\\)?"
+		      (format "\\(?: +\\(\\[#\\(?:%s\\)\\]\\)\\)?" org-priority-value-regexp)
 		      "\\(?: +\\(.*?\\)\\)??"
 		      "\\(?:[ \t]+\\(:[[:alnum:]_@#%:]+:\\)\\)?"
 		      "[ \t]*$")
 	      org-complex-heading-regexp-format
 	      (concat "^\\(\\*+\\)"
 		      "\\(?: +" org-todo-regexp "\\)?"
-		      "\\(?: +\\(\\[#.\\]\\)\\)?"
+		      (format "\\(?: +\\(\\[#\\(?:%s\\)\\]\\)\\)?" org-priority-value-regexp)
 		      "\\(?: +"
                       ;; Headline might be commented
                       "\\(?:" org-comment-string " +\\)?"
@@ -6062,7 +6081,7 @@ needs to be inserted at a specific position in the font-lock sequence.")
           (list org-radio-target-regexp '(0 'org-target prepend))
 	  (list org-target-regexp '(0 'org-target prepend))
 	  ;; Macro
-	  '(org-fontify-macros) ; `org-fontify-macro' pepends faces
+	  '(org-fontify-macros) ; `org-fontify-macro' prepends faces
 	  ;; TODO keyword
 	  (list (format org-heading-keyword-regexp-format
 			org-todo-regexp)
@@ -6324,7 +6343,7 @@ If TAG is a number, get the corresponding match group."
 					 invisible t intangible t
 					 org-emphasis t
                                          syntax-table t))
-    (org-fold-core-update-optimisation beg end)
+    (org-fold-core-update-optimization beg end)
     (org-remove-font-lock-display-properties beg end)))
 
 (defconst org-script-display  '(((raise -0.3) (height 0.7))
@@ -6730,7 +6749,7 @@ Return nil before first heading."
       (org-back-to-heading t)
       (let ((case-fold-search nil))
 	(looking-at org-complex-heading-regexp)
-        ;; When using `org-fold-core--optimise-for-huge-buffers',
+        ;; When using `org-fold-core--optimize-for-huge-buffers',
         ;; returned text will be invisible.  Clear it up.
         (save-match-data
           (org-fold-core-remove-optimisation (match-beginning 0) (match-end 0)))
@@ -6746,7 +6765,7 @@ Return nil before first heading."
 			  (h h)))
 	      (tags (and (not no-tags) (match-string 5))))
           ;; Restore cleared optimization.
-          (org-fold-core-update-optimisation (match-beginning 0) (match-end 0))
+          (org-fold-core-update-optimization (match-beginning 0) (match-end 0))
 	  (mapconcat #'identity
 		     (delq nil (list todo priority headline tags))
 		     " "))))))
@@ -6771,7 +6790,7 @@ This is a list with the following elements:
 	        (and (match-end 3) (aref (match-string 3) 2))
 	        (match-string-no-properties 4)
 	        (match-string-no-properties 5))
-        (org-fold-core-update-optimisation (match-beginning 0) (match-end 0))))))
+        (org-fold-core-update-optimization (match-beginning 0) (match-end 0))))))
 
 (defun org-get-entry ()
   "Get the entry text, after heading, entire subtree."
@@ -10890,7 +10909,7 @@ narrowing."
 	   ;; No drawer found.  Create one, if permitted.
 	   (when create
              ;; `org-end-of-meta-data' ended up at next heading
-             ;; * Heading to insert darawer<maybe folded>
+             ;; * Heading to insert drawer<maybe folded>
              ;; * Another heading
              ;;
              ;; Unless current heading is the last heading in buffer
@@ -11303,24 +11322,6 @@ from the `before-change-functions' in the current buffer."
 		   'org-remove-occur-highlights 'local))))
 
 ;;;; Priorities
-
-(defvar org-priority-value-regexp "[A-Z]\\|[0-9]\\|[1-5][0-9]\\|6[0-4]"
-  "Regular expression matching valid priority values.
-The priority value must be a capital Latin
-alphabetic character, A through Z, or can be an integer value in the range 0
-through 64.")
-
-(defvar org-priority-regexp
-  (format ".*?\\(\\[#\\(%s\\)\\] ?\\)" org-priority-value-regexp)
-  "Regular expression matching the priority indicator.
-A priority indicator can be e.g. [#A] or [#1].
-The value of the priority cookie must be a capital Latin
-alphabetic character, A through Z, or can be an integer value in
-the range 0 through 64.
-This regular expression matches these groups:
-0 : the whole match, e.g. \"TODO [#A] Hack\"
-1 : the priority cookie, e.g. \"[#A]\"
-2 : the value of the priority cookie, e.g. \"A\".")
 
 (defun org-priority-valid-cookie-string-p (priority)
   "Return t if the PRIORITY is a valid priority cookie, nil otherwise."
@@ -13533,7 +13534,7 @@ decreases scheduled or deadline date by one day."
 	 (org-todo value)
 	 (when org-auto-align-tags (org-align-tags)))
         ((equal property "PRIORITY")
-	 (org-priority (if (org-string-nw-p value) (string-to-char value) 'remove))
+	 (org-priority (if (org-string-nw-p value) (org-priority-to-value value) 'remove))
 	 (when org-auto-align-tags (org-align-tags)))
         ((equal property "SCHEDULED")
 	 (forward-line)
@@ -19917,6 +19918,24 @@ Signal an error when not at a block."
   ;; parenthesis can end up being parsed as a new list item.
   (looking-at-p "[ \t]*{{{n\\(?:([^\n)]*)\\)?}}}[.)]\\(?:$\\| \\)"))
 
+(defun org-adaptive-fill-paragraph-function ()
+  "Compute a fill prefix for the current line in paragraph.
+Return fill prefix, as a string, or nil if current line isn't meant to
+be filled.  Use `adaptive-fill-regexp', but ignore Org markup at the
+beginning of the line."
+  (let ((context (org-element-context)))
+    ;; Skip over markup symbols, if any.
+    (defvar org-element-all-objects) ; org-element.el
+    (when (and (org-element-type-p context org-element-all-objects)
+               (org-element-contents-begin context)
+               (> (org-element-contents-begin context)
+                  (org-element-begin context)))
+      (goto-char (org-element-contents-begin context)))
+    ;; Delegate to `fill-match-adaptive-prefix' to handle
+    ;; `adaptive-fill-regexp'.  *Assume* that
+    ;; `fill-match-adaptive-prefix' matches at point.
+    (let (adaptive-fill-function) (fill-match-adaptive-prefix))))
+
 (defun org-adaptive-fill-function ()
   "Compute a fill prefix for the current line.
 Return fill prefix, as a string, or nil if current line isn't
@@ -19951,11 +19970,12 @@ matches in paragraphs or comments, use it."
 				     (org-element-begin parent))
 				    ?\s))
 		      ((and adaptive-fill-regexp
-			    ;; Locally disable
+			    ;; Locally override
 			    ;; `adaptive-fill-function' to let
 			    ;; `fill-context-prefix' handle
-			    ;; `adaptive-fill-regexp' variable.
-			    (let (adaptive-fill-function)
+			    ;; `adaptive-fill-regexp' variable, but
+                            ;; ignore Org markup, like "*" at bol.
+			    (let ((adaptive-fill-function #'org-adaptive-fill-paragraph-function))
 			      (fill-context-prefix
 			       post-affiliated
 			       (org-element-end element)))))
