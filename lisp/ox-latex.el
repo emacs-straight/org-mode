@@ -1656,7 +1656,8 @@ LANGUAGE is the language name as a string (e.g. \"english\") and
 LANG-PLIST is the language plist, with the following keys:
  `:font' (mandatory): a string with the system font name,
  `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
- `:props': a string for extra properties (e.g.\"Script=Hebrew\")
+ `:props': a string for extra properties (e.g.\"Script=Hebrew\"). You may use
+           `:features' as an alias.
  `:script': the name for the font family.  Use the :polyglossia from
             `org-latex-language-alist' if not specified.
 
@@ -1727,13 +1728,14 @@ Each entry maps an Org language name with a properties list.
 The language name can be `nil' to map to the (unnamed) default language.
 
 Property `:variant' (mandatory) is one of the script codes:
-   \"rm\" for the roman (serif) font
-   \"sf\" for the sans serif font
-   \"tt\" for the teletype (monospaced) font.
+   \"rm\" or \"main\" for the roman (serif) font
+   \"sf\" or \"sans\" for the sans serif font
+   \"tt\" or \"mono\" for the teletype (monospaced) font.
 Property `:font' (mandatory) property designates the font
 with a system font name and an optional property
 Property `:props' (optional) is a string that stores
-extra properties to control the font's appearance.
+extra properties to control the font's appearance. (You
+can use `:features' as an alias here).
 
 For example:
 
@@ -1756,8 +1758,8 @@ roman font's appearance."
   "An alist to allow \"main\", \"sans\" and \"mono\" when
 defining font mappings for polyglossia or babel.
 
-*CAVEAT*: using long names will not map font families as cleanly as using
-          the native names.")
+*CAVEAT*: long names do not reflect configurations from manuals
+          as cleanly as using the native names.")
 
 ;;; Internal Functions
 
@@ -2103,7 +2105,7 @@ Using babel is only possible when ldf method can be used."
             (if (stringp default-features)
                 default-features
               ;; internally allow default features as a list of strings
-              (mapconcat #'identity default-features ",")) 
+              (mapconcat #'identity default-features ","))
             "}\n")))
 
 (defun org-latex--insert-fontspec (compiler fontspec-config default-features doc-scripts)
@@ -2201,10 +2203,10 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
        (when-let* ((font (plist-get font-config :font)))
          (insert "\\set" font-family "font{" font "}")
          ;; add the extra features
-         ;;  :props is an alias to align with babel/polyglossia
          ;;  :features is closer to fontspec
-         (let ((features (or (plist-get font-config :props)
-                             (plist-get font-config :features))))
+         ;;  :props is an alias to align with babel/polyglossia
+         (let ((features (or (plist-get font-config :features)
+                             (plist-get font-config :props))))
            (when (stringp features)
              (setq features (list features))) ;; needs to be a list to concat a possible fallback
            (when-let* ((fallback-name (alist-get font-family fallback-alist nil nil #'string=))
@@ -2268,7 +2270,8 @@ Extract the information from INFO."
                                  font-family ;; if rm, sf, or tt are defined
                                  (or (plist-get props :script) (plist-get lang-plist :polyglossia))
                                  (org-latex--mk-options
-                                  (plist-get props :props))    ;; add the additional properties
+                                  (or (plist-get props :props)
+                                      (plist-get props :features)))  ;; add the additional properties
                                  (plist-get props :font)))))   ;; last but not least the actual font.
       (buffer-string))))
 
@@ -2399,9 +2402,10 @@ Use fontspec as a last resort and when defined."
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
       (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
                do (let* (;; (font-list (plist-get babel-fontlist :fonts))
-                         (variant (plist-get babel-fontlist :variant)) 
+                         (variant (plist-get babel-fontlist :variant))
                          (font (plist-get babel-fontlist :font))
-                         (props (plist-get babel-fontlist :props)))
+                         (props (or (plist-get babel-fontlist :props)
+                                    (plist-get babel-fontlist :features))))
                     (when (null font)
                       (error "Babel: font name missing for variant %s for lang %s" variant (or lang "<default>")))
                     ;; if it is the main language, ignore. This is only used
@@ -5300,10 +5304,12 @@ This list can be then used to provide/improve the font configurations."
                   (setq font-script (list (cons failed-font emacs-script)))
                 (progn
                   (push (cons failed-font emacs-script) font-script)))))
-          ;; Sort the list by FONT
+          ;; Sort the list by FONT in place, i.e. font-script is modified by sort
+          ;; original definition of sort since Emacs25
           (sort font-script #'(lambda (s1 s2)
                                 (string< (car s1) (car s2))))
-          ;; Remove duplicates
+          ;; Remove duplicates,
+          ;; (delete-dups) is destructive and will replace the original list automatically
           (delete-dups font-script)
           (let ((current-font "")
                 (result "Scripts missing:"))

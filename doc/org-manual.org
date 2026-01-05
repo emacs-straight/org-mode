@@ -15202,8 +15202,8 @@ monospaced passages (for example, listings) and ~TeX Gyre Termes Math~
 for equations or mathematical expressions in general.
 
 If you need extra features for any of the fonts, you need to add them
-with the property ~:props~ [fn:: You may also use ~:features~ as an
-alias for ~:props~. (cf. ~org-latex-fontspec-default-features~
+with the property ~:features~ [fn:: You may also use ~:props~ as an
+alias for ~:features~. (cf. ~org-latex-fontspec-default-features~
 below)].  For example, if you want a nicer scaling for the monotype
 font you can define the ~mono~ font as:
 
@@ -15212,7 +15212,7 @@ font you can define the ~mono~ font as:
               '(("main" :font "FreeSerif")
                 ("sans" :font "FreeSans")
                 ("mono" :font "TeX Gyre Cursor"
-                 :props "Scale=MatchLowercase")
+                 :features "Scale=MatchLowercase")
                 ("math" :font "TeX Gyre Termes Math")))
 #+END_SRC
 
@@ -15226,19 +15226,20 @@ This is translated as:
 \setmathfont{TeX Gyre Termes Math}
 #+END_SRC
 
-The ~:props~ property can be a string or a list of strings to improve
+The ~:features~ property can be a string or a list of strings to improve
 readability.  For example, to make the ~mono~ font appear in blue and
 scaled, you can specify it as:
 
 #+BEGIN_SRC elisp
 ("mono" :font "TeX Gyre Cursor"
-        :props ("Color=blue"
+        :features ("Color=blue"
                    "Scale=MatchLowercase"))
 #+END_SRC
 #+texinfo: @noindent
 When you have more than one feature to add, you can also provide them
 as a comma-separated list in a single string. The following code also
-would also define the ~mono~ font as blue and scaled:
+would also define the ~mono~ font as blue and scaled [fn::Note that we
+are using ~:props~ as an alias for ~features~.]:
 
 #+BEGIN_SRC emacs-lisp
 ("mono" :font "TeX Gyre Cursor"
@@ -15445,7 +15446,8 @@ The properties you can define are:
    variant is indicated, it is assumed that the serif font family
    (variant ~"main"~ or ~"rm"~) is implied.  It is recommended that
    you always add the variant *explicitly*.
-3. ~:props~ : a string for extra properties as defined in the
+3. ~:props~ : a string for extra properties[fn::You can use
+   ~:features~ as an alias for ~:props~.] as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
    Square brackets are not needed, because they are added by Org.
 4. ~:script~ : a string the family name, when the ~:polyglossia~
@@ -15537,12 +15539,13 @@ The properties are defined as follows:
    - ~"sans"~ or ~"sf"~ for the sans serif font, and
    - ~"mono"~ or ~"tt"~ for the teletype (monospaced) font.
 2. ~:font~ (mandatory) is the system font name
-3. ~:props~ (optional) is a string holding the options to apply to this font.
+3. ~:props~ (optional) is a string with the options[fn::You can use
+   ~:features~ as an alias to ~:props~.] to apply to this font.
 
-For example, for a document with text in German and Greek,
-where the main language is German, this variable could be
-initialized as follows[fn::Using two-letter codes you will most
-probably find in examples in the Internet.]:
+For example, for a document with text in German and Greek, where the
+main language is German, this variable could be initialized as
+follows[fn::Using the two-letter font family codes you will find in
+most examples in the Internet.]:
 
 #+BEGIN_SRC elisp
 (setq org-latex-babel-font-config
@@ -15561,11 +15564,12 @@ header:
 \babelfont[polytonicgreek]{rm}{Noto Serif}
 #+END_SRC
 
-implying that text set in Serif (~{rm}~) will use the ~CMU Serif~ font
-unless it is in Greek, where the ~Noto Serif~ font will be used. The
-text set in monospaced font will use ~DejaVu Sans Mono~ regardless of
-the language. The monospaced text will be scaled to match the default
-font size and produce a better-looking output.
+#+texinfo: @noindent
+which will set text in Serif (~rm~) using the ~CMU Serif~ font unless
+it is in polytonic Greek, where the ~Noto Serif~ font will be
+used. The text set in monospaced font (~tt~) will use ~DejaVu Sans
+Mono~ regardless of the language. This text will be scaled to match
+the default font size and produce a better-looking output.
 
 *Note* that the definitions for the default language (~nil~) will
 apply to any document regardless of the default language it declares
