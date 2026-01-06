@@ -5297,9 +5297,12 @@ This list can be then used to provide/improve the font configurations."
       (when (re-search-backward "^[ \t]*This is .*?TeX.*?Version" nil t)
         (let ((font-script nil))
           ;; Create a flat alist with (FONT . EMACS_SCRIPT) for each miss detected
-          (while (search-forward-regexp "^[A-Za-z :]+ is no \\(.\\).+ in font \\[\\([^]]+\\)" nil t)
-            (let ((failed-font (match-string 2))
-                  (emacs-script (symbol-name (aref char-script-table (string-to-char (match-string 1))))))
+          (while (search-forward-regexp "There is no \\(.\\) (U\\+\\([^)]+\\)) in font \\([^:]+\\)" nil t)
+            (let* ((failed-font (match-string 3))
+                   (unicode-value (match-string 2))
+                   (failed-char (string-to-char (match-string 1)))
+                   (emacs-script (symbol-name (aref char-script-table failed-char))))
+              (message "For character %s [\\u%s] (%s)" failed-char unicode-value emacs-script)
               (if (length= font-script 0)
                   (setq font-script (list (cons failed-font emacs-script)))
                 (progn
