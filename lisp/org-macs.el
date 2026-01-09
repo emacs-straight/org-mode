@@ -246,26 +246,27 @@ This function is only useful when called from Agenda buffer."
 (defmacro org-preserve-local-variables (&rest body)
   "Execute BODY while preserving local variables."
   (declare (debug (body)))
-  `(let ((local-variables
-	  (org-with-wide-buffer
-	   (goto-char (point-max))
-	   (let ((case-fold-search t))
-	     (and (re-search-backward "^[ \t]*# +Local Variables:"
-				      (max (- (point) 3000) 1)
-				      t)
-               (let ((buffer-undo-list t))
-	         (delete-and-extract-region (point) (point-max)))))))
-         (tick-counter-before (buffer-modified-tick)))
-     (unwind-protect (progn ,@body)
-       (when local-variables
-	 (org-with-wide-buffer
-	  (goto-char (point-max))
-	  (unless (bolp) (insert "\n"))
-          (let ((modified (< tick-counter-before (buffer-modified-tick)))
-                (buffer-undo-list t))
-	    (insert local-variables)
-            (unless modified
-              (restore-buffer-modified-p nil))))))))
+  (org-with-gensyms (local-variables tick-counter-before)
+    `(let ((,local-variables
+            (org-with-wide-buffer
+             (goto-char (point-max))
+             (let ((case-fold-search t))
+               (and (re-search-backward "^[ \t]*# +Local Variables:"
+                                        (max (- (point) 3000) 1)
+                                        t)
+                    (let ((buffer-undo-list t))
+                      (delete-and-extract-region (point) (point-max)))))))
+           (,tick-counter-before (buffer-modified-tick)))
+       (unwind-protect (progn ,@body)
+         (when ,local-variables
+           (org-with-wide-buffer
+            (goto-char (point-max))
+            (unless (bolp) (insert "\n"))
+            (let ((modified (< ,tick-counter-before (buffer-modified-tick)))
+                  (buffer-undo-list t))
+              (insert ,local-variables)
+              (unless modified
+                (restore-buffer-modified-p nil)))))))))
 
 ;;;###autoload
 (defmacro org-element-with-disabled-cache (&rest body)
