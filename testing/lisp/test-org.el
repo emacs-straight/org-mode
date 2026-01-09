@@ -10188,6 +10188,25 @@ two
   ;; alphabetic
   (should (eq ?G (org-priority-to-value "G"))))
 
+(ert-deftest test-org/org-heading-components ()
+  "Test parsing of headers using org-heading-components."
+  ;; character priority
+  (should
+   (eq ?A
+       (org-test-with-temp-text "* [#A] H1\n Body"
+                                (nth 3 (org-heading-components)))))
+  ;; single digit numeric priority
+  (should
+   (eq 2
+       (org-test-with-temp-text "* [#2] H1\n Body"
+                                (nth 3 (org-heading-components)))))
+  ;; double digit numeric priority
+  (should
+   (eq 10
+       (org-test-with-temp-text "* [#10] H1\n Body"
+         (nth 3 (org-heading-components)))))
+  )
+
 (provide 'test-org)
 
 ;;; test-org.el ends here

@@ -6773,7 +6773,7 @@ This is a list with the following elements:
 - the level as an integer
 - the reduced level, different if `org-odd-levels-only' is set.
 - the TODO keyword, or nil
-- the priority character, like ?A, or nil if no priority is given
+- the priority value, like ?A or 42, or nil if no priority is given
 - the headline text itself, or the tags string if no headline text
 - the tags string, or nil."
   (save-excursion
@@ -6784,7 +6784,7 @@ This is a list with the following elements:
           (list (length (match-string 1))
 	        (org-reduced-level (length (match-string 1)))
 	        (match-string-no-properties 2)
-	        (and (match-end 3) (aref (match-string 3) 2))
+	        (and (match-end 3) (org-priority-to-value (substring (match-string 3) 2 -1)))
 	        (match-string-no-properties 4)
 	        (match-string-no-properties 5))
         (org-fold-core-update-optimization (match-beginning 0) (match-end 0))))))
