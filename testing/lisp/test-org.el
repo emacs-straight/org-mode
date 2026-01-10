@@ -10207,6 +10207,31 @@ two
          (nth 3 (org-heading-components)))))
   )
 
+(ert-deftest test-org/org-priority-cycling ()
+  "Test proper cycling of priority values."
+  ;; Numerics with custom priority wrapping should remove the priority when it exceeds bounds
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: 0 10 5\n* [#0] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-up))))
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: 0 10 5\n* [#10] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-down))))
+  ;; Alpha with custom priority wrapping should remove the priority when it exceeds bounds
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: A Z M\n* [#A] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-up))))
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: A Z M\n* [#Z] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-down)))))
+
 (provide 'test-org)
 
 ;;; test-org.el ends here

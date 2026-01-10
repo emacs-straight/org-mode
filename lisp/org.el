@@ -11471,7 +11471,10 @@ interactive prompt, it will automatically be converted to uppercase."
 	    ;; normal cycling: `new-value' is beyond highest/lowest priority
 	    ;; and is wrapped around to the empty priority
 	    (setq remove t)))
-	(setq new-value-string (org-priority-to-string new-value))
+        (setq new-value-string
+              (if remove
+                  "removed"
+                (org-priority-to-string new-value)))
 	(if has-existing-cookie
 	    (if remove
 		(replace-match "" t t nil 1)
