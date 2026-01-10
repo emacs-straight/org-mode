@@ -3208,12 +3208,11 @@ PROPERTIES: The list properties specified in the `:properties' parameter
               (if (eq 'headline (org-element-type elm))
                   (org-element-property :level elm)
                 ;; inline task
-                (1+
-                 (or (org-element-lineage-map elm
-                         (lambda (elm)
-                           (org-element-property :level elm))
-                       '(headline) nil t)
-                     0))))
+                (or (org-element-lineage-map elm
+                        (lambda (elm)
+                          (org-element-property :level elm))
+                      '(headline) nil t)
+                    1)))
              (level (when (<= level maxlevel) level))
              (title
               (let ((headline (org-element-property :title elm)))
