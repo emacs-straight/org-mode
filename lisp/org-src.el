@@ -993,9 +993,11 @@ LANG is a string, and the returned value is a symbol."
                 (let ((l (or (cdr (assoc lang org-src-lang-modes)) lang)))
                   (if (symbolp l) (symbol-name l) l))
                 "-mode"))))
-    (if (fboundp 'major-mode-remap)
-        (major-mode-remap mode)
-      mode)))
+    (cond
+     ((fboundp 'major-mode-remap) (major-mode-remap mode))
+     ((boundp 'major-mode-remap-alist)
+      (or (cdr (assq mode major-mode-remap-alist)) mode))
+     (t mode))))
 
 (defun org-src-get-lang-mode-if-bound (lang &optional fallback fallback-message-p)
   "Return major mode for LANG, if bound, and FALLBACK otherwise.
