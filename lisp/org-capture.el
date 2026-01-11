@@ -1044,7 +1044,7 @@ for `entry'-type templates"))
   (org-capture-put
    :initial-target-region
    ;; Check if the buffer is currently narrowed
-   (when (org-buffer-narrowed-p)
+   (when (buffer-narrowed-p)
      (cons (point-min) (point-max))))
   ;; store the current point
   (org-capture-put :initial-target-position (point)))

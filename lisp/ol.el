@@ -496,7 +496,7 @@ The following %-escapes will be replaced by corresponding information:
 %T   full \"To\" field
 %t   first name in \"To\" field, address if no name
 %c   correspondent.  Usually \"from NAME\", but if you sent it yourself, it
-     will be \"to NAME\".  See also the variable `org-from-is-user-regexp'.
+     will be \"to NAME\".  See also the variable `org-link-from-user-regexp'.
 %s   subject
 %d   date
 %m   message-id.

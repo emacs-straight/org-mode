@@ -162,7 +162,7 @@ visibility in the buffer.
   : ,-> OVERVIEW -> CONTENTS -> SHOW ALL --.
   : '--------------------------------------'
 
-- {{{kbd(C-u C-u C-u TAB)}}} (~org-show-all~) ::
+- {{{kbd(C-u C-u C-u TAB)}}} (~org-fold-show-all~) ::
 
   Show all, including drawers.
 
