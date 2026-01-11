@@ -13816,11 +13816,13 @@ backend by default in-lines that image.  For example:
 =the image=.  For more details, see the variable
 ~org-html-inline-images~.
 
+#+vindex: org-html-inline-image-rules
 On the other hand, if the description part of the Org link is itself
-another link, such as =file:= or =https:= URL pointing to an image, the
-HTML export backend in-lines this image and links to the main image.
-This Org syntax enables the backend to link low-resolution thumbnail
-to the high-resolution version of the image, as shown in this example:
+another link, such as =file:= or =https:= URL pointing to an image
+(the exact rule is defined in ~org-html-inline-image-rules~), the HTML
+export backend in-lines this image and links to the main image.  This
+Org syntax enables the backend to link low-resolution thumbnail to the
+high-resolution version of the image, as shown in this example:
 
 : [[file:highres.jpg][file:thumb.jpg]]
 
