@@ -5887,12 +5887,14 @@ Text.
 ;;; Outline structure
 
 (ert-deftest test-org/move-subtree ()
-  "Test `org-metaup' and `org-metadown' on headings."
+  "Test `org-metaup' and `org-metadown' on headings.
+Also ensure undo works as expected."
   (cl-flet*
       ((test-move-subtree (direction
                            initial-text
                            expected &optional selection)
          (org-test-with-temp-text initial-text
+           (buffer-enable-undo)
            (when selection
              (set-mark (point))
              (search-forward selection))
@@ -5906,6 +5908,11 @@ Text.
                   :type 'user-error)
                (funcall func)
                (should (equal expected
+                              (buffer-string)))
+               (deactivate-mark)
+               (undo-boundary)
+               (undo)
+               (should (equal (string-replace "<point>" "" initial-text)
                               (buffer-string))))))))
     (test-move-subtree 'down
                        "* H1<point>\n* H2\n"
