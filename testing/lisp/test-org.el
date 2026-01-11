@@ -5891,34 +5891,40 @@ Text.
   (cl-flet*
       ((test-move-subtree (direction
                            initial-text
-                           &optional expected selection)
+                           expected &optional selection)
          (org-test-with-temp-text initial-text
            (when selection
              (set-mark (point))
              (search-forward selection))
-           (cl-ecase direction
-             (up   (org-metaup))
-             (down (org-metadown)))
-           (should (equal expected
-                          (buffer-string))))))
+           (let ((func
+                  (cl-ecase direction
+                    (up   #'org-metaup)
+                    (down #'org-metadown))))
+             (if (eq expected 'error)
+                 (should-error
+                  (funcall func)
+                  :type 'user-error)
+               (funcall func)
+               (should (equal expected
+                              (buffer-string))))))))
     (test-move-subtree 'down
                        "* H1<point>\n* H2\n"
                        "* H2\n* H1\n")
     (test-move-subtree 'up
                        "* H1\n* H2<point>\n"
                        "* H2\n* H1\n")
-    (should-error
-     (test-move-subtree 'down
-                        "* H1\n* H2<point>\n"))
-    (should-error
-     (test-move-subtree 'up
-                        "* H1<point>\n* H2\n"))
-    (should-error
-     (test-move-subtree 'down
-                        "* H1\n** H1.2<point>\n* H2"))
-    (should-error
-     (test-move-subtree 'up
-                        "* H1\n** H1.2<point>\n"))
+    (test-move-subtree 'down
+                       "* H1\n* H2<point>\n"
+                       'error)
+    (test-move-subtree 'up
+                       "* H1<point>\n* H2\n"
+                       'error)
+    (test-move-subtree 'down
+                       "* H1\n** H1.2<point>\n* H2"
+                       'error)
+    (test-move-subtree 'up
+                       "* H1\n** H1.2<point>\n"
+                       'error)
     ;; With selection
     (test-move-subtree 'down
                        "* T\n** <point>H1\n** H2\n** H3\n"
@@ -5928,16 +5934,14 @@ Text.
                        "* T\n** H0\n** <point>H1\n** H2\n** H3\n"
                        "* T\n** H1\n** H2\n** H0\n** H3\n"
                        "H2")
-    (should-error
-     (test-move-subtree 'down
-                        "* T\n** <point>H1\n** H2\n* T2\n"
-                        nil
-                        "H2"))
-    (should-error
-     (test-move-subtree 'up
-                        "* T\n** <point>H1\n** H2\n* T2\n"
-                        nil
-                        "H2"))))
+    (test-move-subtree 'down
+                       "* T\n** <point>H1\n** H2\n* T2\n"
+                       'error
+                       "H2")
+    (test-move-subtree 'up
+                       "* T\n** <point>H1\n** H2\n* T2\n"
+                       'error
+                       "H2")))
 
 (ert-deftest test-org/demote ()
   "Test `org-demote' specifications."
