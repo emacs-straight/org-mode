@@ -10232,6 +10232,23 @@ two
                                 (goto-char (point-max))
                                 (org-priority-down)))))
 
+(ert-deftest test-org/priority-allowed-values ()
+  "Test `org-property-get-allowed-values' for priorities."
+  (dolist (bounds '((?A . ?J) (1 . 10)))
+    (let* ((org-priority-highest (car bounds))
+           (org-priority-lowest (cdr bounds))
+           (allowed-priorities-expected
+            (mapcar #'org-priority-to-string
+                    (number-sequence org-priority-highest
+                                     org-priority-lowest)))
+           (allowed-priorities
+            (org-property-get-allowed-values nil "PRIORITY")))
+      (should (= (length allowed-priorities-expected)
+                 (length allowed-priorities)))
+      (dotimes (n (length allowed-priorities))
+        (should (string-equal (elt allowed-priorities-expected n)
+                              (elt allowed-priorities n)))))))
+
 (provide 'test-org)
 
 ;;; test-org.el ends here

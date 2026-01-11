@@ -13963,7 +13963,7 @@ completion."
      ((equal property "PRIORITY")
       (let ((n org-priority-lowest))
 	(while (>= n org-priority-highest)
-	  (push (char-to-string n) vals)
+	  (push (org-priority-to-string n) vals)
 	  (setq n (1- n)))))
      ((equal property "CATEGORY"))
      ((member property org-special-properties))
