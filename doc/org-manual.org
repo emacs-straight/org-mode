@@ -19619,6 +19619,14 @@ already exist in the code block.
   Wrap the code block in comments.  Include links pointing back to the
   place in the Org file from where the code was tangled.
 
+  #+findex: org-store-link
+  #+vindex: org-id-link-to-org-use-id
+  Do note that Org will use ~org-store-link~ ([[*Handling Links]]) to
+  store link to code block.  Such link may not be unique if the parent
+  heading title is a duplicate of earlier heading or changes after
+  tangling.  We recommend setting ~org-id-link-to-org-use-id~ to t to
+  make sure that the link points to the correct heading.
+
 - =yes= ::
 
   Kept for backward compatibility; same as =link=.
