@@ -127,11 +127,11 @@ When this variable is nil, while indenting with `\\[org-indent-block]'
 or after editing with `\\[org-edit-src-code]', the minimum (across-lines)
 number of leading whitespace characters are removed from all lines,
 and the code block is uniformly indented according to the value of
-`org-edit-src-content-indentation'."
+`org-src-content-indentation'."
   :group 'org-edit-structure
   :type 'boolean)
 
-(defcustom org-edit-src-content-indentation 2
+(defcustom org-src-content-indentation 2
   "Indentation for the content of a source code block.
 
 This should be the number of spaces added to the indentation of the #+begin
@@ -592,7 +592,7 @@ Leave point in edit buffer."
                             (org--get-expected-indentation
                              (org-element-parent datum) nil))
                            (t (org-current-text-indentation)))))
-	     (content-ind org-edit-src-content-indentation)
+	     (content-ind org-src-content-indentation)
 	     (preserve-ind (org-src-preserve-indentation-p datum))
 	     ;; Store relative positions of mark (if any) and point
 	     ;; within the edited area.
@@ -768,7 +768,7 @@ as `org-src-fontify-natively' is non-nil."
 	       (if (org-src-preserve-indentation-p) 0
 	         (+ (progn (backward-char)
                            (org-current-text-indentation))
-	            org-edit-src-content-indentation))))
+	            org-src-content-indentation))))
           (while (re-search-forward "^[ ]*\t" end t)
             (let* ((b (and (eq indent-offset (move-to-column indent-offset))
                            (point)))

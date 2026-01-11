@@ -86,7 +86,7 @@
 
 (defvar org-complex-heading-regexp)
 (defvar org-done-keywords)
-(defvar org-edit-src-content-indentation)
+(defvar org-src-content-indentation)
 (defvar org-match-substring-regexp)
 (defvar org-odd-levels-only)
 (defvar org-property-drawer-re)
@@ -2598,10 +2598,10 @@ Return a new syntax node of `example-block' type containing `:begin',
 	 (let ((val (org-element-property :value example-block)))
 	   (cond
 	    ((org-src-preserve-indentation-p example-block) val)
-	    ((= 0 org-edit-src-content-indentation)
+	    ((= 0 org-src-content-indentation)
 	     (org-remove-indentation val))
 	    (t
-	     (let ((ind (make-string org-edit-src-content-indentation ?\s)))
+	     (let ((ind (make-string org-src-content-indentation ?\s)))
 	       (replace-regexp-in-string "^[ \t]*\\S-"
 					 (concat ind "\\&")
 					 (org-remove-indentation val))))))))
@@ -3134,10 +3134,10 @@ Assume point is at the beginning of the block."
 	 (let ((val (org-element-property :value src-block)))
 	   (cond
 	    ((org-src-preserve-indentation-p src-block) val)
-	    ((zerop org-edit-src-content-indentation)
+	    ((zerop org-src-content-indentation)
 	     (org-remove-indentation val))
 	    (t
-	     (let ((ind (make-string org-edit-src-content-indentation ?\s)))
+	     (let ((ind (make-string org-src-content-indentation ?\s)))
 	       (replace-regexp-in-string "^[ \t]*\\S-"
 					 (concat ind "\\&")
 					 (org-remove-indentation val))))))))

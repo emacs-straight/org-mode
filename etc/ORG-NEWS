@@ -610,6 +610,13 @@ constructed again.
 
 ** Removed or renamed functions and variables
 
+*** ~org-edit-src-content-indentation~ is renamed to ~org-src-content-indentation~
+
+The new name highlights that the customization affects more than
+editing.  ~org-src-content-indentation~ also affects detangling,
+printing Org syntax tree (for example, during export to Org), and
+indentation of src and example blocks in Org buffers.
+
 *** ~org-cycle-display-inline-images~ is renamed to ~org-cycle-display-link-previews~
 
 Inline image previews in Org mode are now provided by the more general

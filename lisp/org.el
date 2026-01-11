@@ -19674,7 +19674,7 @@ Also align node properties according to `org-property-format'."
                     (when (not (org-src-preserve-indentation-p element))
                       (org-with-point-at (org-element-property :begin element)
                         (+ (org-current-text-indentation)
-                           org-edit-src-content-indentation)))))
+                           org-src-content-indentation)))))
                ;; Avoid over-indenting when beginning of a new line is not empty.
                ;; https://list.orgmode.org/OMCpuwZ--J-9@phdk.org/
                (org-with-undo-amalgamate
