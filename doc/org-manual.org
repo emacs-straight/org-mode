@@ -19331,10 +19331,10 @@ follows from the type specified above.
 
 #+cindex: @samp{wrap}, header argument
 The =wrap= header argument unconditionally marks the results block by
-appending strings to =#+BEGIN_= and =#+END_=.  If no string is
-specified, Org wraps the results in a =#+BEGIN_results=
-... =#+END_results= block.  It takes precedent over the =results=
-value listed above.  E.g.,
+appending strings to =#+BEGIN_= and =#+END_=, except if the value is
+=nil= or =no=.  If no string is specified, Org wraps the results in a
+=#+BEGIN_results= ... =#+END_results= block.  It takes precedent over
+the =results= value listed above.  E.g.,
 
 #+begin_example
 ,#+BEGIN_SRC emacs-lisp :results html :wrap EXPORT markdown

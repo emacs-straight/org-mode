@@ -2725,6 +2725,10 @@ result:
 			   (opening-line (concat "#+begin_" full))
 			   (closing-line (concat "#+end_" type)))
 		      (cond
+                       ;; Do nothing if type is "no" or "nil"
+                       ((or (org-string-equal-ignore-case type "nil")
+                            (org-string-equal-ignore-case type "no"))
+                        nil)
 		       ;; Escape contents from "export" wrap.  Wrap
 		       ;; inline results within an export snippet with
 		       ;; appropriate value.
