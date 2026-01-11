@@ -13851,7 +13851,7 @@ as-is.
 #+cindex: dvisvgm
 #+cindex: ImageMagick
 
-#+vindex: org-html-mathjax-options~
+#+vindex: org-html-mathjax-options
 LaTeX math snippets (see [[*LaTeX fragments]]) can be displayed in two
 different ways on HTML pages.  The default is to use the
 [[https://www.mathjax.org][MathJax]], which should work out of the box
