@@ -657,7 +657,7 @@ duplicate results block."
     'foo
   ,#+end_src
 #+end_src"
-	      (let ((org-edit-src-content-indentation 2)
+	      (let ((org-src-content-indentation 2)
 		    (org-src-preserve-indentation nil))
 		(org-babel-execute-src-block))))))
 
@@ -2226,14 +2226,14 @@ default-directory
   "Test `org-babel-update-block-body' specifications."
   (should
    (equal "#+begin_src elisp\n  2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2))
+	  (let ((org-src-content-indentation 2))
 	    (org-test-with-temp-text "#+begin_src elisp\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "2")
 	      (buffer-string)))))
   ;; Preserve block indentation.
   (should
    (equal "  #+begin_src elisp\n   2\n  #+end_src"
-	  (let ((org-edit-src-content-indentation 1))
+	  (let ((org-src-content-indentation 1))
 	    (org-test-with-temp-text
 		"  #+begin_src elisp\n  (+ 1 1)\n  #+end_src"
 	      (org-babel-update-block-body "2")
@@ -2241,14 +2241,14 @@ default-directory
   ;; Ignore NEW-BODY global indentation.
   (should
    (equal "#+begin_src elisp\n  2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2))
+	  (let ((org-src-content-indentation 2))
 	    (org-test-with-temp-text "#+begin_src elisp\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "      2")
 	      (buffer-string)))))
   ;; When indentation should be preserved ignore the two rules above.
   (should
    (equal "  #+begin_src elisp\n2\n  #+end_src"
-	  (let ((org-edit-src-content-indentation 1)
+	  (let ((org-src-content-indentation 1)
 		(org-src-preserve-indentation t))
 	    (org-test-with-temp-text
 		"  #+begin_src elisp\n  (+ 1 1)\n  #+end_src"
@@ -2256,21 +2256,21 @@ default-directory
 	      (buffer-string)))))
   (should
    (equal "  #+begin_src elisp -i\n2\n  #+end_src"
-	  (let ((org-edit-src-content-indentation 1))
+	  (let ((org-src-content-indentation 1))
 	    (org-test-with-temp-text
 		"  #+begin_src elisp -i\n  (+ 1 1)\n  #+end_src"
 	      (org-babel-update-block-body "2")
 	      (buffer-string)))))
   (should
    (equal "#+begin_src elisp\n      2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2)
+	  (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation t))
 	    (org-test-with-temp-text "#+begin_src elisp\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "      2")
 	      (buffer-string)))))
   (should
    (equal "#+begin_src elisp -i\n      2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2)
+	  (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation t))
 	    (org-test-with-temp-text "#+begin_src elisp -i\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "      2")
@@ -2660,7 +2660,7 @@ do not org-indent-block text here
 (ert-deftest test-ob/demarcate-block-split-prefix-point ()
   "Test prefix argument point splitting."
   (let ((org-adapt-indentation t)
-        (org-edit-src-content-indentation 2)
+        (org-src-content-indentation 2)
         (org-src-preserve-indentation nil)
         (ok-col 11)
         (stars "^\\*\\*\\*\\*\\*\\*\\*\\*\\*\\*"))
@@ -2683,14 +2683,14 @@ do not org-indent-block text here
         (cond ((string= regexp stars)
                (should (= 0 (current-column))))
               ((string-prefix-p ";;" regexp)
-               (should (= (+ ok-col org-edit-src-content-indentation)
+               (should (= (+ ok-col org-src-content-indentation)
                           (current-column))))
               (t (should (= ok-col (current-column)))))))))
 
 (ert-deftest test-ob/demarcate-block-split-prefix-region ()
   "Test prefix argument region splitting."
   (let ((org-adapt-indentation t)
-        (org-edit-src-content-indentation 2)
+        (org-src-content-indentation 2)
         (org-src-preserve-indentation nil)
         (ok-col 11)
         (stars "^\\*\\*\\*\\*\\*\\*\\*\\*\\*\\*")
@@ -2732,14 +2732,14 @@ do not org-indent-block text here
         (cond ((string= regexp stars)
                (should (= 0 (current-column))))
               ((memq regexp parts)
-               (should (= (+ ok-col org-edit-src-content-indentation)
+               (should (= (+ ok-col org-src-content-indentation)
                           (current-column))))
               (t (should (= ok-col (current-column)))))))))
 
 (ert-deftest test-ob/demarcate-block-split-user-errors ()
   "Test for `user-error's in splitting"
   (let ((org-adapt-indentation t)
-        (org-edit-src-content-indentation 2)
+        (org-src-content-indentation 2)
         (org-src-preserve-indentation))
     (let* ((caption "#+caption: caption.")
            (within-body ";; within-body")

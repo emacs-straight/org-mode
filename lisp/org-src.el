@@ -127,16 +127,20 @@ When this variable is nil, while indenting with `\\[org-indent-block]'
 or after editing with `\\[org-edit-src-code]', the minimum (across-lines)
 number of leading whitespace characters are removed from all lines,
 and the code block is uniformly indented according to the value of
-`org-edit-src-content-indentation'."
+`org-src-content-indentation'."
   :group 'org-edit-structure
   :type 'boolean)
 
-(defcustom org-edit-src-content-indentation 2
+(defcustom org-src-content-indentation 2
   "Indentation for the content of a source code block.
 
 This should be the number of spaces added to the indentation of the #+begin
 line in order to compute the indentation of the block content after
 editing it with `\\[org-edit-src-code]'.
+
+This customization also affects how the source code and example blocks
+are printed - when interpreting Org AST (during export), during
+detangling, and indentation.
 
 It has no effect if `org-src-preserve-indentation' is non-nil."
   :group 'org-edit-structure
@@ -588,7 +592,7 @@ Leave point in edit buffer."
                             (org--get-expected-indentation
                              (org-element-parent datum) nil))
                            (t (org-current-text-indentation)))))
-	     (content-ind org-edit-src-content-indentation)
+	     (content-ind org-src-content-indentation)
 	     (preserve-ind (org-src-preserve-indentation-p datum))
 	     ;; Store relative positions of mark (if any) and point
 	     ;; within the edited area.
@@ -764,7 +768,7 @@ as `org-src-fontify-natively' is non-nil."
 	       (if (org-src-preserve-indentation-p) 0
 	         (+ (progn (backward-char)
                            (org-current-text-indentation))
-	            org-edit-src-content-indentation))))
+	            org-src-content-indentation))))
           (while (re-search-forward "^[ ]*\t" end t)
             (let* ((b (and (eq indent-offset (move-to-column indent-offset))
                            (point)))
@@ -993,9 +997,11 @@ LANG is a string, and the returned value is a symbol."
                 (let ((l (or (cdr (assoc lang org-src-lang-modes)) lang)))
                   (if (symbolp l) (symbol-name l) l))
                 "-mode"))))
-    (if (fboundp 'major-mode-remap)
-        (major-mode-remap mode)
-      mode)))
+    (cond
+     ((fboundp 'major-mode-remap) (major-mode-remap mode))
+     ((boundp 'major-mode-remap-alist)
+      (or (cdr (assq mode major-mode-remap-alist)) mode))
+     (t mode))))
 
 (defun org-src-get-lang-mode-if-bound (lang &optional fallback fallback-message-p)
   "Return major mode for LANG, if bound, and FALLBACK otherwise.

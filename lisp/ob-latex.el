@@ -78,7 +78,6 @@
 (defcustom org-babel-latex-preamble
   (lambda (_)
     "\\documentclass[preview]{standalone}
-\\def\\pgfsysdriver{pgfsys-tex4ht.def}
 ")
   "Closure which evaluates at runtime to the LaTeX preamble.
 

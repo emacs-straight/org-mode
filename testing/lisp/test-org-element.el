@@ -3818,12 +3818,12 @@ CLOCK: [2012-01-01 sun. 00:01]--[2012-01-01 sun. 00:02] =>  0:01")))
   ;; Handle indentation.
   (should (equal "#+begin_example\n  Test\n#+end_example\n"
 		 (let ((org-src-preserve-indentation nil)
-		       (org-edit-src-content-indentation 2))
+		       (org-src-content-indentation 2))
 		   (org-test-parse-and-interpret
 		    "#+BEGIN_EXAMPLE\nTest\n#+END_EXAMPLE"))))
   (should (equal "#+begin_example\n Test\n#+end_example\n"
 		 (let ((org-src-preserve-indentation t)
-		       (org-edit-src-content-indentation 2))
+		       (org-src-content-indentation 2))
 		   (org-test-parse-and-interpret
 		    "#+BEGIN_EXAMPLE\n Test\n#+END_EXAMPLE")))))
 
@@ -3889,14 +3889,14 @@ DEADLINE: <2012-03-29 thu.> SCHEDULED: <2012-03-29 thu.> CLOSED: [2012-03-29 thu
   "Test src block interpreter."
   ;; With arguments.
   (should
-   (equal (let ((org-edit-src-content-indentation 2)
+   (equal (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation nil))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp :results silent\n(+ 1 1)\n#+END_SRC"))
 	  "#+begin_src emacs-lisp :results silent\n  (+ 1 1)\n#+end_src\n"))
   ;; With switches.
   (should
-   (equal (let ((org-edit-src-content-indentation 2)
+   (equal (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation nil))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp -n -k\n(+ 1 1)\n#+END_SRC"))
@@ -3904,21 +3904,21 @@ DEADLINE: <2012-03-29 thu.> SCHEDULED: <2012-03-29 thu.> CLOSED: [2012-03-29 thu
   ;; Preserve code escaping.
   (should
    (equal
-    (let ((org-edit-src-content-indentation 2)
+    (let ((org-src-content-indentation 2)
 	  (org-src-preserve-indentation nil))
       (org-test-parse-and-interpret
        "#+BEGIN_SRC org\n,* Headline\n,#+KEYWORD: value\nText\n#+END_SRC"))
     "#+begin_src org\n  ,* Headline\n  ,#+KEYWORD: value\n  Text\n#+end_src\n"))
-  ;; Do not apply `org-edit-src-content-indentation' when preserving
+  ;; Do not apply `org-src-content-indentation' when preserving
   ;; indentation.
   (should
-   (equal (let ((org-edit-src-content-indentation 2)
+   (equal (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation t))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp\n(+ 1 1)\n#+END_SRC"))
 	  "#+begin_src emacs-lisp\n(+ 1 1)\n#+end_src\n"))
   (should
-   (equal (let ((org-edit-src-content-indentation 2)
+   (equal (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation nil))
 	    (org-test-parse-and-interpret
 	     "#+BEGIN_SRC emacs-lisp -i\n(+ 1 1)\n#+END_SRC"))
@@ -3927,7 +3927,7 @@ DEADLINE: <2012-03-29 thu.> SCHEDULED: <2012-03-29 thu.> CLOSED: [2012-03-29 thu
   (should
    (equal
     "#+begin_src emacs-lisp\n  Test\n#+end_src\n"
-    (let ((org-edit-src-content-indentation 2)
+    (let ((org-src-content-indentation 2)
 	  (org-src-preserve-indentation nil))
       (org-element-interpret-data
        '(src-block (:language "emacs-lisp" :value "Test")))))))

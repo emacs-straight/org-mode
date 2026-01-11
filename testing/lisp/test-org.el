@@ -231,7 +231,7 @@ Otherwise, evaluate RESULT as an sexp and return its result."
   (should
    (equal "  ;; "
 	  (org-test-with-temp-text "#+BEGIN_SRC emacs-lisp\n<point>\n#+END_SRC"
-	    (let ((org-edit-src-content-indentation 2))
+	    (let ((org-src-content-indentation 2))
 	      (call-interactively #'org-comment-dwim))
 	    (buffer-substring-no-properties (line-beginning-position)
 					    (point)))))
@@ -242,7 +242,7 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 	    (transient-mark-mode 1)
 	    (push-mark (point) t t)
 	    (forward-line 2)
-	    (let ((org-edit-src-content-indentation 2))
+	    (let ((org-src-content-indentation 2))
 	      (call-interactively #'org-comment-dwim))
 	    (buffer-string)))))
 
@@ -1232,14 +1232,14 @@ while the sphinx of black quartz judges my vow."
 	 (current-indentation)))))
   ;; Within code part of a source block, use language major mode if
   ;; `org-src-tab-acts-natively' is non-nil, only add
-  ;; `org-edit-src-content-indentation' to lines with indentation that
+  ;; `org-src-content-indentation' to lines with indentation that
   ;; is lower. Otherwise, indent according to line above.
   (should
    (= 6
       (org-test-with-temp-text
 	  "#+BEGIN_SRC emacs-lisp\n (and A\n<point>B)\n#+END_SRC"
 	(let ((org-src-tab-acts-natively t)
-	      (org-edit-src-content-indentation 0))
+	      (org-src-content-indentation 0))
 	  (org-indent-line))
 	(current-indentation))))
   (should
@@ -1247,7 +1247,7 @@ while the sphinx of black quartz judges my vow."
       (org-test-with-temp-text
 	  "#+BEGIN_SRC emacs-lisp\n  (and A\n<point>B)\n#+END_SRC"
 	(let ((org-src-tab-acts-natively t)
-	      (org-edit-src-content-indentation 2))
+	      (org-src-content-indentation 2))
 	  (org-indent-line))
         (forward-line -1)
 	(current-indentation))))
@@ -1256,7 +1256,7 @@ while the sphinx of black quartz judges my vow."
       (org-test-with-temp-text
 	  "#+BEGIN_SRC emacs-lisp\n (and A\n<point>B)\n#+END_SRC"
 	(let ((org-src-tab-acts-natively nil)
-	      (org-edit-src-content-indentation 0))
+	      (org-src-content-indentation 0))
 	  (org-indent-line))
 	(current-indentation))))
   ;; Otherwise, indent like the first non-blank line above.
@@ -1353,7 +1353,7 @@ while the sphinx of black quartz judges my vow."
 	  (org-test-with-temp-text
 	      "#+BEGIN_SRC emacs-lisp\n (and A\nB)\n#+END_SRC"
 	    (let ((org-src-tab-acts-natively t)
-		  (org-edit-src-content-indentation 0))
+		  (org-src-content-indentation 0))
 	      (org-indent-region (point-min) (point-max)))
 	    (buffer-string))))
   (should
@@ -1361,7 +1361,7 @@ while the sphinx of black quartz judges my vow."
 	  (org-test-with-temp-text
 	      "#+BEGIN_SRC emacs-lisp\n (and A\nB)\n#+END_SRC"
 	    (let ((org-src-tab-acts-natively nil)
-		  (org-edit-src-content-indentation 0))
+		  (org-src-content-indentation 0))
 	      (org-indent-region (point-min) (point-max)))
 	    (buffer-string))))
   ;; Align node properties according to `org-property-format'.  Handle
@@ -1767,9 +1767,9 @@ CLOCK: [2022-09-17 sam. 11:00]--[2022-09-17 sam. 11:46] =>  0:46"
 	      (buffer-string)))))
   ;; Make sure that we do not mess things up when indenting remotely
   ;; in src block buffer.
-  (let ((org-edit-src-content-indentation 2))
+  (let ((org-src-content-indentation 2))
     (should
-     ;; Add `org-edit-src-content-indentation' and no more.
+     ;; Add `org-src-content-indentation' and no more.
      ;; https://orgmode.org/list/5O9VMGb6WRaqeHR5_NXTb832Z2Lek_5L40YPDA52-S3kPwGYJspI8kLWaGtuq3DXyhtHpj1J7jTIXb39RX9BtCa2ecrWHjijZqI8QAD742U=@proton.me
      (equal "#+begin_src fundamental\n  \n#+end_src" ; 2 spaces
             (org-test-with-temp-text "#+begin_src fundamental<point>\n#+end_src"
@@ -10187,6 +10187,50 @@ two
   (should (eq 42 (org-priority-to-value "42")))
   ;; alphabetic
   (should (eq ?G (org-priority-to-value "G"))))
+
+(ert-deftest test-org/org-heading-components ()
+  "Test parsing of headers using org-heading-components."
+  ;; character priority
+  (should
+   (eq ?A
+       (org-test-with-temp-text "* [#A] H1\n Body"
+                                (nth 3 (org-heading-components)))))
+  ;; single digit numeric priority
+  (should
+   (eq 2
+       (org-test-with-temp-text "* [#2] H1\n Body"
+                                (nth 3 (org-heading-components)))))
+  ;; double digit numeric priority
+  (should
+   (eq 10
+       (org-test-with-temp-text "* [#10] H1\n Body"
+         (nth 3 (org-heading-components)))))
+  )
+
+(ert-deftest test-org/org-priority-cycling ()
+  "Test proper cycling of priority values."
+  ;; Numerics with custom priority wrapping should remove the priority when it exceeds bounds
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: 0 10 5\n* [#0] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-up))))
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: 0 10 5\n* [#10] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-down))))
+  ;; Alpha with custom priority wrapping should remove the priority when it exceeds bounds
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: A Z M\n* [#A] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-up))))
+  (should
+   (string-equal "Priority removed"
+       (org-test-with-temp-text "#+PRIORITIES: A Z M\n* [#Z] Test\n"
+                                (goto-char (point-max))
+                                (org-priority-down)))))
 
 (provide 'test-org)
 

@@ -313,6 +313,7 @@ This affects IDs that are determined from the ID property.")
   pre.src-asymptote:before { content: 'Asymptote'; }
   pre.src-awk:before { content: 'Awk'; }
   pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-c:before { content: 'C'; }
   pre.src-C:before { content: 'C'; }
   /* pre.src-C++ doesn't work in CSS */
   pre.src-clojure:before { content: 'Clojure'; }
@@ -454,7 +455,7 @@ You can use `org-html-head' and `org-html-head-extra' to add to
 this style.  If you don't want to include this default style,
 customize `org-html-head-include-default-style'."
   :group 'org-export-html
-  :package-version '(Org . "9.5")
+  :package-version '(Org . "9.8")
   :type 'string)
 
 

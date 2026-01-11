@@ -13824,11 +13824,13 @@ backend by default in-lines that image.  For example:
 =the image=.  For more details, see the variable
 ~org-html-inline-images~.
 
+#+vindex: org-html-inline-image-rules
 On the other hand, if the description part of the Org link is itself
-another link, such as =file:= or =https:= URL pointing to an image, the
-HTML export backend in-lines this image and links to the main image.
-This Org syntax enables the backend to link low-resolution thumbnail
-to the high-resolution version of the image, as shown in this example:
+another link, such as =file:= or =https:= URL pointing to an image
+(the exact rule is defined in ~org-html-inline-image-rules~), the HTML
+export backend in-lines this image and links to the main image.  This
+Org syntax enables the backend to link low-resolution thumbnail to the
+high-resolution version of the image, as shown in this example:
 
 : [[file:highres.jpg][file:thumb.jpg]]
 
@@ -13857,7 +13859,7 @@ as-is.
 #+cindex: dvisvgm
 #+cindex: ImageMagick
 
-#+vindex: org-html-mathjax-options~
+#+vindex: org-html-mathjax-options
 LaTeX math snippets (see [[*LaTeX fragments]]) can be displayed in two
 different ways on HTML pages.  The default is to use the
 [[https://www.mathjax.org][MathJax]], which should work out of the box
@@ -20331,6 +20333,14 @@ already exist in the code block.
 
   Wrap the code block in comments.  Include links pointing back to the
   place in the Org file from where the code was tangled.
+
+  #+findex: org-store-link
+  #+vindex: org-id-link-to-org-use-id
+  Do note that Org will use ~org-store-link~ ([[*Handling Links]]) to
+  store link to code block.  Such link may not be unique if the parent
+  heading title is a duplicate of earlier heading or changes after
+  tangling.  We recommend setting ~org-id-link-to-org-use-id~ to t to
+  make sure that the link points to the correct heading.
 
 - =yes= ::
 
