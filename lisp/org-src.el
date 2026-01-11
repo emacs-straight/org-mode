@@ -138,6 +138,10 @@ This should be the number of spaces added to the indentation of the #+begin
 line in order to compute the indentation of the block content after
 editing it with `\\[org-edit-src-code]'.
 
+This customization also affects how the source code and example blocks
+are printed - when interpreting Org AST (during export), during
+detangling, and indentation.
+
 It has no effect if `org-src-preserve-indentation' is non-nil."
   :group 'org-edit-structure
   :type 'integer
