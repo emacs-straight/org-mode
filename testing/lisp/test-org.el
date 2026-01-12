@@ -7288,7 +7288,7 @@ Paragraph<point>"
 	  (org-test-with-temp-text "* [#A] H"
 	    (cdr (assoc "PRIORITY" (org-entry-properties))))))
   (should
-   (equal (char-to-string org-priority-default)
+   (equal (org-priority-to-string org-priority-default)
 	  (org-test-with-temp-text "* H"
 	    (cdr (assoc "PRIORITY" (org-entry-properties nil "PRIORITY"))))))
   ;; Get "FILE" property.
