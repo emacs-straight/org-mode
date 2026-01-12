@@ -996,7 +996,7 @@ In addition, it is necessary to install pygments
 passed to pdflatex.
 
 The minted choice has possible repercussions on the preview of
-latex fragments (see `org-preview-latex-fragment').  If you run
+latex fragments (see `org-latex-preview').  If you run
 into previewing problems, please consult
 URL `https://orgmode.org/worg/org-tutorials/org-latex-preview.html'.
 

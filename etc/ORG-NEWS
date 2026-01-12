@@ -187,6 +187,14 @@ removed as part of refactoring for numeric priorities.
 # We list the most important features, and the features that may
 # require user action to be used.
 
+*** =:wrap= header argument can now be explicitly disabled
+
+Previously, presence of =:wrap= argument (inherited or not) in code
+block headers always made the block results wrapped. There was no way
+to disable wrapping if =:wrap= was specified in the inherited header
+arguments. Now, =:wrap no= or =:wrap nil= will explicitly disable
+wrapping.
+
 *** All Org link types can be previewed
 :PROPERTIES:
 :CUSTOM_ID: link-preview

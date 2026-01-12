@@ -3081,7 +3081,7 @@ and the clock summary:
                    (let ((clocksum (org-clock-sum-current-item))
                          (effort (org-duration-to-minutes
                                    (org-entry-get (point) \"Effort\"))))
-                     (org-minutes-to-clocksum-string (- effort clocksum))))))"
+                     (org-duration-from-minutes (- effort clocksum))))))"
   :group 'org-properties
   :version "24.1"
   :type '(alist :key-type (string     :tag "Property")
@@ -18696,12 +18696,12 @@ an argument, unconditionally call `org-insert-heading'."
      ["Descriptive Links"
       org-toggle-link-display
       :style radio
-      :selected org-descriptive-links
+      :selected org-link-descriptive
       ]
      ["Literal Links"
       org-toggle-link-display
       :style radio
-      :selected (not org-descriptive-links)])
+      :selected (not org-link-descriptive)])
     "--"
     ("TODO Lists"
      ["TODO/DONE/-" org-todo t]

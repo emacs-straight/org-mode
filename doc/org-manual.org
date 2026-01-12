@@ -615,11 +615,12 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
   Switch back to the startup visibility of the buffer (see [[*Initial
   visibility]]).
 
-- {{{kbd(C-u C-u C-u TAB)}}} (~org-show-all~) ::
+- {{{kbd(C-u C-u C-u TAB)}}} (~org-fold-show-all~) ::
 
   #+cindex: show all, command
   #+kindex: C-u C-u C-u TAB
   #+findex: org-show-all
+  #+findex: org-fold-show-all
   Show all, including drawers.
 
 - {{{kbd(C-c C-r)}}} (~org-reveal~) ::
@@ -642,11 +643,12 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
   #+findex: org-show-branches
   Expose all the headings of the subtree, but not their bodies.
 
-- {{{kbd(C-c TAB)}}} (~org-show-children~) ::
+- {{{kbd(C-c TAB)}}} (~org-fold-show-children~) ::
 
   #+cindex: show children, command
   #+kindex: C-c TAB
   #+findex: org-show-children
+  #+findex: org-fold-show-children
   Expose all direct children of the subtree.  With a numeric prefix
   argument {{{var(N)}}}, expose all children down to level
   {{{var(N)}}}.
@@ -7806,7 +7808,7 @@ its location in the outline tree, but behaves in the following way:
   command (see [[*Visibility Cycling]]).  You can force cycling archived
   subtrees with {{{kbd(C-c C-TAB)}}}, or by setting the option
   ~org-cycle-open-archived-trees~.  Also, normal outline commands, like
-  ~org-show-all~, open archived subtrees.
+  ~org-fold-show-all~, open archived subtrees.
 
 -
   #+vindex: org-sparse-tree-open-archived-trees
@@ -9887,6 +9889,7 @@ filter elements are accumulated.
         '(("Effort_ALL". "0 0:10 0:30 1:00 2:00 3:00 4:00")))
   #+end_src
 
+  #+vindex: org-agenda-sort-noeffort-is-high
   #+vindex: org-sort-agenda-noeffort-is-high
   You can then filter for an effort by first typing an operator, one
   of {{{kbd(<)}}}, {{{kbd(>)}}} and {{{kbd(=)}}}, and then the
@@ -9895,7 +9898,7 @@ filter elements are accumulated.
   restricts to entries with effort smaller-or-equal, equal, or
   larger-or-equal than the selected value.  For application of the
   operator, entries without a defined effort are treated according to
-  the value of ~org-sort-agenda-noeffort-is-high~.  To clear the
+  the value of ~org-agenda-sort-noeffort-is-high~.  To clear the
   filter, press {{{kbd(_)}}} twice (once to call the command again,
   and once at the first prompt).
 
@@ -20046,10 +20049,10 @@ follows from the type specified above.
 
 #+cindex: @samp{wrap}, header argument
 The =wrap= header argument unconditionally marks the results block by
-appending strings to =#+BEGIN_= and =#+END_=.  If no string is
-specified, Org wraps the results in a =#+BEGIN_results=
-... =#+END_results= block.  It takes precedent over the =results=
-value listed above.  E.g.,
+appending strings to =#+BEGIN_= and =#+END_=, except if the value is
+=nil= or =no=.  If no string is specified, Org wraps the results in a
+=#+BEGIN_results= ... =#+END_results= block.  It takes precedent over
+the =results= value listed above.  E.g.,
 
 #+begin_example
 ,#+BEGIN_SRC emacs-lisp :results html :wrap EXPORT markdown
