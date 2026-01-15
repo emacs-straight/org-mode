@@ -14371,6 +14371,11 @@ A sample Org file with the above headers:
   some more text
 #+end_example
 
+The LaTeX backend normally exports using the Roman font family
+specified in the document class or by the user in the
+=LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
+force the LaTeX compiler to use the Sans font as default.
+
 *** Quoting LaTeX code
 :PROPERTIES:
 :DESCRIPTION: Incorporating literal @LaTeX{} code.
