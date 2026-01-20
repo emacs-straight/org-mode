@@ -1106,5 +1106,23 @@ entirely."
         (expected "\n<ul>\n<li>\n<ul>\n<li>1\n<ul>\n<li>1.1</li>\n</ul>\n</li>\n</ul>\n</li>\n<li>2</li>\n</ul>\n"))
     (should (string= (org-html--toc-text toc-entries nil) expected))))
 
+;;; Rendering priorities
+
+(ert-deftest ox-html/test-priority ()
+  "Test the generation of priority values."
+  ;; Alphabetical
+  (should
+   (equal "<span class=\"priority\">[A]</span>"
+          (org-html--priority ?A nil)))
+  ;; Numeric single digit
+  (should
+   (equal "<span class=\"priority\">[8]</span>"
+          (org-html--priority 8 nil)))
+  ;; Numeric double digit
+  (should
+   (equal "<span class=\"priority\">[18]</span>"
+          (org-html--priority 18 nil)))
+  )
+
 (provide 'test-ox-html)
 ;;; test-ox-html.el ends here

@@ -629,5 +629,51 @@ Headings exported as list items have no such problem."
           (re-search-forward "^@anchor{Heading 2-2-2}$")
           (re-search-forward "^@subheading Heading 2-2-2$")))))))
 
+(ert-deftest test-ox-texinfo/heading-priorities ()
+  "Test formatting of priority in headings."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "#+OPTIONS: pri:t"
+              "* [#A] Heading 1"
+              "* [#8] Heading 2"
+              "* [#27] Heading 3")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "^* Heading 1::$")
+          (re-search-forward "^* Heading 2::$")
+          (re-search-forward "^* Heading 3::$")
+          (re-search-forward "@emph{#A}")
+          (re-search-forward "@emph{#8}")
+          (re-search-forward "@emph{#27}")))))))
+
+(ert-deftest test-ox-texinfo/inlinetask-priorities ()
+  "Test formatting of priority in headings."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "#+OPTIONS: inline:t pri:t"
+              "*************** [#C] Inlinetask 1"
+              "*************** [#11] Inlinetask 2")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "^@center #C Inlinetask 1$")
+          (re-search-forward "^@center #11 Inlinetask 2$")
+          ))))))
+
 (provide 'test-ox-texinfo)
 ;;; test-ox-texinfo.el end here

@@ -2363,7 +2363,8 @@ INFO is the info plist."
   "Format a priority into HTML.
 PRIORITY is the character code of the priority or nil.  INFO is
 a plist containing export options."
-  (and priority (format "<span class=\"priority\">[%c]</span>" priority)))
+  (and priority (format "<span class=\"priority\">[%s]</span>"
+                        (org-priority-to-string priority))))
 
 ;;;; Tags
 

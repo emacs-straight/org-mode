@@ -299,6 +299,14 @@ is suppressed
 * [#42] Test
 "
    (goto-char (point-min))
+   (should (search-forward "\\framebox{\\#42}")))
+  ;; Test inline task (level >= org-inlinetask-min-level, default 15)
+  (org-test-with-exported-text
+   'latex
+   "#+OPTIONS: pri:t inline:t
+***************** [#42] Test
+"
+   (goto-char (point-min))
    (should (search-forward "\\framebox{\\#42}"))))
 
 (ert-deftest test-ox-latex/alphabetical-priority-headline ()
@@ -307,6 +315,14 @@ is suppressed
    'latex
    "#+OPTIONS: pri:t
 * [#C] Test
+"
+   (goto-char (point-min))
+   (should (search-forward "\\framebox{\\#C}")))
+  ;; Test inline task (level >= org-inlinetask-min-level, default 15)
+  (org-test-with-exported-text
+   'latex
+   "#+OPTIONS: pri:t inline:t
+***************** [#C] Test
 "
    (goto-char (point-min))
    (should (search-forward "\\framebox{\\#C}"))))

@@ -130,5 +130,21 @@
         (should (search-forward "[babel org file](examples/babel.org)"))
         (should (search-forward "[babel script](examples/babel.el)"))))))
 
+(ert-deftest ox-md/headline-priority ()
+  "Test formatting of headlines with priority."
+  (let ((export-buffer "*Test MD Export*")
+        (org-export-show-temporary-export-buffer nil))
+    (org-test-with-temp-text "#+options: toc:nil pri:t
+* [#A] Test
+* [#7] Test 2
+* [#23] Test 3
+"
+        (org-export-to-buffer 'md export-buffer)
+        (with-current-buffer export-buffer
+          (goto-char (point-min))
+          (should (search-forward "# [#A] Test"))
+          (should (search-forward "# [#7] Test 2"))
+          (should (search-forward "# [#23] Test 3"))))))
+
 (provide 'test-ox-md)
 ;;; test-ox-md.el ends here
