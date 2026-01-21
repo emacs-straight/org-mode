@@ -15636,19 +15636,21 @@ use ~DejaVu Sans~ for Portuguese with ~org-latex-babel-font-config~.
 *Note* that the property for the main language (Greek in the example),
 is /always/ ~import,main~.
 
-**** Configuration for the ~xeCJK~ package for CJK languages
+**** Configuration of the ~xeCJK~ or ~luatexja~ packages for CJK languages
 :PROPERTIES:
 :CUSTOM_ID: babel-xelatex-cjk
 :DESCRIPTION: Localisation and font management with xeCJK
 :END:
 
 When composing Chinese, Japanese or Korean (CJK) documents, fonts are
-configured using the ~xeCJK~ package , while localization is provided
-by ~babel~ .  *Note* that this solution will /only/ work with
-~xelatex~.
+configured using the ~xeCJK~ package or ~luatexja~ package, depending
+on the LaTeX engine you configured, while localization is provided by
+~babel~.  *Note* that this solution will /only/ work with ~xelatex~
+and ~lualatex~.
 
 Setting ~org-latex-fontspec-config~ to ~nil~ will produce a working
-document with the default fonts provided by the ~xeCJK~ package.
+document with the default fonts provided by the ~xeCJK~ or ~luatexja~
+package.
 
 The following document header
 #+BEGIN_SRC org
@@ -15659,6 +15661,10 @@ The following document header
 
 #+texinfo: @noindent
 will allow you to typeset a Chinese document.
+
+Replacing ~#+LATEX_COMPILER~ option with ~lualatex~ will allow you to
+typeset a Chinese document using ~luatexja~ and the default =Fandol=
+fonts.
 
 Similarly, you can typeset Japanese documents, just by replacing the
 ~#+LANGUAGE:~ line by
@@ -15672,13 +15678,13 @@ This will allow you to typeset a Japanese document, using the
 =HaranoAjiMincho= and =HaranoAjiGothic= fonts.
 
 The appearance of the PDF output can be further customised if needed.
-The ~xeCJK~ package provides the ~\setCKJmainfont{}~,
-~\setCJKsansfont{}~ and ~\setCJKmonofont{}~ commands to select specific
-fonts.  Use ~org-latex-fontspec-config~ to define the ~CJKmain~,
-~CJKsans~ and ~CJKmono~ fonts supporting the Chinese, Japanese or
-Korean scripts to match your needs.  For example, the following font
-configuration will produce a Chinese document typeset with the =Noto=
-font family:
+The ~\setCKJmainfont{}~, ~\setCJKsansfont{}~ and ~\setCJKmonofont{}~
+commands are provided as a unified interface for ~xeCJK~ and
+~luatexja~ to select specific fonts.  Use ~org-latex-fontspec-config~
+to define the ~CJKmain~, ~CJKsans~ and ~CJKmono~ fonts supporting the
+Chinese, Japanese or Korean scripts to match your needs.  For example,
+the following font configuration will produce a Chinese document
+typeset with the =Noto= font family:
 
 #+BEGIN_SRC elisp
 ((org-mode .
@@ -15699,6 +15705,9 @@ produce a Japanese document typeset with the =Noto= font family:
      ("CJKmono" :font "Noto Sans Mono CJK JP"))))))
 #+END_SRC
 
+Note that when ~lualatex~ and thus ~luatexja~ is used, setting
+~CJKmono~ has no effect, while ~CJKsans~ will be used for verbatim
+environment.
 
 ** Markdown Export
 :PROPERTIES:
