@@ -6291,7 +6291,7 @@ If KWD is a number, get the corresponding match group."
 
 (defun org-get-priority-face (priority)
   "Get the right face for PRIORITY.
-PRIORITY is a character."
+PRIORITY is a number from 0-64 or a character value from ?A to ?Z."
   (or (org-face-from-face-or-color
        'priority 'org-priority (cdr (assq priority org-priority-faces)))
       'org-priority))
@@ -6313,7 +6313,7 @@ If TAG is a number, get the corresponding match group."
 	  (end (1+ (match-end 2))))
       (add-face-text-property
        beg end
-       (org-get-priority-face (string-to-char (match-string 2))))
+       (org-get-priority-face (org-priority-to-value (match-string 2))))
       (add-text-properties
        beg end
        (list 'font-lock-fontified t)))))

@@ -2025,23 +2025,24 @@ When t, the highest priority entries are bold, lowest priority italic.
 However, settings in `org-priority-faces' will overrule these faces.
 When this variable is the symbol `cookies', only fontify the
 cookies, not the entire task.
-This may also be an association list of priority faces, whose
-keys are the character values of `org-priority-highest',
-`org-priority-default', and `org-priority-lowest' (the default values
-are ?A, ?B, and ?C, respectively).  The face may be a named face, a
-color as a string, or a list like `(:background \"Red\")'.
-If it is a color, the variable `org-faces-easy-properties'
-determines if it is a foreground or a background color."
+
+This may also be an association list of priority faces, whose keys are
+priorities and values are faces.  The face may be a named face, a color
+as a string, or a list like `(:background \"Red\")'.  If it is a color,
+the variable `org-faces-easy-properties' determines if it is a
+foreground or a background color."
   :group 'org-agenda-line-format
   :type '(choice
 	  (const :tag "Never" nil)
 	  (const :tag "Defaults" t)
 	  (const :tag "Cookies only" cookies)
-	  (repeat :tag "Specify"
-		  (list (character :tag "Priority" :value ?A)
-			(choice    :tag "Face    "
-				   (string :tag "Color")
-				   (sexp :tag "Face"))))))
+          (alist :tag "Association list"
+                 :key-type (choice :tag "Priority"
+                                   (character :tag "Character" :value ?A)
+                                   (natnum :tag "Number" :value 1))
+                 :value-type (choice :tag "Face    "
+			             (string :tag "Color")
+			             (sexp :tag "Face")))))
 
 (defcustom org-agenda-day-face-function nil
   "Function called to determine what face should be used to display a day.
@@ -4129,7 +4130,7 @@ agenda display, configure `org-agenda-finalize-hook'."
 		    org-priority-highest)
 	      l (or (get-char-property (point) 'org-priority-lowest)
 		    org-priority-lowest)
-	      p (string-to-char (match-string 2))
+	      p (org-priority-to-value (match-string 2))
 	      b (match-beginning 1)
 	      e (if (eq org-agenda-fontify-priorities 'cookies)
 		    (1+ (match-end 2))
