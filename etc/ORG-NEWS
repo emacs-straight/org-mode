@@ -286,6 +286,12 @@ executable can be configured via =org-ditaa-exec=.
 SVG output can now be generated; note, however, that this requires a
 ditaa version of at least 0.11.0.
 
+*** ~org-lint~ now checks priorities
+
+Warnings are raised on headlines containing out-of-bounds, invalid
+(e.g., =[#-1]=, =[#AA]=), or malformed (e.g., =[#1=, =[#A=)
+priorities.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,

@@ -1506,6 +1506,32 @@ Use \"export %s\" instead"
              (format "Bullet counter \"%s\" is not the same with item position %d.  Consider adding manual [@%d] counter."
                      bullet (car (last true-number)) bullet-number))))))))
 
+(defun org-lint-priority (ast)
+  "Report out-of-bounds, invalid, and malformed priorities.
+Raise warnings on headlines containing out-of-bounds, invalid (e.g.,
+`[#-1]', `[#AA]'), or malformed (e.g., `[#1', `[#A') priorities."
+  (let ((bad-priority-rx (rx line-start ?\[ ?#
+                             (group (zero-or-more (not (in ?\[ ?\]))))
+                             (group (zero-or-more ?\])))))
+    (org-element-map ast 'headline
+      (lambda (headline)
+        (if-let* ((priority (org-element-property :priority headline)))
+            (when (and (not (org-priority-valid-value-p priority))
+                       (org-priority-valid-value-p priority t))
+              (list (org-element-begin headline)
+                    (format "Out-of-bounds priority '%s'"
+                            (org-priority-to-string priority))))
+          (when-let* ((headline-value (org-element-property
+                                       :raw-value headline))
+                      (matches (string-match bad-priority-rx
+                                             headline-value)))
+            (list (org-element-begin headline)
+                  (if (string-empty-p (match-string 2 headline-value))
+                      (format "Malformed priority '%s'"
+                              (match-string 0 headline-value))
+                    (format "Invalid priority '%s'"
+                            (match-string 1 headline-value))))))))))
+
 (defun org-lint-LaTeX-$ (ast)
   "Report semi-obsolete $...$ LaTeX fragments.
 AST is the buffer parse tree."
@@ -1863,6 +1889,11 @@ AST is the buffer parse tree."
   "Report inconsistent item numbers in lists"
   #'org-lint-item-number
   :categories '(plain-list))
+
+(org-lint-add-checker 'priority
+  "Report out-of-bounds, invalid, and malformed priorities."
+  #'org-lint-priority
+  :categories '(markup))
 
 (org-lint-add-checker 'LaTeX-$
   "Report potentially confusing $...$ LaTeX markup."
