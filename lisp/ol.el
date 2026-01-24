@@ -50,6 +50,9 @@
 (declare-function org-before-first-heading-p "org" ())
 (declare-function org-do-occur "org" (regexp &optional cleanup))
 (declare-function org-element-at-point "org-element" (&optional pom cached-only))
+(declare-function org-element-parse-secondary-string "org-element"
+                  (string restriction &optional parent))
+(declare-function org-element-restriction "org-element" (element))
 (declare-function org-element-cache-refresh "org-element" (pos))
 (declare-function org-element-cache-reset "org-element" (&optional all no-persistence))
 (declare-function org-element-context "org-element" (&optional element))
@@ -2173,11 +2176,26 @@ buffer boundaries with possible narrowing."
         (forward-char -1)               ;ensure we are on the link
         (when-let*
             ((link (org-element-lineage (org-element-context) 'link t))
+             (path (or
+                    ;; Link without description or link with description
+                    ;; that is requested to be previewed anyway.
+                    (and (or include-linked
+                             (not (org-element-contents-begin link)))
+                         (org-element-property :path link))
+                    ;; Special case: link with description where
+                    ;; description is itself a sole link
+                    (and (org-element-contents-begin link)
+                         (setq link
+                               (org-with-point-at (org-element-contents-begin link)
+                                 (org-element-put-property
+                                  (org-element-link-parser) :parent link)))
+                         (org-element-type-p link 'link)
+                         (equal (org-element-end link)
+                                (org-element-contents-end
+                                 (org-element-parent link)))
+                         (org-element-property :path link))))
              (linktype (org-element-property :type link))
-             (preview-func (org-link-get-parameter linktype :preview))
-             (path (and (or include-linked
-                            (not (org-element-contents-begin link)))
-                        (org-element-property :path link))))
+             (preview-func (org-link-get-parameter linktype :preview)))
           ;; Create an overlay to hold the preview
           (let ((ov (or (cdr-safe (get-char-property-and-overlay
                                    (org-element-begin link) 'org-image-overlay))
