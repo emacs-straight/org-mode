@@ -11461,7 +11461,12 @@ interactive prompt, it will automatically be converted to uppercase."
 			(if org-priority-start-cycle-with-default
 			    org-priority-default
 			  (1+ org-priority-default))))))
-	 (t (user-error "Invalid action")))
+	 (t (user-error (concat "Invalid action: `%s'.  Action must be one of "
+                                "`up', `down', `set', `remove' or a value "
+                                "between `%s' and `%s'")
+                        action
+                        (org-priority-to-string org-priority-highest)
+                        (org-priority-to-string org-priority-lowest))))
         ;; Check against the current high/low range if we need to wrap
 	(when (not (org-priority-valid-value-p new-value))
 	  (if (and (memq action '(up down))
