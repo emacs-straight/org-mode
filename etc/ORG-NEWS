@@ -498,6 +498,13 @@ the suffix of =:file= is the primary determinant, and =:file-ext=
 secondary.  Header arguments =:pdf= and =:eps= are supported for
 backwards compatibility.  Default output type is still PNG.
 
+*** New option ~org-latex-use-sans~
+
+This option specifies the PDF should be typeset using the Sans font
+specified in the document class (or the user) instead of the default
+font (i.e. the Roman font).
+
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.

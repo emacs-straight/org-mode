@@ -170,6 +170,7 @@
     (:latex-title-command nil nil org-latex-title-command)
     (:latex-toc-command nil nil org-latex-toc-command)
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
+    (:latex-use-sans nil "latex-use-sans" org-latex-use-sans)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1978,6 +1979,15 @@ INFO is a plist used as a communication channel."
 	 (member (or compiler "") org-latex-compilers)
 	 (format org-latex-compiler-file-string compiler))))
 
+(defcustom org-latex-use-sans nil
+  "Whether to typeset the document with the Sans font family.
+
+The default behaviour is to typeset with the Roman font family."
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type 'boolean
+  :safe #'booleanp)
+
 
 ;;; Filters
 
@@ -2032,7 +2042,11 @@ specified in `org-latex-default-packages-alist' or
 	 (mapconcat #'org-element-normalize-string
 		    (list (plist-get info :latex-header)
 			  (and (not snippet?)
-			       (plist-get info :latex-header-extra)))
+			       (plist-get info :latex-header-extra))
+                          (and (not snippet?)
+                               (plist-get info :latex-use-sans)
+                               "\\renewcommand*\\familydefault{\\sfdefault}"))
+
 		    ""))))
       info)
      info)))
