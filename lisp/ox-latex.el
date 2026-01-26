@@ -2730,7 +2730,7 @@ specified in `org-latex-default-packages-alist' or
 			      (and (not snippet?)
 			           (plist-get info :latex-header-extra))
                               (and (not snippet?)
-                                   (or (plist-get info :latex-use-sans) org-latex-use-sans)
+                                   (plist-get info :latex-use-sans)
                                    "\\renewcommand*\\familydefault{\\sfdefault}"))
 
 		        "")
