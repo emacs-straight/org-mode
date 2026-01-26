@@ -853,6 +853,48 @@ and END-OFFSET."
   (org-unescape-code-in-string
    (org-element--substring element beg-offset end-offset)))
 
+(defvar org-element--cache-diagnostics-level 2
+  "Detail level of the diagnostics.")
+
+(defvar-local org-element--cache-diagnostics-ring nil
+  "Ring containing cache process log entries.
+The ring size is `org-element--cache-diagnostics-ring-size'.")
+
+(defvar org-element--cache-diagnostics-ring-size 5000
+  "Size of `org-element--cache-diagnostics-ring'.")
+
+(defvar org-element--cache-self-verify nil
+  "Activate extra consistency checks for the cache.
+
+This may cause serious performance degradation depending on the value
+of `org-element--cache-self-verify-frequency'.
+
+When set to symbol `backtrace', record and display backtrace log if
+any inconsistency is detected.")
+
+(defmacro org-element--cache-warn (format-string &rest args)
+  "Raise warning for org-element-cache.
+FORMAT-STRING and ARGS are the same arguments as in `format'."
+  `(let* ((format-string (funcall #'format ,format-string ,@args))
+          (format-string
+           (if (or (not org-element--cache-diagnostics-ring)
+                   (not (eq 'backtrace org-element--cache-self-verify)))
+               format-string
+             (prog1
+                 (concat (format "Warning(%s): "
+                                 (buffer-name (current-buffer)))
+                         format-string
+                         "\nBacktrace:\n  "
+                         (mapconcat #'identity
+                                    (ring-elements org-element--cache-diagnostics-ring)
+                                    "\n  "))
+               (setq org-element--cache-diagnostics-ring nil)))))
+     (if (and (boundp 'org-batch-test) org-batch-test)
+         (error "%s" (concat "org-element--cache: " format-string))
+       (push (concat "org-element--cache: " format-string) org--warnings)
+       (display-warning '(org-element org-element-cache)
+                        (concat "org-element--cache: " format-string)))))
+
 
 ;;; Greater elements
 ;;
@@ -1997,6 +2039,14 @@ Return a new syntax node of `plain-list' type containing `:type',
 `:post-blank' and `:post-affiliated' properties.
 
 Assume point is at the beginning of the list."
+  (when (and structure (not (assq (point) structure)))
+    ;; STRUCT is corrupted - cannot find list inside.
+    (org-element--cache-warn
+     "Invalid :struct passed to plain-list parser at %S: %S
+If this warning appears regularly, please report the warning text to Org mode mailing list (M-x org-submit-bug-report)."
+     (point) structure)
+    ;; Try to recover
+    (setq structure nil))
   (save-excursion
     (let* ((struct (or structure (org-element--list-struct limit)))
 	   (type (cond ((looking-at-p "[ \t]*[A-Za-z0-9]") 'ordered)
@@ -5805,15 +5855,6 @@ seconds.")
   "Duration, as a time value, of the pause between synchronizations.
 See `org-element-cache-sync-duration' for more information.")
 
-(defvar org-element--cache-self-verify nil
-  "Activate extra consistency checks for the cache.
-
-This may cause serious performance degradation depending on the value
-of `org-element--cache-self-verify-frequency'.
-
-When set to symbol `backtrace', record and display backtrace log if
-any inconsistency is detected.")
-
 (defvar org-element--cache-self-verify-before-persisting nil
   "Perform consistency checks for the cache before writing to disk.
 
@@ -5835,16 +5876,6 @@ to be correct.  Setting this to a value less than 0.0001 is useless.")
 
 (defvar org-element--cache-map-statistics-threshold 0.1
   "Time threshold in seconds to log statistics for `org-element-cache-map'.")
-
-(defvar org-element--cache-diagnostics-level 2
-  "Detail level of the diagnostics.")
-
-(defvar-local org-element--cache-diagnostics-ring nil
-  "Ring containing cache process log entries.
-The ring size is `org-element--cache-diagnostics-ring-size'.")
-
-(defvar org-element--cache-diagnostics-ring-size 5000
-  "Size of `org-element--cache-diagnostics-ring'.")
 
 ;;;; Data Structure
 
@@ -6007,29 +6038,6 @@ FORMAT-STRING and ARGS are the same arguments as in `format'."
            (setq org-element--cache-diagnostics-ring
                  (make-ring org-element--cache-diagnostics-ring-size)))
          (ring-insert org-element--cache-diagnostics-ring format-string)))))
-
-(defmacro org-element--cache-warn (format-string &rest args)
-  "Raise warning for org-element-cache.
-FORMAT-STRING and ARGS are the same arguments as in `format'."
-  `(let* ((format-string (funcall #'format ,format-string ,@args))
-          (format-string
-           (if (or (not org-element--cache-diagnostics-ring)
-                   (not (eq 'backtrace org-element--cache-self-verify)))
-               format-string
-             (prog1
-                 (concat (format "Warning(%s): "
-                                 (buffer-name (current-buffer)))
-                         format-string
-                         "\nBacktrace:\n  "
-                         (mapconcat #'identity
-                                    (ring-elements org-element--cache-diagnostics-ring)
-                                    "\n  "))
-               (setq org-element--cache-diagnostics-ring nil)))))
-     (if (and (boundp 'org-batch-test) org-batch-test)
-         (error "%s" (concat "org-element--cache: " format-string))
-       (push (concat "org-element--cache: " format-string) org--warnings)
-       (display-warning '(org-element org-element-cache)
-                        (concat "org-element--cache: " format-string)))))
 
 (defsubst org-element--cache-key (element)
   "Return a unique key for ELEMENT in cache tree.

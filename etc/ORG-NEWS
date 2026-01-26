@@ -4,7 +4,7 @@ ORG NEWS -- history of user-visible changes.   -*- mode: org; coding: utf-8 -*-
 
 #+LINK: doc https://orgmode.org/worg/doc.html#%s
 #+LINK: msg https://list.orgmode.org/%s/
-#+LINK: git https://git.savannah.gnu.org/cgit/emacs/org-mode.git/commit/?id=%s
+#+LINK: git https://git.savannah.nongnu.org/cgit/org-mode.git/commit/?id=%s
 
 Copyright (C) 2012-2026 Free Software Foundation, Inc.
 See the end of the file for license conditions.
@@ -182,6 +182,13 @@ The =show= parameter for the =org-priority= function was deprecated in
 Org 9.2 (released in 2017). Sufficient time has passed and it is being
 removed as part of refactoring for numeric priorities.
 
+*** Priority speed commands adapt to user options
+
+Previously, =1=, =2=, and =3= would insert priorities =A=, =B=, and
+=C=, which causes errors when using numeric priorities.  These now
+insert ~org-priority-highest~, ~org-priority-default~, and
+~org-priority-lowest~, respectively.
+
 ** New features
 
 # We list the most important features, and the features that may
@@ -293,6 +300,12 @@ executable can be configured via =org-ditaa-exec=.
 
 SVG output can now be generated; note, however, that this requires a
 ditaa version of at least 0.11.0.
+
+*** ~org-lint~ now checks priorities
+
+Warnings are raised on headlines containing out-of-bounds, invalid
+(e.g., =[#-1]=, =[#AA]=), or malformed (e.g., =[#1=, =[#A=)
+priorities.
 
 ** New and changed options
 
@@ -785,6 +798,12 @@ Previously, ox-man ignored =#+DATE:= keyword even when
 ~org-export-with-date~ is set to non-nil.  Now, the date is exported
 and specified in the =footer-middle= argument of =.TH= macro (see ~man
 7 man~).
+
+*** ox-man: Support specifying =:release= and =:header= in =#+MAN_CLASS_OPTIONS:= in addition to =:section-id=
+
+The newly added =:release= and =:header= options of =#+MAN_CLASS_OPTIONS=
+are respectively mapped to the =footer-inside= and =header-middle=
+arguments of the =.TH= macro (see ~man 7 groff_man~).
 
 *** ~org-timer-done-hook~ is now run before the timer is stopped
 

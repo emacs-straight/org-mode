@@ -33,7 +33,11 @@
 ;; See ox.el for more details on how this exporter works.
 ;;
 ;; It introduces one new buffer keywords:
-;; "MAN_CLASS_OPTIONS".
+;; "MAN_CLASS_OPTIONS" that accepts the following options:
+;;   - `:section-id', the section, a string (eg. ':section-id "2"');
+;;   - `:release', the footer middle, a string (eg. ':release "Emacs 13"');
+;;   - `:header', the header middle, a string (eg. ':header "GNU"').
+
 
 ;;; Code:
 
@@ -328,20 +332,24 @@ holding export options."
                               (list (plist-get info :man-class-options))
                               " "))))
          (section-item (plist-get attr :section-id))
+         (release (plist-get attr :release))
+         (header (plist-get attr :header))
          ;; Note: groff linter suggests date to be the third argument
          ;; of .TH
          (date (and (plist-get info :with-date)
 		    (org-export-data (org-export-get-date info) info))))
     (concat
-     (cond
-      ((and title (stringp section-item))
-       (format ".TH \"%s\" \"%s\" \"%s\" \n" title section-item date))
-      ((and (string= "" title) (stringp section-item))
-       (format ".TH \"%s\" \"%s\" \"%s\" \n" " " section-item date))
-      (title
-       (format ".TH \"%s\" \"1\" \"%s\" \n" title date))
-      (t
-       (format ".TH \" \" \"1\" \"%s\" " date)))
+     (format ".TH \"%s\" \"%s\"" ;; only two required by groff_man(7).
+             (if title title " ")
+             (if (stringp section-item) section-item "1"))
+     (if date (format " \"%s\""  date)
+       " \"\"") ;; in case later options are present.
+     (if release (format " \"%s\"" release)
+       " \"\"") ;; in case later options are present.
+     ;; Do not write an empty footer-outside, otherwise man(1) will
+     ;; no longer generate its content, see groff_man(7).
+     (if header (format " \"%s\"" header))
+     " \n"
      contents)))
 
 

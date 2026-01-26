@@ -54,10 +54,10 @@
 (declare-function org-link-heading-search-string "ol" (&optional string))
 (declare-function org-tag-alist-to-string "org" (alist &optional skip-key))
 (declare-function org-time-stamp-format "org" (&optional with-time inactive custom))
+(declare-function org-priority-to-string "org" (priority))
 
 (defvar org-babel-common-header-args-w-values)
 (defvar org-current-tag-alist)
-(defvar org-priority-default)
 (defvar org-drawer-regexp)
 (defvar org-element-affiliated-keywords)
 (defvar org-entities)
@@ -66,9 +66,10 @@
 (defvar org-export-select-tags)
 (defvar org-file-tags)
 (defvar org-priority-highest)
+(defvar org-priority-default)
+(defvar org-priority-lowest)
 (defvar org-link-abbrev-alist)
 (defvar org-link-abbrev-alist-local)
-(defvar org-priority-lowest)
 (defvar org-options-keywords)
 (defvar org-outline-regexp)
 (defvar org-property-re)
@@ -274,10 +275,11 @@ When completing for #+STARTUP, for example, this function returns
 
 (defun pcomplete/org-mode/file-option/priorities ()
   "Complete arguments for the #+PRIORITIES file option."
-  (pcomplete-here (list (format "%c %c %c"
-				org-priority-highest
-				org-priority-lowest
-				org-priority-default))))
+  (pcomplete-here
+   (list (format "%s %s %s"
+                 (org-priority-to-string org-priority-highest)
+                 (org-priority-to-string org-priority-lowest)
+                 (org-priority-to-string org-priority-default)))))
 
 (defun pcomplete/org-mode/file-option/select_tags ()
   "Complete arguments for the #+SELECT_TAGS file option."

@@ -246,26 +246,37 @@ This function is only useful when called from Agenda buffer."
 (defmacro org-preserve-local-variables (&rest body)
   "Execute BODY while preserving local variables."
   (declare (debug (body)))
-  `(let ((local-variables
-	  (org-with-wide-buffer
-	   (goto-char (point-max))
-	   (let ((case-fold-search t))
-	     (and (re-search-backward "^[ \t]*# +Local Variables:"
-				      (max (- (point) 3000) 1)
-				      t)
-               (let ((buffer-undo-list t))
-	         (delete-and-extract-region (point) (point-max)))))))
-         (tick-counter-before (buffer-modified-tick)))
-     (unwind-protect (progn ,@body)
-       (when local-variables
-	 (org-with-wide-buffer
-	  (goto-char (point-max))
-	  (unless (bolp) (insert "\n"))
-          (let ((modified (< tick-counter-before (buffer-modified-tick)))
-                (buffer-undo-list t))
-	    (insert local-variables)
-            (unless modified
-              (restore-buffer-modified-p nil))))))))
+  (org-with-gensyms (local-variables tick-counter-before)
+    `(org-with-undo-amalgamate
+       (let ((,local-variables
+              (org-with-wide-buffer
+               (goto-char (point-max))
+               (let ((case-fold-search t))
+                 (and (re-search-backward
+                       ,(rx-let ((prefix
+                                  (seq line-start (zero-or-more whitespace)
+                                       "#" (one-or-more whitespace))))
+                          (rx prefix "Local Variables:"
+                              (one-or-more anychar)
+                              prefix "End:"
+                              (zero-or-more whitespace) (optional "\n")))
+                       (max (- (point) 3000) 1)
+                       t)
+                      (cons (match-beginning 0)
+                            (delete-and-extract-region (match-beginning 0)
+                                                         (match-end 0)))))))
+             (,tick-counter-before (buffer-modified-tick)))
+         (unwind-protect (progn ,@body)
+           (when ,local-variables
+             (org-with-wide-buffer
+              (let ((modified (< ,tick-counter-before (buffer-modified-tick))))
+                (if (not modified)
+                    (goto-char (car ,local-variables))
+                  (goto-char (point-max))
+                  (unless (bolp) (insert "\n")))
+	        (insert (cdr ,local-variables))
+                (unless modified
+                  (restore-buffer-modified-p nil))))))))))
 
 ;;;###autoload
 (defmacro org-element-with-disabled-cache (&rest body)

@@ -1889,6 +1889,20 @@ CLOCK: [2022-09-17 sam. 11:00]--[2022-09-17 sam. 11:46] =>  0:46"
 	  (org-test-with-temp-text "<point>P"
 	    (org-insert-heading)
 	    (buffer-string))))
+  ;; Move local variable string to end when we respect the content
+  (let ((local-variable-string "# Local Variables:
+# fill-column: 120
+# End:\n"))
+    (should
+     (equal (concat "* \n" local-variable-string)
+            (org-test-with-temp-text local-variable-string
+              (org-insert-heading-respect-content)
+              (buffer-string))))
+    (should
+     (equal (concat "* H\n* \n" local-variable-string)
+            (org-test-with-temp-text (concat "* H<point>\n" local-variable-string)
+              (org-insert-heading-respect-content)
+              (buffer-string)))))
   ;; In the middle of a line, split the line if allowed, otherwise,
   ;; insert the headline at its end.
   (should
@@ -5887,58 +5901,78 @@ Text.
 ;;; Outline structure
 
 (ert-deftest test-org/move-subtree ()
-  "Test `org-metaup' and `org-metadown' on headings."
-  (should
-   (equal "* H2\n* H1\n"
-          (org-test-with-temp-text "* H1<point>\n* H2\n"
-            (org-metadown)
-            (buffer-string))))
-  (should
-   (equal "* H2\n* H1\n"
-          (org-test-with-temp-text "* H1\n* H2<point>\n"
-            (org-metaup)
-            (buffer-string))))
-  (should-error
-   (org-test-with-temp-text "* H1\n* H2<point>\n"
-     (org-metadown)
-     (buffer-string)))
-  (should-error
-   (org-test-with-temp-text "* H1<point>\n* H2\n"
-     (org-metaup)
-     (buffer-string)))
-  (should-error
-   (org-test-with-temp-text "* H1\n** H1.2<point>\n* H2"
-     (org-metadown)
-     (buffer-string)))
-  (should-error
-   (org-test-with-temp-text "* H1\n** H1.2<point>\n"
-     (org-metaup)
-     (buffer-string)))
-  ;; With selection
-  (should
-   (equal "* T\n** H3\n** H1\n** H2\n"
-          (org-test-with-temp-text "* T\n** <point>H1\n** H2\n** H3\n"
-            (set-mark (point))
-            (search-forward "H2")
-            (org-metadown)
-            (buffer-string))))
-  (should
-   (equal "* T\n** H1\n** H2\n** H0\n** H3\n"
-          (org-test-with-temp-text "* T\n** H0\n** <point>H1\n** H2\n** H3\n"
-            (set-mark (point))
-            (search-forward "H2")
-            (org-metaup)
-            (buffer-string))))
-  (should-error
-   (org-test-with-temp-text "* T\n** <point>H1\n** H2\n* T2\n"
-     (set-mark (point))
-     (search-forward "H2")
-     (org-metadown)))
-  (should-error
-   (org-test-with-temp-text "* T\n** <point>H1\n** H2\n* T2\n"
-     (set-mark (point))
-     (search-forward "H2")
-     (org-metaup))))
+  "Test `org-metaup' and `org-metadown' on headings.
+Also ensure undo works as expected."
+  (cl-flet*
+      ((test-move-subtree (direction
+                           initial-text
+                           expected &optional selection)
+         (org-test-with-temp-text initial-text
+           (buffer-enable-undo)
+           (when selection
+             (set-mark (point))
+             (search-forward selection))
+           (let ((func
+                  (cl-ecase direction
+                    (up   #'org-metaup)
+                    (down #'org-metadown))))
+             (if (eq expected 'error)
+                 (should-error
+                  (funcall func)
+                  :type 'user-error)
+               (funcall func)
+               (should (equal expected
+                              (buffer-string)))
+               (deactivate-mark)
+               (undo-boundary)
+               (undo)
+               (should (equal (string-replace "<point>" "" initial-text)
+                              (buffer-string))))))))
+    (test-move-subtree 'down
+                       "* H1<point>\n* H2\n"
+                       "* H2\n* H1\n")
+    (test-move-subtree 'up
+                       "* H1\n* H2<point>\n"
+                       "* H2\n* H1\n")
+    (test-move-subtree 'down
+                       "* H1\n* H2<point>\n"
+                       'error)
+    (test-move-subtree 'up
+                       "* H1<point>\n* H2\n"
+                       'error)
+    (test-move-subtree 'down
+                       "* H1\n** H1.2<point>\n* H2"
+                       'error)
+    (test-move-subtree 'up
+                       "* H1\n** H1.2<point>\n"
+                       'error)
+    ;; Local variables
+    (let ((local-variable-string "# Local Variables:
+# fill-column: 120
+# End:\n"))
+      (test-move-subtree 'down
+                         (concat "* H1<point>\n* H2\n" local-variable-string)
+                         (concat "* H2\n* H1\n" local-variable-string))
+      (test-move-subtree 'down
+                         (concat "* H1<point>\n* H2\n" local-variable-string "* H3\n")
+                         (concat "* H2\n* H1\n* H3\n" local-variable-string)))
+    ;; With selection
+    (test-move-subtree 'down
+                       "* T\n** <point>H1\n** H2\n** H3\n"
+                       "* T\n** H3\n** H1\n** H2\n"
+                       "H2")
+    (test-move-subtree 'up
+                       "* T\n** H0\n** <point>H1\n** H2\n** H3\n"
+                       "* T\n** H1\n** H2\n** H0\n** H3\n"
+                       "H2")
+    (test-move-subtree 'down
+                       "* T\n** <point>H1\n** H2\n* T2\n"
+                       'error
+                       "H2")
+    (test-move-subtree 'up
+                       "* T\n** <point>H1\n** H2\n* T2\n"
+                       'error
+                       "H2")))
 
 (ert-deftest test-org/demote ()
   "Test `org-demote' specifications."
@@ -7254,7 +7288,7 @@ Paragraph<point>"
 	  (org-test-with-temp-text "* [#A] H"
 	    (cdr (assoc "PRIORITY" (org-entry-properties))))))
   (should
-   (equal (char-to-string org-priority-default)
+   (equal (org-priority-to-string org-priority-default)
 	  (org-test-with-temp-text "* H"
 	    (cdr (assoc "PRIORITY" (org-entry-properties nil "PRIORITY"))))))
   ;; Get "FILE" property.
