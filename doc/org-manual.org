@@ -20775,7 +20775,7 @@ changes.
   #+vindex: org-priority-lowest
   #+vindex: org-priority-default
   This line sets the limits and the default for the priorities.  All
-  three must be either letters A--Z or numbers 0--9.  The highest
+  three must be either letters A--Z or numbers 0--64.  The highest
   priority must have a lower ASCII number than the lowest priority.
 
 - =#+PROPERTY: Property_Name Value= ::
