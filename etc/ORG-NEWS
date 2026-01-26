@@ -539,6 +539,13 @@ Fine-tune the aspect of mathematical expressions produced by the
 ~xelatex~ as the LaTeX compiler. This option is passed as-is as
 package options to =unicode-math=.
 
+*** New option ~org-latex-use-sans~
+
+This option specifies the PDF should be typeset using the Sans font
+specified in the document class (or the user) instead of the default
+font (i.e. the Roman font).
+
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
