@@ -579,6 +579,21 @@ Fake test document
       (should (search-forward "\\renewcommand*\\familydefault{\\sfdefault}" nil t))
       (should (search-forward "\\begin{document}" nil t)))))
 
+(ert-deftest test-ox-latex/use-sans-option ()
+  "Test `org-latex-use-sans' set to t."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test sans fonts
+#+OPTIONS: latex-use-sans:t
+
+* Test
+
+Fake test document
+"
+      (goto-char (point-min))
+      (should (search-forward "\\renewcommand*\\familydefault{\\sfdefault}" nil t))
+      (should (search-forward "\\begin{document}" nil t))))
+
 (ert-deftest test-ox-latex/use-sans-default ()
   "Test `org-latex-use-sans' default setting."
   (org-test-with-exported-text 'latex
