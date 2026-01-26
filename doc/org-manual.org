@@ -9791,10 +9791,12 @@ done depends on the type of view.
   time-of-day specification.  These entries are shown at the beginning
   of the list, as a /schedule/ for the day.  After that, items remain
   grouped in categories, in the sequence given by ~org-agenda-files~.
-  Within each category, items are sorted by urgency, which is composed
-  of the base priority (see [[*Priorities]]; 2000 for priority =A=, 1000
-  for =B=, and 0 for =C=), plus additional increments for overdue
-  scheduled or deadline items.
+  Within each category, items are sorted by urgency, which is derived
+  from the priority (see [[*Priorities]]), plus additional increments
+  for overdue scheduled or deadline items.  The lowest priority is
+  scored as 0, the next as 1000, and continues in steps of 1000 until
+  reaching the highest priority, e.g., =C=, =B=, =A= are scored as 0,
+  1000, and 2000, respectively.
 
 - For the TODO list, items remain in the order of categories, but
   within each category, sorting takes place according to urgency.  The
