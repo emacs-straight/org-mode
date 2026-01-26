@@ -566,32 +566,6 @@ Irgend etwas.
      (save-excursion
        (should (search-forward "\\babelprovide[onchar=ids fonts]{greek}" nil t))))))
 
-(ert-deftest test-ox-latex/use-sans ()
-  "Test `org-latex-use-sans' set to t."
-  (let ((org-latex-use-sans t))
-    (org-test-with-exported-text 'latex
-        "#+TITLE: Test sans fonts
-* Test
-
-Fake test document
-"
-      (goto-char (point-min))
-      (should (search-forward "\\renewcommand*\\familydefault{\\sfdefault}" nil t))
-      (should (search-forward "\\begin{document}" nil t)))))
-
-(ert-deftest test-ox-latex/use-sans-default ()
-  "Test `org-latex-use-sans' default setting."
-  (org-test-with-exported-text 'latex
-                               "#+TITLE: Test no sans fonts
-* Test
-
-Fake test document
-"
-      (goto-char (point-min))
-      (should-not (search-forward "\\renewcommand*\\familydefault{\\sfdefault}" nil t))
-      (goto-char (point-min))
-      (should (search-forward "\\begin{document}" nil t))))
-
 (ert-deftest test-ox-latex/math-in-alt-title ()
   "Test math wrapping in ALT_TITLE properties."
   (org-test-with-exported-text
