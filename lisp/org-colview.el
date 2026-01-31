@@ -73,7 +73,7 @@ node `(org)Column attributes')."
 
 (defcustom org-columns-modify-value-for-display-function nil
   "Function that modifies values for display in column view.
-For example, it can be used to cut out a certain part from a time stamp.
+For example, it can be used to cut out a certain part from a timestamp.
 The function must take 2 arguments:
 
 column-title    The title of the column (*not* the property name)
@@ -106,9 +106,8 @@ or (LABEL SUMMARIZE COLLECT) where
   properties is set, e.g., to return VACATION_DAYS only if
   CONFIRMED is true.
 
-Note that the return value can become one value for an higher
-order summary, so the function is expected to handle its own
-output.
+Note that the return value can become one value for a higher-order
+summary, so the function is expected to handle its own output.
 
 Types defined in this variable take precedence over those defined
 in `org-columns-summary-types-default', which see."
@@ -150,10 +149,10 @@ This is the compiled version of the format.")
   "Currently active maximum column widths, as a vector.")
 
 (defvar-local org-columns-begin-marker nil
-  "Points to the position where last a column creation command was called.")
+  "Points to the position where a column creation command was last called.")
 
 (defvar-local org-columns-top-level-marker nil
-  "Points to the position where current columns region starts.")
+  "Points to the position where the current columns region starts.")
 
 (defvar org-columns--time 0.0
   "Number of seconds since the epoch, as a floating point number.")
@@ -178,7 +177,7 @@ This is the compiled version of the format.")
     ("@mean" . org-columns--summary-mean-age)
     ("@min"  . org-columns--summary-min-age)
     ("est+"  . org-columns--summary-estimate))
-  "Map operators to summarize functions.
+  "Map operators to summary functions.
 See `org-columns-summary-types' for details.")
 
 (defun org-columns-content ()
@@ -509,7 +508,7 @@ substring whose `string-width' does not exceed WIDTH."
   "Inhibit recomputing of columns on column view startup.")
 (defvar org-columns-flyspell-was-active nil
   "Remember the state of `flyspell-mode' before column view.
-Flyspell-mode can cause problems in columns view, so it is turned off
+Flyspell mode can cause problems in columns view, so it is turned off
 for the duration of the command.")
 
 (defvar header-line-format)
@@ -696,7 +695,7 @@ Where possible, use the standard interface for changing this line."
      ((eq major-mode 'org-agenda-mode)
       (org-columns--call action)
       ;; The following let preserves the current format, and makes
-      ;; sure that in only a single file things need to be updated.
+      ;; sure that only a single file needs to be updated.
       (let* ((org-overriding-columns-format org-columns-current-fmt)
 	     (buffer (marker-buffer pom))
 	     (org-agenda-contributing-files
@@ -812,8 +811,8 @@ an integer, select that value."
 
 (defun org-colview-construct-allowed-dates (s)
   "Construct a list of three dates around the date in S.
-This respects the format of the time stamp in S, active or non-active,
-and also including time or not.  S must be just a time stamp, no text
+This respects the format of the timestamp in S, active or non-active,
+and also including time or not.  S must be just a timestamp, no text
 around it."
   (when (and s (string-match (concat "^" org-ts-regexp3 "$") s))
     (let* ((time (org-parse-time-string s 'nodefaults))
@@ -884,7 +883,7 @@ Also sets `org-columns-top-level-marker' to the new position."
 Column view applies to the whole buffer if point is before the first
 headline.  Otherwise, it applies to the first ancestor setting
 \"COLUMNS\" property.  If there is none, it defaults to the current
-headline.  With a `\\[universal-argument]' prefix \ argument, GLOBAL,
+headline.  With a `\\[universal-argument]' prefix argument, GLOBAL,
 turn on column view for the whole buffer unconditionally.
 
 When COLUMNS-FMT-STRING is non-nil, use it as the column format."
@@ -957,10 +956,9 @@ When COLUMNS-FMT-STRING is non-nil, use it as the column format."
 Interactively fill attributes for new column.  When column format
 specification SPEC is provided, edit it instead.
 
-When optional argument attributes can be a list of columns
-specifications attributes to create the new column
-non-interactively.  See `org-columns-compile-format' for
-details."
+When optional argument ATTRIBUTES is provided, it should be a list of
+column specification attributes to create the new column
+non-interactively.  See `org-columns-compile-format' for details."
   (interactive)
   (let ((new (or attributes
 		 (let ((prop
@@ -995,7 +993,7 @@ details."
     (org-columns-redo)))
 
 (defun org-columns-delete ()
-  "Delete the column at point from columns view."
+  "Delete the column at point from column view."
   (interactive)
   (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
     (when (y-or-n-p (format "Are you sure you want to remove column %S? "
@@ -1635,7 +1633,7 @@ PARAMS is a property list of parameters:
     (funcall formatter (point) table params)))
 
 (defun org-columns-dblock-write-default (ipos table params)
-  "Write out a columnview table at position IPOS in the current buffer.
+  "Write out a column view table at position IPOS in the current buffer.
 TABLE is a table with data as produced by `org-columns--capture-view'.
 PARAMS is the parameter property list obtained from the dynamic block
 definition."
