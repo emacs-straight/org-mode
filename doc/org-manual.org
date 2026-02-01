@@ -15277,36 +15277,28 @@ are using ~:props~ as an alias for ~features~.]:
         :props "Color=blue,Scale=MatchLowercase")
 #+END_SRC
 
+#+texinfo: @heading Fallback fonts
+
 As mentioned earlier, it is always advisable to use (Unicode) fonts
 that cover all scripts in your document to simplify font
 configuration.  If you are using =lualatex= as your LaTeX compiler,
 you can also declare fallback fonts for specific scripts that are not
 included in the fonts used for your document.
 
-# When using =lualatex=, the LaTeX export process prints the list of
-# scripts used in the document that are outside the ~latin-1~ character
-# set in the *~*Messages*~* buffer. For example, when you include
-# Cyrillic text, you will see:
-
-# #+begin_example
-# => Scripts used in document: (cyrillic)
-# #+end_example
-
-If the system fonts you use to produce the PDF output don't support a
-specific script, the LaTeX compiler will fail and Emacs will warn
-you. To help you fix the font setup, Org will include a list of
-/problematic/ fonts with the Emacs scripts they don't support. For
-example:
+If the specified in the document class, or the fonts you specify don't
+support a specific script, the LaTeX compiler will fail and Emacs will
+warn you. To help you fix the font setup, Org will include a list of
+/problematic/ fonts with the Emacs scripts they don't support in the
+*~*Messages*~* buffer. For example:
 
 #+begin_example
 Scripts missing:
-For font lmmono10-regular: cyrillic
-For font lmroman10-regular: cyrillic
-For font lmsans10-regular: emoji
+For font lmroman10-regular: emoji
 #+end_example
 
-Most LaTeX document classes use the ~lm...~ fonts by default. These
-fonts are installed with your LaTeX distribution. Most of the times,
+In this case, you document uses a document class, which like most,
+LaTeX document classes use the ~lm...~. These fonts
+are installed with your LaTeX distribution. Most of the times,
 replacing these fonts by system fonts supporting the missing scripts
 will be enough (the Cyrillic script in the example above)[fn::Replace
 Cyrillic with your specific needs. You just need to find a Unicode
@@ -15320,48 +15312,38 @@ family based on this list.
 The ~:fallback~ property maps Emacs script names to their fallback
 system font and optional extra configuration.
 
-For the example above, you would need to find Unicode font substitutes
-for the ~lmroman...~ and ~lmmono...~ fonts, because then lack the
-Cyrillic script. In the case of the ~lmsans...~ font, you need to add
-a fallback font for the ~emoji~ script. In order to allow fallback
-fonts, you need a substitute font for the family that needs them.
+In the example above, you need to set the default font to ~Latin
+Modern Roman~ and add a fallback font for the ~emoji~ script. In order
+to allow fallback fonts, you need a substitute font for the family
+that needs them.
 
-Turning back to the example above. The ~Free...~ fonts provide
-reasonable substitutes for the default ~lm...~ fonts. With this in
-mind you could define ~org-latex-fontspec-config~ as follows:
+Turning back to the example above, a possible configuration to
+add the ~emoji~ script to your default font would be:
 
 #+BEGIN_SRC emacs-lisp
 (setq-default org-latex-fontspec-config
               '(("main"
-                 :font "FreeSerif")
-                ("sans" :font "FreeSans"
-                 :fallback (("emoji" :font "Noto Color Emoji:mode=harf")))
-                ("mono"
-                 :font "FreeMono"
-                 :props "Scale=MatchLowercase")
-                ("math" :font "TeX Gyre Termes Math")))
+                 :font "Latin Modern Roman"
+                 :fallback (("emoji" :font "Noto Color Emoji:mode=harf")))))
 #+END_SRC
 
 When Emacs detects characters belonging to the ~emoji~ character set,
-it will include the following fallback definition for the ~sans~
+it will include the following fallback definition for the ~main~
 font[fn:55]:
 
 #+BEGIN_SRC latex
 \directlua{
- luaotfload.add_fallback ("fallback_sans",{
+ luaotfload.add_fallback ("fallback_main",{
   "Noto Color Emoji:mode=harf",
  })
 }
 #+END_SRC
 
 (note that the ~emoji~ script is not mentioned) and, then, generate
-the following font specification for =sans=.
+the following font specification for =main=.
 
 #+BEGIN_SRC latex
-\setmainfont{FreeSerif}
-\setsansfont{FreeSans}[RawFeature={fallback=fallback_sans}]
-\setmonofont{FreeMono}[Scale=MatchLowercase]
-\setmathfont{TeX Gyre Termes Math}
+\setmainfont{Latin Modern Roman}[RawFeature={fallback=fallback_main}]
 #+END_SRC
 
 This will enable you to include emojis in parts of the document that
@@ -15380,6 +15362,8 @@ definition is appended as another feature to the font definition.
 
 Make sure to the fallback fonts for the LaTeX font families that need
 them.
+
+#+texinfo: @heading Additional settings
 
 #+vindex: org-latex-fontspec-default-features
 Additionally, you can define common features (cf. ~:props~ above) for
@@ -15410,6 +15394,26 @@ work on does not use a specific script. For example, you will normally
 not use emojis in a document, but might include them in a beamer
 presentation. If you use the same system fonts in both, you can use a
 common font configuration for Org.
+
+#+texinfo: @heading Default fonts
+
+The appearance of a document is controlled by the fonts declared in
+the *document class*. As stated above, you can provide your own fonts
+and modify the appearance of the final output. If you encounter a
+situation where you need to add support for a script type not
+supported by the default fonts but need to keep them overall, you will
+need to find the long font name for your
+~org-latex-fontspec-config~. If your document class uses the =lm*=
+fonts, a good translation is:
+
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-fontspec-config
+      '(("main" :font "Latin Modern Roman")
+        ("mono" :font "Latin Modern Mono")
+        ("math" :font "Latin Modern Math")
+        ("sans" :font "Latin Modern Sans")))
+#+END_SRC
+
 
 **** Configuration of the ~polyglossia~ package
 :PROPERTIES:
