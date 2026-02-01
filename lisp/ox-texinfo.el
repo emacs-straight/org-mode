@@ -1171,7 +1171,7 @@ holding contextual information."
   "Default format function for a headline.
 See `org-texinfo-format-headline-function' for details."
   (concat (and todo (format "@strong{%s} " todo))
-	  (and priority (format "@emph{#%s} " priority))
+	  (and priority (format "@emph{#%s} " (org-priority-to-string priority)))
 	  text
 	  (and tags (concat " " (org-make-tag-string tags)))))
 
@@ -1209,7 +1209,7 @@ holding contextual information."
 See `org-texinfo-format-inlinetask-function' for details."
   (let ((full-title
 	 (concat (when todo (format "@strong{%s} " todo))
-		 (when priority (format "#%c " priority))
+		 (when priority (format "#%s " (org-priority-to-string priority)))
 		 title
 		 (when tags (org-make-tag-string tags)))))
     (format "@center %s\n\n%s\n" full-title contents)))

@@ -580,10 +580,9 @@ Fake test document
       (should (search-forward "\\begin{document}" nil t)))))
 
 (ert-deftest test-ox-latex/use-sans-option ()
-  "Test `org-latex-use-sans' set to t."
-  (org-test-with-exported-text
-   'latex
-   "#+TITLE: Test sans fonts
+  "Test latex-use-sans in OPTIONS set to t."
+  (org-test-with-exported-text 'latex
+"#+TITLE: Test sans fonts
 #+OPTIONS: latex-use-sans:t
 
 * Test
@@ -650,6 +649,14 @@ Fake test document
 * [#42] Test
 "
    (goto-char (point-min))
+   (should (search-forward "\\framebox{\\#42}")))
+  ;; Test inline task (level >= org-inlinetask-min-level, default 15)
+  (org-test-with-exported-text
+   'latex
+   "#+OPTIONS: pri:t inline:t
+***************** [#42] Test
+"
+   (goto-char (point-min))
    (should (search-forward "\\framebox{\\#42}"))))
 
 (ert-deftest test-ox-latex/alphabetical-priority-headline ()
@@ -658,6 +665,14 @@ Fake test document
    'latex
    "#+OPTIONS: pri:t
 * [#C] Test
+"
+   (goto-char (point-min))
+   (should (search-forward "\\framebox{\\#C}")))
+  ;; Test inline task (level >= org-inlinetask-min-level, default 15)
+  (org-test-with-exported-text
+   'latex
+   "#+OPTIONS: pri:t inline:t
+***************** [#C] Test
 "
    (goto-char (point-min))
    (should (search-forward "\\framebox{\\#C}"))))

@@ -919,8 +919,8 @@ nil      When nil, the command tries to be smart and figure out the
 	  (cond
 	   ((looking-at "^") (insert "| "))
 	   ((looking-at "[ \t]*$") (replace-match " |") (forward-line 1))
-	   ((looking-at "[ \t]*\"\\([^\"\n]*\\)\"")
-	    (replace-match "\\1")
+	   ((looking-at "[ \t]*\"\\([^\"]*\\)\"")
+	    (replace-match (replace-regexp-in-string "\n" " " (match-string 1)) t t)
 	    (if (looking-at "\"") (insert "\"")))
 	   ((looking-at "[^,\n]+") (goto-char (match-end 0)))
 	   ((looking-at "[ \t]*,") (replace-match " | "))

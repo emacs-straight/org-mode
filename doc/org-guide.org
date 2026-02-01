@@ -2150,7 +2150,7 @@ additional information.  These lines may be put anywhere in the file:
 
 : #+TITLE: I'm in the Mood for Org
 
-Most proeminent export options include:
+Most prominent export options include:
 
 | =TITLE=    | the title to be shown                                      |
 | =AUTHOR=   | the author (default taken from ~user-full-name~)           |

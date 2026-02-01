@@ -3343,7 +3343,7 @@ holding contextual information."
 See `org-latex-format-inlinetask-function' for details."
   (let ((full-title
 	 (concat (when todo (format "\\textbf{\\textsf{\\textsc{%s}}} " todo))
-		 (when priority (format "\\framebox{\\#%c} " priority))
+		 (when priority (format "\\framebox{\\#%s} " (org-priority-to-string priority)))
 		 title
 		 (when tags
 		   (format "\\hfill{}\\textsc{%s}"

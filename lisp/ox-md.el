@@ -409,8 +409,8 @@ a communication channel."
 			     (concat "     " (org-make-tag-string tag-list))))))
 	   (priority
 	    (and (plist-get info :with-priority)
-		 (let ((char (org-element-property :priority headline)))
-		   (and char (format "[#%c] " char)))))
+		 (let ((priority-value (org-element-property :priority headline)))
+		   (and priority-value (format "[#%s] " (org-priority-to-string priority-value))))))
 	   ;; Headline text without tags.
 	   (heading (concat todo priority title))
 	   (style (plist-get info :md-headline-style)))

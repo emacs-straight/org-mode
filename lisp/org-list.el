@@ -2546,10 +2546,6 @@ portion of the buffer."
       (let* ((cookie-re "\\(\\(\\[[0-9]*%\\]\\)\\|\\(\\[[0-9]*/[0-9]*\\]\\)\\)")
 	     (box-re "^[ \t]*\\([-+*]\\|\\([0-9]+\\|[A-Za-z]\\)[.)]\\)[ \t]+\
 \\(?:\\[@\\(?:start:\\)?\\([0-9]+\\|[A-Za-z]\\)\\][ \t]*\\)?\\(\\[[- X]\\]\\)")
-             (cookie-data (or (org-entry-get nil "COOKIE_DATA") ""))
-	     (recursivep
-	      (or (not org-checkbox-hierarchical-statistics)
-	          (string-match-p "\\<recursive\\>" cookie-data)))
 	     (within-inlinetask (and (not all)
 				     (featurep 'org-inlinetask)
 				     (org-inlinetask-in-task-p)))
@@ -2593,8 +2589,12 @@ portion of the buffer."
         ;; cookie, number of checked boxes to report and total number of
         ;; boxes.
         (while (re-search-forward cookie-re end t)
-          (let ((context (save-excursion (backward-char)
-				         (save-match-data (org-element-context)))))
+          (let* ((context (save-excursion (backward-char)
+				          (save-match-data (org-element-context))))
+                 (cookie-data (save-match-data (or (org-entry-get nil "COOKIE_DATA") "")))
+	         (recursivep
+	          (or (not org-checkbox-hierarchical-statistics)
+	              (string-match-p "\\<recursive\\>" cookie-data))))
 	    (when (and (org-element-type-p context 'statistics-cookie)
                        (not (string-match-p "\\<todo\\>" cookie-data)))
 	      (push

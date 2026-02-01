@@ -30,7 +30,7 @@ As an authoring tool, Org helps you write structured documents and
 provides exporting facilities.  Org files can also be used for literate
 programming and reproducible research.  As a TODO lists manager, Org
 helps you organize your tasks in a flexible way, from daily needs to
-detailed project-planning, allowing logging, multiple views on your
+detailed project planning, allowing logging, multiple views of your
 tasks, exporting your agendas, etc.
 
 Org mode is implemented on top of Outline mode, which makes it
@@ -42,13 +42,13 @@ entries, and any files related to the projects.
 
 Org develops organizational tasks around notes files that contain
 lists or information about projects as plain text.  Project planning
-and task management make use of metadata which is part of an outline
+and task management make use of metadata, which is part of an outline
 node.  Based on this data, specific entries can be extracted in
-queries and create dynamic /agenda views/ that also integrate the Emacs
+queries to create dynamic /agenda views/ that also integrate the Emacs
 calendar and diary.  Org can be used to implement many different
 project planning schemes, such as David Allen's GTD system.
 
-Org files can serve as a single source authoring system with export to
+Org files can serve as a single-source authoring system with export to
 many different formats such as HTML, LaTeX, Open Document, and
 Markdown.  New export backends can be derived from existing ones, or
 defined from scratch.
@@ -60,7 +60,7 @@ place and their results can be captured in the file.  This makes it
 possible to create a single file reproducible research compendium.
 
 Org keeps simple things simple.  When first fired up, it should feel
-like a straightforward, easy to use outliner.  Complexity is not
+like a straightforward, easy-to-use outliner.  Complexity is not
 imposed, but a large amount of functionality is available when needed.
 Org is a toolbox.  Many users actually run only a---very
 personal---fraction of Org's capabilities, and know that there is more
@@ -79,7 +79,8 @@ of Org, as well as additional information, frequently asked questions
 
 #+cindex: print edition
 An earlier version (7.3) of this manual was available as a paperback
-book from the Network Theory Ltd. publishing company, closed in 2009.
+book from the Network Theory Ltd. publishing company, which closed
+in 2009.
 
 ** Installation
 :PROPERTIES:
@@ -87,13 +88,13 @@ book from the Network Theory Ltd. publishing company, closed in 2009.
 :END:
 #+cindex: installation
 
-Org is included in distributions of GNU Emacs, you probably do not
+Org is included in distributions of GNU Emacs, so you probably do not
 need to install it.  Most users will simply activate Org and begin
 exploring its features.
 
-If, for one reason or another, you want to install Org on top of this
+If, for one reason or another, you want to install Org on top of the
 pre-packaged version, you can use the Emacs package system or clone
-Org's git repository.  We *strongly recommend* sticking to a single
+Org's Git repository.  We *strongly recommend* sticking to a single
 installation method.
 
 When installing Org on top of the pre-packaged version, please note
@@ -116,19 +117,19 @@ with {{{kbd(M-x list-packages)}}}.  See [[info:emacs::Package Menu][Package Menu
 #+attr_texinfo: :tag Important
 #+begin_quote
 You need to do this in a session where no =.org= file has been
-visited, i.e., where no Org built-in function have been loaded.
-Otherwise, autoload Org functions will mess up the installation.
+visited, i.e., where no Org built-in functions have been loaded.
+Otherwise, autoloaded Org functions will mess up the installation.
 #+end_quote
 
-To avoid interference with built-in Org mode, you can use command line
-(you need Emacs 30 or later):
+To avoid interference with the built-in Org mode, you can use the
+command line (you need Emacs 30 or later):
 
 #+begin_src sh
 emacs -Q -batch -eval "(progn (require 'package) (package-initialize) (package-refresh-contents) (package-upgrade 'org))"
 #+end_src
 
 This approach has the advantage of isolating the upgrade process from
-a running Emacs session, ensuring that version conflicts can not
+a running Emacs session, ensuring that version conflicts cannot
 arise.
 
 *** Using Org's git repository
@@ -170,14 +171,15 @@ Org Build System page on [[https://orgmode.org/worg/dev/org-build-system.html][W
 :UNNUMBERED: notoc
 :END:
 
-Org's repository used to contain =contrib/= directory for add-ons
+Org's repository used to contain the =contrib/= directory for add-ons
 contributed by others.  As of Org 9.5, the directory has been moved to
 the dedicated org-contrib [[https://git.sr.ht/~bzg/org-contrib][repository]], which you can install
 separately as a [[https://elpa.nongnu.org/nongnu/org-contrib.html][package]] from NonGNU ELPA.
 
-There are enough valuable packages maintained outside the Org repository.
-Worg has a list of [[https://orgmode.org/worg/org-contrib/index.html][org-contrib and external packages]], certainly it is not
-exhaustive.
+There are many valuable packages maintained outside the Org
+repository.  Worg has a list of
+[[https://orgmode.org/worg/org-contrib/index.html][org-contrib and
+external packages]]; it is certainly not exhaustive.
 
 ** Activation
 :PROPERTIES:
@@ -190,8 +192,8 @@ exhaustive.
 #+cindex: key bindings, global
 
 Org mode buffers need Font Lock to be turned on: this is the default
-in Emacs[fn:: If you do not use Font Lock globally turn it on in Org
-buffer with =(add-hook 'org-mode-hook #'turn-on-font-lock)=.].
+in Emacs[fn:: If you do not use Font Lock globally, turn it on in an
+Org buffer with =(add-hook 'org-mode-hook #'turn-on-font-lock)=.].
 
 There are compatibility issues between Org mode and some other Elisp
 packages (see [[*Packages that conflict with Org mode]]).  Please take the
@@ -250,13 +252,13 @@ ideas about it, please send an email to the Org mailing list
 [[mailto:emacs-orgmode@gnu.org]].  You can subscribe to the list
 [[https://lists.gnu.org/mailman/listinfo/emacs-orgmode][from this web
 page]].  If you are not a member of the mailing list, your mail will
-be passed to the list after a moderator has approved it[fn:: Please
+be passed to the list after a moderator approves it[fn:: Please
 consider subscribing to the mailing list in order to minimize the work
 the mailing list moderators have to do.].  We ask you to read and
 respect the
 [[https://www.gnu.org/philosophy/kind-communication.html][GNU Kind
 Communications Guidelines]] when sending messages on this mailing
-list.  Please allow up to one month for the response and follow up if
+list.  Please allow up to one month for a response and follow up if
 no response is received on the bug report.
 
 #+findex: org-version
@@ -267,22 +269,22 @@ is quite possible that the bug has been fixed already.  If the bug
 persists, prepare a report and provide as much information as
 possible, including the version information of Emacs ({{{kbd(M-x
 emacs-version)}}}) and Org ({{{kbd(M-x org-version)}}}), as well as
-the Org related setup in the Emacs init file.  The easiest way to do
+the Org-related setup in the Emacs init file.  The easiest way to do
 this is to use the command
 
 : M-x org-submit-bug-report <RET>
 
 #+texinfo: @noindent
 which puts all this information into an Emacs mail buffer so that you
-only need to add your description.  If you are not sending the Email
-from within Emacs, please copy and paste the content into your Email
+only need to add your description.  If you are not sending the email
+from within Emacs, please copy and paste the content into your email
 program.
 
 Sometimes you might face a problem due to an error in your Emacs or
 Org mode setup.  Before reporting a bug, it is very helpful to start
-Emacs with minimal customizations and reproduce the problem.  Doing so
-often helps you determine if the problem is with your customization or
-with Org mode itself.  You can start a typical minimal session with
+Emacs with minimal customizations and to reproduce the problem.  Doing
+so often helps you determine if the problem is with your customization
+or with Org mode itself.  You can start a typical minimal session with
 a command like the example below.
 
 : $ emacs -Q -l /path/to/minimal-org.el
@@ -304,8 +306,8 @@ shown below.
 (add-to-list 'load-path (expand-file-name "/path/to/org-mode/lisp"))
 #+end_src
 
-If you are using Org mode version from Git repository, you can start
-minimal session using make.
+If you are using Org mode version from the Git repository, you can
+start a minimal session using =make=.
 
 : # Bare Emacs
 : make repro
@@ -327,7 +329,7 @@ information about:
 #+cindex: laggy
 #+cindex: not responsive
 If you experience degraded performance, you can record a "profile" and
-share it on the Org mailing list.  See below for the instructions how
+share it on the Org mailing list.  See below for instructions on how
 to record a useful profile.
 
 Thank you for helping to improve this program.
@@ -372,14 +374,14 @@ error occurred.  Here is how to produce a useful backtrace:
 :END:
 
 #+cindex: profiler
-Sometimes, Org is becoming slow for no apparent reason.  Such slowdown
+Sometimes, Org becomes slow for no apparent reason.  Such slowdown
 is often caused by interaction between third-party packages and Org
 mode.  However, identifying the root cause is not always straightforward.
 
 Emacs is able to record performance statistics, which can then be used
-to find out which functions are taking most of the time to execute.
-To record the statistics, one can use so-called profiler.  To use the
-Emacs profiler, we recommend the following steps:
+to find out which functions are taking the most time to execute.  To
+record the statistics, one can use a profiler.  To use the Emacs
+profiler, we recommend the following steps:
 
 1. Make sure that no profiler is currently active:
 
@@ -397,17 +399,17 @@ Emacs profiler, we recommend the following steps:
 
    This command will display a summary of the commands and functions
    that have been executed between ~profiler-start~ and
-   ~profiler-report~ invocations, with command taking most of the time
-   displayed on top.
+   ~profiler-report~ invocations, with the command taking the most
+   time displayed on top.
 
    =<TAB>= key can be used to fold and unfold lines in the profiler
    buffer.  The child items revealed upon unfolding are the functions
    and commands called by the unfolded parent.
 
-   The root causes are often buried deep inside sub-children items in
+   The root causes are often buried deep inside child items in
    the profiler.  You can press =B= (~profiler-report-render-reversed-calltree~)
-   to quickly reveal the actual function/command that takes most of
-   the time to run.
+   to quickly reveal the actual function/command that takes the most
+   time to run.
 
    Pressing =C= ~profiler-report-render-calltree~ will recover the
    original view.
@@ -420,8 +422,8 @@ Emacs profiler, we recommend the following steps:
    : /path/to/profile-file-to-be-saved <RET>
 
    Then, you can attach the saved file to your email to the Org
-   mailing list, alongside with details about what you did to trigger
-   the slowdown.
+   mailing list, along with details about what you did to trigger the
+   slowdown.
 
    Note that the saved statistics will only contain the function names
    and how long their execution takes.  No private data will be
@@ -470,7 +472,7 @@ conventions:
 :END:
 
 The manual lists both the keys and the corresponding commands for
-accessing a functionality.  Org mode often uses the same key for
+accessing functionality.  Org mode often uses the same key for
 different functions, depending on context.  The command that is bound
 to such keys has a generic name, like ~org-metaright~.  In the manual
 we will, wherever possible, give the function that is internally
@@ -492,8 +494,8 @@ representation of notes and thoughts.  An overview of this structure
 is achieved by folding, i.e., hiding large parts of the document to
 show only the general document structure and the parts currently being
 worked on.  Org greatly simplifies the use of outlines by compressing
-the entire show and hide functionalities into a single command,
-~org-cycle~, which is bound to the {{{kbd(TAB)}}} key.
+the show and hide functionalities into a single command, ~org-cycle~,
+which is bound to the {{{kbd(TAB)}}} key.
 
 ** Headlines
 :PROPERTIES:
@@ -524,8 +526,8 @@ The name defined in ~org-footnote-section~ is reserved.  Do not use it
 as a title for your own headings.
 
 Some people find the many stars too noisy and would prefer an outline
-that has whitespace followed by a single star as headline starters.
-This can be achieved using an Org Indent minor mode.  See [[*A Cleaner
+that has whitespace followed by a single star as headline markers.
+This can be achieved using the Org Indent minor mode.  See [[*A Cleaner
 Outline View]] for more information.
 
 Headlines are not numbered.  However, you may want to dynamically
@@ -717,7 +719,7 @@ for this property are =folded=, =children=, =content=, and =all=.
 #+vindex: org-fold-catch-invisible-edits
 #+vindex: org-fold-catch-invisible-edits-commands
 Sometimes you may inadvertently edit an invisible part of the buffer
-and be confused on what has been edited and how to undo the mistake.
+and be confused about what has been edited and how to undo the mistake.
 By default, Org prevents such edits for a limited set of user
 commands.  Users can control which commands are affected by
 customizing ~org-fold-catch-invisible-edits-commands~.
@@ -783,7 +785,7 @@ The following commands jump to other headlines in the buffer.
   | {{{kbd(/)}}}              | Do a Sparse-tree search         |
 
   #+texinfo: @noindent
-  The following keys work if you turn off ~org-goto-auto-isearch~
+  The following keys work if you turn off ~org-goto-auto-isearch~.
 
   #+attr_texinfo: :columns 0.3 0.7
   | {{{kbd(n)}}} / {{{kbd(p)}}}   | Next/previous visible headline.    |
@@ -912,7 +914,7 @@ The following commands jump to other headlines in the buffer.
 
   #+kindex: C-c @@
   #+findex: org-mark-subtree
-  Mark the subtree at point.  Hitting repeatedly marks subsequent
+  Mark the subtree at point.  Hitting it repeatedly marks subsequent
   subtrees of the same level as the marked subtree.
 
 - {{{kbd(C-c C-x C-w)}}} (~org-cut-subtree~) ::
@@ -1061,7 +1063,7 @@ commands can be accessed through a dispatcher:
   Prompts for a regexp (see [[*Regular Expressions]]) and shows a
   sparse tree with all matches.  If the match is in a headline, the
   headline is made visible.  If the match is in the body of an entry,
-  headline and body are made visible.  In order to provide minimal
+  the headline and body are made visible.  In order to provide minimal
   context, also the full hierarchy of headlines above the match is
   shown, as well as the headline following the match.  Each match is
   also highlighted; the highlights disappear when the buffer is
@@ -1145,18 +1147,18 @@ Org knows ordered lists, unordered lists, and description lists.
 
 - /Description/ list items are unordered list items, and contain the
   separator =::= to distinguish the description /term/ from the
-  description.
+  description text.
 
 Items belonging to the same list must have the same indentation on the
 first line.  In particular, if an ordered list reaches number =10.=,
 then the 2-digit numbers must be written left-aligned with the other
-numbers in the list.  An item ends before the next line that is less
-or equally indented than its bullet/number.
+numbers in the list.  An item ends before the next line that has an
+indentation less than or equal to its bullet/number.
 
 A list ends whenever every item has ended, which means before any line
-less or equally indented than items at top level.  It also ends before
-two blank lines.  In that case, all items are closed.  Here is an
-example:
+with an indentation less than or equal to that of the top-level items.
+It also ends before two blank lines.  In that case, all items are
+closed.  Here is an example:
 
 #+begin_example
 ,* Lord of the Rings
@@ -1187,7 +1189,7 @@ indented to signal that they belong to a particular item.
 If you find that using a different bullet for a sub-list---than that
 used for the current list-level---improves readability, customize the
 variable ~org-list-demote-modify-bullet~.  To get a greater difference
-of indentation between items and theirs sub-items, customize
+of indentation between items and their sub-items, customize
 ~org-list-indent-offset~.
 
 #+vindex: org-list-automatic-rules
@@ -1227,7 +1229,7 @@ to disable them individually.
   in the middle of an item, that item is /split/ in two, and the
   second part becomes the new item[fn:: If you do not want the item to
   be split, customize the variable ~org-M-RET-may-split-line~.].  If
-  this command is executed /before item's body/, the new item is
+  this command is executed /before the item's body/, the new item is
   created /before/ the current one.
 
 - {{{kbd(M-S-RET)}}} ::
@@ -1321,8 +1323,8 @@ to disable them individually.
   #+vindex: org-support-shift-select
   #+kindex: S-LEFT
   #+kindex: S-RIGHT
-  This command also cycles bullet styles when point is in on the
-  bullet or anywhere in an item line, details depending on
+  This command also cycles bullet styles when point is on the bullet
+  or anywhere in an item line, details depending on
   ~org-support-shift-select~.
 
 - {{{kbd(C-c ^)}}} ::
@@ -1340,7 +1342,7 @@ to disable them individually.
 #+cindex: visibility cycling, drawers
 
 Sometimes you want to keep information associated with an entry, but
-you normally do not want to see it.  For this, Org mode has /drawers/.
+you do not normally want to see it.  For this, Org mode has /drawers/.
 They can contain anything but a headline and another drawer.  Drawers
 look like this:
 
@@ -1368,7 +1370,7 @@ Completion over drawer keywords is also possible using
 {{{kbd(M-TAB)}}}[fn:6].
 
 Visibility cycling (see [[*Visibility Cycling]]) on the headline hides and
-shows the entry, but keep the drawer collapsed to a single line.  In
+shows the entry, but keeps the drawer collapsed to a single line.  In
 order to look inside the drawer, you need to move point to the drawer
 line and press {{{kbd(TAB)}}} there.
 
@@ -1439,7 +1441,7 @@ header lines.  A table might look like this:
 #+end_example
 
 A table is re-aligned automatically each time you press
-{{{kbd(TAB)}}}, {{{kbd(RET)}}} or {{{kbd(C-c C-c)}}} inside the table.
+{{{kbd(TAB)}}}, {{{kbd(RET)}}}, or {{{kbd(C-c C-c)}}} inside the table.
 {{{kbd(TAB)}}} also moves to the next field---{{{kbd(RET)}}} to the
 next row---and creates new table rows at the end of the table or
 before horizontal lines.  The indentation of the table is set by the
@@ -1530,14 +1532,14 @@ you, configure the option ~org-table-auto-blank-field~.
 
   #+kindex: M-a
   #+findex: org-table-beginning-of-field
-  Move to beginning of the current table field, or on to the previous
+  Move to beginning of the current table field, or onto the previous
   field.
 
 - {{{kbd(M-e)}}} (~org-table-end-of-field~) ::
 
   #+kindex: M-e
   #+findex: org-table-end-of-field
-  Move to end of the current table field, or on to the next field.
+  Move to end of the current table field, or onto the next field.
 
 *** Column and row editing
 :PROPERTIES:
@@ -1566,7 +1568,7 @@ you, configure the option ~org-table-auto-blank-field~.
 
   #+kindex: M-S-RIGHT
   #+findex: org-table-insert-column
-  Insert a new column at point position.  Move the recent column and
+  Insert a new column at point position.  Move the current column and
   all cells to the right of this column to the right.
 
 - {{{kbd(M-UP)}}} (~org-table-move-row-up~) ::
@@ -1779,7 +1781,7 @@ you, configure the option ~org-table-auto-blank-field~.
   #+findex: org-table-header-line-mode
   #+vindex: org-table-header-line-p
   Turn on the display of the first data row of the table at point in
-  the window header line when this first row is not visible anymore in
+  the window header line when this first row is not visible any more in
   the buffer.  You can activate this minor mode by default by setting
   the option ~org-table-header-line-p~ to ~t~.
 
@@ -1800,7 +1802,7 @@ The alignment of a column is determined automatically from the
 fraction of number-like versus non-number fields in the column.
 
 #+vindex: org-table-automatic-realign
-Editing a field may modify alignment of the table.  Moving
+Editing a field may modify the alignment of the table.  Moving
 a contiguous row or column---i.e., using {{{kbd(TAB)}}} or
 {{{kbd(RET)}}}---automatically re-aligns it.  If you want to disable
 this behavior, set ~org-table-automatic-realign~ to ~nil~.  In any
@@ -1867,7 +1869,7 @@ with the following tools:
   Expand all columns.
 
 To see the full text of a shrunk field, hold the mouse over it:
-a tool-tip window then shows the full contents of the field.
+a tooltip window then shows the full contents of the field.
 Alternatively, {{{kbd(C-h .)}}} (~display-local-help~) reveals them,
 too.  For convenience, any change near the shrunk part of a column
 expands it.
@@ -2005,12 +2007,12 @@ The row specification only counts data lines and ignores horizontal
 separator lines, or "hlines".  Like with columns, you can use absolute
 row numbers =@1=, =@2=, ..., =@N=, and row numbers relative to the
 current row like =@+3= or =@-1=.  =@<= and =@>= are immutable
-references the first and last row in the table, respectively.  You may
-also specify the row relative to one of the hlines: =@I= refers to the
-first hline, =@II= to the second, etc.  =@-I= refers to the first such
-line above the current line, =@+I= to the first such line below the
-current line.  You can also write =@III+2= which is the second data
-line after the third hline in the table.
+references to the first and last row in the table, respectively.  You
+may also specify the row relative to one of the hlines: =@I= refers to
+the first hline, =@II= to the second, etc.  =@-I= refers to the first
+such line above the current line, =@+I= to the first such line below
+the current line.  You can also write =@III+2= which is the second
+data line after the third hline in the table.
 
 =@0= and =$0= refer to the current row and column, respectively, i.e.,
 to the row/column for the field being computed.  Also, if you omit
@@ -2099,7 +2101,7 @@ and ~org-table-current-column~.  Examples:
 For the second and third examples, table {{{var(FOO)}}} must have at
 least as many rows or columns as the current table.  Note that this is
 inefficient[fn:: The computation time scales as O(N^2) because table
-{{{var(FOO)}}} is parsed for each field to be copied.] for large
+{{{var(FOO)}}} is parsed for each field to be copied.] for a large
 number of rows.
 
 **** Named references
@@ -2161,7 +2163,7 @@ valid in the referenced table.
 When {{{var(NAME)}}} has the format =@ROW$COLUMN=, it is substituted
 with the name or ID found in this field of the current table.  For
 example =remote($1, @@>$2)= \Rightarrow =remote(year_2013, @@>$1)=.  The format
-=B3= is not supported because it can not be distinguished from a plain
+=B3= is not supported because it cannot be distinguished from a plain
 table name or ID.
 
 *** Formula syntax for Calc
@@ -2249,17 +2251,17 @@ You may also provide a ~format~ specifier (similar to ~printf~)[fn:9]
 to reformat the Calc result after it has been passed back to Org
 instead of letting Calc handle the formatting.  A few examples:
 
-| =$1+$2=            | Sum of first and second field                    |
-| =$1+$2;%.2f=       | Same, format result to two decimals              |
-| =exp($2)+exp($1)=  | Math functions can be used                       |
-| =$0;%.1f=          | Reformat current cell to 1 decimal               |
-| =($3-32)*5/9=      | Degrees F \to C conversion                         |
-| =$c/$1/$cm=        | Hz \to cm conversion, using =constants.el=         |
-| =tan($1);Dp3s1=    | Compute in degrees, precision 3, display SCI 1   |
-| =sin($1);Dp3%.1e=  | Same, but use ~format~ specifier for display     |
-| =vmean($2..$7)=    | Compute column range mean, using vector function |
-| =vmean($2..$7);EN= | Same, but treat empty fields as 0                |
-| =taylor($3,x=7,2)= | Taylor series of $3, at x=7, second degree       |
+| =$1+$2=            | Sum of first and second field                       |
+| =$1+$2;%.2f=       | Same, format result to two decimals                 |
+| =exp($2)+exp($1)=  | Math functions can be used                          |
+| =$0;%.1f=          | Reformat current cell to 1 decimal                  |
+| =($3-32)*5/9=      | Fahrenheit to Celsius conversion                    |
+| =$c/$1/$cm=        | Herz to centimeter conversion, using =constants.el= |
+| =tan($1);Dp3s1=    | Compute in degrees, precision 3, display SCI 1      |
+| =sin($1);Dp3%.1e=  | Same, but use ~format~ specifier for display        |
+| =vmean($2..$7)=    | Compute column range mean, using vector function    |
+| =vmean($2..$7);EN= | Same, but treat empty fields as 0                   |
+| =taylor($3,x=7,2)= | Taylor series of $3, at x=7, second degree          |
 
 Calc also contains a complete set of logical operations (see [[info:calc#Logical Operations][Logical
 Operations]]).  For example
@@ -2272,7 +2274,7 @@ Operations]]).  For example
 - =if("$1" =​= "nan" || "$2" =​= "nan", string(""), $1 + $2); E f-1= ::
 
   Sum of the first two columns.  When at least one of the input fields
-  is empty the Org table result field is set to empty.  =E= is
+  is empty, the Org table result field is set to empty.  =E= is
   required to not convert empty fields to 0.  =f-1= is an optional
   Calc format string similar to =%.1f= but leaves empty results empty.
 
@@ -2280,7 +2282,7 @@ Operations]]).  For example
 
   Mean value of a range unless there is any empty field.  Every field
   in the range that is empty is replaced by =nan= which lets =vmean=
-  result in =nan=.  Then =typeof == 12= detects the =nan= from ~vmean~
+  return =nan=.  Then =typeof == 12= detects the =nan= from ~vmean~
   and the Org table result field is set to empty.  Use this when the
   sample set is expected to never have missing values.
 
@@ -2294,7 +2296,7 @@ Operations]]).  For example
 
 - =vmean($1..$7); EN= ::
 
-  To complete the example before: Mean value of a range with empty
+  To complete the previous example: Mean value of a range with empty
   fields counting as samples with value 0.  Use this only when
   incomplete sample sets should be padded with 0 to the full size.
 
@@ -2367,7 +2369,7 @@ interpret everything past =;= as format specifier:
 : '(concat $1 ";")
 
 #+texinfo: @noindent
-You can put an extra tailing =;= to indicate that all the earlier
+You can put an extra trailing =;= to indicate that all the earlier
 instances of =;= belong to the formula itself:
 
 : '(concat $1 ";");
@@ -2499,7 +2501,7 @@ current column, evaluated and the current field replaced with the
 result.  If the field contains only ===, the previously stored formula
 for this column is used.  For each column, Org only remembers the most
 recently used formula.  In the =TBLFM= keyword, column formulas look
-like =$4=$1+$2=.  The left-hand side of a column formula can not be
+like =$4=$1+$2=.  The left-hand side of a column formula cannot be
 the name of column, it must be the numeric column reference or =$>=.
 
 Instead of typing an equation into the field, you may also use the
@@ -2553,7 +2555,7 @@ Org has three predefined Emacs Lisp functions for lookups in tables.
   #+findex: org-lookup-all
   Similar to ~org-lookup-first~, but searches for /all/ elements for
   which {{{var(PREDICATE)}}} is non-~nil~, and returns /all/
-  corresponding values.  This function can not be used by itself in
+  corresponding values.  This function cannot be used by itself in
   a formula, because it returns a list of values.  However, powerful
   lookups can be built when this function is combined with other Emacs
   Lisp functions.
@@ -2787,7 +2789,7 @@ becomes the string =#ERROR=.  If you want to see what is going on
 during variable substitution and calculation in order to find a bug,
 turn on formula debugging in the Tbl menu and repeat the calculation,
 for example by pressing {{{kbd(C-u C-u C-c = RET)}}} in a field.
-Detailed information are displayed.
+Detailed information is displayed.
 
 *** Updating the table
 :PROPERTIES:
@@ -3134,7 +3136,7 @@ Draw an ASCII bar in a table.
 {{{var(VALUE)}}} is the value to plot.
 
 {{{var(MIN)}}} is the value displayed as an empty bar.  {{{var(MAX)}}}
-is the value filling all the {{{var(WIDTH)}}}.  Sources values outside
+is the value filling all the {{{var(WIDTH)}}}.  Source values outside
 this range are displayed as =too small= or =too large=.
 
 {{{var(WIDTH)}}} is the number of characters of the bar plot.  It
@@ -3176,8 +3178,7 @@ or alternatively
 #+cindex: backslashes, in links
 Some =\=, =[= and =]= characters in the {{{var(LINK)}}} part need to
 be "escaped", i.e., preceded by another =\= character.  More
-specifically, the following characters, and only them, must be
-escaped:
+specifically, only the following characters must be escaped:
 
 1. all =[= and =]= characters,
 2. every =\= character preceding either =]= or =[=,
@@ -3211,7 +3212,7 @@ incomplete and the internals are again displayed as plain text.
 Inserting the missing bracket hides the link internals again.  To show
 the internal structure of all links, use the menu: Org \rarr
 Hyperlinks \rarr Literal links, customize ~org-link-descriptive~, or use
-=literallinks= [[*Summary of In-Buffer Settings][startup option]].
+the =literallinks= [[*Summary of In-Buffer Settings][startup option]].
 
 ** Internal Links
 :PROPERTIES:
@@ -3682,8 +3683,8 @@ generally, act on links.
   a {{{kbd(C-u C-u)}}} prefix.
 
   #+vindex: org-link-frame-setup
-  If point is on a headline, but not on a link, offer all links in the
-  headline and entry text.  If you want to set up the frame
+  If point is on a headline, but not on a link, Org offers all links
+  in the headline and entry text.  If you want to set up the frame
   configuration for following links, customize ~org-link-frame-setup~.
 
 - {{{kbd(RET)}}} ::
@@ -3734,7 +3735,7 @@ generally, act on links.
   #+kindex: C-c C-x C-n
   #+findex: org-next-link
   #+cindex: links, finding next/previous
-  Move forward/backward to the next link in the buffer.  At the limit
+  Move forward/backward to the next/previous link in the buffer.  At the limit
   of the buffer, the search fails once, and then wraps around.  The
   key bindings for this are really too long; you might want to bind
   this also to {{{kbd(M-n)}}} and {{{kbd(M-p)}}}.
@@ -3995,7 +3996,7 @@ The most important commands to work with TODO entries are:
   #+vindex: org-todo-keywords
   #+findex: org-show-todo-tree
   View TODO items in a /sparse tree/ (see [[*Sparse Trees]]).  Folds the
-  entire buffer, but shows all TODO items---with not-DONE state---and
+  entire buffer, but shows all TODO items---with a not-DONE state---and
   the headings hierarchy above them.  With a prefix argument, or by
   using {{{kbd(C-c / T)}}}, search for a specific TODO.  You are
   prompted for the keyword, and you can also give a list of keywords
@@ -4102,9 +4103,9 @@ Using TODO types, it would be set up like this:
 #+end_src
 
 In this case, different keywords do not indicate states, but rather
-different types.  So the normal work flow would be to assign a task to
+different types.  So the normal workflow would be to assign a task to
 a person, and later to mark it DONE.  Org mode supports this style by
-adapting the workings of the command {{{kbd(C-c C-t)}}}[fn:: This is
+adapting the working of the command {{{kbd(C-c C-t)}}}[fn:: This is
 also true for the {{{kbd(t)}}} command in the agenda buffer.].  When
 used several times in succession, it still cycles through all names,
 in order to first select the right type for a task.  But when you
@@ -4395,7 +4396,7 @@ of the DONE states, a line =CLOSED: [timestamp]= is inserted just
 after the headline.  If you turn the entry back into a TODO item
 through further state cycling, that line is removed again.  If you
 turn the entry back to a non-TODO state (by pressing {{{kbd(C-c C-t
-SPC)}}} for example), that line is also removed, unless you set
+SPC)}}}, for example), that line is also removed, unless you set
 ~org-closed-keep-when-no-todo~ to non-~nil~.  If you want to record a
 note along with the timestamp, use[fn:: The corresponding in-buffer
 setting is: =#+STARTUP: lognotedone=.]
@@ -4451,9 +4452,9 @@ and that a note is recorded when switching to =WAIT= or
 entering the state, a timestamp should be recorded when /leaving/ the
 =WAIT= state, if and only if the /target/ state does not configure
 logging for entering it.  So it has no effect when switching from
-=WAIT= to =DONE=, because =DONE= is configured to record a timestamp
-only.  But when switching from =WAIT= back to =TODO=, the =/!= in the
-=WAIT= setting now triggers a timestamp even though =TODO= has no
+=WAIT= to =DONE=, because =DONE= is configured to record only a
+timestamp.  But when switching from =WAIT= back to =TODO=, the =/!= in
+the =WAIT= setting now triggers a timestamp even though =TODO= has no
 logging configured.
 
 You can use the exact same syntax for setting logging preferences local
@@ -4617,7 +4618,7 @@ right after the TODO keyword, like this:
 #+vindex: org-priority-faces
 By default, Org mode supports three priorities: =A=, =B=, and =C=.
 =A= is the highest priority.  An entry without a cookie is treated as
-equivalent if it had priority =B=.  Priorities make a difference only
+if it had priority =B=.  Priorities make a difference only
 for sorting in the agenda (see [[*Weekly/daily agenda]]).  Outside the
 agenda, they have no inherent meaning to Org mode.  The cookies are
 displayed with the face defined by the variable ~org-priority-faces~,
@@ -4707,7 +4708,7 @@ updated each time the TODO status of a child changes, or when pressing
 
 #+cindex: @samp{COOKIE_DATA}, property
 If a heading has both checkboxes and TODO children below it, the
-meaning of the statistics cookie become ambiguous.  Set the property
+meaning of the statistics cookie becomes ambiguous.  Set the property
 =COOKIE_DATA= to either =checkbox= or =todo= to resolve this issue.
 
 #+vindex: org-hierarchical-todo-statistics
@@ -5314,12 +5315,12 @@ related information into special lists.
   only TODO items.
 
 These commands all prompt for a match string which allows basic
-Boolean logic like =+boss+urgent-project1=, to find entries with tags
-=boss= and =urgent=, but not =project1=, or =Kathy|Sally= to find
-entries which are tagged, like =Kathy= or =Sally=.  The full syntax of
-the search string is rich and allows also matching against TODO
-keywords, entry levels and properties.  For a complete description
-with many examples, see [[*Matching tags and properties]].
+Boolean logic, such as =+boss+urgent-project1= to find entries with
+tags =boss= and =urgent=, but not =project1= or =Kathy|Sally= to find
+entries tagged with either =Kathy= or =Sally=.  The full syntax of the
+search string is rich and allows also matching against TODO keywords,
+entry levels and properties.  For a complete description with many
+examples, see [[*Matching tags and properties]].
 
 * Properties and Columns
 :PROPERTIES:
@@ -6809,14 +6810,14 @@ special repeaters =++= and =.+=.  For example:
 #+begin_example
 ,** TODO Call Father
    DEADLINE: <2008-02-10 Sun ++1w>
-   Marking this DONE shifts the date by at least one week, but also
+   Marking this as DONE shifts the date by at least one week, but also
    by as many weeks as it takes to get this date into the future.
    However, it stays on a Sunday, even if you called and marked it
    done on Saturday.
 
 ,** TODO Empty kitchen trash
    DEADLINE: <2008-02-08 Fri 20:00 ++1d>
-   Marking this DONE shifts the date by at least one day, and also
+   Marking this as DONE shifts the date by at least one day, and also
    by as many days as it takes to get the timestamp into the future.
    Since there is a time in the timestamp, the next deadline in the
    future will be on today's date if you complete the task before
@@ -6824,11 +6825,11 @@ special repeaters =++= and =.+=.  For example:
 
 ,** TODO Check the batteries in the smoke detectors
    DEADLINE: <2005-11-01 Tue .+1m>
-   Marking this DONE shifts the date to one month after today.
+   Marking this as DONE shifts the date to one month after today.
 
 ,** TODO Wash my hands
    DEADLINE: <2019-04-05 08:00 Fri .+1h>
-   Marking this DONE shifts the date to exactly one hour from now.
+   Marking this as DONE shifts the date to exactly one hour from now.
 #+end_example
 
 #+vindex: org-agenda-skip-scheduled-repeats-after-deadline
@@ -6910,8 +6911,8 @@ about what to do with it.
   #+vindex: org-clock-in-prepare-hook
   While the clock is running, Org shows the current clocking time in
   the mode line, along with the title of the task.  The clock time
-  shown is all time ever clocked for this task and its children.  If
-  the task has an effort estimate (see [[*Effort Estimates]]), the
+  shown is all time ever clocked in for this task and its children.
+  If the task has an effort estimate (see [[*Effort Estimates]]), the
   mode line displays the current clocking time against it[fn:: To add
   an effort estimate "on the fly", hook a function doing this to
   ~org-clock-in-prepare-hook~.].  If the task is a repeating one (see
@@ -7011,7 +7012,7 @@ about what to do with it.
 
   #+kindex: C-c C-x C-j
   #+findex: or-clock-goto
-  Jump to the headline of the currently clocked in task.  With
+  Jump to the headline of the currently clocked-in task.  With
   a {{{kbd(C-u)}}} prefix argument, select the target task from a list
   of recently clocked tasks.
 
@@ -7207,7 +7208,7 @@ using the =:formatter= parameter.
 
   An integer to limit the width of the headline column in the Org
   table.  If you write it like =50!=, then the headline is also
-  shortened in export.
+  shortened during export.
 
 - =:indent= ::
 
@@ -7731,7 +7732,7 @@ global searches like the construction of agenda views fast.
 #+cindex: external archiving
 
 The most common archiving action is to move a project tree to another
-file, the archive file.
+file, called the archive file.
 
 - {{{kbd(C-c C-x C-s)}}} or short {{{kbd(C-c $)}}} (~org-archive-subtree~) ::
 
@@ -7781,7 +7782,7 @@ location as the value (see [[*Properties and Columns]]).
 #+vindex: org-archive-save-context-info
 When a subtree is moved, it receives a number of special properties
 that record context information like the file from where the entry
-came, its outline path the archiving time etc.  Configure the variable
+came, its outline path, the archiving time etc.  Configure the variable
 ~org-archive-save-context-info~ to adjust the amount of information
 added.
 
@@ -7922,9 +7923,9 @@ You may also define a global key for capturing new material (see
   #+findex: org-capture
   Display the capture templates menu.  If you have templates defined
   (see [[*Capture templates]]), it offers these templates for
-  selection.  It inserts the template into the target file and switch
-  to an indirect buffer narrowed to this new node.  You may then
-  insert the information you want.
+  selection.  It inserts the template into the target file and
+  switches to an indirect buffer narrowed to this new node.  You may
+  then insert the information you want.
 
 - {{{kbd(C-c C-c)}}} (~org-capture-finalize~) ::
 
@@ -8516,8 +8517,8 @@ remote, computer, like emails or source code files belonging to a
 project.
 
 Another method is /attachments/, which are files located in a
-directory belonging to heading/subtree.  Org uses directories either
-named by =ID= property of a heading, or by a =DIR= property.
+directory belonging to heading/subtree.  Org uses directories named
+either by the =ID= property of a heading or by a =DIR= property.
 
 *** Attachment defaults and dispatcher
 :PROPERTIES:
@@ -9790,10 +9791,12 @@ done depends on the type of view.
   time-of-day specification.  These entries are shown at the beginning
   of the list, as a /schedule/ for the day.  After that, items remain
   grouped in categories, in the sequence given by ~org-agenda-files~.
-  Within each category, items are sorted by urgency, which is composed
-  of the base priority (see [[*Priorities]]; 2000 for priority =A=, 1000
-  for =B=, and 0 for =C=), plus additional increments for overdue
-  scheduled or deadline items.
+  Within each category, items are sorted by urgency, which is derived
+  from the priority (see [[*Priorities]]), plus additional increments
+  for overdue scheduled or deadline items.  The lowest priority is
+  scored as 0, the next as 1000, and continues in steps of 1000 until
+  reaching the highest priority, e.g., =C=, =B=, =A= are scored as 0,
+  1000, and 2000, respectively.
 
 - For the TODO list, items remain in the order of categories, but
   within each category, sorting takes place according to urgency.  The
@@ -13252,7 +13255,7 @@ should in principle be exportable as a Beamer presentation.
   environment.
 
   #+cindex: @samp{BEAMER_SUBTITLE}, property
-  If =BEAMER_SUBTITLE= is set, org exports its value as the subtitle
+  If =BEAMER_SUBTITLE= is set, Org exports its value as the subtitle
   for the headline's frame. This property has no effect on headlines
   which are not exported as frames.
 
@@ -14371,6 +14374,18 @@ A sample Org file with the above headers:
   some more text
 #+end_example
 
+The LaTeX backend normally exports using the Roman font family
+specified in the document class or by the user in the
+=LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
+force the LaTeX compiler to use the Sans font as default. You can also
+include it in the document options with:
+
+#+begin_example
+#+OPTIONS: latex-use-sans:t
+#+end_example
+
+
+#+vindex: org-latex-use-sans
 The LaTeX backend normally exports using the Roman font family
 specified in the document class or by the user in the
 =LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
@@ -18035,7 +18050,7 @@ non-Org files, you always need to specify the publishing function:
 
 - ~:htmlized-source~ ::
 
-  Non-~nil~ means, publish htmlized source.
+  Non-~nil~ means, publish an htmlized version of the source.
 
 The function must accept three arguments: a property list containing
 at least a ~:publishing-directory~ property, the name of the file to
@@ -18341,7 +18356,7 @@ to include attachments such as JPG, CSS or PNG files in the project
 definition since the third-party tool syncs them.
 
 Publishing to a local directory is also much faster than to a remote
-one, so that you can afford more easily to republish entire projects.
+one, so that you can more easily afford to republish entire projects.
 If you set ~org-publish-use-timestamps-flag~ to ~nil~, you gain the
 main benefit of re-including any changed external files such as source
 example files you might include with =INCLUDE= keyword.  The timestamp
@@ -18491,7 +18506,7 @@ resources.  For example, consider the following Org mode snippet
 : Org mode is used by various communities [cite:teaching: @orgteaching;
 : and TeX: @orgtex].  [cite/author/caps:@orgtex] uses Org mode to simplify
 : writing scientific publications, while [cite/author/caps:@orgteaching]
-: experiment with Org babel to improve teaching.
+: experiments with Org babel to improve teaching.
 :
 : #+print_bibliography:
 
@@ -18867,7 +18882,7 @@ A source code block conforms to this structure:
 ,#+END_SRC
 #+end_example
 
-Do not be put-off by having to remember the source block syntax.  Org
+Do not be put off by having to remember the source block syntax.  Org
 mode offers a command for wrapping existing text in a block (see
 [[*Structure Templates]]).  Org also works with other completion systems
 in Emacs, some of which predate Org and have custom domain-specific
@@ -19002,7 +19017,7 @@ Org expand =:noweb= references by default.
             (assq-delete-all :noweb org-babel-default-header-args)))
 #+end_src
 
-#+cindex: language specific default header arguments
+#+cindex: language-specific default header arguments
 #+cindex: default header arguments per language
 Each language can have separate default header arguments by
 customizing the variable ~org-babel-default-header-args:<LANG>~, where
@@ -19051,7 +19066,7 @@ Properties defined through ~org-set-property~ function, bound to
 {{{kbd(C-c C-x p)}}}, apply to all active languages.  They override
 properties set in ~org-babel-default-header-args~.
 
-#+cindex: language specific header arguments properties
+#+cindex: language-specific header arguments properties
 #+cindex: header arguments per language
 Language-specific header arguments are also read from properties
 =header-args:<LANG>= where {{{var(<LANG>)}}} is the language
@@ -19602,9 +19617,9 @@ to the end of the code block for execution.
 #+cindex: @samp{RESULTS}, keyword
 
 A note about security: With code evaluation comes the risk of harm.
-Org safeguards by prompting for user's permission before executing any
-code in the source block.  To customize this safeguard, or disable it,
-see [[*Code Evaluation and Security Issues]].
+Org provides safeguards by prompting for the user's permission before
+executing any code.  To customize this safeguard, or disable it, see
+[[*Code Evaluation and Security Issues]].
 
 *** How to evaluate source code
 :PROPERTIES:
@@ -20510,7 +20525,7 @@ code block header arguments:
 #+cindex: code block, languages
 
 Code blocks in dozens of languages are supported.  See Worg website
-for [[https://orgmode.org/worg/org-contrib/babel/languages/index.html][language specific documentation]].
+for [[https://orgmode.org/worg/org-contrib/babel/languages/index.html][language-specific documentation]].
 
 #+vindex: org-babel-load-languages
 By default, only Emacs Lisp is enabled for evaluation.  To enable or
@@ -21226,11 +21241,11 @@ including the user-defined ones.
 #+cindex: odd-levels-only outlines
 #+cindex: clean outline view
 
-Org's outline with stars and no indents can look cluttered for short
-documents.  For /book-like/ long documents, the effect is not as
-noticeable.  Org provides an alternate stars and indentation scheme,
-as shown on the right in the following table.  It displays only one
-star and indents text to line up with the heading:
+Org's outline, with its stars and lack of indents, can look cluttered
+in short documents. For /book-like/ long documents, the effect is not
+as noticeable.  Org provides an alternate stars and indentation
+scheme, as shown on the right in the following table.  It displays
+only one star and indents text to line up with the heading:
 
 #+begin_example
 ,* Top level headline             |    * Top level headline
@@ -21404,7 +21419,7 @@ manual, but here is a consolidated list for easy reference.
 
 - If point is in one of the special =KEYWORD= lines, scan the buffer
   for these lines and update the information.  Also reset the Org file
-  cache used to temporary store the contents of URLs used as values
+  cache used to temporarily store the contents of URLs used as values
   for keywords like =SETUPFILE=.
 
 - If point is inside a table, realign the table.
@@ -21509,7 +21524,7 @@ changes.
   #+vindex: org-priority-lowest
   #+vindex: org-priority-default
   This line sets the limits and the default for the priorities.  All
-  three must be either letters A--Z or numbers 0--9.  The highest
+  three must be either letters A--Z or numbers 0--64.  The highest
   priority must have a lower ASCII number than the lowest priority.
 
 - =#+PROPERTY: Property_Name Value= ::
@@ -22085,7 +22100,7 @@ moves across a special context.
   #+cindex: @file{yasnippet.el}
   The way Org mode binds the {{{kbd(TAB)}}} key (binding to ~[tab]~
   instead of ~"\t"~) overrules YASnippet's access to this key.  The
-  following code fixed this problem:
+  following code fixes this problem:
 
   #+begin_src emacs-lisp
   (add-hook 'org-mode-hook
@@ -23923,7 +23938,7 @@ community and the code.
 - Eric Fraga drove the development of Beamer export with ideas and
   testing.
 
-- Barry Gidden did proofreading the manual in preparation for the book
+- Barry Gidden proofread the manual in preparation for the book
   publication through Network Theory Ltd.
 
 - Niels Giesen had the idea to automatically archive DONE trees.
