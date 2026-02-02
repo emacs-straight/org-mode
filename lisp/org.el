@@ -10016,12 +10016,14 @@ changes because there are unchecked boxes in this entry."
 (defun org-update-statistics-cookies (all)
   "Update the statistics cookie, either from TODO or from checkboxes.
 This should be called with the cursor in a line with a statistics
-cookie.  When called with a \\[universal-argument] prefix, update
-all statistics cookies in the buffer."
+cookie.  When called with a \\[universal-argument] prefix, update all
+statistics cookies in the accessible portion of the buffer, i.e.,
+respect narrowing."
   (interactive "P")
   (if all
       (progn
-	(org-update-checkbox-count 'all)
+	(org-update-checkbox-count
+	 (if (buffer-narrowed-p) 'narrow 'all))
 	(org-map-region 'org-update-parent-todo-statistics
                         (point-min) (point-max)))
     (if (not (org-at-heading-p))
