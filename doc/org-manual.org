@@ -20294,6 +20294,11 @@ To stop Org from evaluating code blocks for greater security, set the
 ~org-export-use-babel~ variable to ~nil~, but understand that header
 arguments will have no effect.
 
+If results of evaluation are not marked for export (=:exports code= or
+=:exports none=), Org will not evaluate them, even for =:eval yes=.
+The only exception is when a code block uses =:session= - such blocks
+are evaluated according to their =:eval= header argument.
+
 Turning off evaluation comes in handy when batch processing.  For
 example, markup languages for wikis, which have a high risk of
 untrusted code.  Stopping code block evaluation also stops evaluation

@@ -1327,8 +1327,9 @@ original code in the Org buffer, and replace it with the edited
 version.  See `org-src-window-setup' to configure the display of
 windows containing the Org buffer and the code buffer.
 
-When optional argument CODE is a string, edit it in a dedicated
-buffer instead.
+When optional argument CODE is a string, edit it in a read-only buffer
+instead.  The contents of that buffer will *not* be written back to
+the source of example block at point.
 
 When optional argument EDIT-BUFFER-NAME is non-nil, use it as the
 name of the sub-editing buffer."

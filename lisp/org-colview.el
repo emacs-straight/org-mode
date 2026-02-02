@@ -510,6 +510,10 @@ substring whose `string-width' does not exceed WIDTH."
   "Remember the state of `flyspell-mode' before column view.
 Flyspell mode can cause problems in columns view, so it is turned off
 for the duration of the command.")
+(defvar org-columns-org-num-was-active nil
+  "Remember the state of `org-num-mode' before column view.
+Org-num mode can cause problems in columns view, so it is turned off
+for the duration of the command.")
 
 (defvar header-line-format)
 (defvar org-columns-previous-hscroll 0)
@@ -574,6 +578,8 @@ for the duration of the command.")
 	(remove-text-properties (point-min) (point-max) '(read-only t))))
     (when org-columns-flyspell-was-active
       (flyspell-mode 1))
+    (when org-columns-org-num-was-active
+      (org-num-mode 1))
     (when (local-variable-p 'org-colview-initial-truncate-line-value)
       (setq truncate-lines org-colview-initial-truncate-line-value))))
 
@@ -919,6 +925,9 @@ When COLUMNS-FMT-STRING is non-nil, use it as the column format."
 	    (when (setq-local org-columns-flyspell-was-active
 			      (bound-and-true-p flyspell-mode))
 	      (flyspell-mode 0))
+            (when (setq-local org-columns-org-num-was-active
+			      (bound-and-true-p org-num-mode))
+	      (org-num-mode 0))
 	    (unless (local-variable-p 'org-colview-initial-truncate-line-value)
 	      (setq-local org-colview-initial-truncate-line-value
 			  truncate-lines))
@@ -1796,6 +1805,9 @@ definition."
 	  (when (setq-local org-columns-flyspell-was-active
 			    (bound-and-true-p flyspell-mode))
 	    (flyspell-mode 0))
+          (when (setq-local org-columns-org-num-was-active
+			    (bound-and-true-p org-num-mode))
+	    (org-num-mode 0))
 	  (dolist (entry cache)
 	    (goto-char (car entry))
 	    (org-columns--display-here (cdr entry)))
