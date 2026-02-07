@@ -1415,6 +1415,10 @@ See also `org-latex-compiler'."
   :version "26.1"
   :package-version '(Org . "9.0"))
 
+(defconst org-latex-compilers '("pdflatex" "xelatex" "lualatex")
+  "Known LaTeX compilers.
+See also `org-latex-compiler'.")
+
 (defcustom org-latex-compiler "pdflatex"
   "LaTeX compiler to use.
 
@@ -1434,10 +1438,6 @@ Can also be set in buffers via #+LATEX_COMPILER.  See also
                ;; either an empty string or one of the supported compilers
                (or (length= s 0)
                    (member s org-latex-compilers)))))
-
-(defconst org-latex-compilers '("pdflatex" "xelatex" "lualatex")
-  "Known LaTeX compilers.
-See also `org-latex-compiler'.")
 
 (defcustom org-latex-bib-compiler "bibtex"
   "Command to process a LaTeX file's bibliography.

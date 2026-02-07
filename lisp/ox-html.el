@@ -3133,6 +3133,8 @@ Math environments match the regular expression defined in
 `org-latex-math-environments-re'.  This function is meant to be
 used as a predicate for `org-export-get-ordinal' or a value to
 `org-html-standalone-image-predicate'."
+  (require 'ox-latex)
+  (defvar org-latex-math-environments-re) ; defined in ox-latex.el
   (string-match-p org-latex-math-environments-re
                   (org-element-property :value element)))
 
@@ -3421,6 +3423,8 @@ INFO is a plist holding contextual information.  See
 	     (format "<a href=\"#%s\"%s>%s</a>" href attributes desc)))
 	  ;; Fuzzy link points to a target or an element.
 	  (_
+           (require 'ox-latex)
+           (declare-function org-latex--environment-type "ox-latex" (latex-environment))
            (if (and destination
                     (memq (plist-get info :with-latex) '(mathjax t))
                     (org-element-type-p destination 'latex-environment)
