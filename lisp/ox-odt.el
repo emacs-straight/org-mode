@@ -2993,7 +2993,11 @@ contextual information."
       ;; FIXME: The unnecessary spacing may still remain when a newline
       ;; is at a boundary between Org objects (e.g. italics markup
       ;; followed by newline).
-      (when (org-string-nw-p output) ; blank string needs not to be re-filled
+      (when (and (org-string-nw-p output) ; blank string needs not to be re-filled
+                 ;; Plain text inside verse blocks gotta preserve newlines
+                 ;; and spaces.
+                 (not (org-element-lineage text '(verse-block)))
+                 )
         (setq output
               (with-temp-buffer
                 (save-match-data
