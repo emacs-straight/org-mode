@@ -3782,9 +3782,12 @@ contextual information."
 	  (replace-regexp-in-string
 	   ;; Replace leading tabs and spaces.
 	   "^[ \t]+" #'org-odt--encode-tabs-and-spaces
-	   ;; Add line breaks to each line of verse.
-	   (replace-regexp-in-string
-	    "\\(<text:line-break/>\\)?[ \t]*$" "<text:line-break/>" contents))))
+           (replace-regexp-in-string
+            ;; Remove newlines after line breaks.
+            "<text:line-break/>[\n]" "<text:line-break/>"
+	    (replace-regexp-in-string
+             ;; Add line breaks to each line of verse.
+	     "\\(<text:line-break/>\\)?[ \t]*$" "<text:line-break/>" contents)))))
 
 
 
