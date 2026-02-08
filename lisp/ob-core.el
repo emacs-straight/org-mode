@@ -3073,6 +3073,8 @@ parameters when merging lists."
 		 (setf (cddr (nth variable-index vars))
 		       (concat (symbol-name name) "=" value))
 		 (cl-incf variable-index)))
+              ((null (cdr pair)) ;; Empty :var, ignore
+               nil)
 	      (t (error "Variable \"%s\" must be assigned a default value"
 			(cdr pair))))))
 	  (`(:results . ,value)
