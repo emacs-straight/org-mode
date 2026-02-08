@@ -12950,9 +12950,9 @@ leading =*= with =,= to avoid interpreting them as headings.]
 Finally, a =COMMENT= keyword at the beginning of an entry, but after
 any other keyword or priority cookie, comments out the entire subtree.
 In this case, the subtree is not exported and no code block within it
-is executed either[fn:: For a less drastic behavior, consider using a
-select tag (see [[*Export Settings]]) instead.].  The command below
-helps to change the comment status of a headline.
+is executed or tangled[fn:: For less restrictive export limitations,
+consider using a select tag (see [[*Export Settings]]) instead.].  The
+command below helps to change the comment status of a headline.
 
 - {{{kbd(C-c ;)}}} (~org-toggle-comment~) ::
   #+kindex: C-c ;
@@ -14282,6 +14282,11 @@ general options (see [[*Export Settings]]).
   customizing ~org-latex-multi-lang~ variable. Setting the keyword
   supersedes the variable value.
 
+- =LATEX_CLASS_PRE= ::
+
+  #+cindex: @samp{LATEX_CLASS_PRE}, keyword
+  Arbitrary lines to prepend before the LaTeX preamble.
+
 - =KEYWORDS= ::
 
   #+cindex: @samp{KEYWORDS}, keyword
@@ -14379,6 +14384,32 @@ specified in the document class or by the user in the
 =LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
 force the LaTeX compiler to use the Sans font as default. You can also
 include it in the document options with:
+#+cindex: @samp{LATEX_CLASS_PRE}, keyword
+The LaTeX export backend prepends values from =LATEX_CLASS_PRE=
+keywords before the LaTeX preamble. Use this option when you want to
+set the values passed to packages included in the document class. For
+example, to use extended names for the ~xcolor~ package, use
+
+#+begin_example
+,#+LATEX_CLASS_PRE: \PassOptionsToPackage{dvipsnames}{xcolor}
+#+end_example
+
+#+cindex: @samp{LANGUAGE}, keyword
+#+vindex: org-export-default-language
+LaTeX packages =babel= or =polyglossia= can also be loaded in a
+document.  The "AUTO" string will be replaced in both cases by the
+appropriate value for the =LANGUAGE= keyword, if present in the
+document, or by the value of ~org-export-default-language~.  Let's see
+some examples in one or another case.
+
+=Babel= accepts the classic syntax and (in addition) the new syntax
+with the =\babelprovide= command to load the languages using the new
+=INI= files procedure.  Keep in mind that there are a number of
+languages that are only served in babel using =INI= files, so they
+cannot be declared using the classic syntax, but only using the
+=\babelprovide= command (see
+https://mirrors.ctan.org/macros/latex/required/babel/base/babel.pdf).
+Valid usage examples could be:
 
 #+begin_example
 #+OPTIONS: latex-use-sans:t
@@ -15277,7 +15308,10 @@ are using ~:props~ as an alias for ~features~.]:
         :props "Color=blue,Scale=MatchLowercase")
 #+END_SRC
 
-#+texinfo: @heading Fallback fonts
+**** Fallback fonts
+:PROPERTIES:
+:UNNUMBERED: notoc
+:END:
 
 As mentioned earlier, it is always advisable to use (Unicode) fonts
 that cover all scripts in your document to simplify font
@@ -15363,7 +15397,10 @@ definition is appended as another feature to the font definition.
 Make sure to the fallback fonts for the LaTeX font families that need
 them.
 
-#+texinfo: @heading Additional settings
+**** Additional settings
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
 
 #+vindex: org-latex-fontspec-default-features
 Additionally, you can define common features (cf. ~:props~ above) for
@@ -15395,7 +15432,10 @@ not use emojis in a document, but might include them in a beamer
 presentation. If you use the same system fonts in both, you can use a
 common font configuration for Org.
 
-#+texinfo: @heading Default fonts
+**** Default fonts
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
 
 The appearance of a document is controlled by the fonts declared in
 the *document class*. As stated above, you can provide your own fonts
@@ -20361,6 +20401,10 @@ to source file(s).
   any string passed to the =tangle= header argument.  Org derives the
   file name as being relative to the directory of the Org file's
   location.  Example: =:tangle FILENAME=.
+
+#+cindex: comment trees
+Additionally, code blocks inside commented subtrees (see [[*Comment
+Lines]]) are never exported.
 
 #+cindex: @samp{mkdirp}, header argument
 The =mkdirp= header argument creates parent directories for tangled

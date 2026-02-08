@@ -1122,8 +1122,9 @@ specifying the depth of the table."
 	       (format "<text:span text:style-name=\"%s\">%s</text:span> "
 		       style todo)))
 	   (when priority
-	     (let* ((style (format "OrgPriority-%s" priority))
-		    (priority (format "[#%c]" priority)))
+	     (let* ((priority-string (org-priority-to-string priority))
+                    (style (format "OrgPriority-%s" priority-string))
+		    (priority (format "[#%s]" priority-string)))
 	       (format "<text:span text:style-name=\"%s\">%s</text:span> "
 		       style priority)))
 	   ;; Title.
@@ -1394,7 +1395,11 @@ original parsed data.  INFO is a plist holding export options."
     ;; Ensure we have write permissions to this file.
     (set-file-modes (concat org-odt-zip-dir "styles.xml") #o600)
 
-    (let ((styles-xml (concat org-odt-zip-dir "styles.xml")))
+    (let ((styles-xml (concat org-odt-zip-dir "styles.xml"))
+          ;; Capture the current (possibly buffer-local) values for priorities
+          ;; because these get reset to global values when we use `with-temp-buffer'
+          (priority-high org-priority-highest)
+          (priority-low org-priority-lowest))
       (with-temp-buffer
         (when (file-exists-p styles-xml)
           (insert-file-contents styles-xml))
@@ -1425,6 +1430,16 @@ original parsed data.  INFO is a plist holding export options."
 		          (level (string-to-number (match-string 2))))
 		      (if (wholenump sec-num) (<= level sec-num) sec-num))
 	      (replace-match replacement t nil))))
+
+        ;; Update styles.xml with priority styles for the current valid priority range
+        (when (plist-get info :with-priority)
+          (goto-char (point-min))
+          (when (re-search-forward "<style:style style:name=\"OrgPriority\" style:family=\"text\"/>" nil t)
+            (goto-char (match-end 0))
+            (insert "\n  <!-- Org Priority Styles -->\n")
+            (dolist (priority (number-sequence priority-high priority-low))
+              (insert (format "  <style:style style:name=\"OrgPriority-%s\" style:family=\"text\" style:parent-style-name=\"OrgPriority\"/>\n"
+                              (org-priority-to-string priority))))))
 
         ;; Write back the new contents.
         (write-region nil nil styles-xml))))
@@ -1863,8 +1878,9 @@ See `org-odt-format-headline-function' for details."
      (let ((style (if (eq todo-type 'done) "OrgDone" "OrgTodo")))
        (format "<text:span text:style-name=\"%s\">%s</text:span> " style todo)))
    (when priority
-     (let* ((style (format "OrgPriority-%c" priority))
-	    (priority (format "[#%c]" priority)))
+     (let* ((priority-string (org-priority-to-string priority))
+            (style (format "OrgPriority-%s" priority-string))
+	    (priority (format "[#%s]" priority-string)))
        (format "<text:span text:style-name=\"%s\">%s</text:span> "
 	       style priority)))
    ;; Title.
@@ -2977,7 +2993,11 @@ contextual information."
       ;; FIXME: The unnecessary spacing may still remain when a newline
       ;; is at a boundary between Org objects (e.g. italics markup
       ;; followed by newline).
-      (when (org-string-nw-p output) ; blank string needs not to be re-filled
+      (when (and (org-string-nw-p output) ; blank string needs not to be re-filled
+                 ;; Plain text inside verse blocks gotta preserve newlines
+                 ;; and spaces.
+                 (not (org-element-lineage text '(verse-block)))
+                 )
         (setq output
               (with-temp-buffer
                 (save-match-data
@@ -3762,9 +3782,12 @@ contextual information."
 	  (replace-regexp-in-string
 	   ;; Replace leading tabs and spaces.
 	   "^[ \t]+" #'org-odt--encode-tabs-and-spaces
-	   ;; Add line breaks to each line of verse.
-	   (replace-regexp-in-string
-	    "\\(<text:line-break/>\\)?[ \t]*$" "<text:line-break/>" contents))))
+           (replace-regexp-in-string
+            ;; Remove newlines after line breaks.
+            "<text:line-break/>[\n]" "<text:line-break/>"
+	    (replace-regexp-in-string
+             ;; Add line breaks to each line of verse.
+	     "\\(<text:line-break/>\\)?[ \t]*$" "<text:line-break/>" contents)))))
 
 
 

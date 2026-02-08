@@ -123,6 +123,7 @@
     (:latex-class-options "LATEX_CLASS_OPTIONS" nil nil t)
     (:latex-header "LATEX_HEADER" nil nil newline)
     (:latex-header-extra "LATEX_HEADER_EXTRA" nil nil newline)
+    (:latex-class-pre "LATEX_CLASS_PRE" nil nil newline)
     (:description "DESCRIPTION" nil nil parse)
     (:keywords "KEYWORDS" nil nil parse)
     (:subtitle "SUBTITLE" nil nil parse)
@@ -1424,6 +1425,10 @@ See also `org-latex-compiler'."
   :version "26.1"
   :package-version '(Org . "9.0"))
 
+(defconst org-latex-compilers '("pdflatex" "xelatex" "lualatex")
+  "Known LaTeX compilers.
+See also `org-latex-compiler'.")
+
 (defcustom org-latex-compiler "pdflatex"
   "LaTeX compiler to use.
 
@@ -1443,10 +1448,6 @@ Can also be set in buffers via #+LATEX_COMPILER.  See also
                ;; either an empty string or one of the supported compilers
                (or (length= s 0)
                    (member s org-latex-compilers)))))
-
-(defconst org-latex-compilers '("pdflatex" "xelatex" "lualatex")
-  "Known LaTeX compilers.
-See also `org-latex-compiler'.")
 
 (defcustom org-latex-bib-compiler "bibtex"
   "Command to process a LaTeX file's bibliography.
@@ -2711,27 +2712,31 @@ specified in `org-latex-default-packages-alist' or
 	      (let* ((class-options (plist-get info :latex-class-options))
 		     (header (nth 1 (assoc class (plist-get info :latex-classes)))))
 		(and (stringp header)
-		     (if (not class-options) header
-		       (replace-regexp-in-string
-			"^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
-			class-options header t nil 1))))
-	      (user-error "Unknown LaTeX class `%s'" class)))
-         (multi-lang (plist-get info :latex-multi-lang)))
-    ;; (message "org-latex-make-preamble from %s" template)
-    (let ((new-template
-           (org-element-normalize-string
-	    (org-splice-latex-header
-	     class-template
-	     (org-latex--remove-packages org-latex-default-packages-alist info)
-	     (org-latex--remove-packages org-latex-packages-alist info)
-	     snippet?
-	     (mapconcat #'org-element-normalize-string
-		        (list (plist-get info :latex-header)
-			      (and (not snippet?)
-			           (plist-get info :latex-header-extra))
-                              (and (not snippet?)
-                                   (plist-get info :latex-use-sans)
-                                   "\\renewcommand*\\familydefault{\\sfdefault}"))
+	             (mapconcat #'org-element-normalize-string
+		                (list
+                                 (and (not snippet?)
+                                      (plist-get info :latex-class-pre))
+		                 (if (not class-options) header
+		                   (replace-regexp-in-string
+			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
+			            class-options header t nil 1))))))
+	      (user-error "Unknown LaTeX class `%s'" class))))
+    (org-latex-guess-polyglossia-language
+     (org-latex-guess-babel-language
+      (org-latex-guess-inputenc
+       (org-element-normalize-string
+	(org-splice-latex-header
+	 class-template
+	 (org-latex--remove-packages org-latex-default-packages-alist info)
+	 (org-latex--remove-packages org-latex-packages-alist info)
+	 snippet?
+	 (mapconcat #'org-element-normalize-string
+		    (list (plist-get info :latex-header)
+			  (and (not snippet?)
+			       (plist-get info :latex-header-extra))
+                          (and (not snippet?)
+                               (plist-get info :latex-use-sans)
+                               "\\renewcommand*\\familydefault{\\sfdefault}"))
 
 		        "")
              (org-latex-fontspec-to-string info)))))

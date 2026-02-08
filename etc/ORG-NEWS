@@ -189,6 +189,11 @@ Previously, =1=, =2=, and =3= would insert priorities =A=, =B=, and
 insert ~org-priority-highest~, ~org-priority-default~, and
 ~org-priority-lowest~, respectively.
 
+*** Update of statistics cookies now respects narrowing
+
+Calling ~org-update-statistics-cookies~ with a prefix argument will
+now only update cookies in the accessible portion of the buffer.
+
 ** New features
 
 # We list the most important features, and the features that may
@@ -558,6 +563,9 @@ This option specifies the PDF to be typeset using the Sans font
 specified in the document class (or by the user) instead of the
 default font (i.e. the Roman font).
 
+*** New option ~#+LATEX_CLASS_PRE~
+
+This option prepends LaTeX code before the LaTeX preamble.
 
 ** New functions and changes in function arguments
 

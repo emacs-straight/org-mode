@@ -674,16 +674,41 @@ but the stars and the body are.")
 An archived subtree does not open during visibility cycling, and does
 not contribute to the agenda listings.")
 
-(defconst org-tag-re "[[:alnum:]_@#%]+"
+(defconst org-tag--valid-char-set "[:alnum:]_@#%"
+  "Regex pattern representing the set of characters valid within a tag.
+This is the base pattern for tag matching regex.")
+
+(defconst org-tag--invalid-char-re
+  (format "[^%s]" org-tag--valid-char-set)
+  "Regexp matching a single character that's NOT a valid tag char.")
+
+(defconst org-tag-re (format "[%s]+" org-tag--valid-char-set)
   "Regexp matching a single tag.")
 
-(defconst org-tag-group-re "[ \t]+\\(:\\([[:alnum:]_@#%:]+\\):\\)[ \t]*$"
+(defconst org-tag--group-enclosed-re
+  (format "\\(:\\([%s:]+\\):\\)" org-tag--valid-char-set)
+  "Regex pattern for a colon-enclosed group of tags.
+The regexp does not match encosing spaces and tabs, e.g.,
+\":TAG1:TAG2:\".  Match group 1 stores the tags with the enclosing
+colons, and match group 2 stores the tags without the enclosing
+colons.  Built using `org-tag--valid-char-set' with the addition of the
+colon.")
+
+(defconst org-tag--group-optional-re
+  (concat "\\(?:[ \t]+" org-tag--group-enclosed-re "\\)?[ \t]*$")
+  "Regexp matching an optional tag group at the end of a line.
+Regexp includes optional leading and trailing spaces.  If a tag group
+is present, group 1 is the full tag group (with colons), group 2 is
+the tag content (without colons).")
+
+(defconst org-tag-group-re
+  (format "[ \t]+%s[ \t]*$" org-tag--group-enclosed-re)
   "Regexp matching the tag group at the end of a line, with leading spaces.
 Tags are stored in match group 1.  Match group 2 stores the tags
 without the enclosing colons.")
 
 (defconst org-tag-line-re
-  "^\\*+ \\(?:.*[ \t]\\)?\\(:\\([[:alnum:]_@#%:]+\\):\\)[ \t]*$"
+  (format "^\\*+ \\(?:.*[ \t]\\)?%s[ \t]*$" org-tag--group-enclosed-re)
   "Regexp matching tags in a headline.
 Tags are stored in match group 1.  Match group 2 stores the tags
 without the enclosing colons.")
@@ -940,11 +965,17 @@ depends on, if any."
 	      (const :tag "C  s5          Export buffer to s5 presentations" s5)
 	      (const :tag "C  taskjuggler Export buffer to TaskJuggler format" taskjuggler)))
 
-(eval-after-load 'ox
-  '(dolist (backend org-export-backends)
-     (condition-case-unless-debug nil (require (intern (format "ox-%s" backend)))
-       (error (message "Problems while trying to load export backend `%s'"
-		       backend)))))
+(defun org-load-export-backends (&optional force)
+  "Load all the export backends from `org-export-backends'.
+When FORCE, load backends even when ox is loaded."
+  (unless (and (featurep 'ox) (not force))
+    (require 'ox)
+    (dolist (backend org-export-backends)
+      (condition-case-unless-debug nil (require (intern (format "ox-%s" backend)))
+        (error (message "Problems while trying to load export backend `%s'"
+		        backend))))))
+
+(eval-after-load 'ox '(org-load-export-backends 'force))
 
 (defcustom org-support-shift-select nil
   "Non-nil means make shift-cursor commands select text when possible.
@@ -4614,8 +4645,7 @@ related expressions."
 		      "\\(?: +" org-todo-regexp "\\)?"
 		      (format "\\(?: +\\(\\[#\\(?:%s\\)\\]\\)\\)?" org-priority-value-regexp)
 		      "\\(?: +\\(.*?\\)\\)??"
-		      "\\(?:[ \t]+\\(:[[:alnum:]_@#%:]+:\\)\\)?"
-		      "[ \t]*$")
+                      org-tag--group-optional-re)
 	      org-complex-heading-regexp-format
 	      (concat "^\\(\\*+\\)"
 		      "\\(?: +" org-todo-regexp "\\)?"
@@ -4628,14 +4658,13 @@ related expressions."
 		      "\\(%s\\)"
 		      "\\(?: *\\[[0-9%%/]+\\]\\)*"
 		      "\\)"
-		      "\\(?:[ \t]+\\(:[[:alnum:]_@#%%:]+:\\)\\)?"
-		      "[ \t]*$")
+                      ;; Shield % inside as they will break `format'.
+		      (replace-regexp-in-string "%" "%%" org-tag--group-optional-re))
 	      org-todo-line-tags-regexp
 	      (concat "^\\(\\*+\\)"
 		      "\\(?: +" org-todo-regexp "\\)?"
 		      "\\(?: +\\(.*?\\)\\)??"
-		      "\\(?:[ \t]+\\(:[[:alnum:]:_@#%]+:\\)\\)?"
-		      "[ \t]*$"))
+                      org-tag--group-optional-re))
 	(org-compute-latex-and-related-regexp)))))
 
 (defun org-collect-keywords (keywords &optional unique directory)
@@ -10019,12 +10048,14 @@ changes because there are unchecked boxes in this entry."
 (defun org-update-statistics-cookies (all)
   "Update the statistics cookie, either from TODO or from checkboxes.
 This should be called with the cursor in a line with a statistics
-cookie.  When called with a \\[universal-argument] prefix, update
-all statistics cookies in the buffer."
+cookie.  When called with a \\[universal-argument] prefix, update all
+statistics cookies in the accessible portion of the buffer, i.e.,
+respect narrowing."
   (interactive "P")
   (if all
       (progn
-	(org-update-checkbox-count 'all)
+	(org-update-checkbox-count
+	 (if (buffer-narrowed-p) 'narrow 'all))
 	(org-map-region 'org-update-parent-todo-statistics
                         (point-min) (point-max)))
     (if (not (org-at-heading-p))
@@ -12208,7 +12239,7 @@ in Lisp code use `org-set-tags' instead."
 	       (tags
 		(replace-regexp-in-string
 		 ;; Ignore all forbidden characters in tags.
-		 "[^[:alnum:]_@#%]+" ":"
+                 org-tag--invalid-char-re ":"
 		 (if (or (eq t org-use-fast-tag-selection)
 			 (and org-use-fast-tag-selection
 			      (delq nil (mapcar #'cdr table))))
