@@ -3622,9 +3622,9 @@ header, or they will be appended."
 
 (defcustom org-latex-default-packages-alist
   '(;; amsmath before fontspec for lualatex and xetex
-    (""     "amsmath"   t ("lualatex" "xetex"))
+    (""     "amsmath"   t ("lualatex" "xelatex"))
     ;; fontspec ASAP for lualatex and xetex
-    (""     "fontspec"  t ("lualatex" "xetex"))
+    (""     "fontspec"  t ("lualatex" "xelatex"))
     ;; inputenc and fontenc are for pdflatex only
     ("AUTO" "inputenc"  t ("pdflatex"))
     ("T1"   "fontenc"   t ("pdflatex"))
