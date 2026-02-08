@@ -19638,6 +19638,10 @@ to source file(s).
   file name as being relative to the directory of the Org file's
   location.  Example: =:tangle FILENAME=.
 
+#+cindex: comment trees
+Additionally, code blocks inside commented subtrees (see [[*Comment
+Lines]]) are never exported.
+
 #+cindex: @samp{mkdirp}, header argument
 The =mkdirp= header argument creates parent directories for tangled
 files if the directory does not exist.  A =yes= value enables
