@@ -873,7 +873,7 @@ Idea taken from `gnus-dired-attach'."
          (get-window-with-predicate
           (lambda (window)
             (with-current-buffer (window-buffer window)
-              (eq major-mode 'org-mode))))))
+              (derived-mode-p 'org-mode))))))
     (unless other-win
       (user-error
        "Can't attach to subtree.  No window displaying an Org buffer"))
