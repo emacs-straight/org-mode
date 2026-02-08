@@ -509,6 +509,9 @@ This option specifies the PDF should be typeset using the Sans font
 specified in the document class (or the user) instead of the default
 font (i.e. the Roman font).
 
+*** New option ~#+LATEX_CLASS_PRE~
+
+This option prepends LaTeX code before the LaTeX preamble.
 
 ** New functions and changes in function arguments
 

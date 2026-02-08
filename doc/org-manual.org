@@ -14273,6 +14273,11 @@ general options (see [[*Export Settings]]).
   hyperref settings.  See ~org-latex-classes~ for adjusting the
   structure and order of the LaTeX headers.
 
+- =LATEX_CLASS_PRE= ::
+
+  #+cindex: @samp{LATEX_CLASS_PRE}, keyword
+  Arbitrary lines to prepend before the LaTeX preamble.
+
 - =KEYWORDS= ::
 
   #+cindex: @samp{KEYWORDS}, keyword
@@ -14362,6 +14367,16 @@ A sample Org file with the above headers:
   some text
 ,* Headline 2
   some more text
+#+end_example
+
+#+cindex: @samp{LATEX_CLASS_PRE}, keyword
+The LaTeX export backend prepends values from =LATEX_CLASS_PRE=
+keywords before the LaTeX preamble. Use this option when you want to
+set the values passed to packages included in the document class. For
+example, to use extended names for the ~xcolor~ package, use
+
+#+begin_example
+,#+LATEX_CLASS_PRE: \PassOptionsToPackage{dvipsnames}{xcolor}
 #+end_example
 
 #+cindex: @samp{LANGUAGE}, keyword

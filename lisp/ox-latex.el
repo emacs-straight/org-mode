@@ -124,6 +124,7 @@
     (:latex-class-options "LATEX_CLASS_OPTIONS" nil nil t)
     (:latex-header "LATEX_HEADER" nil nil newline)
     (:latex-header-extra "LATEX_HEADER_EXTRA" nil nil newline)
+    (:latex-class-pre "LATEX_CLASS_PRE" nil nil newline)
     (:description "DESCRIPTION" nil nil parse)
     (:keywords "KEYWORDS" nil nil parse)
     (:subtitle "SUBTITLE" nil nil parse)
@@ -2025,10 +2026,14 @@ specified in `org-latex-default-packages-alist' or
 	      (let* ((class-options (plist-get info :latex-class-options))
 		     (header (nth 1 (assoc class (plist-get info :latex-classes)))))
 		(and (stringp header)
-		     (if (not class-options) header
-		       (replace-regexp-in-string
-			"^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
-			class-options header t nil 1))))
+	             (mapconcat #'org-element-normalize-string
+		                (list
+                                 (and (not snippet?)
+                                      (plist-get info :latex-class-pre))
+		                 (if (not class-options) header
+		                   (replace-regexp-in-string
+			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
+			            class-options header t nil 1))))))
 	      (user-error "Unknown LaTeX class `%s'" class))))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language

@@ -328,6 +328,23 @@ Fake test document
       (goto-char (point-min))
       (should (search-forward "\\begin{document}" nil t)))))
 
+(ert-deftest test-ox-latex/latex-class-pre ()
+  "Test #+LATEX_CLASS_PRE"
+  (org-test-with-exported-text 'latex
+                               "#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
+#+TITLE: Test prepending LaTeX before the preamble
+
+* Test
+
+Fake test document
+"
+      (goto-char (point-min))
+      (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
+      ;; And after this
+      (should (search-forward "\\documentclass" nil t))
+      ;; And after this
+      (should (search-forward "\\begin{document}" nil t))))
+
 (ert-deftest test-ox-latex/math-in-alt-title ()
   "Test math wrapping in ALT_TITLE properties."
   (org-test-with-exported-text
