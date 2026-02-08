@@ -14384,6 +14384,10 @@ specified in the document class or by the user in the
 =LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
 force the LaTeX compiler to use the Sans font as default. You can also
 include it in the document options with:
+#+BEGIN_SRC org
+,#+OPTIONS: latex-use-sans: t
+#+END_SRC
+
 #+cindex: @samp{LATEX_CLASS_PRE}, keyword
 The LaTeX export backend prepends values from =LATEX_CLASS_PRE=
 keywords before the LaTeX preamble. Use this option when you want to

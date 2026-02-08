@@ -2720,24 +2720,22 @@ specified in `org-latex-default-packages-alist' or
 		                   (replace-regexp-in-string
 			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
 			            class-options header t nil 1))))))
-	      (user-error "Unknown LaTeX class `%s'" class))))
-    (org-latex-guess-polyglossia-language
-     (org-latex-guess-babel-language
-      (org-latex-guess-inputenc
-       (org-element-normalize-string
-	(org-splice-latex-header
-	 class-template
-	 (org-latex--remove-packages org-latex-default-packages-alist info)
-	 (org-latex--remove-packages org-latex-packages-alist info)
-	 snippet?
-	 (mapconcat #'org-element-normalize-string
-		    (list (plist-get info :latex-header)
-			  (and (not snippet?)
-			       (plist-get info :latex-header-extra))
-                          (and (not snippet?)
-                               (plist-get info :latex-use-sans)
-                               "\\renewcommand*\\familydefault{\\sfdefault}"))
-
+	      (user-error "Unknown LaTeX class `%s'" class)))
+         (multi-lang (plist-get info :latex-multi-lang)))
+    (let ((new-template
+           (org-element-normalize-string
+           (org-splice-latex-header
+            class-template
+            (org-latex--remove-packages org-latex-default-packages-alist info)
+            (org-latex--remove-packages org-latex-packages-alist info)
+            snippet?
+            (mapconcat #'org-element-normalize-string
+                       (list (plist-get info :latex-header)
+                             (and (not snippet?)
+                                  (plist-get info :latex-header-extra))
+                              (and (not snippet?)
+                                   (plist-get info :latex-use-sans)
+                                   "\\renewcommand*\\familydefault{\\sfdefault}"))
 		        "")
              (org-latex-fontspec-to-string info)))))
       (if multi-lang
