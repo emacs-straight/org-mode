@@ -827,6 +827,7 @@ exported.
 This option can also be set with the OPTIONS keyword, e.g.
 \"<:nil\"."
   :group 'org-export-general
+  :package-version '(Org . "9.8")
   :type '(choice
 	  (const :tag "All timestamps" t)
 	  (const :tag "Active timestamps, including diary timestamps" active)

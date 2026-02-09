@@ -211,7 +211,7 @@ link.
   Face used when hovering over the link.  Default is
   `highlight'."
   :group 'org-link
-  :package-version '(Org . "9.1")
+  :package-version '(Org . "9.8")
   :type '(alist :tag "Link display parameters"
 		:value-type plist))
 
@@ -542,21 +542,23 @@ links more efficient."
   :safe #'booleanp)
 
 (defcustom org-link-preview-delay 0.05
-  "Idle delay in seconds between link previews when using
-`org-link-preview'.  Links are previewed in batches (see
+  "Idle delay in seconds between link previews when using `org-link-preview'.
+Links are previewed in batches (see
 `org-link-preview-batch-size') spaced out by this delay.  Set
 this to a small number for more immediate previews, but at the
 expense of higher lag."
   :group 'org-link
+  :package-version '(Org . "9.8")
   :type 'number)
 
 (defcustom org-link-preview-batch-size 6
-  "Number of links that are previewed at once with
-`org-link-preview'.  Links are previewed asynchronously, in
+  "Number of links that are previewed at once with `org-link-preview'.
+Links are previewed asynchronously, in
 batches spaced out in time (see `org-link-preview-delay').  Set
 this to a large integer for more immediate previews, but at the
 expense of higher lag."
   :group 'org-link
+  :package-version '(Org . "9.8")
   :type 'natnum)
 
 (defcustom org-display-remote-inline-images 'skip

@@ -241,7 +241,7 @@ not the case, this variable provides a way to simplify things on
 the user side.  For example, there is no `ocaml-mode' in Emacs,
 but the mode to use is `tuareg-mode'."
   :group 'org-edit-structure
-  :package-version '(Org . "9.7")
+  :package-version '(Org . "9.8")
   :type '(repeat
 	  (cons
 	   (string :tag "Language name")
