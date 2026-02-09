@@ -19561,11 +19561,14 @@ Note that all the links pointing to a source block exported using
 unless broken links are allowed during export (see [[*Export Settings]]).
 
 #+vindex: org-export-use-babel
-To stop Org from evaluating code blocks to speed up export, use the
-header argument =:eval never-export= (see [[*Evaluating Code Blocks]]).
-To stop Org from evaluating code blocks for greater security, set the
-~org-export-use-babel~ variable to ~nil~, but understand that header
-arguments will have no effect.
+You can prevent Org from evaluating code blocks for speed or security
+reasons:
+
+- To speed up export, use the header argument =:eval never-export=
+  (see [[*Evaluating Code Blocks]]).
+- For greater security, set the ~org-export-use-babel~ variable to
+  ~nil~, but understand that header arguments will have no effect in
+  this case.
 
 If results of evaluation are not marked for export (=:exports code= or
 =:exports none=), Org will not evaluate them, even for =:eval yes=.
