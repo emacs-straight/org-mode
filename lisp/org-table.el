@@ -511,7 +511,7 @@ This may be useful when columns have been shrunk."
 (define-minor-mode org-table-header-line-mode
   "Display the first row of the table at point in the header line."
   :lighter " TblHeader"
-  (unless (eq major-mode 'org-mode)
+  (unless (derived-mode-p 'org-mode)
     (user-error "Cannot turn org table header mode outside org-mode buffers"))
   (if org-table-header-line-mode
       (add-hook 'post-command-hook #'org-table-header-set-header nil t)

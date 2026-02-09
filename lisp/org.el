@@ -22268,7 +22268,7 @@ Point is moved after both elements."
 Relative indentation (between items, inside blocks, etc.) isn't
 modified."
   (interactive)
-  (unless (eq major-mode 'org-mode)
+  (unless (derived-mode-p 'org-mode)
     (user-error "Cannot un-indent a buffer not in Org mode"))
   (letrec ((parse-tree (org-element-parse-buffer 'greater-element nil 'defer))
 	   (unindent-tree
