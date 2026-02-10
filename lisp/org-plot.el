@@ -405,6 +405,7 @@ be set.
    Accepts string, nil, or lambda function which returns string
    or nil.  Defaults to nil."
   :group 'org-plot
+  :package-version '(Org . "9.8")
   :type 'alist)
 
 (defvar org--plot/radar-template

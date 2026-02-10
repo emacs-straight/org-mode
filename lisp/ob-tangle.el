@@ -64,7 +64,7 @@ be inserted as the extension commonly used to identify files
 written in this language.  If no entry is found in this list,
 then the name of the language is used."
   :group 'org-babel-tangle
-  :version "24.1"
+  :package-version '(Org . "9.8")
   :type '(repeat
 	  (cons
 	   (string "Language name")

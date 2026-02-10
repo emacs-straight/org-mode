@@ -83,6 +83,7 @@
 
 It takes 1 argument which is the parameters of the source block."
   :group 'org-babel
+  :package-version '(Org . "9.8")
   :type 'function)
 
 (defcustom org-babel-latex-begin-env

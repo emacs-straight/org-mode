@@ -789,7 +789,7 @@ interpreted as a descriptive headline that will be added when
 listing the speed commands in the Help buffer using the `?' speed
 command."
   :group 'org-structure
-  :package-version '(Org . "9.5")
+  :package-version '(Org . "9.8")
   :type '(repeat :value ("k" . ignore)
 		 (choice :value ("k" . ignore)
 			 (list :tag "Descriptive Headline" (string :tag "Headline"))

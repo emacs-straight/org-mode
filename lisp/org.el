@@ -2494,8 +2494,9 @@ smaller than `org-priority-lowest': for example, if \"A\" is the
 highest priority, it is smaller than the lowest \"C\" priority:
 65 < 67."
   :group 'org-priorities
-  :type '(restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
-          :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
+  :package-version '(Org . "9.8")
+  :type '( restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
+           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
 
 (defvaralias 'org-lowest-priority 'org-priority-lowest)
 (defcustom org-priority-lowest ?C
@@ -2515,8 +2516,9 @@ than `org-priority-highest': for example, if \"C\" is the lowest
 priority, it is greater than the highest \"A\" priority: 67 >
 65."
   :group 'org-priorities
-  :type '(restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
-          :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
+  :package-version '(Org . "9.8")
+  :type '( restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
+           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
 
 (defvaralias 'org-default-priority 'org-priority-default)
 (defcustom org-priority-default ?B
@@ -2530,8 +2532,9 @@ in this range exclusive or inclusive to the range boundaries.  Else the
 first step refuses to set the default and the second will fall back on
 \(depending on the command used) the highest or lowest priority."
   :group 'org-priorities
-  :type '(restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
-          :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
+  :package-version '(Org . "9.8")
+  :type '( restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
+           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
 
 (defcustom org-priority-start-cycle-with-default t
   "Non-nil means start with default priority when starting to cycle.
@@ -2622,7 +2625,7 @@ Leading \"<\" or \"[\" and trailing \">\" or \"]\" pair will be
 stripped from the format strings in Emacs buffers.  The brackets
 will be preserved on export."
   :group 'org-time
-  :package-version '(Org . "9.6")
+  :package-version '(Org . "9.8")
   :type '(cons string string))
 
 (defun org-time-stamp-format (&optional with-time inactive custom)
@@ -3066,6 +3069,7 @@ function in the list.
 For an example of a function that uses this advanced sorting system, see
 `org-tags-sort-hierarchy'."
   :group 'org-tags
+  :package-version '(Org . "9.8")
   :type '(choice
 	  (const :tag "Default sorting" nil)
 	  (const :tag "Alphabetical" org-string<)
@@ -20715,7 +20719,7 @@ directory name to copy/cut the image to that directory, or a
 function that will be called without arguments and should return the
 directory name, as a string."
   :group 'org
-  :package-version '(Org . "9.7")
+  :package-version '(Org . "9.8")
   :type '(choice (const :tag "Add it as attachment" attach)
                  (directory :tag "Save it in directory")
                  (function :tag "Save it in a directory returned from the function call"))
