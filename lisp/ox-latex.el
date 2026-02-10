@@ -5314,35 +5314,37 @@ This list can be then used to provide/improve the font configurations."
       (when (re-search-backward "^[ \t]*This is .*?TeX.*?Version" nil t)
         (let ((font-script nil))
           ;; Create a flat alist with (FONT . EMACS_SCRIPT) for each miss detected
+          ;; Keep the full regex for the future
           (while (search-forward-regexp "There is no \\(.\\) (U\\+\\([^)]+\\)) in font \\([^:]+\\)" nil t)
-            (let* ((failed-font (match-string 3))
-                   (unicode-value (match-string 2))
-                   (failed-char (string-to-char (match-string 1)))
+            (let* ((failed-char (string-to-char (match-string 1)))
+                   ;; (unicode-value (match-string 2))
+                   (failed-font (match-string 3))
                    (emacs-script (symbol-name (aref char-script-table failed-char))))
-              (message "For character %s [\\u%s] (%s)" failed-char unicode-value emacs-script)
-              (if (length= font-script 0)
+              ;; (message "For character %s [\\u%s] (%s)" failed-char unicode-value emacs-script)
+              (if (null font-script)
                   (setq font-script (list (cons failed-font emacs-script)))
-                (progn
-                  (push (cons failed-font emacs-script) font-script)))))
-          ;; Sort the list by FONT in place, i.e. font-script is modified by sort
-          ;; original definition of sort since Emacs25
-          (sort font-script #'(lambda (s1 s2)
-                                (string< (car s1) (car s2))))
-          ;; Remove duplicates,
-          ;; (delete-dups) is destructive and will replace the original list automatically
-          (delete-dups font-script)
-          (let ((current-font "")
-                (result "Scripts missing:"))
-            (cl-loop for (font . script) in font-script
-                     do
-                     (if (string= current-font font)
-                         ;; Collect the EMACS_SCRIPT
-                         (setq result (concat result " " script))
-                       (progn
-                         (setq current-font font)
-                         ;; New line for each new FONT
-                         (setq result (concat result "\nFor font " font ": " script)))))
-            (message result)))))))
+                (push (cons failed-font emacs-script) font-script))))
+          ;; When all is OK, font-script will be nil
+          (unless (null font-script)
+            ;; Sort the list by FONT in place, i.e. font-script is modified by sort
+            ;; original definition of sort since Emacs25
+            (sort font-script #'(lambda (s1 s2)
+                                  (string< (car s1) (car s2))))
+            ;; Remove duplicates,
+            ;; (delete-dups) is destructive and will replace the original list automatically
+            (delete-dups font-script)
+            (let ((current-font "")
+                  (result ""))
+              (cl-loop for (font . script) in font-script
+                       do
+                       (if (string= current-font font)
+                           ;; Collect the EMACS_SCRIPT
+                           (setq result (concat result " " script))
+                         (progn
+                           (setq current-font font)
+                           ;; New line for each new FONT
+                           (setq result (concat result "\nFor font " font ": " script)))))
+              (warn "Missing scripts:%s" result))))))))
 
 ;;;###autoload
 (defun org-latex-publish-to-latex (plist filename pub-dir)
