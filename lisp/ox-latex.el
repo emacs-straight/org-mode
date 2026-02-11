@@ -2033,7 +2033,8 @@ specified in `org-latex-default-packages-alist' or
 		                 (if (not class-options) header
 		                   (replace-regexp-in-string
 			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
-			            class-options header t nil 1))))))
+			            class-options header t nil 1)))
+                                nil)))
 	      (user-error "Unknown LaTeX class `%s'" class))))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
