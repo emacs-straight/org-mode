@@ -2916,11 +2916,14 @@ information."
   (when (org-string-nw-p (org-element-property :value example-block))
     (let ((environment (or (org-export-read-attribute
 			    :attr_latex example-block :environment)
-			   "verbatim")))
+			   "verbatim"))
+          (options (or (org-export-read-attribute
+                        :attr_latex example-block :options)
+                       "")))
       (org-latex--wrap-label
        example-block
-       (format "\\begin{%s}\n%s\\end{%s}"
-	       environment
+       (format "\\begin{%s}%s\n%s\\end{%s}"
+	       environment options
 	       (org-export-format-code-default example-block info)
 	       environment)
        info))))

@@ -14801,6 +14801,24 @@ to specify a custom environment.
 ,#+END_EXAMPLE
 #+end_example
 
+You can also pass options to the environment with the ~:options~
+parameter. For example:
+
+#+begin_example
+,#+ATTR_LATEX: :environment Verbatim :options [fontsize=\footnotesize]
+,#+BEGIN_EXAMPLE
+  This sentence is false.
+,#+END_EXAMPLE
+#+end_example
+
+exports to:
+
+#+begin_example
+\begin{Verbatim}[fontsize=\footnotesize]
+  This sentence is false.
+\end{Verbatim}
+#+end_example
+
 *** Special blocks in LaTeX export
 :PROPERTIES:
 :DESCRIPTION: Attributes specific to special blocks.

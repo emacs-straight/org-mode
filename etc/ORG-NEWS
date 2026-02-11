@@ -567,6 +567,11 @@ default font (i.e. the Roman font).
 
 This option prepends LaTeX code before the LaTeX preamble.
 
+*** ~#+BEGIN_EXAMPLE~ now checks for ~:options~ in ~#+ATTR_LATEX:~
+
+You can now pass options to the environment you choose for the
+~#+BEGIN_EXAMPLE~ environments.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
