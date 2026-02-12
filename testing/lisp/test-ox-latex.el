@@ -639,6 +639,23 @@ Fake test document
       ;; And after this
       (should (search-forward "\\begin{document}" nil t))))
 
+(ert-deftest test-ox-latex/latex-example-with-options ()
+  "Test #+ATTR_LATEX: :environment ... :options "
+  (org-test-with-exported-text 'latex
+                               "#+TITLE: Test adding options to EXAMPLE
+
+* Test
+
+#+ATTR_LATEX: :environment Verbatim :options [frame=single]
+#+BEGIN_EXAMPLE
+How do you do?
+#+END_EXAMPLE
+"
+      (goto-char (point-min))
+      (should (search-forward "\\begin{document}" nil t))
+      (should (search-forward "\\begin{Verbatim}[frame=single]" nil t))))
+
+
 (ert-deftest test-ox-latex/math-in-alt-title ()
   "Test math wrapping in ALT_TITLE properties."
   (org-test-with-exported-text
