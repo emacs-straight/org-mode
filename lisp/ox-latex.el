@@ -2719,25 +2719,26 @@ specified in `org-latex-default-packages-alist' or
 		                 (if (not class-options) header
 		                   (replace-regexp-in-string
 			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
-			            class-options header t nil 1))))))
+			            class-options header t nil 1)))
+                                nil)))
 	      (user-error "Unknown LaTeX class `%s'" class)))
          (multi-lang (plist-get info :latex-multi-lang)))
     (let ((new-template
            (org-element-normalize-string
-           (org-splice-latex-header
-            class-template
-            (org-latex--remove-packages org-latex-default-packages-alist info)
-            (org-latex--remove-packages org-latex-packages-alist info)
-            snippet?
-            (mapconcat #'org-element-normalize-string
-                       (list (plist-get info :latex-header)
-                             (and (not snippet?)
-                                  (plist-get info :latex-header-extra))
+            (org-splice-latex-header
+             class-template
+             (org-latex--remove-packages org-latex-default-packages-alist info)
+             (org-latex--remove-packages org-latex-packages-alist info)
+             snippet?
+             (mapconcat #'org-element-normalize-string
+                        (list (plist-get info :latex-header)
+                              (and (not snippet?)
+                                   (plist-get info :latex-header-extra))
                               (and (not snippet?)
                                    (plist-get info :latex-use-sans)
                                    "\\renewcommand*\\familydefault{\\sfdefault}"))
 		        "")
-             (org-latex-fontspec-to-string info)))))
+             (org-latex-fontspec-to-string info))))) ;; this will return an empty string if multi-lang is nil
       (if multi-lang
           ;; Full headers are generated using the new drivers
           new-template
