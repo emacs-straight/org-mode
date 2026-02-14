@@ -306,10 +306,7 @@ this template."
 				        ;; Do not use tabs for block
 				        ;; indentation.
 				        (when (fboundp 'indent-tabs-mode)
-					  (indent-tabs-mode -1)
-					  ;; FIXME: Emacs 26
-					  ;; compatibility.
-					  (setq-local indent-tabs-mode nil))
+					  (indent-tabs-mode -1))
 				        (insert replacement)
 				        (skip-chars-backward " \r\t\n")
 				        (indent-line-to ind)
@@ -321,10 +318,7 @@ this template."
 				      ;; Do not use tabs for block
 				      ;; indentation.
 				      (when (fboundp 'indent-tabs-mode)
-					(indent-tabs-mode -1)
-					;; FIXME: Emacs 26
-					;; compatibility.
-					(setq-local indent-tabs-mode nil))
+					(indent-tabs-mode -1))
 				      (insert replacement)
 				      (indent-rigidly
 				       1 (point) ind)
