@@ -6451,6 +6451,7 @@ and subscripts."
 ;; FIXME: This function is unused.
 (defun org-show-empty-lines-in-parent ()
   "Move to the parent and re-show empty lines before visible headlines."
+  (declare (obsolete "no longer used" "9.8"))
   (save-excursion
     (let ((context (if (org-up-heading-safe) 'children 'overview)))
       (org-cycle-show-empty-lines context))))

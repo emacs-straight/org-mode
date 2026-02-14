@@ -653,6 +653,11 @@ constructed again.
 ** Removed or renamed functions and variables
 
 *** Obsolete functions ~org-let~ and ~org-let2~ are removed
+*** ~org-show-empty-lines-in-parent~ is now obsolete
+
+This function is unused in Org code and does not appear to be used in third-party code.
+To be removed in future releases.
+
 *** ~org-edit-src-content-indentation~ is renamed to ~org-src-content-indentation~
 
 The new name highlights that the customization affects more than
