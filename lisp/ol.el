@@ -213,7 +213,8 @@ link.
   :group 'org-link
   :package-version '(Org . "9.8")
   :type '(alist :tag "Link display parameters"
-		:value-type plist))
+		:value-type plist)
+  :safe nil)
 
 (defun org-link--set-link-display (symbol value)
   "Set `org-link-descriptive' (SYMBOL) to VALUE.
@@ -386,7 +387,8 @@ another window."
 	  (cons (const wl)
 		(choice
 		 (const wl)
-		 (const wl-other-frame)))))
+		 (const wl-other-frame))))
+  :safe nil)
 
 (defcustom org-link-search-must-match-exact-headline 'query-to-create
   "Control fuzzy link behavior when specific matches not found.
@@ -549,7 +551,8 @@ this to a small number for more immediate previews, but at the
 expense of higher lag."
   :group 'org-link
   :package-version '(Org . "9.8")
-  :type 'number)
+  :type 'number
+  :safe t)
 
 (defcustom org-link-preview-batch-size 6
   "Number of links that are previewed at once with `org-link-preview'.
@@ -559,7 +562,8 @@ this to a large integer for more immediate previews, but at the
 expense of higher lag."
   :group 'org-link
   :package-version '(Org . "9.8")
-  :type 'natnum)
+  :type 'natnum
+  :safe t)
 
 (defcustom org-display-remote-inline-images 'skip
   "How to display remote inline images.
@@ -597,7 +601,8 @@ Possible values:
           (const :tag "Limit to `fill-column'" fill-column)
           (const :tag "Limit to window width" window)
           (integer :tag "Limit to a number of pixels")
-          (float :tag "Limit to a fraction of window width")))
+          (float :tag "Limit to a fraction of window width"))
+  :safe t)
 
 (defcustom org-image-align 'left
   "How to align images previewed using `org-link-preview-region'.

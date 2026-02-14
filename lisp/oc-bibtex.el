@@ -70,7 +70,8 @@ BibTeX provides the following default styles:
     (const :tag "APA-like" "apalike")
     (const :tag "IEEE" "ieeetr")
     (const :tag "SIAM" "siam")
-    (string :tag "Other")))
+    (string :tag "Other"))
+  :safe t)
 
 
 ;;; Export capability

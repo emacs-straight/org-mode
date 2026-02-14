@@ -1074,7 +1074,8 @@ This variable can be nil, t, or an a list of entries like
            (choice (const :tag "Keep region" t)
                    (const :tag "Deactivate region" nil))))
   :package-version '(Org . "9.8")
-  :group 'org-edit-structure)
+  :group 'org-edit-structure
+  :safe t)
 
 (defun org--deactivate-mark ()
   "Return non-nil when `this-command' should deactivate mark upon completion.
@@ -2496,7 +2497,8 @@ highest priority, it is smaller than the lowest \"C\" priority:
   :group 'org-priorities
   :package-version '(Org . "9.8")
   :type '( restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
-           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
+           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t))))
+  :safe t)
 
 (defvaralias 'org-lowest-priority 'org-priority-lowest)
 (defcustom org-priority-lowest ?C
@@ -2518,7 +2520,8 @@ priority, it is greater than the highest \"A\" priority: 67 >
   :group 'org-priorities
   :package-version '(Org . "9.8")
   :type '( restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
-           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
+           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t))))
+  :safe t)
 
 (defvaralias 'org-default-priority 'org-priority-default)
 (defcustom org-priority-default ?B
@@ -2534,7 +2537,8 @@ first step refuses to set the default and the second will fall back on
   :group 'org-priorities
   :package-version '(Org . "9.8")
   :type '( restricted-sexp :tag "Number 0-64 or uppercase character A-Z"
-           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t)))))
+           :match-alternatives ((lambda (val) (org-priority-valid-value-p val t))))
+  :safe t)
 
 (defcustom org-priority-start-cycle-with-default t
   "Non-nil means start with default priority when starting to cycle.
@@ -2626,7 +2630,8 @@ stripped from the format strings in Emacs buffers.  The brackets
 will be preserved on export."
   :group 'org-time
   :package-version '(Org . "9.8")
-  :type '(cons string string))
+  :type '(cons string string)
+  :safe t)
 
 (defun org-time-stamp-format (&optional with-time inactive custom)
   "Get timestamp format for a time string.
@@ -3076,7 +3081,8 @@ For an example of a function that uses this advanced sorting system, see
 	  (const :tag "Reverse alphabetical" org-string>)
           (const :tag "Sort by hierarchy" org-tags-sort-hierarchy)
           (function :tag "Custom function" nil)
-          (repeat function)))
+          (repeat function))
+  :safe nil)
 
 (defvar org-tags-history nil
   "History of minibuffer reads for tags.")
@@ -3547,7 +3553,8 @@ Place-holders only used by `:image-converter':
   :group 'org-latex
   :package-version '(Org . "9.8")
   :type '(alist :tag "LaTeX to image backends"
-		:value-type (plist)))
+		:value-type (plist))
+  :safe nil)
 
 (defcustom org-preview-latex-image-directory "ltximg/"
   "Path to store latex preview images.
@@ -3566,7 +3573,8 @@ processed Org files paths.  An absolute path puts all files
 in the same place."
   :group 'org-latex
   :package-version '(Org . "9.8")
-  :type 'string)
+  :type 'string
+  :safe nil)
 
 (defun org-format-latex-mathml-available-p ()
   "Return t if `org-latex-to-mathml-convert-command' is usable."

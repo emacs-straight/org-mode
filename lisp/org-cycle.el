@@ -245,7 +245,8 @@ normal outline commands like `show-all', but not with the cycling commands."
   :group 'org-startup
   :group 'org-cycle
   :package-version '(Org . "9.8")
-  :type 'boolean)
+  :type 'boolean
+  :safe t)
 
 (defvaralias 'org-tab-first-hook 'org-cycle-tab-first-hook)
 (defvar org-cycle-tab-first-hook nil

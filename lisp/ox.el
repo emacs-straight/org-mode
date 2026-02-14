@@ -886,7 +886,8 @@ This variable does not affect {{{results}}} macros when processing
 code block results."
   :group 'org-export-general
   :package-version '(Org . "9.8")
-  :type 'boolean)
+  :type 'boolean
+  :safe (lambda (obj) (null obj)))
 
 (defcustom org-export-snippet-translation-alist nil
   "Alist between export snippets backends and exporter backends.
