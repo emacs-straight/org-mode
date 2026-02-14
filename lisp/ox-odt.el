@@ -383,7 +383,8 @@ replacements.  See info node `(org)Advanced Export Configuration'."
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "Leave forbidden characters as-is" t)
                  (const :tag "Err when forbidden characters encountered" nil)
-                 (string :tag "Replacement string")))
+                 (string :tag "Replacement string"))
+  :safe t)
 
 ;;;; Debugging
 
@@ -731,7 +732,6 @@ SYMBOL         Convert the LaTeX fragments to images using any symbol
 
 If the desired converter is not available or any other symbol is
 provided, process as `verbatim'."
-  :version "24.4"
   :package-version '(Org . "9.8")
   :type `(choice
           (const :tag "Do not process math in any way" nil)
@@ -743,7 +743,8 @@ provided, process as `verbatim'."
                            :match-alternatives
                            (,(lambda (v)
                                (assq v org-preview-latex-process-alist))))
-          (const :tag "Leave math verbatim" verbatim)))
+          (const :tag "Leave math verbatim" verbatim))
+  :safe t)
 
 
 ;;;; Links

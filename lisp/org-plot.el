@@ -406,7 +406,8 @@ be set.
    or nil.  Defaults to nil."
   :group 'org-plot
   :package-version '(Org . "9.8")
-  :type 'alist)
+  :type 'alist
+  :safe nil)
 
 (defvar org--plot/radar-template
   "### spider plot/chart with gnuplot

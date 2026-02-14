@@ -106,7 +106,8 @@ converted to markdown.
 When nil, the links still point to the plain \".org\" file."
   :group 'org-export-md
   :package-version '(Org . "9.8")
-  :type 'boolean)
+  :type 'boolean
+  :safe t)
 
 
 

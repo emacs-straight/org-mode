@@ -67,7 +67,8 @@ For example a value of \"(progn ;; %s\\n   %%s)\" would ignore the
 current directory string."
   :group 'org-babel
   :package-version '(Org . "9.8")
-  :type 'string)
+  :type 'string
+  :safe nil)
 
 (defun org-babel-expand-body:lisp (body params)
   "Expand BODY according to PARAMS, return the expanded body."

@@ -456,7 +456,8 @@ this style.  If you don't want to include this default style,
 customize `org-html-head-include-default-style'."
   :group 'org-export-html
   :package-version '(Org . "9.8")
-  :type 'string)
+  :type 'string
+  :safe t)
 
 
 ;;; User Configuration Variables
@@ -1175,7 +1176,8 @@ attribute.  See `format-time-string' for more information on its
 components."
   :type '(cons string string)
   :group 'org-export-html
-  :package-version '(Org . "9.8"))
+  :package-version '(Org . "9.8")
+  :safe t)
 
 ;;;; Template :: Mathjax
 
@@ -1566,7 +1568,8 @@ or for publication projects using the :html-head property."
   :group 'org-export-html
   :package-version '(Org . "9.8")
   :type '(choice (string :tag "Literal text to insert")
-                 (function :tag "Function evaluating to a string")))
+                 (function :tag "Function evaluating to a string"))
+  :safe t)
 ;;;###autoload
 (put 'org-html-head 'safe-local-variable 'stringp)
 
@@ -1580,7 +1583,8 @@ a string."
   :group 'org-export-html
   :package-version '(Org . "9.8")
   :type '(choice (string :tag "Literal text to insert")
-                 (function :tag "Function evaluating to a string")))
+                 (function :tag "Function evaluating to a string"))
+  :safe t)
 ;;;###autoload
 (put 'org-html-head-extra 'safe-local-variable 'stringp)
 

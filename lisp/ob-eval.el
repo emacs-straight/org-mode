@@ -161,15 +161,8 @@ This buffer is named by `org-babel-error-buffer-name'."
   "Return system `shell-file-name', defaulting to /bin/sh.
 Unfortunately, `executable-find' does not support file name
 handlers.  Therefore, we could use it in the local case only."
-  ;; FIXME: Since Emacs 27, `executable-find' accepts optional second
-  ;; argument supporting remote hosts.
-  (cond ((and (not (file-remote-p default-directory))
-	      (executable-find shell-file-name))
-	 shell-file-name)
-	((file-executable-p
-	  (concat (file-remote-p default-directory) shell-file-name))
-	 shell-file-name)
-	("/bin/sh")))
+  (if (executable-find shell-file-name 'respect-remote)
+      shell-file-name "/bin/sh"))
 
 (provide 'ob-eval)
 

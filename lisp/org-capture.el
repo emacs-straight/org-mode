@@ -534,7 +534,8 @@ you can escape ambiguous cases with a backward slash, e.g., \\%i."
 				     ((const :format "%v " :tree-type) (const week))
 				     ((const :format "%v " :unnarrowed) (const t))
 				     ((const :format "%v " :table-line-pos) (string))
-				     ((const :format "%v " :kill-buffer) (const t)))))))))
+				     ((const :format "%v " :kill-buffer) (const t))))))))
+  :safe nil)
 
 (defcustom org-capture-before-finalize-hook nil
   "Hook that is run right before a capture process is finalized.
