@@ -1755,6 +1755,29 @@ CLOCK: [2023-10-13 Fri 14:40]--[2023-10-13 Fri 14:51] =>  0:11"
   (org-test-with-temp-text "* COMMENT:tag:"
     (should-not (org-element-property :commentedp (org-element-at-point)))))
 
+(ert-deftest test-org-element/headline-tags ()
+  "Test tag recognition."
+  (org-test-with-temp-text "* Headline"
+    (should-not (org-element-property :tags (org-element-at-point))))
+  (org-test-with-temp-text "* Headline:notatag:"
+    (should-not (org-element-property :tags (org-element-at-point))))
+  (org-test-with-temp-text "* Headline :tag:"
+    (should (equal (list "tag") (org-element-property :tags (org-element-at-point)))))
+  (org-test-with-temp-text "* Headline :tag:tag2:"
+    (should (equal (list "tag" "tag2") (org-element-property :tags (org-element-at-point)))))
+  (org-test-with-temp-text "* Headline :tag_valid:"
+    (should (equal (list "tag_valid") (org-element-property :tags (org-element-at-point)))))
+  (org-test-with-temp-text "* Headline :tag_valid#1%%:"
+    (should (equal (list "tag_valid#1%%") (org-element-property :tags (org-element-at-point)))))
+  (org-test-with-temp-text "* Headline :tag^:"
+    (should-not (org-element-property :tags (org-element-at-point))))
+  (org-test-with-temp-text "* Headline :tag::"
+    (should (equal (list "tag" "") (org-element-property :tags (org-element-at-point)))))
+  (org-test-with-temp-text "* Headline :notatag: :tag:"
+    (should (equal (list "tag") (org-element-property :tags (org-element-at-point)))))
+  (org-test-with-temp-text "* :notatag: Headline"
+    (should-not (org-element-property :tags (org-element-at-point)))))
+
 (ert-deftest test-org-element/headline-comment-keyword ()
   "Test COMMENT keyword recognition."
   ;; Reference test.

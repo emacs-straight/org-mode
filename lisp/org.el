@@ -697,7 +697,7 @@ colon.")
 (defconst org-tag--group-optional-re
   (concat "\\(?:[ \t]+" org-tag--group-enclosed-re "\\)?[ \t]*$")
   "Regexp matching an optional tag group at the end of a line.
-Regexp includes optional leading and trailing spaces.  If a tag group
+Regexp includes leading and optional trailing spaces.  If a tag group
 is present, group 1 is the full tag group (with colons), group 2 is
 the tag content (without colons).")
 

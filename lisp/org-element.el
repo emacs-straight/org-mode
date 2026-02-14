@@ -1411,10 +1411,13 @@ Throw `:org-element-deferred-retry' signal at the end."
 		     (goto-char (match-end 0))
                      (skip-chars-forward " \t"))))
 	     (title-start (point))
-	     (tags (when (re-search-forward
-                          org-tag--group-enclosed-re
-			  (line-end-position)
-			  'move)
+	     (tags (when (progn
+                           ;; `org-tag-group-re' includes spaces before tags.
+                           ;; Start search before preceding spaces, if any.
+                           ;; If there are no spaces before point here,
+                           ;; We are not looking at the tags.
+                           (skip-chars-backward " \t")
+                           (re-search-forward org-tag-group-re (line-end-position) 'move))
 		     (goto-char (match-beginning 0))
                      (mapcar #'org-element--get-cached-string
 		             (org-split-string (match-string-no-properties 1) ":"))))
