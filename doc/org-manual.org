@@ -19,7 +19,7 @@
 :END:
 #+cindex: summary
 
-Org Mode is an authoring tool and a TODO lists manager for GNU Emacs.
+Org mode is an authoring tool and a TODO list manager for GNU Emacs.
 It relies on a lightweight plain-text markup language used in files
 with the =.org= extension.
 
@@ -28,22 +28,22 @@ understand, and change them with any text editor.
 
 As an authoring tool, Org helps you write structured documents and
 provides exporting facilities.  Org files can also be used for literate
-programming and reproducible research.  As a TODO lists manager, Org
+programming and reproducible research.  As a TODO list manager, Org
 helps you organize your tasks in a flexible way, from daily needs to
 detailed project planning, allowing logging, multiple views of your
 tasks, exporting your agendas, etc.
 
 Org mode is implemented on top of Outline mode, which makes it
 possible to keep the content of large files well-structured.
-Visibility cycling and structure editing help to work with the tree.
+Visibility cycling and structure editing help you work with the tree.
 Tables are easily created with a built-in table editor.  Plain text
 URL-like links connect to websites, emails, Usenet messages, BBDB
 entries, and any files related to the projects.
 
-Org develops organizational tasks around notes files that contain
+Org develops organizational tasks around note files that contain
 lists or information about projects as plain text.  Project planning
 and task management make use of metadata, which is part of an outline
-node.  Based on this data, specific entries can be extracted in
+node.  Based on this data, specific entries can be extracted via
 queries to create dynamic /agenda views/ that also integrate the Emacs
 calendar and diary.  Org can be used to implement many different
 project planning schemes, such as David Allen's GTD system.
@@ -57,7 +57,7 @@ Org files can include source code blocks, which makes Org uniquely
 suited for authoring technical documents with code examples.  Org
 source code blocks are fully functional; they can be evaluated in
 place and their results can be captured in the file.  This makes it
-possible to create a single file reproducible research compendium.
+possible to create a single-file reproducible research compendium.
 
 Org keeps simple things simple.  When first fired up, it should feel
 like a straightforward, easy-to-use outliner.  Complexity is not
@@ -132,7 +132,7 @@ This approach has the advantage of isolating the upgrade process from
 a running Emacs session, ensuring that version conflicts cannot
 arise.
 
-*** Using Org's git repository
+*** Using Org's Git repository
 :PROPERTIES:
 :UNNUMBERED: notoc
 :END:
@@ -159,7 +159,7 @@ Make sure you set the load path correctly in your Emacs init file:
 #+end_src
 
 You can also compile with =make=, generate the documentation with
-=make doc=, create a local configuration with =make config= and
+=make doc=, create a local configuration with =make config=, and
 install Org with =make install=.  Please run =make help= to get the
 list of compilation/installation options.
 
@@ -206,7 +206,7 @@ For a better experience, the three Org commands ~org-store-link~,
 ~org-capture~ and ~org-agenda~ ought to be accessible anywhere in
 Emacs, not just in Org buffers.  To that effect, you need to bind them
 to globally available keys, like the ones reserved for users (see
-[[info:elisp::Key Binding Conventions]]).  Here are suggested bindings,
+[[info:elisp::Key Binding Conventions]]).  Here are suggested bindings;
 please modify the keys to your own liking in your [[info:emacs#Init File][personal init file]].
 
 #+begin_src emacs-lisp
@@ -306,7 +306,7 @@ shown below.
 (add-to-list 'load-path (expand-file-name "/path/to/org-mode/lisp"))
 #+end_src
 
-If you are using Org mode version from the Git repository, you can
+If you are using the Org mode version from the Git repository, you can
 start a minimal session using =make=.
 
 : # Bare Emacs
@@ -314,9 +314,9 @@ start a minimal session using =make=.
 : # or pass extra arguments
 : make repro REPRO_ARGS="-l /path/to/minimal/config.el /tmp/bug.org"
 
-If an error occurs, a "backtrace" can be very useful---see below on
-how to create one.  Often a small example file helps, along with clear
-information about:
+If an error occurs, a "backtrace" can be very useful---see below for
+instructions on how to create one.  Often a small example file helps,
+along with clear information about:
 
 1. What exactly did you do?
 2. What did you expect to happen?
@@ -402,7 +402,7 @@ profiler, we recommend the following steps:
    ~profiler-report~ invocations, with the command taking the most
    time displayed on top.
 
-   =<TAB>= key can be used to fold and unfold lines in the profiler
+   The =<TAB>= key can be used to fold and unfold lines in the profiler
    buffer.  The child items revealed upon unfolding are the functions
    and commands called by the unfolded parent.
 
@@ -416,7 +416,7 @@ profiler, we recommend the following steps:
 
 5. If you need further help, you can share the statistics data.
 
-   Just save the data by issuing
+   To save the data, issue
 
    : M-x profiler-report-write-profile <RET>
    : /path/to/profile-file-to-be-saved <RET>
@@ -440,7 +440,7 @@ profiler, we recommend the following steps:
 :UNNUMBERED: notoc
 :END:
 
-Org uses various syntactical elements: TODO keywords, tags, property
+Org uses various syntactic elements: TODO keywords, tags, property
 names, keywords, blocks, etc.  In this manual we use the following
 conventions:
 
@@ -474,7 +474,7 @@ conventions:
 The manual lists both the keys and the corresponding commands for
 accessing functionality.  Org mode often uses the same key for
 different functions, depending on context.  The command that is bound
-to such keys has a generic name, like ~org-metaright~.  In the manual
+to such keys has a generic name, like ~org-metaright~.  In the manual,
 we will, wherever possible, give the function that is internally
 called by the generic command.  For example, in the chapter on
 document structure, {{{kbd(M-RIGHT)}}} will be listed to call
