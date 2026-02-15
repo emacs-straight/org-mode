@@ -18,35 +18,12 @@ Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 # require user action for most Org mode users.
 # Sorted from most important to least important.
 
-*** ~org-babel-lob-ingest~ no longer performs noweb expansion when ingesting blocks
-
-Previously, ~org-babel-lob-ingest~ would expand noweb references when
-adding source blocks to the Library of Babel.  Now, blocks are stored
-with unexpanded noweb references.
-
-Noweb expansion is handled appropriately when blocks are actually used
-via ~org-babel-execute-src-block~ or ~org-babel-exp-do-export~, with
-the correct context (~:tangle~, ~:export~, or ~:eval~).
-
-This change is unlikely to affect most users, but code that directly
-accesses ~org-babel-library-of-babel~ may observe the difference.
-
-*** ~org-store-link~ no longer asks to select store function when called noninteractively
-
-Previously, when multiple store functions are available to store link
-at point, ~org-store-link~ would aslways ask user which store function
-to use.
-
-Now, when ~org-store-link~ is called noninteractively (~interactive?~
-argument is nil), the first matching store function is used.
-Interactively, the previous behaviour is retained.
-
 *** You may need to update =org-protocol= bookmarklets for browsers
 
-In Firefox-133, and Firefox-128.5 ESR the previously suggested
-javascript bookmarklets replace current page with bookmarklet URL
+In Firefox 133 and Firefox 128.5 ESR, the previously suggested
+JavaScript bookmarklets replace the current page with the bookmarklet URL
 text.  We have updated the manual with new bookmarklets that do not
-have such problem.
+have this problem.
 
 The new bookmarklets have ~void(0);~ appended at the end, so that they
 do not return anything.
@@ -86,7 +63,7 @@ uses different defaults:
    - ~C-u 1~ for toggling all images at point/current entry
    - ~C-u 11~ for toggling all images in buffer
 
-(The first five of these prefix arg behaviors are the same as that of
+(The first five of these prefix argument behaviors are the same as that of
 the ~org-latex-preview~ command.)
 
 In addition to images, ~org-link-preview~ can also be used to preview
@@ -101,13 +78,14 @@ following to your config:
   (org-defkey org-mode-map (kbd "C-c C-x C-v") #'org-toggle-inline-images))
 #+end_src
 
-*** Org mode may throw an error when attempting to include remote unsafe resource noninteractively
+*** Org mode no longer treats =:results drawer= as verbatim output
 
-Previously, when ~org-resource-download-policy~ is ~ask~ (default),
-and Emacs is running in batch mode, Org mode simply skipped unsafe
-remote resources in the =#+include:='s.  Now, an error is thrown to
-avoid seemingly ignored =#+include= statements when publishing via
-batch scripts.
+Previously, =:results drawer= left the code block results verbatim in
+some scenarios.  This is no longer the case, in line with the manual
+and the intended purpose of this option.  However, the fix may have
+brought subtle changes in the code block output for users who made use
+of the previous erroneous behavior.  If you use =:results drawer= in your
+Org documents, please watch out for potential changes in the code evaluation.
 
 *** Diary-style timestamps are exported together with active timestamps
 
@@ -176,61 +154,18 @@ Previously, the whole contents of drawer, including blank lines at the beginning
 parsed as paragraph.  Now, the blank lines at the beginning are stored in ~:pre-blank~
 property, just as in other greater elements.
 
-*** The deprecated =show= parameter to =org-priority= has been removed
+*** ~org-element-org-data-parser~ now returns syntax node with ~:pre-blank~ property
 
-The =show= parameter for the =org-priority= function was deprecated in
-Org 9.2 (released in 2017). Sufficient time has passed and it is being
-removed as part of refactoring for numeric priorities.
+Previously, parsing ~org-data~ syntax node did not record information
+about blank lines at the beginning of the document.  Now, the number
+of blank lines is recorded in ~:pre-blank~ property.
 
-*** Priority speed commands adapt to user options
-
-Previously, =1=, =2=, and =3= would insert priorities =A=, =B=, and
-=C=, which causes errors when using numeric priorities.  These now
-insert ~org-priority-highest~, ~org-priority-default~, and
-~org-priority-lowest~, respectively.
-
-*** Update of statistics cookies now respects narrowing
-
-Calling ~org-update-statistics-cookies~ with a prefix argument will
-now only update cookies in the accessible portion of the buffer.
+~org-element-org-data-interpreter~ takes into account this information.
 
 ** New features
 
 # We list the most important features, and the features that may
 # require user action to be used.
-
-*** =:wrap= header argument can now be explicitly disabled
-
-Previously, presence of =:wrap= argument (inherited or not) in code
-block headers always made the block results wrapped. There was no way
-to disable wrapping if =:wrap= was specified in the inherited header
-arguments. Now, =:wrap no= or =:wrap nil= will explicitly disable
-wrapping.
-
-*** All Org link types can be previewed
-:PROPERTIES:
-:CUSTOM_ID: link-preview
-:END:
-
-Org links support a new parameter =:preview= that can be used to
-preview arbitrary link types.  The value of this parameter should be a
-function that is called to preview links of the corresponding type
-(see ~org-link-parameters~).
-
-*** Alignment of image previews can be customized
-
-This is not a new feature.  It has been added in Org 9.7, but not
-documented in the news.  See [[#preview-align][restrospectively added news entry]].
-
-*** Beamer export supports setting frame subtitles
-If a headline is exported as a frame, and has its =BEAMER_SUBTITLE=
-property set, the value is used as the subtitle.
-
-*** =ol.el=: New =shortdoc= link type
-
-You can now create links to =shortdoc= documentation groups for Emacs
-Lisp functions (see =M-x shortdoc-display-group=).  Requires Emacs 28
-or newer.
 
 *** Some navigation commands can now be repeated
 
@@ -255,10 +190,73 @@ The keybindings in the repeat-maps can be changed by customizing
 
 See the new [[info:org#Repeating commands]["Repeating commands"]] section in Org mode manual.
 
+*** New babel backend for C# code blocks
+
+Org now officially enables C# code block evaluation based on the .NET SDK.
+The old backend that does not use .NET SDK remains in org-contrib
+and will be removed in a future release. The built-in =ob-csharp.el= should be
+considered the official successor.
+
+*** All Org link types can be previewed
+:PROPERTIES:
+:CUSTOM_ID: link-preview
+:END:
+
+Org links support a new parameter =:preview= that can be used to
+preview arbitrary link types.  The value of this parameter should be a
+function that is called to preview links of the corresponding type
+(see ~org-link-parameters~).
+
+The new preview system does not bring any brand-new link previews, but
+open the possibility for third-party packages to implement custom previews
+without having to use non-ideal hacks.
+
+On the user side, the existing image link previews should now run
+smoother, especially in Org buffers that have a lot of image links to
+preview.  The new previews are less blocking, previewing link in
+batches, without fully blocking Emacs.  See the new
+~org-link-preview-batch-size~ and ~org-link-preview-delay~ options.
+
+*** New =%\*N= placeholder in ~org-capture-templates~
+
+The new placeholder is like =%\N=, but gives access not only to the
+=%^{prompt}= values, but also to =%^{prompt}X= values.
+
+*** Alignment of image previews can be customized
+
+This feature was added in Org 9.7 but was not documented in the release notes.  See [[#preview-align][retrospectively added news entry]].
+
+*** ~org-open-at-point-global~ now accepts prefix argument
+
+The argument is passed through to ~org-link-open~, allowing alternative
+way to open links, if link ~:follow~ function supports it.
+
+*** ox-latex: Table of contents generation has been fixed and augmented
+
+The LaTeX exporter differs from other exporters in that it does not
+include unnumbered sections in the table of contents by default.  To
+include an unnumbered section, set the property =:UNNUMBERED: toc= on
+the section.
+
+Alternatively, you can set the new custom variable
+~org-latex-toc-include-unnumbered~ to include unnumbered sections by
+default, aligning with other exporters' behavior.  In that case, to
+exclude a section from the table of contents, mark it as =:UNNUMBERED:
+notoc= in its properties.
+
 *** Tables copied from LibreOffice Calc documents can be pasted as Org tables
 
 Tables copied into the clipboard from LibreOffice Calc documents can
 now be pasted as an Org table using ~yank-media~.
+
+*** Ditaa code blocks can use ditaa executable, and can produce SVG output
+
+In order to use a ditaa executable instead of a JAR file, you can set
+~org-ditaa-default-exec-mode~ to ~'ditaa~.  The location of the
+executable can be configured via ~org-ditaa-exec~.
+
+SVG output can now be generated; note, however, that this requires a
+ditaa version of at least 0.11.0.
 
 *** New datetree capture ~:tree-type~ options
 :PROPERTIES:
@@ -284,67 +282,55 @@ take the date as an argument, and generate a list of pairs for
 types of datetrees (e.g. for lunar calendars, academic calendars,
 retail 4-4-5 calendars, etc).
 
-*** Source blocks fall back to Fundamental mode
+*** New =shortdoc= link type
 
-Org now falls back to Fundamental mode for source blocks when the
-appropriate major mode is unavailable.
+You can now create links to =shortdoc= documentation groups for Emacs
+Lisp functions (see =M-x shortdoc-display-group=).  Requires Emacs 28
+or newer.
 
-*** Graphviz Dot mode is used if available
+*** Beamer export supports setting frame subtitles
 
-When editing Dot source blocks, Org now uses Graphviz Dot mode, if installed.
+If a headline is exported as a frame, and has its =BEAMER_SUBTITLE=
+property set, the value is used as the subtitle.
 
-*** C# code block support with =ob-csharp.el=
+*** =:wrap= header argument can now be explicitly disabled
 
-Org now officially enables C# code block evaluation based on the .NET SDK.
+Previously, presence of =:wrap= argument (inherited or not) in code
+block headers always made the block results wrapped. There was no way
+to disable wrapping if =:wrap= was specified in the inherited header
+arguments. Now, =:wrap no= or =:wrap nil= will explicitly disable
+wrapping.
 
-*** =ob-ditaa=: ditaa executable, and SVG output
+*** =ob-sqlite=: Added ability to open a database in readonly mode
 
-In order to use a ditaa executable instead of a JAR file, you can set
-=org-ditaa-default-exec-mode= to ='ditaa=.  The location of the
-executable can be configured via =org-ditaa-exec=.
+Added option ~:readonly~ to =ob-sqlite=.
 
-SVG output can now be generated; note, however, that this requires a
-ditaa version of at least 0.11.0.
+With ~:readonly yes~, the database is opened in readonly mode. For
+example:
 
-*** ~org-lint~ now checks priorities
+#+begin_src sqlite :db /tmp/rip.db  :readonly yes  :exports both
+create table rip(a,b);
+#+end_src
 
-Warnings are raised on headlines containing out-of-bounds, invalid
-(e.g., =[#-1]=, =[#AA]=), or malformed (e.g., =[#1=, =[#A=)
-priorities.
+This results in an error such as:
+
+#+begin_example
+Runtime error near line 2: attempt to write a readonly database (8)
+[ Babel evaluation exited with code 1 ]
+#+end_example
 
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
-*** New context available to save in archived headings
 
-~org-archive-save-context-info~ can now contain ~olid~ symbol to save
-parent heading id in the archived heading.
+*** New option ~org-edit-keep-region~
 
-*** New hook ~org-archive-finalize-hook~
+Since Org 9.7, structure editing commands do not deactivate region
+after editing.  Now, this is configurable via the new option.
 
-Hook run after successfully archiving a subtree in final location.
-Unlike ~org-archive-hook~, which runs in the sourcce Org buffer, the
-new hook is called with point on the subtree in the destination file.
-
-*** ox-odt: New export option ~org-odt-with-forbidden-chars~
-
-The new export option controls how to deal with characters that are forbidden
-inside ODT documents during export.
-
-The ODT documents must follow XML1.0 specification and cannot contain
-certain unicode characters.  For example, form feed characters like ^L
-are disallowed.
-
-By default, =ox-odt= will strip such characters and display warning.
-You may return to the previous behaviour by setting
-~org-odt-with-forbidden-chars~ to t.
-
-Note that Emacs warnings can always be suppressed by clicking on ⛔
-symbol or by customizing ~warning-suppress-types~.
-
-*** Allow using =xelatex= for LaTeX preview
+*** =xelatex= can be used for LaTeX previews
 
 A new process =xelatex= is added to ~org-preview-process-alist~ to
 allow generating LaTeX fragment preview through =xdv= file produced by
@@ -352,61 +338,33 @@ XeLaTeX, which has better support for Unicode.
 
 You can now set ~org-preview-latex-default-process~ to ~'xelatex~.
 
-*** New option ~org-edit-keep-region~
-
-Since Org 9.7, structure editing commands do not deactivate region
-after editing.  Now, this is configurable via the new option.
-
-*** New option ~org-link-preview-batch-size~
+*** New link preview system
+**** New option ~org-link-preview-batch-size~
 
 Org link previews are generated asynchronously and a few at a time, in
 batches.  This option controls the number of links that are previewed
 in each batch.
 
-*** New option ~org-link-preview-delay~
+**** New option ~org-link-preview-delay~
 
 Org link previews are generated asynchronously.  This option controls
 the minimum idle time in seconds between previews of batches of links.
 
-*** Allow disabling macro replacement during export
+*** New and changed export options
+**** ~org-html-style-default~ now highlights =#+begin_src c= (lowercase) blocks
 
-New custom option ~org-export-replace-macros~ controls whether Org
-mode replaces macros in the buffer before export.  Set it to nil to
-disable macro replacement.
+The default value has been changed, adding ~pre.src-c:before {
+content: 'C'; }~ (lowercase =c=) that parallels ~pre.src-C:before {
+content: 'C'; }~ (uppercase =C=).
 
-This variable has no effect on the ={{{results...}}}= macros for inline
-code block results.
+**** ~org-odt-with-latex~ accepts any method from ~org-preview-latex-process-alist~
 
-*** Allow headline/olp target in ~org-capture-templates~ to be a function/variable
+Previously, only a few conversion methods (~dvipng~, ~imagemagick~,
+~dvisvgm~) could be used to render LaTeX fragments as images when
+exporting to ODT.  Now any method in ~org-preview-latex-process-alist~
+can be used.
 
-The variable ~org-capture-templates~ accepts a target specification as
-function or symbol for headline (~file+headline~) and olp (~file+olp~
-and ~file+olp+datetree~).
-
-*** New =%\*N= placeholder in ~org-capture-templates~
-
-The new placeholder is like =%\N=, gives access not only to the
-=%^{prompt}= values, but also to =%^{prompt}X= values.
-
-*** The default value of ~org-babel-latex-process-alist~ is no longer taken from ~org-preview-latex-process-alist~
-
-The default value used to be pulled from =dvipng= process type from
-~org-preview-latex-process-alist~.  Now, it defaults to using
-=latexmk= (when available), or running =latex= multiple times, so that
-all the references are resolved in the generated png.
-
-*** New option ~org-cite-csl-bibtex-titles-to-sentence-case~
-
-When this option is non-nil then title fields in bibtex bibliography
-entries are converted to sentence-case before being formatted
-according to a CSL style, except for entries with a =langid= field
-specifying a non-English language.  When nil, this conversion is
-limited to entries having a =langid= field specifying a variant of
-English.  The default value is ~t~ as the CSL standard assumes that
-English titles are specified in sentence-case but the bibtex
-bibliography format requires them to be written in title-case.
-
-*** New environment =onlyenv= in ~org-beamer-environments-default~
+**** New environment =onlyenv= in ~org-beamer-environments-default~
 
 The =onlyenv= environment limits showing parts of an animated Beamer
 slide to specific animation steps.
@@ -420,29 +378,101 @@ slide to specific animation steps.
 This text will be displayed on animation step 2 and later.
 #+END_SRC
 
-*** ox-html: Headline self links can be enabled from an Org-mode file
+**** =ox-html=: Headline self links can be enabled from an Org mode file
 
 Previously HTML export could add, to each headline, a link to itself.
 To enable it, you had to use the variable
 ~org-html-self-link-headlines~.
 
-Now, it's also possible to enable it per Org-mode file by adding:
+Now, it's also possible to enable it per Org mode file by adding:
 : #+OPTIONS: html-self-link-headlines:t
 
-*** ox-latex: Table of contents generation has been fixed and augmented
+**** Allow disabling macro replacement during export
 
-The LaTeX exporter differs from other exporters in that it *does not*
-export unnumbered sections by default.
+New custom option ~org-export-replace-macros~ controls whether Org
+mode replaces macros in the buffer before export.  Set it to nil to
+disable macro replacement.
 
-The LaTeX exporter will use the new property value =:UNNUMBERED: toc= to
-include unnumbered sections in the table of contents.
+This variable has no effect on the ={{{results...}}}= macros for inline
+code block results.
 
-Additionally, a new custom variable
-~org-latex-toc-include-unnumbered~ has been introduced. It
-enables including unnumbered sections in the ToC aligned with the
-behaviour of other exporters. In this case, to exclude a section from
-the table of contents, mark it as =:UNNUMBERED: notoc= in its
-properties.
+**** New option ~org-cite-bibtex-bibliography-style~
+
+This option adds a fallback bibliography style for BibTeX when none is
+provided in the =#+CITE_EXPORT= options.  The default style is
+"plain".
+
+**** New option ~org-cite-csl-bibtex-titles-to-sentence-case~
+
+When this option is non-nil then title fields in BibTeX bibliography
+entries are converted to sentence-case before being formatted
+according to a CSL style, except for entries with a =langid= field
+specifying a non-English language.  When nil, this conversion is
+limited to entries having a =langid= field specifying a variant of
+English.  The default value is ~t~ as the CSL standard assumes that
+English titles are specified in sentence-case but the BibTeX
+bibliography format requires them to be written in title-case.
+
+**** New option ~org-latex-mathml-directory~
+
+This option specifies the path where MathML files generated from LaTeX
+fragments are stored.
+
+**** New option ~org-latex-use-sans~
+
+This option specifies the PDF should be typeset using the Sans font
+specified in the document class (or the user) instead of the default
+font (i.e. the Roman font).
+
+**** New option ~#+LATEX_CLASS_PRE~
+
+This option prepends LaTeX code before the LaTeX preamble.
+
+**** New option ~org-odt-with-forbidden-chars~
+
+The new export option controls how to deal with characters that are forbidden
+inside ODT documents during export.
+
+The ODT documents must follow XML1.0 specification and cannot contain
+certain Unicode characters.  For example, form feed characters like ^L
+are disallowed.
+
+By default, =ox-odt= will strip such characters and display warning.
+You may return to the previous behavior by setting
+~org-odt-with-forbidden-chars~ to t.
+
+Note that Emacs warnings can always be suppressed by clicking on ⛔
+symbol or by customizing ~warning-suppress-types~.
+
+**** New option ~org-md-link-org-files-as-md~
+
+This option makes it possible to disable mapping of linked org files
+to markdown during export to Markdown. This is analogous to how
+~org-html-link-org-files-as-html~ works in export to HTML.
+
+*** New context available to save in archived headings
+
+~org-archive-save-context-info~ can now contain ~olid~ symbol to save
+parent heading ID in the archived heading.
+
+*** New hook ~org-archive-finalize-hook~
+
+Hook run after successfully archiving a subtree in final location.
+Unlike ~org-archive-hook~, which runs in the source Org buffer, the
+new hook is called with point on the subtree in the destination file.
+
+*** Headline/olp target in ~org-capture-templates~ can be a function/variable
+
+The variable ~org-capture-templates~ accepts a target specification as
+function or symbol for headline (~file+headline~) and olp (~file+olp~
+and ~file+olp+datetree~).
+
+*** The default value of ~org-babel-latex-process-alist~ is no longer taken from ~org-preview-latex-process-alist~
+
+The default value used to be pulled from =dvipng= process type from
+~org-preview-latex-process-alist~.  Now, it defaults to using
+=latexmk= (when available), or running =latex= multiple times, so that
+all the references are resolved in the generated PNG.
 
 *** ~org-tags-sort-function~ can now be a list of functions
 
@@ -527,23 +557,10 @@ will be used as a directory to save the image to.
 
 Candidate refile targets may now be specified with the symbol ~t~ to
 indicate that all headlines within the specified file are to be
-considered.  For example, setting ~org-refile-targets~ to ~((nil
-. t))~ will allow one to refile to any heading within the current
-buffer.
+considered.  For example, setting ~org-refile-targets~ to ~((nil . t))~
+will allow one to refile to any heading within the current buffer.
 
-*** ~org-odt-with-latex~ accepts any method from ~org-preview-latex-process-alist~
-
-Previously, only a few conversion methods (~dvipng~, ~imagemagick~,
-~dvisvgm~) could be used to render LaTeX fragments as images when
-exporting to ODT.  Now any method in ~org-preview-latex-process-alist~
-can be used.
-
-*** New option ~org-latex-mathml-directory~
-
-This option specifies the path where MathML files generated from LaTeX
-fragments are stored.
-
-*** =ob-ditaa=: output type control
+*** In =ob-ditaa=, the output type is now controlled consistently with other babel backends
 
 Output file type is determined as specified in Babel documentation:
 the suffix of =:file= is the primary determinant, and =:file-ext=
@@ -576,6 +593,12 @@ You can now pass options to the environment you choose for the
 
 # This also includes changes in function behavior from Elisp perspective.
 
+*** The deprecated =show= parameter to =org-priority= has been removed
+
+The =show= parameter for the =org-priority= function was deprecated in
+Org 9.2 (released in 2017). Sufficient time has passed, and it is being
+removed as part of refactoring for numeric priorities.
+
 *** ~org-attach-attach~ now returns a link to file stored
 
 Previously, ~org-attach-attach~ did not have any specified default value.
@@ -592,6 +615,32 @@ New function ~org-link-make-string-for-buffer~ exposes link and description
 cleanups performed by ~org-insert-link~, including cleaning up =<...>= brackets,
 stripping current buffer file path from the link, and adjusting =file:= links
 according to ~org-link-file-path-type~.
+
+*** ob-comint: New optional arguments controlling prompt handling
+
+The new argument ~prompt-handling~ in ~org-babel-comint-with-output~
+and ~org-babel-comint-async-register~ allows Babel languages to
+specify how prompts should be handled in comint output.  If equal to
+~filter-prompts~, prompts are removed from output before it is passed
+on to language-specific processing.  If equal to
+~disable-prompt-filtering~, then the prompt filtering is skipped.  If
+unset, then the default behavior is the same as ~filter-prompts~ for
+backwards compatibility.
+
+Prompt filtering is needed for some Babel languages, such as ob-shell,
+which leave extra prompts in the output as a side effect of
+evaluation.  However, other Babel languages, like ob-python, don't
+leave extra prompts after evaluation, and skipping the prompt
+filtering can be more robust for such languages (as this avoids
+removing false positive prompts).
+
+*** Elisp functions for new datetree tree-types
+
+Accompanying the [[#9.8-datetree-treetype][new datetree capture ~:tree-type~ options]], on the
+elisp level ~org-datetree-find-create-entry~ and
+~org-datetree-find-create-hierarchy~ generalize
+~org-datetree-find-date-create~, ~org-datetree-find-month-create~, and
+~org-datetree-find-iso-week-create~ to new datetree types.
 
 *** New function ~org-src-get-lang-mode-if-bound~
 
@@ -633,22 +682,6 @@ obsolete.
 This command replaces ~org-redisplay-inline-images~, which is now
 obsolete.
 
-*** ob-sqlite: Added ability to open a database in readonly mode
-
-Added option :readonly to ob-sqlite.
-
-When :readonly=true the database is opened in readonly mode. For example:
-
-#+begin_src sqlite :db /tmp/rip.db  :readonly yes  :exports both
-create table rip(a,b);
-#+end_src
-
-This results in an error such as:
-
-#+begin_example
-Runtime error near line 2: attempt to write a readonly database (8)
-[ Babel evaluation exited with code 1 ]
-#+end_example
 *** ~org-html-head~ and ~org-html-head-extra~ can now be specified as functions
 
 Previously, ~org-html-head~ and ~org-html-head-extra~ could only be
@@ -656,32 +689,6 @@ specified directly as strings.  Now, they can be set to functions that
 accept the INFO channel and return a string.  This makes it possible
 to dynamically generate the content of the resulting ~<head>~ tag in
 the resulting HTML document.
-
-*** ob-comint: New optional arguments controlling prompt handling
-
-The new argument ~prompt-handling~ in ~org-babel-comint-with-output~
-and ~org-babel-comint-async-register~ allows Babel languages to
-specify how prompts should be handled in comint output.  If equal to
-~filter-prompts~, prompts are removed from output before it is passed
-on to language-specific processing.  If equal to
-~disable-prompt-filtering~, then the prompt filtering is skipped.  If
-unset, then the default behavior is the same as ~filter-prompts~ for
-backwards compatibility.
-
-Prompt filtering is needed for some Babel languages, such as ob-shell,
-which leave extra prompts in the output as a side effect of
-evaluation.  However other Babel languages, like ob-python, don't
-leave extra prompts after evaluation, and skipping the prompt
-filtering can be more robust for such languages (as this avoids
-removing false positive prompts).
-
-*** Elisp functions for new datetree tree-types
-
-Accompanying the [[#9.8-datetree-treetype][new datetree capture ~:tree-type~ options]], on the
-elisp level ~org-datetree-find-create-entry~ and
-~org-datetree-find-create-hierarchy~ generalize
-~org-datetree-find-date-create~, ~org-datetree-find-month-create~, and
-~org-datetree-find-iso-week-create~ to new datetree types.
 
 *** ~org-element-create~ now ignores ~nil~s in CHILDREN argument
 
@@ -725,7 +732,17 @@ constructed again.
 
 ** Removed or renamed functions and variables
 
+*** Obsolete functions and variables removed from ~org-datetree~
+
+Due to the refactoring of ~org-datetree~ to support the [[#9.8-datetree-treetype][new datetree
+capture ~:tree-type~ options]], the internal variable
+~org-datetree-base-level~ has been removed, as well as the
+undocumented helper function ~org-datetree-insert-line~.
+
 *** Obsolete functions ~org-let~ and ~org-let2~ are removed
+
+If any code is still using these ancient functions, it should move to ~cl-progv~.
+
 *** ~org-show-empty-lines-in-parent~ is now obsolete
 
 This function is unused in Org code and does not appear to be used in third-party code.
@@ -741,7 +758,7 @@ indentation of src and example blocks in Org buffers.
 *** ~org-cycle-display-inline-images~ is renamed to ~org-cycle-display-link-previews~
 
 Inline image previews in Org mode are now provided by the more general
-link previews feature.  The behavior with regards to image links is
+link previews feature.  The behavior with regard to image links is
 unchanged.
 
 *** ~org-cycle-inline-images-display~ is renamed to ~org-cycle-link-previews-display~
@@ -753,13 +770,6 @@ previews of supported link types besides image links.
 
 The behavior is unchanged, except in that the new variable now affects
 previews of supported link types besides image links.
-
-*** Obsolete functions and variables removed from ~org-datetree~
-
-Due to the refactoring of ~org-datetree~ to support the [[#9.8-datetree-treetype][new datetree
-capture ~:tree-type~ options]], the internal variable
-~org-datetree-base-level~ has been removed, as well as the
-undocumented helper function ~org-datetree-insert-line~.
 
 *** =ob-ditaa=: =org-babel-ditaa-java-cmd= renamed and =org-ditaa-jar-option= made obsolete
 
@@ -773,43 +783,70 @@ has been made obsolete. Its value is still used in place of default
 parameter -jar if the variable is defined.
 
 ** Miscellaneous
-*** ~org-open-at-point-global~ now accepts prefix argument
+*** =ob-calc.el=: Vector and matrix are now inserted as Org tables by default
 
-The argument is passed through to ~org-link-open~, allowing alternative
-way to open links, if link ~:follow~ function supports it.
+~ob-calc~ now formats vector and matrix results as Org tables.  This
+conversion can be overridden using the ~:results verbatim~ keyword on
+a per source block basis.
 
-*** ~org-capture~ target pointing to headline is now handled uniformly for =plain= entry type
+To get back the old behavior, add
 
-Previously, when using ~file+regexp~, ~file+function~ or ~function~, =plain= entries
-were inserted right at the point according to regexp/function, even when point is
-on an existing headline.
+#+BEGIN_SRC emacs-lisp
+(with-eval-after-load 'ob-calc
+  (setq org-babel-header-args:calc
+        (append '(:results . "verbatim") org-babel-header-args:calc)))
+#+END_SRC
 
-Now, when target points to an existing headline, =plain= entries are
-inserted inside its body, honoring ~:prepend~ property.  This is more
-consistent with how ~item~, ~checkitem~, and ~table-line~ templates
-are handled.
+to your configuration.
 
-*** HTML export wraps ~<code>~ around all the exported src blocks
+The new behavior follows general babel backend rules (auto-detecting
+result type), but may affect the existing usage.
 
-HTML export always uses ~<pre>~ tag around exported src blocks.
-In addition, previously, HTML export used ~<code>~ tag around src
-blocks when ~org-html-klipsify-src~ is non-nil.
+*** ~orgtbl-to-generic~ retains special rows when exporting to Org
 
-Now, both ~<pre>~ and ~<code>~ tags are *always* wrapped around the
-export src blocks.
+Previously, special table rows were unconditionally removed when
+export to Org.  Now, the defaults follow what ox-org does - to retain
+special rows by default.  See [[*=ox-org= now exports special table rows
+by default]].
 
-*** ~org-element-org-data-parser~ now returns syntax node with ~:pre-blank~ property
+To retain the old behavior, add ~:with-special-rows nil~ to PARAMS argument:
 
-Previously, parsing ~org-data~ syntax node did not record information
-about blank lines at the beginning of the document.  Now, the number
-of blank lines is recorded in ~:pre-blank~ property.
+: (orgtbl-to-generic table '(:with-special-rows nil)
 
-~org-element-org-data-interpreter~ takes into account this information.
+*** ~org-babel-lob-ingest~ no longer performs noweb expansion when ingesting blocks
 
-*** ~yank-media~ and DND handlers now honor the user option ~org-file-link-type~
+Previously, ~org-babel-lob-ingest~ would expand noweb references when
+adding source blocks to the Library of Babel.  Now, blocks are stored
+with unexpanded noweb references.
 
-When inserting file: links, ~yank-media~ and DND handlers now respect
-the user option ~org-file-link-type~.
+Noweb expansion is handled appropriately when blocks are actually used
+via ~org-babel-execute-src-block~ or ~org-babel-exp-do-export~, with
+the correct context (~:tangle~, ~:export~, or ~:eval~).
+
+This change is unlikely to affect most users, but code that directly
+accesses ~org-babel-library-of-babel~ may observe the difference.
+
+*** Trailing =-= is now allowed in plain links
+
+Previously, plain links like
+
+: https://domain/test-
+
+did not include the trailing =-= punctuation.
+
+Now, the =-= is allowed at the end, and is considered a part of the plain link.
+
+#+begin_quote
+These types of links will likely be encountered for sites where anchor
+targets are automatically generated from documentation headings which
+are questions.
+         https://list.orgmode.org/orgmode/87sexh9ddv.fsf@ice9.digital/
+#+end_quote
+
+*** Update of statistics cookies now respects narrowing
+
+Calling ~org-update-statistics-cookies~ with a prefix argument will
+now only update cookies in the accessible portion of the buffer.
 
 *** ox-man: Support specifying =#+DATE:= and ~org-export-with-date~
 
@@ -823,6 +860,73 @@ and specified in the =footer-middle= argument of =.TH= macro (see ~man
 The newly added =:release= and =:header= options of =#+MAN_CLASS_OPTIONS=
 are respectively mapped to the =footer-inside= and =header-middle=
 arguments of the =.TH= macro (see ~man 7 groff_man~).
+
+*** ~org-capture~ target pointing to headline is now handled uniformly for =plain= entry type
+
+Previously, when using ~file+regexp~, ~file+function~ or ~function~, =plain= entries
+were inserted right at the point according to regexp/function, even when point is
+on an existing headline.
+
+Now, when target points to an existing headline, =plain= entries are
+inserted inside its body, honoring ~:prepend~ property.  This is more
+consistent with how ~item~, ~checkitem~, and ~table-line~ templates
+are handled.
+
+*** ~org-lint~ now checks priorities
+
+Warnings are raised on headlines containing out-of-bounds, invalid
+(e.g., =[#-1]=, =[#AA]=), or malformed (e.g., =[#1=, =[#A=)
+priorities.
+
+*** In Dot code blocks, ~graphviz-dot-mode~ is used if available
+
+Previously, when editing Dot code blocks with =M-x org-edit-special=,
+Dot code would open in Fundamental mode, even when specialized mode is
+installed. The new behavior is more DWIM.
+
+*** Source blocks fall back to Fundamental mode
+
+Org now falls back to Fundamental mode for source blocks when the
+appropriate major mode is unavailable.
+
+*** Priority speed commands adapt to user options
+
+Previously, =1=, =2=, and =3= would insert priorities =A=, =B=, and
+=C=, which causes errors when using numeric priorities.  These now
+insert ~org-priority-highest~, ~org-priority-default~, and
+~org-priority-lowest~, respectively.
+
+*** ~org-store-link~ no longer asks to select store function when called noninteractively
+
+Previously, when multiple store functions are available to store link
+at point, ~org-store-link~ would always ask user which store function
+to use.
+
+Now, when ~org-store-link~ is called noninteractively (~interactive?~
+argument is nil), the first matching store function is used.
+Interactively, the previous behavior is retained.
+
+*** Org mode may throw an error when attempting to include remote unsafe resource noninteractively
+
+Previously, when ~org-resource-download-policy~ is ~ask~ (default),
+and Emacs is running in batch mode, Org mode simply skipped unsafe
+remote resources in the =#+include:='s.  Now, an error is thrown to
+avoid seemingly ignored =#+include= statements when publishing via
+batch scripts.
+
+*** HTML export wraps ~<code>~ around all the exported src blocks
+
+HTML export always uses ~<pre>~ tag around exported src blocks.
+In addition, previously, HTML export used ~<code>~ tag around src
+blocks when ~org-html-klipsify-src~ is non-nil.
+
+Now, both ~<pre>~ and ~<code>~ tags are *always* wrapped around the
+export src blocks.
+
+*** ~yank-media~ and DND handlers now honor the user option ~org-file-link-type~
+
+When inserting file: links, ~yank-media~ and DND handlers now respect
+the user option ~org-file-link-type~.
 
 *** ~org-timer-done-hook~ is now run before the timer is stopped
 
@@ -858,13 +962,13 @@ blocks now conform to the "16.4 Environment of a Code Block" section
 of Org mode manual that prescribes Org buffer directory or ~:dir~
 value to be used as working dir to run the code blocks.
 
-*** ~org-cancel-repeater~ now cancels all the repeaters under inside entry
+*** ~org-cancel-repeater~ now cancels all the repeaters inside entry
 
-Previously, ~org-cacnel-repeater~ only canceled repeater in the first
+Previously, ~org-cancel-repeater~ only canceled repeater in the first
 active timestamp inside heading.  Now, all the repeaters are
-cancelled.
+canceled.
 
-The function is renamed to ~org-cacnel-repeaters~ accordingly (the old
+The function is renamed to ~org-cancel-repeaters~ accordingly (the old
 name is still kept as an alias).
 
 *** ~org-refile~ now saves current position to Org mark ring when jumping to heading
@@ -874,38 +978,10 @@ When ~org-refile~ is called with =C-u= or =C-u C-u= prefix argument
 point to Org mark ring before jumping. Then, the user can return back
 via ~org-mark-ring-goto~.
 
-*** ~orgtbl-to-generic~ retains special rows when exporting to Org
-
-Previously, special table rows were unconditionally removed when
-export to Org.  Now, the defaults follow what ox-org does - to retain
-special rows by default.  See [[*=ox-org= now exports special table rows
-by default]].
-
-To retain the old behaviour, add ~:with-special-rows nil~ to PARAMS argument:
-
-: (orgtbl-to-generic table '(:with-special-rows nil)
-
-*** Trailing =-= is now allowed in plain links
-
-Previously, plain links like
-
-: https://domain/test-
-
-did not include the trailing =-= punctuation.
-
-Now, the =-= is allowed at the end, and is considered a part of the plain link.
-
-#+begin_quote
-These types of links will likely be encountered for sites where anchor
-targets are automatically generated from documentation headings which
-are questions.
-         https://list.orgmode.org/orgmode/87sexh9ddv.fsf@ice9.digital/
-#+end_quote
-
 *** =org-attach= now considers symlinked files when searching pre-existing attach dirs
 
 When Org buffer is opened from a symlink, Org mode looks into the
-original file directory when searching if an attach directory already exists.
+original file directory when searching if an attachment directory already exists.
 This way, attachments will remain accessible when opening symlinked Org file.
 
 When no attach dir exists, Org mode will still prefer creating it in
@@ -938,11 +1014,11 @@ were tangled into a file named =NAME.bibtex=.  Now, they are tangled
 into a file named =FILE.bib=, using the standard extension =.bib=,
 matching the rest of the ecosystem, including BibTeX and LaTeX.
 
-*** LaTeX export now respects ~org-latex-with...~ options in the PDF matedata
+*** LaTeX export now respects ~org-latex-with...~ options in the PDF metadata
 
 Previously, the LaTeX exporter handled the PDF metadata =pdfcreator=,
 =pdfauthor= and =pdftitle= as defined in
-~org-latex-hyperref-template~. This has changed and these three fields
+~org-latex-hyperref-template~. This has changed, and these three fields
 will be defined as empty and not produce any metadata if their
 corresponding ~org-latex-with-author~, ~org-latex-with-title~, or
 ~org-latex-with-creator~ option is set to ~nil~.
@@ -952,7 +1028,7 @@ Previously, timestamps would always be rendered inside a ~<span
 class="timestamp">~. Now, if both ~org-html-doctype~ is ~html5~ and
 ~org-html-html5-fancy~ is enabled, org will use the semantic
 ~<time>~ element. This will also have the ~timestamp~ class, but
-additionally set the ~datetime~ attribute with a machine readable
+additionally set the ~datetime~ attribute with a machine-readable
 variant of the timestamp. The format used for the attribute can be
 customized using ~org-html-datetime-formats~.
 

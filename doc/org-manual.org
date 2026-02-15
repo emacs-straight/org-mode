@@ -494,7 +494,7 @@ representation of notes and thoughts.  An overview of this structure
 is achieved by folding, i.e., hiding large parts of the document to
 show only the general document structure and the parts currently being
 worked on.  Org greatly simplifies the use of outlines by compressing
-the show and hide functionalities into a single command, ~org-cycle~,
+the show and hide functionality into a single command, ~org-cycle~,
 which is bound to the {{{kbd(TAB)}}} key.
 
 ** Headlines
@@ -562,7 +562,7 @@ subtree, in order to structure the collapsed view.  See the variable
 
 Outlines make it possible to hide parts of the text in the buffer.
 Org uses just two commands, bound to {{{kbd(TAB)}}} and
-{{{kbd(S-TAB)}}} to change the visibility in the buffer.
+{{{kbd(S-TAB)}}}, to change the visibility in the buffer.
 
 #+attr_texinfo: :sep ,
 - {{{kbd(TAB)}}} (~org-cycle~) ::
@@ -631,7 +631,7 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
   #+kindex: C-c C-r
   #+findex: org-reveal
   Reveal context around point, showing the current entry, the
-  following heading and the hierarchy above.  It is useful for working
+  following heading, and the hierarchy above.  It is useful for working
   near a location that has been exposed by a sparse tree command (see
   [[*Sparse Trees]]) or an agenda command (see [[*Commands in the Agenda
   Buffer]]).  With a prefix argument, show, on each level, all sibling
@@ -661,7 +661,7 @@ Org uses just two commands, bound to {{{kbd(TAB)}}} and
   #+findex: org-tree-to-indirect-buffer
   Show the current subtree in an indirect buffer[fn:2].  With
   a numeric prefix argument {{{var(N)}}}, go up to level {{{var(N)}}}
-  and then take that tree.  If {{{var(N)}}} is negative then go up
+  and then take that tree.  If {{{var(N)}}} is negative, then go up
   that many levels.  With a {{{kbd(C-u)}}} prefix, do not remove the
   previously used indirect buffer.
 
@@ -726,7 +726,7 @@ customizing ~org-fold-catch-invisible-edits-commands~.
 
 The strategy used to decide if a given edit is dangerous is controlled
 by ~org-fold-catch-invisible-edits~.  See the docstring of this option
-on the available strategies.  Set the option to ~nil~ to disable
+for the available strategies.  Set the option to ~nil~ to disable
 catching invisible edits completely.
 
 ** Motion
@@ -819,7 +819,7 @@ The following commands jump to other headlines in the buffer.
   #+kindex: M-RET
   #+findex: org-meta-return
   #+vindex: org-M-RET-may-split-line
-  Insert a new heading, item or row.
+  Insert a new heading, item, or row.
 
   If the command is used at the /beginning/ of a line, and if there is
   a heading or a plain list item (see [[*Plain Lists]]) at point, the new
@@ -881,8 +881,7 @@ The following commands jump to other headlines in the buffer.
   #+cindex: transient mark mode
   When there is an active region---i.e., when Transient Mark mode is
   active---promotion and demotion work on all headlines in the region.
-  To select a region of headlines, it is best to place both point and
-  mark at the beginning of a line, mark at the beginning of the first
+  To select a region of headlines, it is best to set mark at the beginning of the first
   headline, and point at the line just after the last headline to
   change.
 
@@ -921,7 +920,7 @@ The following commands jump to other headlines in the buffer.
 
   #+kindex: C-c C-x C-w
   #+findex: org-cut-subtree
-  Kill subtree, i.e., remove it from buffer but save in kill ring.
+  Kill subtree, i.e., remove it from the buffer but save in kill ring.
   With a numeric prefix argument N, kill N sequential subtrees.
 
 - {{{kbd(C-c C-x M-w)}}} (~org-copy-subtree~) ::
@@ -965,7 +964,7 @@ The following commands jump to other headlines in the buffer.
   #+findex: org-clone-subtree-with-time-shift
   Clone a subtree by making a number of sibling copies of it.  You are
   prompted for the number of copies to make, and you can also specify
-  if any timestamps in the entry should be shifted.  This can be
+  whether any timestamps in the entry should be shifted.  This can be
   useful, for example, to create a number of tasks related to a series
   of lectures to prepare.  For more details, see the docstring of the
   command ~org-clone-subtree-with-time-shift~.
@@ -1044,8 +1043,7 @@ also the variable ~org-fold-show-context-detail~ to decide how much context
 is shown around each match.].  Just try it out and you will see
 immediately how it works.
 
-Org mode contains several commands creating such trees, all these
-commands can be accessed through a dispatcher:
+Org mode contains several commands creating such trees, all of which can be accessed through a dispatcher:
 
 - {{{kbd(C-c /)}}} (~org-sparse-tree~) ::
 
@@ -1088,7 +1086,7 @@ commands can be accessed through a dispatcher:
   Jump to the previous sparse tree match in this buffer.
 
 #+vindex: org-agenda-custom-commands
-For frequently used sparse trees of specific search strings, you can
+For frequently used sparse trees for specific search strings, you can
 use the variable ~org-agenda-custom-commands~ to define fast keyboard
 access to specific sparse trees.  These commands will then be
 accessible through the agenda dispatcher (see [[*The Agenda Dispatcher]]).
@@ -1110,7 +1108,7 @@ tags, or properties and are discussed later in this manual.
 #+cindex: printing sparse trees
 #+cindex: visible text, printing
 To print a sparse tree, you can use the Emacs command
-~ps-print-buffer-with-faces~ which does not print invisible parts of
+~ps-print-buffer-with-faces~, which does not print invisible parts of
 the document.  Or you can use the command {{{kbd(C-c C-e C-v)}}} to
 export only the visible part of the document and print the resulting
 file.
@@ -1308,15 +1306,14 @@ to disable them individually.
 
   #+kindex: C-c *
   Turn a plain list item into a headline---so that it becomes
-  a subheading at its location.  See [[*Structure Editing]], for
+  a subheading at its location.  See [[*Structure Editing]] for
   a detailed explanation.
 
 - {{{kbd(C-c C-*)}}} ::
 
   #+kindex: C-c C-*
   Turn the whole plain list into a subtree of the current heading.
-  Checkboxes (see [[*Checkboxes]]) become =TODO=, respectively =DONE=,
-  keywords when unchecked, respectively checked.
+  Checkboxes (see [[*Checkboxes]]) become =TODO= or =DONE= keywords when unchecked or checked, respectively.
 
 - {{{kbd(S-LEFT)}}}, {{{kbd(S-RIGHT)}}} ::
 
@@ -1324,7 +1321,7 @@ to disable them individually.
   #+kindex: S-LEFT
   #+kindex: S-RIGHT
   This command also cycles bullet styles when point is on the bullet
-  or anywhere in an item line, details depending on
+  or anywhere in an item line, with details depending on
   ~org-support-shift-select~.
 
 - {{{kbd(C-c ^)}}} ::
@@ -1391,7 +1388,7 @@ similarly to state changes, use
 #+vindex: org-hide-block-startup
 #+cindex: blocks, folding
 
-Org mode uses =#+BEGIN= ... =#+END= blocks for various purposes from
+Org mode uses =#+BEGIN= ... =#+END= blocks for various purposes, from
 including source code examples (see [[*Literal Examples]]) to capturing
 time logging information (see [[*Clocking Work Time]]).  These blocks can
 be folded and unfolded by pressing {{{kbd(TAB)}}} in the =#+BEGIN=
@@ -20356,11 +20353,14 @@ Note that all the links pointing to a source block exported using
 unless broken links are allowed during export (see [[*Export Settings]]).
 
 #+vindex: org-export-use-babel
-To stop Org from evaluating code blocks to speed exports, use the
-header argument =:eval never-export= (see [[*Evaluating Code Blocks]]).
-To stop Org from evaluating code blocks for greater security, set the
-~org-export-use-babel~ variable to ~nil~, but understand that header
-arguments will have no effect.
+You can prevent Org from evaluating code blocks for speed or security
+reasons:
+
+- To speed up export, use the header argument =:eval never-export=
+  (see [[*Evaluating Code Blocks]]).
+- For greater security, set the ~org-export-use-babel~ variable to
+  ~nil~, but understand that header arguments will have no effect in
+  this case.
 
 If results of evaluation are not marked for export (=:exports code= or
 =:exports none=), Org will not evaluate them, even for =:eval yes=.
