@@ -1458,7 +1458,7 @@ fields.  Even faster would be to type =|Name|Phone|Age= followed by
 
 When typing text into a field, Org treats {{{kbd(DEL)}}},
 {{{kbd(Backspace)}}}, and all character keys in a special way, so that
-inserting and deleting avoids shifting other fields.  Also, when
+inserting and deleting avoid shifting other fields.  Also, when
 typing /immediately/ after point was moved into a new field with
 {{{kbd(TAB)}}}, {{{kbd(S-TAB)}}} or {{{kbd(RET)}}}, the field is
 automatically made blank.  If this behavior is too unpredictable for
@@ -1710,12 +1710,12 @@ you, configure the option ~org-table-auto-blank-field~.
   #+kindex: S-RET
   #+findex: org-table-copy-down
   #+vindex: org-table-copy-increment
-  When current field is empty, copy from first non-empty field above.
-  When not empty, copy current field down to next row and move point
+  When the current field is empty, copy from the first non-empty field above.
+  When it is not empty, copy the current field down to the next row and move point
   along with it.
 
   Depending on the variable ~org-table-copy-increment~, integer and
-  time stamp field values, and fields prefixed or suffixed with
+  time stamp field values, as well as fields prefixed or suffixed with
   a whole number, can be incremented during copy.  Also, a ~0~ prefix
   argument temporarily disables the increment.
 
@@ -1743,11 +1743,11 @@ you, configure the option ~org-table-auto-blank-field~.
 - {{{kbd(M-x org-table-import)}}} ::
 
   #+findex: org-table-import
-  Import a file as a table.  The table should be TAB or whitespace
-  separated.  Use, for example, to import a spreadsheet table or data
-  from a database, because these programs generally can write
-  TAB-separated text files.  This command works by inserting the file
-  into the buffer and then converting the region to a table.  Any
+  Import a file as a table.  The table should be TAB- or
+  whitespace-separated.  Use, for example, to import a spreadsheet
+  table or data from a database, because these programs generally can
+  write TAB-separated text files.  This command works by inserting the
+  file into the buffer and then converting the region to a table.  Any
   prefix argument is passed on to the converter, which uses it to
   determine the separator.
 
@@ -1778,7 +1778,7 @@ you, configure the option ~org-table-auto-blank-field~.
   #+findex: org-table-header-line-mode
   #+vindex: org-table-header-line-p
   Turn on the display of the first data row of the table at point in
-  the window header line when this first row is not visible any more in
+  the window header line when this first row is not visible anymore in
   the buffer.  You can activate this minor mode by default by setting
   the option ~org-table-header-line-p~ to ~t~.
 
@@ -1893,8 +1893,7 @@ automatically upon exporting the document.
 #+cindex: grouping columns in tables
 
 When Org exports tables, it does so by default without vertical lines
-because that is visually more satisfying in general.  Occasionally
-however, vertical lines can be useful to structure a table into groups
+because that is visually more satisfying in general.  Occasionally, however, vertical lines can be useful to structure a table into groups
 of columns, much like horizontal lines can do for groups of rows.  In
 order to specify column groups, you can use a special row where the
 first field contains only =/=.  The further fields can either contain
