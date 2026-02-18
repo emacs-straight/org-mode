@@ -3158,7 +3158,7 @@ links to other files, Usenet articles, emails, and much more.
 #+cindex: angle bracket links
 #+cindex: plain links
 Org recognizes plain URIs, possibly wrapped within angle
-brackets[fn:10], and activate them as clickable links.
+brackets[fn:10], and activates them as clickable links.
 
 #+cindex: bracket links
 The general link format, however, looks like this:
@@ -3275,7 +3275,7 @@ The last sentence will appear as =Here we refer to item 2= when
 exported.
 
 In non-Org files, the search looks for the words in the link text.  In
-the above example the search would be for =target=.
+the above example, the search would be for =target=.
 
 Following a link pushes a mark onto Org's own mark ring.  You can
 return to the previous position with {{{kbd(C-c &)}}}.  Using this
@@ -3332,8 +3332,8 @@ Here is the full set of built-in link types:
 
   File links.  File name may be remote, absolute, or relative.
 
-  As a special case, "file" prefix may be omitted if the file name
-  is complete, e.g., it starts with =./=, or =/=.
+  As a special case, the "file" prefix may be omitted if the file name
+  is complete, e.g., it starts with =./= or =/=.
 
 - =attachment= ::
 
@@ -3664,14 +3664,14 @@ generally, act on links.
   #+findex: org-open-at-point
   #+vindex: org-file-apps
   Open link at point.  This launches a web browser for URL (using
-  ~browse-url-at-point~), run VM/MH-E/Wanderlust/Rmail/Gnus/BBDB for
-  the corresponding links, and execute the command in a shell link.
+  ~browse-url-at-point~), runs VM/MH-E/Wanderlust/Rmail/Gnus/BBDB for
+  the corresponding links, and executes the command in a shell link.
   When point is on an internal link, this command runs the
   corresponding search.  When point is on the tags part of a headline,
   it creates the corresponding tags view (see [[*Matching tags and
   properties]]).  If point is on a timestamp, it compiles the agenda for
   that date.  Furthermore, it visits text and remote files in =file=
-  links with Emacs and select a suitable application for local
+  links with Emacs and selects a suitable application for local
   non-text files.  Classification of files is based on file extension
   only.  See option ~org-file-apps~.  If you want to override the
   default application and visit the file with Emacs, use
@@ -3694,7 +3694,7 @@ generally, act on links.
 
   #+kindex: mouse-2
   #+kindex: mouse-1
-  On links, {{{kbd(mouse-1)}}} and {{{kbd(mouse-2)}}} opens the link
+  On links, {{{kbd(mouse-1)}}} and {{{kbd(mouse-2)}}} open the link
   just as {{{kbd(C-c C-o)}}} does.
 
 - {{{kbd(mouse-3)}}} ::
@@ -3763,7 +3763,7 @@ You might want to bind them to globally available keys.  See
 #+cindex: link abbreviations
 #+cindex: abbreviation, links
 
-Long URL can be cumbersome to type, and often many similar links are
+Long URLs can be cumbersome to type, and often many similar links are
 needed in a document.  For this you can use link abbreviations.  An
 abbreviated link looks like this
 
@@ -3789,7 +3789,7 @@ replacement text.  Here is an example:
 If the replacement text contains the string =%s=, it is replaced with
 the tag.  Using =%h= instead of =%s= percent-encodes the tag (see the
 example above, where we need to encode the URL parameter).  Using
-=%(my-function)= passes the tag to a custom Lisp function, and replace
+=%(my-function)= passes the tag to a custom Lisp function, and replaces
 it by the resulting string.
 
 If the replacement text does not contain any specifier, it is simply
