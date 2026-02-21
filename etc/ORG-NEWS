@@ -12,6 +12,11 @@ See the end of the file for license conditions.
 
 Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 
+# Remember that we only export the first entry from this file
+# into https://orgmode.org/Changes.html
+# This means that links pointing to earlier changelog entries
+# will be broken.
+
 * Version 10.0 (not released yet)
 
 ** Important announcements and breaking changes
