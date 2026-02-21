@@ -714,8 +714,7 @@ result type), but may affect the existing usage.
 
 Previously, special table rows were unconditionally removed when
 export to Org.  Now, the defaults follow what ox-org does - to retain
-special rows by default.  See [[*=ox-org= now exports special table rows
-by default]].
+special rows by default.  See [[https://orgmode.org/worg/org-release-notes.html#ox-org-special-table-rows][previous change]].
 
 To retain the old behavior, add ~:with-special-rows nil~ to PARAMS argument:
 
@@ -2585,6 +2584,9 @@ Previously, all the header arguments where stripped from src blocks
 during export.  Now, header arguments are preserved.
 
 *** =ox-org= now exports special table rows by default
+:PROPERTIES:
+:CUSTOM_ID: ox-org-special-table-rows
+:END:
 
 Previously, when exporting to Org, special table rows (for example,
 width cookies) were not exported.   Now, they are exported by default.
