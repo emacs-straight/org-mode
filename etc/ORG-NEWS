@@ -215,7 +215,7 @@ The new placeholder is like =%\N=, but gives access not only to the
 
 *** Alignment of image previews can be customized
 
-This feature was added in Org 9.7 but was not documented in the release notes.  See [[#preview-align][retrospectively added news entry]].
+This feature was added in Org 9.7 but was not documented in the release notes.  See [[https://orgmode.org/worg/org-release-notes.html#preview-align][retrospectively added news entry]].
 
 *** ~org-open-at-point-global~ now accepts prefix argument
 
