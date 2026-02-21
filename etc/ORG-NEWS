@@ -669,11 +669,11 @@ a per source block basis.
 
 To get back the old behavior, add
 
-#+BEGIN_SRC emacs-lisp
+#+begin_example
 (with-eval-after-load 'ob-calc
   (setq org-babel-header-args:calc
         (append '(:results . "verbatim") org-babel-header-args:calc)))
-#+END_SRC
+#+end_example
 
 to your configuration.
 
