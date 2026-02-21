@@ -272,9 +272,11 @@ Added option ~:readonly~ to =ob-sqlite=.
 With ~:readonly yes~, the database is opened in readonly mode. For
 example:
 
-#+begin_src sqlite :db /tmp/rip.db  :readonly yes  :exports both
+#+begin_example
+,#+begin_src sqlite :db /tmp/rip.db  :readonly yes  :exports both
 create table rip(a,b);
-#+end_src
+,#+end_src
+#+end_example
 
 This results in an error such as:
 
