@@ -119,6 +119,12 @@ of blank lines is recorded in ~:pre-blank~ property.
 
 ~org-element-org-data-interpreter~ takes into account this information.
 
+*** Emacs 26 and Emacs 27 support has been dropped
+
+We maintain compatibility with the latest Emacs release, and two
+versions prior the latest.  The latest is Emacs 30, so we drop
+everything before Emacs 28.
+
 ** New features
 
 # We list the most important features, and the features that may
