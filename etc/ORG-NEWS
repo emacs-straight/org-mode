@@ -582,7 +582,7 @@ accept the INFO channel and return a string.  This makes it possible
 to dynamically generate the content of the resulting ~<head>~ tag in
 the resulting HTML document.
 
-*** ~org-element-create~ now ignores ~nil~s in CHILDREN argument
+*** ~org-element-create~ now ignores ~nil~​s in CHILDREN argument
 
 When CHILDREN contains ~nil~ elements, they are skipped.  This way,
 
