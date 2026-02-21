@@ -304,9 +304,11 @@ Added option ~:readonly~ to =ob-sqlite=.
 With ~:readonly yes~, the database is opened in readonly mode. For
 example:
 
-#+begin_src sqlite :db /tmp/rip.db  :readonly yes  :exports both
+#+begin_example
+,#+begin_src sqlite :db /tmp/rip.db  :readonly yes  :exports both
 create table rip(a,b);
-#+end_src
+,#+end_src
+#+end_example
 
 This results in an error such as:
 
@@ -365,14 +367,14 @@ can be used.
 The =onlyenv= environment limits showing parts of an animated Beamer
 slide to specific animation steps.
 
-#+BEGIN_SRC org
+#+begin_example
 ,***** Comment
 :PROPERTIES:
 :BEAMER_env: onlyenv
 :BEAMER_act: <2->
 :END:
 This text will be displayed on animation step 2 and later.
-#+END_SRC
+#+end_example
 
 **** =ox-html=: Headline self links can be enabled from an Org mode file
 
@@ -612,7 +614,7 @@ accept the INFO channel and return a string.  This makes it possible
 to dynamically generate the content of the resulting ~<head>~ tag in
 the resulting HTML document.
 
-*** ~org-element-create~ now ignores ~nil~s in CHILDREN argument
+*** ~org-element-create~ now ignores ~nil~​s in CHILDREN argument
 
 When CHILDREN contains ~nil~ elements, they are skipped.  This way,
 
@@ -699,11 +701,11 @@ a per source block basis.
 
 To get back the old behavior, add
 
-#+BEGIN_SRC emacs-lisp
+#+begin_example
 (with-eval-after-load 'ob-calc
   (setq org-babel-header-args:calc
         (append '(:results . "verbatim") org-babel-header-args:calc)))
-#+END_SRC
+#+end_example
 
 to your configuration.
 
