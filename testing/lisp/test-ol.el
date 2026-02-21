@@ -157,7 +157,7 @@ See https://github.com/yantar92/org/issues/4."
   ;; On a headline, link to that headline.  Use heading as the
   ;; description of the link.
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* H1"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*H1][H1]]" file)
@@ -165,32 +165,32 @@ See https://github.com/yantar92/org/issues/4."
   ;; On a headline, remove TODO and COMMENT keywords, priority cookie,
   ;; and tags.
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* TODO H1"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*H1][H1]]" file)
 		(org-store-link nil))))))
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* COMMENT H1"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*H1][H1]]" file)
 		(org-store-link nil))))))
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* [#A] H1"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*H1][H1]]" file)
 		(org-store-link nil))))))
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* H1 :tag:"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*H1][H1]]" file)
 		(org-store-link nil))))))
   ;; On a headline, remove any link from description.
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* [[#l][d]]"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*%s][d]]"
@@ -198,13 +198,13 @@ See https://github.com/yantar92/org/issues/4."
 			(org-link-escape "[[#l][d]]"))
 		(org-store-link nil))))))
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* [[l]]"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*%s][l]]" file (org-link-escape "[[l]]"))
 		(org-store-link nil))))))
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "* [[l1][d1]] [[l2][d2]]"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*%s][d1 d2]]"
@@ -213,7 +213,7 @@ See https://github.com/yantar92/org/issues/4."
 		(org-store-link nil))))))
   ;; On a named element, link to that element.
   (should
-   (let (org-store-link-props org-stored-links)
+   (let (org-store-link-plist org-stored-links)
      (org-test-with-temp-text-in-file "#+NAME: foo\nParagraph"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::foo][foo]]" file)
@@ -222,7 +222,7 @@ See https://github.com/yantar92/org/issues/4."
   (should
    (let ((org-stored-links nil)
 	 (org-id-link-to-org-use-id nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "* h1"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*h1][h1]]" file)
@@ -231,29 +231,29 @@ See https://github.com/yantar92/org/issues/4."
   (should
    (let ((org-stored-links nil)
 	 (org-id-link-to-org-use-id nil)
-	 (org-context-in-file-links nil))
+	 (org-link-context-for-files nil))
      (org-test-with-temp-text-in-file "* h1"
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s]]" file file)
+	 (equal (format "[[file:%s]]" file)
 		(org-store-link nil))))))
-  ;; C-u prefix reverses `org-context-in-file-links' in Org buffer.
+  ;; C-u prefix reverses `org-link-context-for-files' in Org buffer.
   (should
    (let ((org-stored-links nil)
 	 (org-id-link-to-org-use-id nil)
-	 (org-context-in-file-links nil))
+	 (org-link-context-for-files nil))
      (org-test-with-temp-text-in-file "* h1"
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::*h1][h1]]" file)
 		(org-store-link '(4)))))))
-  ;; A C-u C-u does *not* reverse `org-context-in-file-links' in Org
+  ;; A C-u C-u does *not* reverse `org-link-context-for-files' in Org
   ;; buffer.
   (should
    (let ((org-stored-links nil)
 	 (org-id-link-to-org-use-id nil)
-	 (org-context-in-file-links nil))
+	 (org-link-context-for-files nil))
      (org-test-with-temp-text-in-file "* h1"
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s]]" file file)
+	 (equal (format "[[file:%s]]" file)
 		(org-store-link '(16)))))))
   ;; Store file link to non-Org buffer, with context.
   (should
@@ -267,13 +267,13 @@ See https://github.com/yantar92/org/issues/4."
   ;; Store file link to non-Org buffer, without context.
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links nil))
+	 (org-link-context-for-files nil))
      (org-test-with-temp-text-in-file "one\n<point>two"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s]]" file file)
+	 (equal (format "[[file:%s]]" file)
 		(org-store-link nil))))))
-  ;; C-u prefix reverses `org-context-in-file-links' in non-Org
+  ;; C-u prefix reverses `org-link-context-for-files' in non-Org
   ;; buffer.
   (should
    (let ((org-stored-links nil)
@@ -283,103 +283,103 @@ See https://github.com/yantar92/org/issues/4."
        (let ((file (buffer-file-name)))
 	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link '(4)))))))
-  ;; A C-u C-u does *not* reverse `org-context-in-file-links' in
+  ;; A C-u C-u does *not* reverse `org-link-context-for-files' in
   ;; non-Org buffer.
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links nil))
+	 (org-link-context-for-files nil))
      (org-test-with-temp-text-in-file "one\n<point>two"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s]]" file file)
+	 (equal (format "[[file:%s]]" file)
 		(org-store-link '(16)))))))
   ;; Context does not include special search syntax.
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "(two)"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "#two"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "*two"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "( two )"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "# two"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "#( two )"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "#** ((## two) )"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   (should-not
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "(two"
        (fundamental-mode)
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::two]]" file file)
+	 (equal (format "[[file:%s::two]]" file)
 		(org-store-link nil))))))
   ;; Context also ignore statistics cookies and special headlines
   ;; data.
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "* TODO [#A] COMMENT foo :bar:"
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::*foo][foo]]" file file)
+	 (equal (format "[[file:%s::*foo][foo]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "* foo[33%]bar"
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::*foo bar][foo bar]]" file file)
+	 (equal (format "[[file:%s::*foo bar][foo bar]]" file)
 		(org-store-link nil))))))
   (should
    (let ((org-stored-links nil)
-	 (org-context-in-file-links t))
+	 (org-link-context-for-files t))
      (org-test-with-temp-text-in-file "* [%][/]  foo [35%] bar[3/5]"
        (let ((file (buffer-file-name)))
-	 (equal (format "[[file:%s::*foo bar][foo bar]]" file file)
+	 (equal (format "[[file:%s::*foo bar][foo bar]]" file)
 		(org-store-link nil)))))))
 
 (ert-deftest test-org-link/precise-link-target ()
@@ -842,6 +842,23 @@ API in `org-link-parameters'.  Used in test
    (null
     (let ((org-link-make-description-function nil))
       (test-ol-insert-link-get-desc "fake-link-type:foo-bar")))))
+
+(ert-deftest test-org-link/insert-link ()
+  "Test `org-insert-link'."
+  ;; Test edge case when no file name is given.
+  (org-test-with-temp-text-in-file ""
+    (let ((file-name (buffer-file-name))
+          (org-link-file-path-type 'absolute))
+      (org-insert-link nil "file:::going")
+      (should
+       (equal (buffer-string)
+              (format "[[file:%s::going]]" file-name)))))
+  ;; Test altering the link at point
+  (org-test-with-temp-text "[[file:file.org][<point>description]]"
+    (cl-letf (((symbol-function #'read-string)
+               (lambda (&rest _) "file:file.org")))
+      (org-insert-link nil nil "altered description"))
+    (should (equal (buffer-string) "[[file:file.org][altered description]]"))))
 
 (provide 'test-ol)
 ;;; test-ol.el ends here

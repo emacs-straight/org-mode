@@ -26,7 +26,8 @@
 
 (require 'org-test "../testing/org-test")
 (require 'org-attach)
-(eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
+(require 'dired)
 
 (ert-deftest test-org-attach/dir ()
   "Test `org-attach-get' specifications."

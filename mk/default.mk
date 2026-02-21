@@ -56,6 +56,7 @@ BTEST_POST  =
 BTEST_OB_LANGUAGES = awk C fortran maxima lilypond octave perl python java sqlite eshell calc
               # R                     # requires ESS to be installed and configured
               # ruby                  # requires inf-ruby to be installed and configured
+              # csharp                # requires a .NET SDK to be installed
 # extra packages to require for testing
 BTEST_EXTRA =
               # ess-site  # load ESS for R tests
@@ -78,20 +79,20 @@ BTEST_LOAD  = \
 	--eval '(add-to-list `load-path (concat default-directory "testing"))'
 BTEST_INIT  = $(BTEST_PRE) $(BTEST_LOAD) $(BTEST_POST)
 
-BTEST = $(BATCH) $(BTEST_INIT) \
-	  -l org-batch-test-init \
-	  --eval '(setq \
-		org-batch-test t \
-		org-babel-load-languages \
-		  (quote ($(foreach ob-lang,\
-				$(BTEST_OB_LANGUAGES) emacs-lisp shell org,\
-				$(lst-ob-lang)))) \
-		org-test-select-re "$(BTEST_RE)" \
-		)' \
-	  -l org-loaddefs.el \
-	  -l cl -l testing/org-test.el \
-	  -l ert -l org -l ox -l ol \
-	  $(foreach req,$(BTEST_EXTRA),$(req-extra)) \
+BTEST = $(BATCH) $(BTEST_INIT) 						    \
+	  -l org-batch-test-init 					    \
+	  --eval '(setq 						    \
+		org-batch-test t 					    \
+		org-babel-load-languages 				    \
+		  (quote ($(foreach ob-lang,				    \
+				$(BTEST_OB_LANGUAGES) emacs-lisp shell org, \
+				$(lst-ob-lang)))) 			    \
+		org-test-select-re "$(BTEST_RE)" 			    \
+		)' 							    \
+	  -l org-loaddefs.el 						    \
+	  -l testing/org-test.el 					    \
+	  -l ert -l org -l ox -l ol 					    \
+	  $(foreach req,$(BTEST_EXTRA),$(req-extra)) 			    \
 	  --eval '(org-test-run-batch-tests org-test-select-re)'
 
 # Running a plain emacs with no config and this Org mode loaded.  This
@@ -112,7 +113,7 @@ endif
 
 # Running a plain emacs with no config, this Org mode loaded, and
 # debugging facilities activated.
-REPRO = $(NOBATCH) $(REPRO_INIT) $(REPRO_ARGS)
+REPRO = $(NOBATCH) $(BTEST_INIT) $(REPRO_INIT) $(REPRO_ARGS)
 
 # start Emacs with no user and site configuration
 # EMACSQ = -vanilla # XEmacs

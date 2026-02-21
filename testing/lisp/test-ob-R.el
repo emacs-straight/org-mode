@@ -22,7 +22,7 @@
 (org-test-for-executable "R")
 (require 'ob-core)
 (unless (featurep 'ess)
-  (signal 'missing-test-dependency "ESS"))
+  (signal 'missing-test-dependency '("ESS")))
 (defvar ess-ask-for-ess-directory)
 (defvar ess-history-file)
 (defvar ess-r-post-run-hook)
@@ -32,7 +32,7 @@
 (declare-function ess-calculate-width "ext:ess-inf" (opt))
 
 (unless (featurep 'ob-R)
-  (signal 'missing-test-dependency "Support for R code blocks"))
+  (signal 'missing-test-dependency '("Support for R code blocks")))
 
 (ert-deftest test-ob-R/simple-session ()
   (let (ess-ask-for-ess-directory ess-history-file)
@@ -99,13 +99,13 @@ x
      (goto-char (point-min)) (org-babel-execute-maybe)
      (org-babel-goto-named-result "TESTSRC") (forward-line 1)
      (should (string= "[[file:junk/test.org]]"
-		      (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+		      (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
      (goto-char (point-min)) (forward-line 1)
      (insert "#+header: :session\n")
      (goto-char (point-min)) (org-babel-execute-maybe)
      (org-babel-goto-named-result "TESTSRC") (forward-line 1)
      (should (string= "[[file:junk/test.org]]"
-		      (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))))
+		      (buffer-substring-no-properties (line-beginning-position) (line-end-position)))))))
 
 
 
@@ -126,6 +126,18 @@ x
 ))))
 
 
+(ert-deftest test-ob-r/session-output-with->-bol ()
+  "make sure prompt-like strings are well formatted, even when at beginning of line."
+    (let (ess-ask-for-ess-directory ess-history-file)
+      (should (string="abc
+def> <ghi"
+  (org-test-with-temp-text "#+begin_src R :results output :session R
+     cat(\"abc
+     def> <ghi\")
+   #+end_src
+"
+    (org-babel-execute-src-block))
+))))
 
 
 ;; (ert-deftest test-ob-r/output-with-error ()

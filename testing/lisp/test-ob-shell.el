@@ -30,7 +30,7 @@
 (require 'org-macs)
 
 (unless (featurep 'ob-shell)
-  (signal 'missing-test-dependency "Support for Shell code blocks"))
+  (signal 'missing-test-dependency '("Support for Shell code blocks")))
 
 (org-test-for-executable "sh")
 
@@ -51,7 +51,7 @@ the body of the tangled block does."
 (ert-deftest test-ob-shell/dont-error-on-babel-error ()
   "Errors within Babel execution should not cause Lisp errors."
   (if (should (null (org-babel-execute:sh "ls NoSuchFileOrDirectory.txt" nil)))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 (ert-deftest test-ob-shell/session-single-return-returns-string ()
   "Sessions with a single result should return a string."
@@ -291,6 +291,49 @@ echo ${table[spaghetti]}
                #+END_SRC"
             (org-trim (org-babel-execute-src-block))))))
 
+(ert-deftest test-ob-shell/cmdline ()
+  "Test :cmdline header argument."
+  (should
+   (equal "2"
+          (org-test-with-temp-text
+              "#+begin_src bash :results output :cmdline 1 2 3
+              printf \"%s\n\" \"$2\"
+              #+end_src"
+            (org-trim (org-babel-execute-src-block)))))
+  (should
+   (equal "2 3"
+          (org-test-with-temp-text
+              "#+begin_src bash :results output :cmdline 1 \"2 3\"
+              printf \"%s\n\" \"$2\"
+              #+end_src"
+            (org-trim (org-babel-execute-src-block)))))
+  (should
+   (equal "1 2 3"
+          (org-test-with-temp-text
+              "#+begin_src bash :results output :cmdline \"\\\"1 2 3\\\"\"
+              printf \"%s\n\" \"$1\"
+              #+end_src"
+            (org-trim (org-babel-execute-src-block)))))
+  (should
+   (equal "1"
+          (org-test-with-temp-text
+              "#+begin_src bash :results output :cmdline 1
+              printf \"%s\n\" \"$1\"
+              #+end_src"
+            (org-trim (org-babel-execute-src-block))))))
+
+(ert-deftest test-ob-shell/ensure-shebang-in-script-files ()
+  "Bug <https://orgmode.org/list/87a5j6y1zk.fsf@localhost>."
+  (skip-unless (executable-find "dash"))
+  (should
+   ;; dash does not initialize $RANDOM, unlike bash.
+   (equal "This must be empty in dash:"
+          (org-test-with-temp-text
+              "#+begin_src dash :results output :cmdline 1 2 3
+              echo This must be empty in dash: \"$RANDOM\"
+              #+end_src"
+            (org-trim (org-babel-execute-src-block))))))
+
 (ert-deftest test-ob-shell/remote-with-stdin-or-cmdline ()
   "Test :stdin and :cmdline with a remote directory."
   ;; We assume `default-directory' is a local directory.
@@ -339,9 +382,7 @@ echo ${table[spaghetti]}
                  (expected (concat "ARGS: --verbose 23 71"
                                    "\nhello tramp from " (file-local-name default-directory))))
             (if (should (equal result expected))
-              ;; FIXME: Fails with non-local exit on Emacs 26.
-              (when (version<= "27" emacs-version)
-                (kill-matching-buffers (format "\\*tramp/mock\\s-%s\\*" system-name) t t))))))))
+                (kill-matching-buffers (format "\\*tramp/mock\\s-%s\\*" (system-name)) t t)))))))
 
 (ert-deftest test-ob-shell/results-table ()
   "Test :results table."
@@ -386,7 +427,7 @@ echo 3
       (should (= 1
                  (org-babel-execute:sh
                   "echo 1; exit 2" nil)))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 
 ;;; Standard error
@@ -403,7 +444,7 @@ the exit code, after exiting with a zero code."
                         "echo 1 >&2" nil)
                        (with-current-buffer org-babel-error-buffer-name
                          (buffer-string)))))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 (ert-deftest test-ob-shell/error-output-after-failure ()
   "Test that standard error shows in the error buffer, alongside
@@ -417,7 +458,7 @@ the exit code, after exiting with a non-zero code."
                         "echo 1 >&2; exit 2" nil)
                        (with-current-buffer org-babel-error-buffer-name
                          (buffer-string)))))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 (ert-deftest test-ob-shell/error-output-after-failure-multiple ()
   "Test that multiple standard error strings show in the error
@@ -435,7 +476,7 @@ buffer, alongside multiple exit codes."
                         "echo 3 >&2; exit 4" nil)
                        (with-current-buffer org-babel-error-buffer-name
                          (buffer-string)))))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 
 ;;; Exit codes
@@ -451,7 +492,7 @@ with a non-zero return code."
                         "exit 1" nil)
                        (with-current-buffer org-babel-error-buffer-name
                          (buffer-string)))))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 (ert-deftest test-ob-shell/exit-code-multiple ()
   "Test that multiple exit codes show in the error buffer after
@@ -467,7 +508,7 @@ exiting with a non-zero return code multiple times."
                         "exit 2" nil)
                        (with-current-buffer org-babel-error-buffer-name
                          (buffer-string)))))
-      (kill-buffer "*Org-Babel Error Output*")))
+      (kill-buffer org-babel-error-buffer-name)))
 
 (provide 'test-ob-shell)
 

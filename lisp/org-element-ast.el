@@ -137,6 +137,9 @@
 ;; properties.  This is useful to generate pure (in functional sense)
 ;; AST.
 ;;
+;; To force resolving deferred properties, you can use
+;; `org-element-properties-resolve'.
+;;
 ;; The properties listed in `org-element--standard-properties', except
 ;; `:deferred' and `:parent' are never considered to have deferred value.
 ;; This constraint makes org-element API significantly faster.
@@ -646,7 +649,7 @@ Return the modified NODE."
    (if force-undefer
        #'org-element--deferred-resolve-force-rec
      #'org-element--deferred-resolve-rec)
-   node 'set 'no-standard)
+   node 'set)
   node)
 
 (defsubst org-element-properties-mapc (fun node &optional undefer)
@@ -729,13 +732,24 @@ nodes.  This way,
 will yield expected results with contents of another node adopted into
 a newly created one.
 
+nil elements in CHILDREN are ignored.  This way,
+   (let ((children nil))
+     (org-element-create \\='section nil children))
+will yield expected results.
+
 When TYPE is `plain-text', CHILDREN must contain a single node -
 string.  Alternatively, TYPE can be a string.  When TYPE is nil or
 `anonymous', PROPS must be nil."
-  (cl-assert
-   ;; FIXME: Just use `plistp' from Emacs 29 when available.
-   (let ((len (proper-list-p props)))
-     (and len (zerop (% len 2)))))
+  (cl-assert (if (fboundp 'plistp) ; Emacs 29.1
+                 (plistp props)
+               (let ((len (proper-list-p props)))
+                 (and len (cl-evenp len)))))
+  ;; Special case: CHILDREN is a single anonymous node
+  (when (and (= 1 (length children))
+             (org-element-type-p (car children) 'anonymous))
+    (setq children (car children)))
+  ;; Filter out nil values from CHILDREN
+  (setq children (delq nil children))
   ;; Assign parray.
   (when (and props (not (stringp type)) (not (eq type 'plain-text)))
     (let ((node (list 'dummy props)))
@@ -751,7 +765,7 @@ string.  Alternatively, TYPE can be a string.  When TYPE is nil or
                 (setq props (nbutlast props 2)
                       ptail nil)
               (setcar ptail (nth 2 ptail))
-              (setcdr ptail (seq-drop ptail 3))))))))
+              (setcdr ptail (cdddr ptail))))))))
   (pcase type
     ((or `nil `anonymous)
      (cl-assert (null props))
@@ -762,10 +776,7 @@ string.  Alternatively, TYPE can be a string.  When TYPE is nil or
     ((pred stringp)
      (if props (org-add-props type props) type))
     (_
-     (if (and (= 1 (length children))
-              (org-element-type-p (car children) 'anonymous))
-         (apply #'org-element-adopt (list type props) (car children))
-       (apply #'org-element-adopt (list type props) children)))))
+     (apply #'org-element-adopt (list type props) children))))
 
 (defun org-element-copy (datum &optional keep-contents)
   "Return a copy of DATUM.
@@ -823,6 +834,7 @@ When DATUM is `plain-text', all the properties are removed."
            (while contents
              (setcar contents (org-element-copy (car contents) t))
              (setq contents (cdr contents)))))
+       (org-element-resolve-deferred node-copy 'force)
        node-copy))))
 
 ;;;; AST queries

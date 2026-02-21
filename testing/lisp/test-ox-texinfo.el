@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2022  Rudolf Adamkovič
 
-;; Author: Rudolf Adamkovič <salutis@me.com>
+;; Author: Rudolf Adamkovič <rudolf@adamkovic.org>
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,7 +27,7 @@
 (eval-when-compile (require 'subr-x))
 
 (unless (featurep 'ox-texinfo)
-  (signal 'missing-test-dependency "org-export-texinfo"))
+  (signal 'missing-test-dependency '("org-export-texinfo")))
 
 
 ;;; TeX fragments
@@ -344,6 +344,336 @@ body
        (should (org-element-type-p section 'section))
        (should-not (org-element-contents section))
        (should (eq first-heading (org-element-parent section)))))))
+
+
+;;; References
+
+(ert-deftest test-ox-texinfo/references ()
+  "Test references with manual and automatic descriptions."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "* A"
+              ":PROPERTIES:"
+              ":ALT_TITLE: B"
+              ":END:"
+              "[[A]]"
+              "[[A][B]]"
+              "[[A][C]]"
+              "  ....")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "@ref{B}")
+          (re-search-forward "@ref{B, , B}")
+          (re-search-forward "@ref{B, , C}")))))))
+
+(ert-deftest test-ox-texinfo/anchors ()
+  "Test anchors and references."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "* The document"
+              "** The model"
+              "This is some text describing the model."
+              "#+name: model"
+              "#+begin_src julia"
+              "  struct Model"
+              "  end"
+              "#+end_src"
+              "** Solution"
+              "Solving the model ([[model]]) leads to some interesting results."
+              )
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "@anchor{model}")
+          (re-search-forward "@ref{model}"))))))
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "* The document"
+              "** The model"
+              "This is some text describing the model."
+              "#+name: model"
+              "| foo | bar |"
+              "** Solution"
+              "Solving the model ([[model]]) leads to some interesting results."
+              )
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "@anchor{model}")
+          (re-search-forward "@ref{model}")))))))
+
+
+;;; Headings with links
+
+(ert-deftest test-ox-texinfo/headings-with-links ()
+  "Test links are removed from headings conditionally.
+
+Headings exported as chapters, sections, and subsections must not
+contain links in their titles, for such links break Texinfo menus.
+Headings exported as list items have no such problem."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "* Chapter [[https://example.com][Example]]"
+              "** Section [[https://example.com][Example]]"
+              "*** Subsection [[https://example.com][Example]]"
+              "**** Item [[https://example.com][Example]]")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "^@menu$")
+          (re-search-forward "^\\* Chapter Example::$")
+          (re-search-forward "^Chapter Example$")
+          (re-search-forward "^\\* Section Example::$")
+          (re-search-forward "^Section Example$")
+          (re-search-forward "^\\* Subsection Example::$")
+          (re-search-forward "^@node Chapter Example$")
+          (re-search-forward "^@chapter Chapter Example$")
+          (re-search-forward "^@menu$")
+          (re-search-forward "^\\* Section Example::$")
+          (re-search-forward "^@node Section Example$")
+          (re-search-forward "^@section Section Example$")
+          (re-search-forward "^@menu$")
+          (re-search-forward "^\\* Subsection Example::$")
+          (re-search-forward "^@node Subsection Example$")
+          (re-search-forward "^@subsection Subsection Example$")
+          (re-search-forward "^@item$")
+          (re-search-forward "^@anchor{Item Example}Item @uref{https://example.com, Example}$")))))))
+
+
+;;; Definitions
+
+(ert-deftest test-ox-texinfo/definition ()
+  "Test definitions."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "- Variable: name ::"
+              "  Description")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "@defvar name")
+          (re-search-forward "Description")
+          (re-search-forward "@end defvar"))))))
+  ;; Edge case: Variable name = nil
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "- Variable: nil ::"
+              "  Description")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "@defvar nil")
+          (re-search-forward "Description")
+          (re-search-forward "@end defvar"))))))
+  ;; Function name containing markup
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "- Function: ~foo_bar~ arg ::"
+              "  Description")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "@defun @code{foo_bar} arg")
+          (re-search-forward "Description")
+          (re-search-forward "@end defun")))))))
+
+
+;;; Escaping
+
+(ert-deftest test-ox-texinfo/escape-special-characters ()
+  "Test escaping special characters."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "[[https://example.com][Foo, Bar]]"
+              "[[https://example.com][Foo, Bar}]]")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (should (search-forward "@uref{https://example.com, Foo@comma{} Bar}"))
+         (should (search-forward "@uref{https://example.com, Foo@comma{} Bar@}}")))))))
+
+
+;;; Structure
+
+(ert-deftest test-ox-texinfo/menus-nodes-headings ()
+  "Test menus, nodes, and headings."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "#+OPTIONS: H:3 toc:2 num:nil"
+              "* Heading 1"
+              "** Heading 1-1"
+              "*** Heading 1-1-1"
+              "*** Heading 1-1-2"
+              "** Heading 1-2"
+              "*** Heading 1-2-1"
+              "*** Heading 1-2-2"
+              "* Heading 2"
+              "** Heading 2-1"
+              "*** Heading 2-1-1"
+              "*** Heading 2-1-2"
+              "** Heading 2-2"
+              "*** Heading 2-2-1"
+              "*** Heading 2-2-2")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "^@menu$")
+          (re-search-forward "^* Heading 1::$")
+          (re-search-forward "^* Heading 2::$")
+          (re-search-forward "^@detailmenu$")
+          (re-search-forward "^Heading 1$")
+          (re-search-forward "^* Heading 1-1::$")
+          (re-search-forward "^* Heading 1-2::$")
+          (re-search-forward "^Heading 2$")
+          (re-search-forward "^* Heading 2-1::$")
+          (re-search-forward "^* Heading 2-2::$")
+          (re-search-forward "^@end detailmenu$")
+          (re-search-forward "^@end menu$")
+          (re-search-forward "^@node Heading 1$")
+          (re-search-forward "^@unnumbered Heading 1$")
+          (re-search-forward "^@menu$")
+          (re-search-forward "^* Heading 1-1::$")
+          (re-search-forward "^* Heading 1-2::$")
+          (re-search-forward "^@end menu$")
+          (re-search-forward "^@node Heading 1-1$")
+          (re-search-forward "^@unnumberedsec Heading 1-1$")
+          (re-search-forward "^@anchor{Heading 1-1-1}$")
+          (re-search-forward "^@subheading Heading 1-1-1$")
+          (re-search-forward "^@anchor{Heading 1-1-2}$")
+          (re-search-forward "^@subheading Heading 1-1-2$")
+          (re-search-forward "^@node Heading 1-2$")
+          (re-search-forward "^@unnumberedsec Heading 1-2$")
+          (re-search-forward "^@anchor{Heading 1-2-1}$")
+          (re-search-forward "^@subheading Heading 1-2-1$")
+          (re-search-forward "^@anchor{Heading 1-2-2}$")
+          (re-search-forward "^@subheading Heading 1-2-2$")
+          (re-search-forward "^@node Heading 2$")
+          (re-search-forward "^@unnumbered Heading 2$")
+          (re-search-forward "^@menu$")
+          (re-search-forward "^* Heading 2-1::$")
+          (re-search-forward "^* Heading 2-2::$")
+          (re-search-forward "^@end menu$")
+          (re-search-forward "^@node Heading 2-1$")
+          (re-search-forward "^@unnumberedsec Heading 2-1$")
+          (re-search-forward "^@anchor{Heading 2-1-1}$")
+          (re-search-forward "^@subheading Heading 2-1-1$")
+          (re-search-forward "^@anchor{Heading 2-1-2}$")
+          (re-search-forward "^@subheading Heading 2-1-2$")
+          (re-search-forward "^@node Heading 2-2$")
+          (re-search-forward "^@unnumberedsec Heading 2-2$")
+          (re-search-forward "^@anchor{Heading 2-2-1}$")
+          (re-search-forward "^@subheading Heading 2-2-1$")
+          (re-search-forward "^@anchor{Heading 2-2-2}$")
+          (re-search-forward "^@subheading Heading 2-2-2$")))))))
+
+(ert-deftest test-ox-texinfo/heading-priorities ()
+  "Test formatting of priority in headings."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "#+OPTIONS: pri:t"
+              "* [#A] Heading 1"
+              "* [#8] Heading 2"
+              "* [#27] Heading 3")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "^* Heading 1::$")
+          (re-search-forward "^* Heading 2::$")
+          (re-search-forward "^* Heading 3::$")
+          (re-search-forward "@emph{#A}")
+          (re-search-forward "@emph{#8}")
+          (re-search-forward "@emph{#27}")))))))
+
+(ert-deftest test-ox-texinfo/inlinetask-priorities ()
+  "Test formatting of priority in headings."
+  (should
+   (org-test-with-temp-text
+       (string-join
+        (list "#+OPTIONS: inline:t pri:t"
+              "*************** [#C] Inlinetask 1"
+              "*************** [#11] Inlinetask 2")
+        "\n")
+     (let ((export-buffer "*Test Texinfo Export*")
+           (org-export-show-temporary-export-buffer nil))
+       (org-export-to-buffer 'texinfo export-buffer
+         nil nil nil nil nil
+         #'texinfo-mode)
+       (with-current-buffer export-buffer
+         (goto-char (point-min))
+         (and
+          (re-search-forward "^@center #C Inlinetask 1$")
+          (re-search-forward "^@center #11 Inlinetask 2$")
+          ))))))
 
 (provide 'test-ox-texinfo)
 ;;; test-ox-texinfo.el end here

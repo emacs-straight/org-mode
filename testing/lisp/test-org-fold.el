@@ -21,7 +21,7 @@
 
 ;;; Code:
 
-(eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
 
 
 
@@ -120,9 +120,9 @@
   "Test `org-fold-hide-block-toggle' specifications."
   (should
    (org-test-with-temp-text "#+BEGIN: dynamic\nContents\n#+END:"
-     (org-hide-block-toggle)))
+     (org-fold-hide-block-toggle)))
   (should-error
-   (org-test-with-temp-text "Paragraph" (org-hide-block-toggle))))
+   (org-test-with-temp-text "Paragraph" (org-fold-hide-block-toggle))))
 
 (ert-deftest test-org-fold/org-fold-hide-entry ()
   "Test `org-fold-hide-entry' specifications."
@@ -301,7 +301,7 @@ Some text here
 	        (current-kill 0 t)))))))
 
 (ert-deftest test-org-fold/set-visibility-according-to-property ()
-  "Test `org-set-visibility-according-to-property' specifications."
+  "Test `org-cycle-set-visibility-according-to-property' specifications."
   ;; "folded" state.
   (should
    (org-test-with-temp-text
@@ -311,7 +311,7 @@ Some text here
 :VISIBILITY: folded
 :END:
 ** <point>b"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (invisible-p (point))))
   (org-test-with-temp-text
       "<point>
@@ -354,7 +354,7 @@ Some text here
 ** b
 <point>Contents
 ** c"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (invisible-p (point))))
   (should
    (org-test-with-temp-text
@@ -366,7 +366,7 @@ Some text here
 ** b
 Contents
 *** <point>c"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (invisible-p (point))))
   ;; "content" state.
   (should
@@ -379,7 +379,7 @@ Contents
 ** b
 <point>Contents
 *** c"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (invisible-p (point))))
   (should
    (org-test-with-temp-text
@@ -391,7 +391,7 @@ Contents
 ** b
 Contents
 *** <point>c"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (not (invisible-p (point)))))
   ;; "showall" state.
   (should
@@ -404,7 +404,7 @@ Contents
 ** b
 <point>Contents
 *** c"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (not (invisible-p (point)))))
   (should
    (org-test-with-temp-text
@@ -416,7 +416,7 @@ Contents
 ** b
 Contents
 *** <point>c"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (not (invisible-p (point)))))
   ;; When VISIBILITY properties are nested, do not alter parent
   ;; visibility unless necessary.
@@ -431,7 +431,7 @@ Contents
 :PROPERTIES:
 :VISIBILITY: folded
 :END:"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (invisible-p (point))))
   (should
    (org-test-with-temp-text
@@ -444,7 +444,7 @@ Contents
 :PROPERTIES:
 :VISIBILITY: content
 :END:"
-     (org-set-visibility-according-to-property)
+     (org-cycle-set-visibility-according-to-property)
      (not (invisible-p (point))))))
 
 (ert-deftest test-org-fold/visibility-show-branches ()
@@ -597,9 +597,9 @@ Unfolded Paragraph.
 "
        (org-cycle)
        (search-forward "FOLDED-DRAWER")
-       (org-hide-drawer-toggle t)
+       (org-fold-hide-drawer-toggle t)
        (search-forward "begin_src")
-       (org-hide-block-toggle t)
+       (org-fold-hide-block-toggle t)
        (goto-char 1)
        ,@body)))
 
@@ -722,17 +722,17 @@ Unfolded Paragraph.
 ** Subheading 2
 [[file:%s]]" org-logo-image org-logo-image org-logo-image)
       (org-overview)
-      (org-show-subtree)
+      (org-fold-show-subtree)
       (org-fold-subtree t)
       (run-hook-with-args 'org-cycle-hook 'folded)
-      (should-not org-inline-image-overlays)
+      (should-not org-link-preview-overlays)
       (should-not
        (cl-every
         (lambda (ov) (overlay-get ov 'org-image-overlay))
         (overlays-in (point-min) (point-max))))
-      (org-show-subtree)
+      (org-fold-show-subtree)
       (run-hook-with-args 'org-cycle-hook 'subtree)
-      (should org-inline-image-overlays)
+      (should org-link-preview-overlays)
       (should
        (cl-every
         (lambda (ov) (overlay-get ov 'org-image-overlay))

@@ -25,19 +25,23 @@
 
 (require 'org-test "../testing/org-test")
 (require 'org-agenda)
-(eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
 
 
 ;; General auxiliaries
 
-(defun org-test-agenda--agenda-buffers ()
+;; By using `defsubst' other files can use these definitions by using
+;; `eval-when-compile', which they should so they don't also include
+;; our test definitions.
+
+(defsubst org-test-agenda--agenda-buffers ()
   "Return agenda buffers in a list."
   (cl-remove-if-not (lambda (x)
 		      (with-current-buffer x
 			(eq major-mode 'org-agenda-mode)))
 		    (buffer-list)))
 
-(defun org-test-agenda--kill-all-agendas ()
+(defsubst org-test-agenda--kill-all-agendas ()
   "Kill all agenda buffers."
   (mapc #'kill-buffer
 	(org-test-agenda--agenda-buffers)))
@@ -46,8 +50,10 @@
   (declare (indent 1))
   `(org-test-with-temp-text-in-file ,text
      (let ((org-agenda-files `(,buffer-file-name)))
-       ,@body
-       (org-test-agenda--kill-all-agendas))))
+       (unwind-protect
+           (progn
+             ,@body)
+         (org-test-agenda--kill-all-agendas)))))
 
 
 ;; Test the Agenda
@@ -97,7 +103,10 @@
       (set-buffer org-agenda-buffer-name)
       (save-excursion
         (goto-char (point-min))
-        (should (search-forward "8:00...... now - - - - - - - - - - - - - - - - - - - - - - - - -")))
+        (should (search-forward
+                 (concat "8:00"
+                         (string-pad (nth 2 org-agenda-time-grid) 7)
+                         org-agenda-current-time-string))))
       (save-excursion
         (goto-char (point-min))
         (should (search-forward "agenda-file2: 9:30-10:00 Scheduled:  TODO one")))
@@ -106,13 +115,17 @@
         (should (search-forward "agenda-file2:10:00-12:30 Scheduled:  TODO two")))
       (save-excursion
         (goto-char (point-min))
-        (should (search-forward "10:00...... ----------------")))
+        (should (search-forward (concat "10:00"
+                                        (string-pad (nth 2 org-agenda-time-grid) 7)
+                                        (nth 3 org-agenda-time-grid)))))
       (save-excursion
         (goto-char (point-min))
         (should (search-forward "agenda-file2:13:00-15:00 Scheduled:  TODO three")))
       (save-excursion
         (goto-char (point-min))
-        (should (search-forward "agenda-file2:19:00...... Scheduled:  TODO four"))))
+        (should (search-forward (concat "agenda-file2:19:00"
+                                        (string-pad (nth 2 org-agenda-time-grid) 7)
+                                        "Scheduled:  TODO four")))))
     (org-test-agenda--kill-all-agendas))
   ;; Custom time grid strings
   (org-test-at-time "2024-01-17 8:00"
@@ -168,6 +181,14 @@
       (save-excursion
         (goto-char (point-min))
         (should (search-forward "agenda-file2:19:00-20:00 Scheduled:  TODO four")))
+      ;; `org-agenda-default-appointment-duration'
+      ;; should not affect date range in timestamps.
+      (save-excursion
+        (goto-char (point-min))
+        (should-not (re-search-forward "agenda-file2:19:00-20:00.+TODO five" nil t)))
+      (save-excursion
+        (goto-char (point-min))
+        (should (search-forward "agenda-file2:19:00...... (1/2):  TODO five")))
       ;; Bug https://list.orgmode.org/orgmode/20211119135325.7f3f85a9@hsu-hh.de/
       (save-excursion
         (goto-char (point-min))
@@ -368,11 +389,13 @@ See https://list.orgmode.org/06d301d83d9e$f8b44340$ea1cc9c0$@tomdavey.com"
     ;; `org-today' or not.
     (org-agenda-list nil "<2017-07-19 Wed>")
     (set-buffer org-agenda-buffer-name)
-    (should
-     (progn (goto-line 3)
-	    (org-agenda-priority ?B)
-	    (looking-at-p " *agenda-file:Scheduled: *\\[#B\\] test agenda"))))
-  (org-test-agenda--kill-all-agendas))
+    (unwind-protect
+        (should
+         (progn (goto-line 3)
+                (org-agenda-priority ?B)
+                (looking-at-p " *agenda-file:Scheduled: *\\[#B\\] test agenda")))
+      (org-test-agenda--kill-all-agendas)
+      (org-test-kill-buffer "agenda-file.org"))))
 
 (ert-deftest test-org-agenda/sticky-agenda-name ()
   "Agenda buffer name after having created one sticky agenda buffer."
@@ -646,6 +669,252 @@ Sunday      7 January 2024
   [^:]+:Scheduled:  TODO Do me every day until Jan, 5th (inclusive)"
               (buffer-string))))))
       (org-test-agenda--kill-all-agendas))))
+
+(ert-deftest test-org-agenda/sorting ()
+  "Test if `org-agenda' sorts according to `org-agenda-sorting-strategy'."
+  ;; FIXME: test the following
+  ;; urgency-up
+  ;; category-up
+  ;; category-keep
+  ;; user-defined-up
+  (cl-flet ((call-agenda-with-priority (priority)
+              (let ((org-agenda-custom-commands
+                     `(("f" "no fluff" todo ""
+                        ((org-agenda-tags-column -10)
+                         (org-agenda-overriding-header "")
+                         (org-agenda-prefix-format "")
+                         (org-agenda-sorting-strategy ',priority))))))
+                (org-agenda nil "f")
+                (string-trim
+                 (substring-no-properties
+                  (buffer-string))))))
+    (org-test-agenda-with-agenda
+        "#+TODO: TODO WAIT DONE
+* TODO a   :a:
+* WAIT a   :b:
+* TODO b   :a:
+* WAIT b   :b:"
+      (should
+       (string-equal
+        (call-agenda-with-priority '(tag-up alpha-up))
+        "TODO a :a:
+TODO b :a:
+WAIT a :b:
+WAIT b :b:"))
+      (should
+       (string-equal
+        (call-agenda-with-priority '(alpha-up tag-down))
+        ;; This result seems unexpected.  It is because the
+        ;; alphabetical sort is done on the full heading title
+        ;; including tags (ex. "a :b:").
+        ;; FIXME: This is probably not what users want.
+        "TODO a :a:
+WAIT a :b:
+TODO b :a:
+WAIT b :b:"))
+      (should
+       (string-equal
+        (call-agenda-with-priority '(todo-state-up alpha-down))
+        "TODO b :a:
+TODO a :a:
+WAIT b :b:
+WAIT a :b:")))
+    (org-test-agenda-with-agenda
+        "* TODO [#A] foo
+:PROPERTIES:
+:Effort:   10m
+:END:
+* TODO [#B] bar
+:PROPERTIES:
+:Effort:   5m
+:END:
+* TODO [#C] habit [2/4]
+:PROPERTIES:
+:STYLE:    habit
+:END:
+* TODO ping [1/4]
+:PROPERTIES:
+:Effort:   1y
+:END:
+* TODO pong [3/4]
+:PROPERTIES:
+:Effort:   10m
+:END:"
+      (should
+       (string-equal
+        (call-agenda-with-priority '(effort-up priority-down))
+        "TODO [#B] bar
+TODO [#A] foo
+TODO pong [3/4]
+TODO ping [1/4]
+TODO [#C] habit [2/4]"))
+      (should
+       (string-equal
+        (call-agenda-with-priority '(habit-up priority-up))
+        "TODO [#C] habit [2/4]
+TODO [#B] bar
+TODO ping [1/4]
+TODO pong [3/4]
+TODO [#A] foo"))
+      (should
+       (string-equal
+        (call-agenda-with-priority '(stats-up priority-up))
+        "TODO [#B] bar
+TODO [#A] foo
+TODO ping [1/4]
+TODO [#C] habit [2/4]
+TODO pong [3/4]")))))
+
+(ert-deftest test-org-agenda/sorting/time ()
+  "Test if `org-agenda' sorts according to `org-agenda-sorting-strategy'."
+  :expected-result :failed
+  ;; FIXME: test the following
+  ;; timestamp-up
+  ;; tsia-up
+  ;; ts-up
+  ;; time-up
+  (cl-flet ((call-agenda-with-priority (priority)
+              (let ((org-agenda-custom-commands
+                     `(("f" "no fluff" todo ""
+                        ((org-agenda-todo-keyword-format "")
+                         (org-agenda-overriding-header "")
+                         (org-agenda-prefix-format "")
+                         (org-agenda-sorting-strategy ',priority))))))
+                (org-agenda nil "f")
+                (string-trim
+                 (substring-no-properties
+                  (buffer-string))))))
+    (org-test-at-time "2025-11-07"
+      (org-test-agenda-with-agenda
+          "* TODO scheduled yesterday
+SCHEDULED: <2025-11-06>
+* TODO scheduled today
+SCHEDULED: <2025-11-07>
+* TODO scheduled tomorrow
+SCHEDULED: <2025-11-08>
+* TODO deadline yesterday
+DEADLINE: <2025-11-06>
+* TODO deadline today
+DEADLINE: <2025-11-07>
+* TODO deadline tomorrow
+DEADLINE: <2025-11-08>
+* TODO both yesterday
+SCHEDULED: <2025-11-06> DEADLINE: <2025-11-06>
+* TODO both today
+SCHEDULED: <2025-11-07> DEADLINE: <2025-11-07>
+* TODO both tomorrow
+SCHEDULED: <2025-11-08> DEADLINE: <2025-11-08>
+* TODO nothing"
+        (should
+         (string-equal
+          (call-agenda-with-priority '(deadline-up scheduled-up))
+          "both yesterday
+deadline yesterday
+both today
+deadline today
+both tomorrow
+deadline tomorrow
+scheduled yesterday
+scheduled today
+scheduled tomorrow
+nothing"))
+        (should
+         (string-equal
+          (call-agenda-with-priority '(scheduled-down deadline-down))
+          "nothing
+deadline tomorrow
+deadline today
+deadline yesterday
+scheduled tomorrow
+both tomorrow
+scheduled today
+both today
+scheduled yesterday
+both yesterday"))))))
+
+(ert-deftest test-org-agenda/tags-sorting ()
+  "Test if `org-agenda' sorts tags according to `org-tags-sort-function'."
+  (let ((string-length< (lambda (s1 s2)
+                          (< (length s1) (length s2))))
+        (org-agenda-custom-commands
+         '(("f" "no fluff" todo ""
+            ((org-agenda-todo-keyword-format "")
+             (org-agenda-overriding-header "")
+             (org-agenda-prefix-format "")
+             (org-agenda-remove-tags t)
+             (org-agenda-sorting-strategy '(tag-up))))))
+        (org-tag-alist
+         ;; Tag "blueberry" is intentionally not in this variable but
+         ;; used in testing
+         '((:startgrouptag)
+           ("group_a")
+           (:grouptags)
+           ("tag_a_1")
+           ("tag_a_2")
+           ("group_a") ;; try to create infinite loop
+           (:endgrouptag)
+           (:startgroup)
+           ("tag_b_1")
+           ("tag_b_1") ;; duplicated
+           ("tag_b_2")
+           (:endgroup)
+           ("groupless")
+           ("lonely"))))
+    (org-test-agenda-with-agenda
+     (string-join
+      '("* TODO group_a :group_a:"
+        "* TODO tag_a_2 :tag_a_2:"
+        "* TODO tag_b_2 :tag_b_2:"
+        "* TODO groupless :groupless:"
+        "* TODO tag_a_1 :tag_a_1:"
+        "* TODO tag_b_1 :tag_b_1:"
+        "* TODO lonely :lonely:"
+        "* TODO blueberry :blueberry:")
+      "\n")
+     (dolist (org-tags-sort-function `(nil
+                                       org-string< org-string> ignore
+                                       ,string-length<
+                                       (,string-length<)
+                                       (,string-length< org-string<)
+                                       org-tags-sort-hierarchy
+                                       (org-tags-sort-hierarchy org-string>)))
+       (should
+        (string-equal
+         (string-trim
+          (progn
+            (org-agenda nil "f")
+            (substring-no-properties (buffer-string))))
+         (pcase org-tags-sort-function
+           ;; Not sorted
+           ('ignore
+            (string-join
+             '("group_a" "tag_a_2" "tag_b_2" "groupless" "tag_a_1" "tag_b_1" "lonely" "blueberry")
+             "\n"))
+           ((or 'nil 'org-string<)
+            (string-join
+             '("blueberry" "group_a" "groupless" "lonely" "tag_a_1" "tag_a_2" "tag_b_1" "tag_b_2")
+             "\n"))
+           ('org-string>
+            (string-join
+             '("tag_b_2" "tag_b_1" "tag_a_2" "tag_a_1" "lonely" "groupless" "group_a" "blueberry")
+             "\n"))
+           ((or (pred (equal string-length<))
+                `(,string-length<))
+            (string-join
+             '("lonely" "group_a" "tag_a_2" "tag_b_2" "tag_a_1" "tag_b_1" "groupless" "blueberry")
+             "\n"))
+           (`(,string-length< org-string<)
+            (string-join
+             '("lonely" "group_a" "tag_a_1" "tag_a_2" "tag_b_1" "tag_b_2" "blueberry" "groupless")
+             "\n"))
+           ('org-tags-sort-hierarchy
+            (string-join
+             '("blueberry" "group_a" "tag_a_1" "tag_a_2" "groupless" "lonely" "tag_b_1" "tag_b_2")
+             "\n"))
+           ('(org-tags-sort-hierarchy org-string>)
+            (string-join
+             '("tag_b_2" "tag_b_1" "lonely" "groupless" "group_a" "tag_a_2" "tag_a_1" "blueberry")
+             "\n")))))))))
 
 (ert-deftest test-org-agenda/goto-date ()
   "Test `org-agenda-goto-date'."

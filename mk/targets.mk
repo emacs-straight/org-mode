@@ -9,6 +9,9 @@ SUBDIRS       = $(OTHERDIRS) $(LISPDIRS)
 INSTSUB       = $(SUBDIRS:%=install-%)
 ORG_MAKE_DOC ?= info html pdf
 
+GITDIR        = .git/hooks
+GITHOOKS      = commit-msg commit-msg-files.awk post-commit pre-commit prepare-commit-msg pre-push
+
 ifneq ($(wildcard .git),)
   # Use the org.el header.
   ORGVERSION := $(patsubst %-dev,%,$(shell $(BATCH) --eval "(require 'lisp-mnt)" \
@@ -27,7 +30,7 @@ ifneq ($(GITSTATUS),)
 endif
 
 .PHONY:	all oldorg update update2 up0 up1 up2 single native $(SUBDIRS) \
-	check test install $(INSTSUB) \
+	check test test-dirty install install-info $(INSTSUB) \
 	info html pdf card refcard doc docs \
 	autoloads cleanall clean $(CLEANDIRS:%=clean%) \
 	clean-install cleanelc cleandirs \
@@ -66,9 +69,9 @@ config config-test config-exe config-all config-version::
 	@echo ""
 
 oldorg:	compile info	# what the old makefile did when no target was specified
-uncompiled:	| cleanlisp autoloads	# for developing
+uncompiled:	cleanlisp autoloads	# for developing
 refcard:	card
-update update2::	| up0 all
+update update2::	up0 clean autoloads all
 
 single:	ORGCM=single
 single:	compile
@@ -108,8 +111,7 @@ up0 up1 up2::
 	git checkout $(GIT_BRANCH)
 	git remote update
 	git pull
-up1 up2::	all
-	$(MAKE) test-dirty
+up1 up2::	clean autoloads test-dirty
 up2 update2::
 	$(SUDO) $(MAKE) install
 
@@ -128,15 +130,24 @@ $(INSTSUB):
 autoloads: lisp
 	$(MAKE) -C $< $@
 
-repro: | cleanall autoloads
+repro: cleanall autoloads
 	-@$(REPRO) &
+
+# Implicit rule to copy Git hooks in
+$(GITDIR)/%: git-hooks/%
+	cp -f $< $@
+
+githooks: $(addprefix $(GITDIR)/,$(GITHOOKS))
+
+cleangithooks:
+	$(RM) $(addprefix $(GITDIR)/,$(GITHOOKS))
 
 cleandirs:
 	$(foreach dir, $(SUBDIRS), $(MAKE) -C $(dir) cleanall;)
 
 clean:	cleanlisp cleandoc
 
-cleanall: cleandirs cleantest
+cleanall: cleandirs cleantest cleangithooks
 	-$(FIND) . \( -name \*~ -o -name \*# -o -name .#\* \) -exec $(RM) {} +
 	-$(FIND) $(CLEANDIRS) \( -name \*~ -o -name \*.elc \) -exec $(RM) {} +
 

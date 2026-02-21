@@ -267,7 +267,14 @@
       (should
        (if (or (< i 2) (= i 4))
            (should (= 4 (- (point) (line-beginning-position))))
-         (should (= 5 (- (point) (line-beginning-position)))))))))
+         (should (= 5 (- (point) (line-beginning-position))))))))
+  ;; Correctly handle edge case when cycling to shorter bullet may
+  ;; shift indentation to "0", breaking the item body out of the list.
+  (org-test-with-temp-text "
+1) text<point>
+ text"
+    (org-cycle-list-bullet)
+    (should (equal "\n- text\n text" (buffer-string)))))
 
 (ert-deftest test-org-list/indent-item ()
   "Test `org-indent-item' specifications."
@@ -674,7 +681,7 @@ b. Item 2<point>"
 	       (org-fold-get-folding-spec)))))))
   (should
    (equal
-    '(outline outline)
+    '(org-fold-outline org-fold-outline)
     (let ((org-fold-core-style 'overlays))
       (org-test-with-temp-text
        "* Headline\n<point>- item 1\n  body 1\n- item 2\n  body 2"
@@ -817,7 +824,7 @@ b. Item 2<point>"
   #+BEGIN_CENTER
   Text2
   #+END_CENTER"
-    (org-hide-block-all)
+    (org-fold-hide-block-all)
     (let ((invisible-property-1
 	   (progn
 	     (search-forward "Text1")
@@ -976,7 +983,7 @@ b. Item 2<point>"
 	                               (org-fold-get-folding-spec nil (line-end-position 2))))))))
   (should
    (equal
-    '(outline outline)
+    '(org-fold-outline org-fold-outline)
     (let ((org-fold-core-style 'overlays))
       (org-test-with-temp-text "- A\n  - B\n- C\n  - D"
                                (let ((org-cycle-include-plain-lists t))
@@ -1047,7 +1054,7 @@ b. Item 2<point>"
               "- item1\n  - item1child\n- item2\n- item3\n- item4\n- item5\n"
             (re-search-forward "item3")
             (org-list-send-item (car (nth 0 (org-list-struct)))
-                                (point-at-bol) (org-list-struct))
+                                (line-beginning-position) (org-list-struct))
             (buffer-string))))
   ;; Delete
   (should
@@ -1055,7 +1062,7 @@ b. Item 2<point>"
           (org-test-with-temp-text
               "- item1\n  - item1child\n- item2\n- item3\n- item4\n- item5\n"
             (re-search-forward "item3")
-            (org-list-send-item (point-at-bol)
+            (org-list-send-item (line-beginning-position)
                                 'delete (org-list-struct))
             (buffer-string))))
   ;; Kill
@@ -1063,7 +1070,7 @@ b. Item 2<point>"
     (org-test-with-temp-text
         "- item1\n  - item1child\n- item2\n- item3\n  - item3child\n- item4\n- item5\n"
       (re-search-forward "item3")
-      (org-list-send-item (point-at-bol)
+      (org-list-send-item (line-beginning-position)
                           'kill (org-list-struct))
       (should (equal "- item1\n  - item1child\n- item2\n- item4\n- item5\n"
                      (buffer-string)))
@@ -1500,8 +1507,8 @@ Line 2
 	  (org-test-with-temp-text "- ccc\n- b\n- aa\n"
 	    (org-sort-list nil ?f
 			   (lambda ()
-			     (length (buffer-substring (point-at-bol)
-						       (point-at-eol))))
+			     (length (buffer-substring (line-beginning-position)
+						       (line-end-position))))
 			   #'<)
 	    (buffer-string))))
   (should
@@ -1509,8 +1516,8 @@ Line 2
 	  (org-test-with-temp-text "- ccc\n- b\n- aa\n"
 	    (org-sort-list nil ?F
 			   (lambda ()
-			     (length (buffer-substring (point-at-bol)
-						       (point-at-eol))))
+			     (length (buffer-substring (line-beginning-position)
+						       (line-end-position))))
 			   #'<)
 	    (buffer-string)))))
 

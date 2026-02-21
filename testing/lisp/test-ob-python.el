@@ -22,7 +22,7 @@
 (org-test-for-executable "python")
 (require 'ob-core)
 (unless (featurep 'ob-python)
-  (signal 'missing-test-dependency "Support for Python code blocks"))
+  (signal 'missing-test-dependency '("Support for Python code blocks")))
 
 (ert-deftest test-ob-python/colnames-yes-header-argument ()
   (should
@@ -245,6 +245,37 @@ print('Yep!')
 			        (sleep-for 0.200)
 			        (goto-char (org-babel-where-is-src-block-result))
 			        (org-babel-read-result)))))))))
+
+(ert-deftest test-ob-python/inline-session-output ()
+  ;; Disable the test on older Emacs as built-in python.el sometimes
+  ;; fail to initialize session.
+  (skip-unless (version<= "28" emacs-version))
+  (let ((org-babel-temporary-directory temporary-file-directory)
+        (org-confirm-babel-evaluate nil)
+        (org-babel-inline-result-wrap "=%s="))
+    (org-test-with-temp-text
+     "src_python[:session :results output]{print(1+1)}"
+     (should (string= "2" (org-babel-execute-src-block))))))
+
+(ert-deftest test-ob-python/async-inline-session-output ()
+  ;; Disable the test on older Emacs as built-in python.el sometimes
+  ;; fail to initialize session.
+  (skip-unless (version<= "28" emacs-version))
+  (let ((org-babel-temporary-directory temporary-file-directory)
+        (org-confirm-babel-evaluate nil)
+        (org-babel-inline-result-wrap "=%s=")
+        (test-line "src_python[:session :async yes :results output]{print(1+1)}"))
+    (org-test-with-temp-text
+     test-line
+     (goto-char (point-min)) (org-babel-execute-maybe)
+     (should (let* ((expected-result "2")
+                    (expected-full (format "%s {{{results(=%s=)}}}"
+                                           test-line expected-result)))
+	       (and (not (string= expected-result (org-babel-execute-src-block)))
+		    (string= expected-full
+			     (progn
+			       (sleep-for 0.200)
+                               (buffer-substring-no-properties (line-beginning-position) (line-end-position))))))))))
 
 (ert-deftest test-ob-python/async-named-output ()
   ;; Disable the test on older Emacs as built-in python.el sometimes

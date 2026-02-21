@@ -30,7 +30,9 @@ help helpall::
 	$(info make native         - build Org natively compiled Elisp files)
 	$(info make autoloads      - create org-loaddefs.el to load Org in-place)
 	$(info make test           - build Org Elisp files and run test suite)
+	$(info make githooks       - install Git hooks that automatically check for commit message conventions)
 	$(info make vanilla        - run Emacs with this Org-mode and no personal config)
+	$(info make repro          - like vanilla, but refresh compilation and enable debugging [use this to reproduce bugs])
 helpall::
 	$(info make test-dirty     - check without building first)
 	$(info make compile-dirty  - build only stale Org Elisp files)
@@ -42,6 +44,7 @@ helpall::
 	$(info Cleaning)
 	$(info ========)
 	$(info make clean          - remove built Org Elisp files and documentation)
+	$(info make cleangithooks  - remove Git hooks)
 	$(info make cleanall       - remove everything that can be built and all remnants)
 	$(info make clean-install  - remove previous Org installation)
 	$(info )

@@ -48,25 +48,16 @@
 			(file-name-directory
 			 (or load-file-name buffer-file-name))))
 	 (org-lisp-dir (expand-file-name
-			(concat org-test-dir "../lisp"))))
-
-    (unless (featurep 'org)
-      (setq load-path (cons org-lisp-dir load-path))
-      (require 'org)
-      (require 'org-id)
-      (require 'ox)
-      (org-babel-do-load-languages
-       'org-babel-load-languages '((shell . t) (org . t))))
-
-    (let ((load-path (cons org-test-dir
-			   (cons (expand-file-name "jump" org-test-dir)
-				 load-path))))
-      (require 'cl-lib)
-      (require 'ert)
-      (require 'ert-x)
-      (when (file-exists-p (expand-file-name "jump/jump.el" org-test-dir))
-	(require 'jump)
-	(require 'which-func)))))
+			(concat org-test-dir "../lisp")))
+	 (load-path (cons org-test-dir
+			  (cons (expand-file-name "jump" org-test-dir)
+			        load-path))))
+    (require 'cl-lib)
+    (require 'ert)
+    (require 'ert-x)
+    (when (file-exists-p (expand-file-name "jump/jump.el" org-test-dir))
+      (require 'jump)
+      (require 'which-func))))
 
 (defconst org-test-default-test-file-name "tests.el"
   "For each defun a separate file with tests may be defined.
@@ -106,10 +97,14 @@ org-test searches this directory up the directory tree.")
 This can be used at the top of code-block-language specific test
 files to avoid loading the file on systems without the
 executable."
-  (unless (cl-reduce
-	   (lambda (acc dir)
-	     (or acc (file-exists-p (expand-file-name exe dir))))
-	   exec-path :initial-value nil)
+  (unless (and (cl-reduce
+	        (lambda (acc dir)
+	          (or acc (file-exists-p (expand-file-name exe dir))))
+	        exec-path :initial-value nil)
+               ;; Sometimes, the program is only available as a stub.
+               ;; Check if it can be actually called.
+               ;; See https://list.orgmode.org/orgmode/CALo8A5XfjiJdFb382J+kACuGw2QPGpqYdE7JUS+h7035MKyO+w@mail.gmail.com/
+               (= 0 (call-process exe nil nil nil "--version")))
     (signal 'missing-test-dependency (list exe))))
 
 (defun org-test-buffer (&optional _file)
@@ -121,51 +116,62 @@ If file is non-nil insert its contents in there.")
 If file is not given, search for a file named after the test
 currently executed.")
 
+(defun org-test-kill-buffer (buffer)
+  "Kill BUFFER like `kill-buffer' but without user interaction."
+  (setq buffer (get-buffer buffer))
+  (when (and buffer (buffer-live-p buffer))
+    (with-current-buffer buffer
+      ;; Prevent "Buffer *temp* modified; kill anyway?".
+      (set-buffer-modified-p nil)
+      (kill-buffer))))
+
 (defmacro org-test-at-id (id &rest body)
   "Run body after placing the point in the headline identified by ID."
   (declare (indent 1) (debug t))
-  `(let* ((id-location (org-id-find ,id))
-	  (id-file (car id-location))
-	  (visited-p (get-file-buffer id-file))
-	  to-be-removed)
-     (unwind-protect
-	 (save-window-excursion
-	   (save-match-data
-	     (org-id-goto ,id)
-	     (setq to-be-removed (current-buffer))
-	     (condition-case nil
-		 (progn
-		   (org-show-subtree)
-		   (org-show-all '(blocks)))
-	       (error nil))
-	     (save-restriction ,@body)))
-       (unless (or visited-p (not to-be-removed))
-	 (kill-buffer to-be-removed)))))
+  (org-with-gensyms (id-location id-file visited-p to-be-removed)
+    `(let* ((,id-location (org-id-find ,id))
+            (,id-file (car ,id-location))
+            (,visited-p (get-file-buffer ,id-file))
+            ,to-be-removed)
+       (unwind-protect
+           (save-window-excursion
+             (save-match-data
+               (org-id-goto ,id)
+               (setq ,to-be-removed (current-buffer))
+               (condition-case nil
+                   (progn
+                     (org-fold-show-subtree)
+                     (org-fold-show-all '(blocks)))
+                 (error nil))
+               (save-restriction ,@body)))
+         (unless (or ,visited-p (not ,to-be-removed))
+           (org-test-kill-buffer ,to-be-removed))))))
 
 (defmacro org-test-in-example-file (file &rest body)
   "Execute body in the Org example file."
   (declare (indent 1) (debug t))
-  `(let* ((my-file (or ,file org-test-file))
-	  (visited-p (get-file-buffer my-file))
-	  to-be-removed
-	  results)
-     (save-window-excursion
-       (save-match-data
-	 (find-file my-file)
-	 (unless (eq major-mode 'org-mode)
-	   (org-mode))
-	 (setq to-be-removed (current-buffer))
-	 (goto-char (point-min))
-	 (condition-case nil
-	     (progn
-	       (outline-next-visible-heading 1)
-	       (org-show-subtree)
-	       (org-show-all '(blocks)))
-	   (error nil))
-	 (setq results (save-restriction ,@body))))
-     (unless visited-p
-       (kill-buffer to-be-removed))
-     results))
+  (org-with-gensyms (my-file visited-p to-be-removed results)
+    `(let* ((,my-file (or ,file org-test-file))
+            (,visited-p (get-file-buffer ,my-file))
+            ,to-be-removed
+            ,results)
+       (save-window-excursion
+         (save-match-data
+           (find-file ,my-file)
+           (unless (eq major-mode 'org-mode)
+             (org-mode))
+           (setq ,to-be-removed (current-buffer))
+           (goto-char (point-min))
+           (condition-case nil
+               (progn
+                 (outline-next-visible-heading 1)
+                 (org-fold-show-subtree)
+                 (org-fold-show-all '(blocks)))
+             (error nil))
+           (setq ,results (save-restriction ,@body))))
+       (unless ,visited-p
+         (org-test-kill-buffer ,to-be-removed))
+       ,results)))
 
 (defmacro org-test-at-marker (file marker &rest body)
   "Run body after placing the point at MARKER in FILE.
@@ -184,19 +190,20 @@ mode holding TEXT.  If the string \"<point>\" appears in TEXT
 then remove it and place the point there before running BODY,
 otherwise place the point at the beginning of the inserted text."
   (declare (indent 1) (debug t))
-  `(let ((inside-text (if (stringp ,text) ,text (eval ,text)))
-	 (org-mode-hook nil))
-     (with-temp-buffer
-       (org-mode)
-       (let ((point (string-match "<point>" inside-text)))
-	 (if point
-	     (progn
-	       (insert (replace-match "" nil nil inside-text))
-	       (goto-char (1+ (match-beginning 0))))
-	   (insert inside-text)
-	   (goto-char (point-min))))
-       (font-lock-ensure (point-min) (point-max))
-       ,@body)))
+  (org-with-gensyms (inside-text)
+    `(let ((,inside-text (if (stringp ,text) ,text (eval ,text)))
+           (org-mode-hook nil))
+       (with-temp-buffer
+         (org-mode)
+         (let ((point (string-match "<point>" ,inside-text)))
+           (if point
+               (progn
+                 (insert (replace-match "" nil nil ,inside-text))
+                 (goto-char (1+ (match-beginning 0))))
+             (insert ,inside-text)
+             (goto-char (point-min))))
+         (font-lock-ensure (point-min) (point-max))
+         ,@body))))
 
 (defmacro org-test-with-temp-text-in-file (text &rest body)
   "Run body in a temporary file buffer with Org mode as the active mode.
@@ -204,27 +211,23 @@ If the string \"<point>\" appears in TEXT then remove it and
 place the point there before running BODY, otherwise place the
 point at the beginning of the buffer."
   (declare (indent 1) (debug t))
-  `(let ((file (make-temp-file "org-test"))
-	 (inside-text (if (stringp ,text) ,text (eval ,text)))
-	 buffer)
-     (with-temp-file file (insert inside-text))
-     (unwind-protect
-	 (progn
-	   ;; FIXME: For the rare cases where we do need to mess with windows,
-           ;; we should let `body' take care of displaying this buffer!
-	   (setq buffer (find-file file))
-	   (when (re-search-forward "<point>" nil t)
-	     (replace-match ""))
-	   (org-mode)
-	   (progn ,@body))
-       (let ((kill-buffer-query-functions nil))
-	 (when buffer
-	   (set-buffer buffer)
-	   ;; Ignore changes, we're deleting the file in the next step
-	   ;; anyways.
-	   (set-buffer-modified-p nil)
-	   (kill-buffer))
-	 (delete-file file)))))
+  (org-with-gensyms (file inside-text buffer)
+    `(let ((,file (make-temp-file "org-test"))
+           (,inside-text (if (stringp ,text) ,text (eval ,text)))
+           ,buffer)
+       (with-temp-file ,file (insert ,inside-text))
+       (unwind-protect
+           (progn
+             ;; FIXME: For the rare cases where we do need to mess with windows,
+             ;; we should let `body' take care of displaying this buffer!
+             (setq ,buffer (find-file ,file))
+             (when (re-search-forward "<point>" nil t)
+               (replace-match ""))
+             (org-mode)
+             (progn ,@body))
+         (let ((kill-buffer-query-functions nil))
+           (org-test-kill-buffer ,buffer)
+           (delete-file ,file))))))
 
 (defun org-test-table-target-expect (target &optional expect laps &rest tblfm)
   "For all TBLFM: Apply the formula to TARGET, compare EXPECT with result.
@@ -456,7 +459,7 @@ https://list.orgmode.org/orgmode/m2ilkwso8r.fsf@me.com"
 (defun org-test-kill-all-examples ()
   (while org-test-buffers
     (let ((b (pop org-test-buffers)))
-      (when (buffer-live-p b) (kill-buffer b)))))
+      (org-test-kill-buffer b))))
 
 (defun org-test-update-id-locations ()
   (setq org-id-locations-file
@@ -504,52 +507,62 @@ TIME can be a non-nil Lisp time value, or a string specifying a date and time."
 	    (,at (if (stringp ,tm)
 		     (org-time-string-to-time ,tm)
 		   ,tm)))
-       (cl-letf
-	   ;; Wrap builtins whose behavior can depend on the current time.
-	   (((symbol-function 'current-time)
-	     (lambda () ,at))
-	    ((symbol-function 'current-time-string)
-	     (lambda (&optional time &rest args)
-	       (apply ,(symbol-function 'current-time-string)
-		      (or time ,at) args)))
-	    ((symbol-function 'current-time-zone)
-	     (lambda (&optional time &rest args)
-	       (apply ,(symbol-function 'current-time-zone)
-		      (or time ,at) args)))
-	    ((symbol-function 'decode-time)
-	     (lambda (&optional time zone form)
-               (condition-case nil
-                   (funcall ,(symbol-function 'decode-time)
-			    (or time ,at) zone form)
-                 (wrong-number-of-arguments
-                  (funcall ,(symbol-function 'decode-time)
-			   (or time ,at))))))
-	    ((symbol-function 'encode-time)
-	     (lambda (time &rest args)
-	       (apply ,(symbol-function 'encode-time) (or time ,at) args)))
-	    ((symbol-function 'float-time)
-	     (lambda (&optional time)
-	       (funcall ,(symbol-function 'float-time) (or time ,at))))
-	    ((symbol-function 'format-time-string)
-	     (lambda (format &optional time &rest args)
-	       (apply ,(symbol-function 'format-time-string)
-		      format (or time ,at) args)))
-	    ((symbol-function 'set-file-times)
-	     (lambda (file &optional time)
-	       (funcall ,(symbol-function 'set-file-times) file (or time ,at))))
-	    ((symbol-function 'time-add)
-	     (lambda (a b) (funcall ,(symbol-function 'time-add)
-			       (or a ,at) (or b ,at))))
-	    ((symbol-function 'time-equal-p)
-	     (lambda (a b) (funcall ,(symbol-function 'time-equal-p)
-				    (or a ,at) (or b ,at))))
-	    ((symbol-function 'time-less-p)
-	     (lambda (a b) (funcall ,(symbol-function 'time-less-p)
-				    (or a ,at) (or b ,at))))
-	    ((symbol-function 'time-subtract)
-	     (lambda (a b) (funcall ,(symbol-function 'time-subtract)
-				    (or a ,at) (or b ,at)))))
-	 ,@body))))
+       (cl-flet
+           ((org-test-current-time (_fun &rest _args)
+              ,at)
+            (org-test-current-time-string (fun &optional time &rest args)
+              (apply fun
+                     (or time ,at) args))
+            (org-test-current-time-zone (fun &optional time &rest args)
+              (apply fun (or time ,at) args))
+            (org-test-decode-time (fun &optional time zone form)
+              (condition-case nil
+                  (funcall fun (or time ,at) zone form)
+                (wrong-number-of-arguments
+                 (funcall fun (or time ,at)))))
+            (org-test-encode-time (fun time &rest args)
+              (apply fun (or time ,at) args))
+            (org-test-float-time (fun &optional time)
+              (funcall fun (or time ,at)))
+            (org-test-format-time-string (fun format &optional time &rest args)
+              (apply fun format (or time ,at) args))
+            (org-test-set-file-times (fun file &optional time)
+              (funcall fun file (or time ,at)))
+            (org-test-time-add (fun a b)
+              (funcall fun (or a ,at) (or b ,at)))
+            (org-test-time-equal-p (fun a b)
+              (funcall fun (or a ,at) (or b ,at)))
+            (org-test-time-less-p (fun a b)
+              (funcall fun (or a ,at) (or b ,at)))
+            (org-test-time-subtract (fun a b)
+              (funcall fun (or a ,at) (or b ,at))))
+         (add-function :around (symbol-function 'current-time)        #'org-test-current-time)
+         (add-function :around (symbol-function 'current-time-string) #'org-test-current-time-string)
+         (add-function :around (symbol-function 'current-time-zone)   #'org-test-current-time-zone)
+         (add-function :around (symbol-function 'decode-time)         #'org-test-decode-time)
+         (add-function :around (symbol-function 'encode-time)         #'org-test-encode-time)
+         (add-function :around (symbol-function 'float-time)          #'org-test-float-time)
+         (add-function :around (symbol-function 'format-time-string)  #'org-test-format-time-string)
+         (add-function :around (symbol-function 'set-file-times)      #'org-test-set-file-times)
+         (add-function :around (symbol-function 'time-add)            #'org-test-time-add)
+         (add-function :around (symbol-function 'time-equal-p)        #'org-test-time-equal-p)
+         (add-function :around (symbol-function 'time-less-p)         #'org-test-time-less-p)
+         (add-function :around (symbol-function 'time-subtract)       #'org-test-time-subtract)
+
+         (unwind-protect
+             (progn ,@body)
+           (remove-function (symbol-function 'current-time)        #'org-test-current-time)
+           (remove-function (symbol-function 'current-time-string) #'org-test-current-time-string)
+           (remove-function (symbol-function 'current-time-zone)   #'org-test-current-time-zone)
+           (remove-function (symbol-function 'decode-time)         #'org-test-decode-time)
+           (remove-function (symbol-function 'encode-time)         #'org-test-encode-time)
+           (remove-function (symbol-function 'float-time)          #'org-test-float-time)
+           (remove-function (symbol-function 'format-time-string)  #'org-test-format-time-string)
+           (remove-function (symbol-function 'set-file-times)      #'org-test-set-file-times)
+           (remove-function (symbol-function 'time-add)            #'org-test-time-add)
+           (remove-function (symbol-function 'time-equal-p)        #'org-test-time-equal-p)
+           (remove-function (symbol-function 'time-less-p)         #'org-test-time-less-p)
+           (remove-function (symbol-function 'time-subtract)       #'org-test-time-subtract))))))
 
 (defmacro org-test-capture-warnings (&rest body)
   "Capture all warnings passed to `org-display-warning' within BODY."
@@ -606,14 +619,15 @@ When FULL is non-nil, return the full name like Monday, Tuesday, ..."
 (defmacro org-test-with-exported-text (backend source &rest body)
   "Run BODY in export buffer for SOURCE string via BACKEND."
   (declare (indent 2))
-  `(org-test-with-temp-text ,source
-     (let ((export-buffer (generate-new-buffer "Org temporary export")))
-       (unwind-protect
-           (progn
-             (org-export-to-buffer ,backend export-buffer)
-             (with-current-buffer export-buffer
-               ,@body))
-         (kill-buffer export-buffer)))))
+  (org-with-gensyms (export-buffer)
+    `(org-test-with-temp-text ,source
+       (let ((,export-buffer (generate-new-buffer "Org temporary export")))
+         (unwind-protect
+             (progn
+               (org-export-to-buffer ,backend ,export-buffer)
+               (with-current-buffer ,export-buffer
+                 ,@body))
+           (kill-buffer ,export-buffer))))))
 
 (provide 'org-test)
 

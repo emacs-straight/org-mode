@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-(eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
 (require 'ob-lob)
 
 
@@ -61,7 +61,7 @@
       (org-test-at-id "fab7e291-fde6-45fc-bf6e-a485b8bca2f0"
 	(move-beginning-of-line 1)
 	(forward-line 6)
-	(message (buffer-substring (point-at-bol) (point-at-eol)))
+	(message (buffer-substring (line-beginning-position) (line-end-position)))
 	(should
 	 (string= "testing" (org-babel-execute-src-block
 			     nil (org-babel-lob-get-info))))
