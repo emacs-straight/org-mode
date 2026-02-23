@@ -102,13 +102,49 @@ of source block parameters.  This function relies on the
 from PARAMS and on the `org-babel-variable-assignments:plantuml'
 function to convert variables to PlantUML assignments.
 
-If BODY does not contain @startXXX ... @endXXX clauses, @startuml
-... @enduml will be added."
-  (let ((full-body
-	 (org-babel-expand-body:generic
-	  body params (org-babel-variable-assignments:plantuml params))))
-    (if (string-prefix-p "@start" body t) full-body
-      (format "@startuml\n%s\n@enduml" full-body))))
+The function parses BODY to find matching @startXXX ... @endXXX
+keyword pairs:
+- If a matching pair is found (e.g., @startuml/@enduml or
+  @startsalt/@endsalt), variable expansion is applied only to the
+  content between the keywords, preserving any content outside the
+  keywords.
+- If @startXXX is found but no matching @endXXX, or if no @startXXX is
+  found, the entire BODY is treated as diagram content and wrapped
+  with @startuml ... @enduml keywords after variable expansion."
+  (let* ((regex (rx
+                 (group (zero-or-more anything))
+                 line-start
+                 (zero-or-more blank)
+                 "@start"
+                 (group (one-or-more (not whitespace)))
+                 (zero-or-more blank)
+                 line-end
+                 (zero-or-one whitespace)
+                 (group (zero-or-more anychar))
+                 line-start
+                 (zero-or-more blank)
+                 "@end"
+                 (backref 2)
+                 (zero-or-more blank)
+                 line-end
+                 (group (zero-or-more anything))))
+         (_ (string-match regex body))
+         (pre-body (string-trim (or (match-string 1 body) "")))
+         (keyword-type (or (match-string 2 body) "uml"))
+         (inner-body (string-trim (or (match-string 3 body) body)))
+         (post-body (string-trim (or (match-string 4 body) ""))))
+
+    (string-join
+     (remove ""
+             (list pre-body
+                   (string-join (list "@start" keyword-type))
+                   (org-babel-expand-body:generic
+                    inner-body
+                    params
+                    (org-babel-variable-assignments:plantuml params))
+                   (string-join (list "@end" keyword-type))
+                   post-body))
+     "\n")))
 
 (defun org-babel-execute:plantuml (body params)
   "Execute a block of plantuml code with org-babel.

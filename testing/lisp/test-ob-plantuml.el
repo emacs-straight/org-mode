@@ -49,6 +49,36 @@ class CLASSNAME
 	   (car src-block-info)
 	   (car (cdr src-block-info)))))))))
 
+(ert-deftest test-ob-plantuml/single-var-on-body-with-start-end-keywords-and-content-outside-the-keywords ()
+  "Test file output with input variable on BODY with @startXXX ... @endXXX keywords
+and pre-body / post-body content."
+  (should
+   (string=
+    "pre-body content
+@startuml
+!define CLASSNAME test_class
+class CLASSNAME
+@enduml
+post-body content"
+    (let ((org-plantuml-jar-path nil))
+      (org-test-with-temp-text
+       "#+name: variable_value
+: test_class
+
+#+header: :file tmp.puml
+#+header: :var CLASSNAME=variable_value
+#+begin_src plantuml
+pre-body content
+@startuml
+class CLASSNAME
+@enduml
+post-body content
+#+end_src"
+       (org-babel-next-src-block)
+       (let ((src-block-info (cdr (org-babel-get-src-block-info))))
+	 (org-babel-plantuml-make-body
+	  (car src-block-info)
+	  (car (cdr src-block-info)))))))))
 
 (ert-deftest test-ob-plantuml/prologue ()
   "Test file output with prologue."
