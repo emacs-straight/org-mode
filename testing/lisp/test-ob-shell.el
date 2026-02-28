@@ -34,6 +34,8 @@
 
 (org-test-for-executable "sh")
 
+(require 'ob-shell)
+
 
 ;;; Code:
 (ert-deftest test-ob-shell/dont-insert-spaces-on-expanded-bodies ()

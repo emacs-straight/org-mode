@@ -22,6 +22,8 @@
 (unless (featurep 'ob-maxima)
   (signal 'missing-test-dependency '("Support for Maxima code blocks")))
 
+(require 'ob-maxima)
+
 (defmacro ob-maxima--without-rc (&rest body)
   "Run body arranging maxima calls to ignore init file."
   (declare (debug (body)))

@@ -22,6 +22,8 @@
 (unless (featurep 'ob-C)
   (signal 'missing-test-dependency '("Support for C code blocks")))
 
+(require 'ob-C)
+
 (ert-deftest ob-C/simple-program ()
   "Hello world program."
   (if (executable-find org-babel-C++-compiler)

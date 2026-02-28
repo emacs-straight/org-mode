@@ -24,6 +24,8 @@
 (unless (featurep 'ob-python)
   (signal 'missing-test-dependency '("Support for Python code blocks")))
 
+(require 'ob-python)
+
 (ert-deftest test-ob-python/colnames-yes-header-argument ()
   (should
    (equal '(("col") hline ("a") ("b"))

@@ -23,6 +23,7 @@
   (signal 'missing-test-dependency '("Support for C# code blocks")))
 
 (require 'ob-core)
+(require 'ob-csharp)
 
 (org-test-for-executable org-babel-csharp-compiler)
 

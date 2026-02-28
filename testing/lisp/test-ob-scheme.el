@@ -30,6 +30,8 @@
 (unless (version<= "27.1" emacs-version)
   (signal 'missing-test-dependency '("Geiser required for Scheme code blocks needs Emacs >=27.1")))
 
+(require 'ob-scheme)
+
 (ert-deftest test-ob-scheme/tables ()
   "Test table output."
   (should

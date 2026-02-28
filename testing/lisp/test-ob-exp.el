@@ -26,6 +26,8 @@
 
 (require 'ob-exp)
 (require 'org-src)
+(require 'org-element)
+(require 'ox)
 (require 'org-test "../testing/org-test")
 
 (defmacro org-test-with-expanded-babel-code (&rest body)

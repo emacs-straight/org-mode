@@ -22,6 +22,8 @@
 (unless (featurep 'ob-lua)
   (signal 'missing-test-dependency '("Support for Lua code blocks")))
 
+(require 'ob-lua)
+
 (ert-deftest test-ob-lua/simple-value ()
   "Test associative array return by value."
   (should

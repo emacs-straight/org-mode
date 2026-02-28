@@ -29,6 +29,8 @@
 (unless (featurep 'ob-java)
   (signal 'missing-test-dependency '("Support for java code blocks")))
 
+(require 'org-lint)
+
 ;;; No Java required
 
 (ert-deftest ob-java/lint-header-args-buffer ()
