@@ -377,18 +377,21 @@ nor a function, elements of KEYWORDS are used directly."
   "Set the priority of the current headline to PRIORITY."
   (org-priority priority))
 
-(defvar org-mouse-priority-regexp "\\[#\\([A-Z]\\)\\]"
+(defvar org-mouse-priority-regexp
+  (format "\\[#\\(%s\\)\\]" org-priority-value-regexp)
   "Regular expression matching the priority indicator.
 Differs from `org-priority-regexp' in that it doesn't contain the
-leading `.*?'.")
+leading `.*?' and only matches a group for the priority value.")
 
 (defun org-mouse-get-priority (&optional default)
   "Return the priority of the current headline.
-DEFAULT is returned if no priority is given in the headline."
+If the headline does not contain a priority, return `org-priority-default'
+when DEFAULT is non-nil and nil otherwise."
   (save-excursion
     (if (org-mouse-re-search-line org-mouse-priority-regexp)
 	(match-string 1)
-      (when default (char-to-string org-priority-default)))))
+      (when default
+        (org-priority-to-string org-priority-default)))))
 
 (defun org-mouse-delete-timestamp ()
   "Deletes the current timestamp as well as the preceding keyword.
@@ -409,8 +412,24 @@ SCHEDULED: or DEADLINE: or ANYTHINGLIKETHIS:"
 	  (> (match-end 0) point))))))
 
 (defun org-mouse-priority-list ()
-  (cl-loop for priority from ?A to org-priority-lowest
-	   collect (char-to-string priority)))
+  "Priorities from `org-priority-highest' to `org-priority-lowest' as strings."
+  (cl-loop for priority from org-priority-highest to org-priority-lowest
+           collect (org-priority-to-string priority)))
+
+(defun org-mouse-priority-menu ()
+  "Create the priority menu."
+  (append (org-mouse-keyword-menu
+           (org-mouse-priority-list)
+           (lambda (keyword) (org-mouse-set-priority
+                         (org-priority-to-value keyword)))
+           (org-mouse-get-priority t)
+           "Priority %s")
+          '("--"
+            ["None" (org-priority 'remove) t]
+            ["Increase" (org-priority-up) t]
+            ["Decrease" (org-priority-down) t]
+            ["Default" (org-priority org-priority-default) t]
+            ["Set..." (org-priority 'set) t])))
 
 (defun org-mouse-todo-menu (state)
   "Create the menu with TODO keywords."
@@ -487,6 +506,7 @@ SCHEDULED: or DEADLINE: or ANYTHINGLIKETHIS:"
     text))
 
 (defun org-mouse-popup-global-menu ()
+  (unless (featurep 'org-agenda) (require 'org-agenda))
   (popup-menu
    `("Main Menu"
      ["Show Overview" org-mouse-show-overview t]
@@ -523,8 +543,7 @@ SCHEDULED: or DEADLINE: or ANYTHINGLIKETHIS:"
      "--"
      ,@(org-mouse-keyword-menu
 	(mapcar #'car org-agenda-custom-commands)
-        (lambda (key)
-	  (org-agenda nil (string-to-char key)))
+        (lambda (key) (org-agenda nil key))
 	nil
         (lambda (key)
           (let ((entry (assoc key org-agenda-custom-commands)))
@@ -684,9 +703,8 @@ This means, between the beginning of line and the point."
 	 "--"
 	 ["Check Deadlines" org-check-deadlines t]
 	 )))
-     ((org-mouse-looking-at org-mouse-priority-regexp "[]A-Z#") ; priority
-      (popup-menu `(nil ,@(org-mouse-keyword-replace-menu
-			   (org-mouse-priority-list) 1 "Priority %s" t))))
+     ((org-mouse-looking-at org-mouse-priority-regexp "[]A-Z0-9#") ; priority
+      (popup-menu `(nil ,@(org-mouse-priority-menu))))
      ((funcall get-context :link)
       (popup-menu
        '(nil
@@ -796,54 +814,47 @@ This means, between the beginning of line and the point."
 	  :style toggle :selected org-table-formula-debug]
 	 )))
      ((and (assq :headline contextlist) (not (eolp)))
-      (let ((priority (org-mouse-get-priority t)))
-	(popup-menu
-	 `("Headline Menu"
-	   ("Tags and Priorities"
-	    ,@(org-mouse-keyword-menu
-	       (org-mouse-priority-list)
-               (lambda (keyword)
-                 (org-mouse-set-priority (string-to-char keyword)))
-	       priority "Priority %s")
-	    "--"
-	    ,@(org-mouse-tag-menu))
-	   ("TODO Status"
-	    ,@(org-mouse-todo-menu (org-get-todo-state)))
-	   ["Show Tags"
-	    (with-current-buffer org-mouse-main-buffer (org-agenda-show-tags))
-	    :visible (not org-mouse-direct)]
-	   ["Show Priority"
-	    (with-current-buffer org-mouse-main-buffer (org-agenda-show-priority))
-	    :visible (not org-mouse-direct)]
-	   ,@(if org-mouse-direct '("--") nil)
-	   ["New Heading" org-mouse-insert-heading :visible org-mouse-direct]
-	   ["Set Deadline"
-	    (progn (org-mouse-end-headline) (insert " ") (org-deadline))
-	    :active (not (save-excursion
-			   (org-mouse-re-search-line org-deadline-regexp)))]
-	   ["Schedule Task"
-	    (progn (org-mouse-end-headline) (insert " ") (org-schedule))
-	    :active (not (save-excursion
-			   (org-mouse-re-search-line org-scheduled-regexp)))]
-	   ["Insert Timestamp"
-	    (progn (org-mouse-end-headline) (insert " ") (org-timestamp nil)) t]
+      (popup-menu
+       `("Headline Menu"
+	 ("Priorities" ,@(org-mouse-priority-menu))
+	 ("Tags" ,@(org-mouse-tag-menu))
+	 ("TODO Status"
+	  ,@(org-mouse-todo-menu (org-get-todo-state)))
+	 ["Show Tags"
+	  (with-current-buffer org-mouse-main-buffer (org-agenda-show-tags))
+	  :visible (not org-mouse-direct)]
+	 ["Show Weighted Priority"
+	  (with-current-buffer org-mouse-main-buffer (org-priority-show))
+	  :visible (not org-mouse-direct)]
+	 ,@(if org-mouse-direct '("--") nil)
+	 ["New Heading" org-mouse-insert-heading :visible org-mouse-direct]
+	 ["Set Deadline"
+	  (call-interactively #'org-deadline)
+	  :active (not (save-excursion
+			 (org-mouse-re-search-line org-deadline-regexp)))]
+	 ["Schedule Task"
+	  (call-interactively #'org-schedule)
+	  :active (not (save-excursion
+			 (org-mouse-re-search-line org-scheduled-regexp)))]
+	 ["Insert Timestamp"
+	  (progn (org-mouse-end-headline) (insert " ") (org-timestamp nil)) t]
 					;	 ["Timestamp (inactive)" org-timestamp-inactive t]
-	   "--"
-	   ["Archive Subtree" org-archive-subtree]
-	   ["Cut Subtree"  org-cut-special]
-	   ["Copy Subtree"  org-copy-special]
-	   ["Paste Subtree"  org-paste-special :visible org-mouse-direct]
-	   ("Sort Children"
-	    ["Alphabetically" (org-sort-entries nil ?a)]
-	    ["Numerically" (org-sort-entries nil ?n)]
-	    ["By Time/Date" (org-sort-entries nil ?t)]
-	    "--"
-	    ["Reverse Alphabetically" (org-sort-entries nil ?A)]
-	    ["Reverse Numerically" (org-sort-entries nil ?N)]
-	    ["Reverse By Time/Date" (org-sort-entries nil ?T)])
-	   "--"
-	   ["Move Trees" org-mouse-move-tree :active nil]
-	   ))))
+	 "--"
+	 ["Archive Subtree" org-archive-subtree]
+	 ["Cut Subtree"  org-cut-special]
+	 ["Copy Subtree"  org-copy-special]
+	 ["Paste Subtree"  org-paste-special :visible org-mouse-direct]
+	 ("Sort Children"
+	  ["Alphabetically" (org-sort-entries nil ?a)]
+	  ["Numerically" (org-sort-entries nil ?n)]
+	  ["By Time/Date" (org-sort-entries nil ?t)]
+	  "--"
+	  ["Reverse Alphabetically" (org-sort-entries nil ?A)]
+	  ["Reverse Numerically" (org-sort-entries nil ?N)]
+	  ["Reverse By Time/Date" (org-sort-entries nil ?T)])
+	 "--"
+	 ["Move Trees" org-mouse-move-tree :active nil]
+	 )))
      (t
       (org-mouse-popup-global-menu)))))
 
@@ -995,8 +1006,6 @@ This means, between the beginning of line and the point."
 	(replace-match replace-text))
       (forward-line))))
 
-(defvar org-mouse-cmd) ;dynamically scoped from `org-with-remote-undo'.
-
 (defun org-mouse-do-remotely (command)
   ;;  (org-agenda-check-no-diary)
   (when (get-text-property (point) 'org-marker)
@@ -1026,11 +1035,8 @@ This means, between the beginning of line and the point."
 	      (setq marker (point-marker))
               (goto-char (max (line-beginning-position) (- (line-end-position) anticol)))
 	      (funcall command)
-	      (message "_cmd: %S" org-mouse-cmd)
-	      (message "this-command: %S" this-command)
 	      (unless (eq (marker-position marker) (marker-position endmarker))
 		(setq newhead (org-get-heading))))
-
 	    (forward-line 1)
 	    (save-excursion
 	      (org-agenda-change-all-lines newhead hdmarker 'fixface))))

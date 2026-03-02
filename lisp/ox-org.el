@@ -79,6 +79,7 @@ described in the Info node `(org)Advanced features'."
     (entity . org-org-identity)
     (example-block . org-org-identity)
     (export-block . org-org-export-block)
+    (export-snippet . org-org-export-snippet)
     (fixed-width . org-org-identity)
     (footnote-definition . ignore)
     (footnote-reference . org-org-identity)
@@ -158,13 +159,23 @@ CONTENTS and INFO are ignored."
   (and (equal (org-element-property :type export-block) "ORG")
        (org-element-property :value export-block)))
 
-(defun org-org-identity (blob contents _info)
+(defun org-org-identity (blob contents info)
   "Transcode BLOB element or object back into Org syntax.
-CONTENTS is its contents, as a string or nil.  INFO is ignored."
-  (let ((case-fold-search t))
-    (replace-regexp-in-string
-     "^[ \t]*#\\+attr_[-_a-z0-9]+:\\(?: .*\\)?\n" ""
-     (org-export-expand blob contents t))))
+CONTENTS is its contents, as a string or nil.  INFO is the information plist."
+  (let ((new-blob (org-element-copy blob)))
+    ;; Recursively export secondary objects.
+    (org-element-map new-blob t
+      (lambda (data)
+        (unless (eq data new-blob)
+          (let ((exported-data (copy-sequence (org-export-data data info))))
+            (unless (string-empty-p exported-data)
+              (org-element-insert-before exported-data data))
+            (org-element-extract-element data))))
+      info nil nil 'with-affiliated)
+    (let ((case-fold-search t))
+      (replace-regexp-in-string
+       "^[ \t]*#\\+attr_[-_a-z0-9]+:\\(?: .*\\)?\n" ""
+       (org-export-expand new-blob contents t)))))
 
 (defun org-org-headline (headline contents info)
   "Transcode HEADLINE element back into Org syntax.
@@ -178,7 +189,7 @@ CONTENTS is its contents, as a string or nil.  INFO is ignored."
       (org-element-put-property headline :priority nil))
     (org-element-put-property headline :level
 			      (org-export-get-relative-level headline info))
-    (org-element-headline-interpreter headline contents)))
+    (org-org-identity headline contents info)))
 
 (defun org-org-keyword (keyword _contents _info)
   "Transcode KEYWORD element back into Org syntax.
@@ -194,6 +205,12 @@ CONTENTS is the description of the link, as a string, or nil.
 INFO is a plist containing current export state."
   (or (org-export-custom-protocol-maybe link contents 'org info)
       (org-element-link-interpreter link contents)))
+
+(defun org-org-export-snippet (export-snippet _contents _info)
+  "Transcode a EXPORT-SNIPPET object from Org to Org.
+CONTENTS is nil.  INFO is a plist holding contextual information."
+  (when (eq (org-export-snippet-backend export-snippet) 'org)
+    (org-element-property :value export-snippet)))
 
 (defun org-org-template (contents info)
   "Return Org document template with document keywords.

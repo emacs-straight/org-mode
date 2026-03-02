@@ -25,25 +25,31 @@ Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 # require user action for most Org mode users.
 # Sorted from most important to least important.
 
+*** ~org-mouse~ tag and priority menus are now separate
+
+The "Tags and Priorities" section of the global context menu is split
+into a "Tags" section and a "Priorities" section.
+
 ** New features
 
 # We list the most important features, and the features that may
 # require user action to be used.
 
-*** New variable ~org-latex-default-example-environment~
+*** New actions in the ~org-mouse~ priority menus
 
-Use this variable to control the LaTeX environment used in example
-blocks.
-
-*** New variable ~org-latex-graphics-path~
-
-use this variable to control the path where LaTeX will look for images.
+Priorities can now be increased, decreased, set to the default, and
+set interactively from the priority context menus.
 
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
+
+*** New custom variable ~org-latex-default-example-environment~
+
+You can set the LaTeX environment used in ~example~ blocks with this
+variable.
 
 ** New functions and changes in function arguments
 
@@ -57,6 +63,11 @@ cookie =[N%]=.
 ** Removed or renamed functions and variables
 
 ** Miscellaneous
+
+*** =ox-latex=: ~#+BEGIN_EXAMPLE~ now checks for ~:options~ in ~#+ATTR_LATEX:~
+
+You can now pass options to the environment you choose for the
+~#+BEGIN_EXAMPLE~ environments.
 
 *** The percent cookie is now non-zero when any sub-task is complete
 

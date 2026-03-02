@@ -5540,7 +5540,7 @@ DATA is a parse tree, an element, an object or a secondary string
 to interpret.  Return Org syntax as a string."
   (letrec ((fun
 	    (lambda (data parent)
-	      (let* ((type (org-element-type data))
+	      (let* ((type (org-element-type data 'allow-anonymous))
 		     ;; Find interpreter for current object or
 		     ;; element.  If it doesn't exist (e.g. this is
 		     ;; a pseudo object or element), return contents,

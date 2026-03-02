@@ -97,7 +97,7 @@ Convert LEXICAL into the form appropriate for `lexical-binding'
 and the LEXICAL argument to `eval'."
   (if (listp lexical)
       lexical
-    (not (null (member lexical '("yes" "t"))))))
+    (not (null (member lexical '("yes" "t" t))))))
 
 (defun org-babel-edit-prep:emacs-lisp (info)
   "Set `lexical-binding' in Org edit buffer.

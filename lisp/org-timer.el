@@ -425,7 +425,8 @@ using three \\[universal-argument] prefix arguments."
 	    org-timer-default-timer))
 	 (effort-minutes
           (cond ((derived-mode-p 'org-agenda-mode)
-                 (floor (org-get-at-bol 'effort-minutes)))
+                 (when-let* ((effort (org-get-at-bol 'effort-minutes)))
+                   (floor effort)))
                 ((derived-mode-p 'org-mode)
                  (let ((effort (org-entry-get nil org-effort-property)))
 	           (when (org-string-nw-p effort)

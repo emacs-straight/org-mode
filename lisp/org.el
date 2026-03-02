@@ -18852,7 +18852,7 @@ an argument, unconditionally call `org-insert-heading'."
     "--"
     ("Documentation"
      ["Show Version" org-version t]
-     ["Info Documentation" org-info t]
+     ["Show Org Manual" org-info t]
      ["Browse Org News" org-browse-news t])
     ("Customize"
      ["Browse Org Group" org-customize t]

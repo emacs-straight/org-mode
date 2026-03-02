@@ -82,7 +82,16 @@ Version mismatch is commonly encountered in the following situations:
    It is recommended to set `load-path' as early in the config as
    possible.
 
-3. New Org version is loaded using straight.el package manager and
+3. New Org version is loaded while an old Org version is partially
+   loaded during compilation or M-x package-upgrade.  This usually
+   should not happen (at least, a number of attemps have been made
+   to avoid this problem in package.el), but sometimes it does anyway.
+
+   You can manually delete Org installation from ~/.emacs.d/elpa/ and
+   try installing again, possibly from emacs -Q without any
+   configuration loaded.
+
+4. New Org version is loaded using straight.el package manager and
    other package depending on Org is loaded before straight triggers
    loading of the newer Org version.
 
@@ -95,7 +104,7 @@ Version mismatch is commonly encountered in the following situations:
    sufficient if the corresponding `use-package' statement is
    deferring the loading.
 
-4. A new Org version is synchronized with Emacs git repository and
+5. A new Org version is synchronized with Emacs git repository and
    stale .elc files are still left from the previous build.
 
    It is recommended to remove .elc files from lisp/org directory and

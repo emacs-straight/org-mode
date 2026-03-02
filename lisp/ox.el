@@ -6760,7 +6760,7 @@ and `org-export-to-file' for more specialized functions."
          ;; Null characters (from variable values) are inserted
          ;; within the file.  As a consequence, coding system for
          ;; buffer contents could fail to be recognized properly.
-         (format ";; -*- coding: utf-8-emacs-unix; lexical-binding:t -*-\n%S"
+         (format ";; -*- coding: utf-8-emacs-unix; lexical-binding:t -*-\n%S\n%s"
                  `(with-temp-buffer
                     ,(when org-export-async-debug '(setq debug-on-error t))
                     ;; Ignore `kill-emacs-hook' and code evaluation
@@ -6774,7 +6774,11 @@ and `org-export-to-file' for more specialized functions."
                     (funcall ',copy-fun)
                     (restore-buffer-modified-p nil)
                     ;; Sexp to evaluate in the buffer.
-                    (print ,body)))
+                    (print ,body))
+                 ;; Add page break to suppress buffer-local variables.
+                 ;; We do not want local variables from the
+                 ;; orginal Org file (if any) to be mistakingly read.
+                 "\n")
          nil temp-file nil 'silent))
       ;; Start external process.
       (let* ((process-connection-type nil)
@@ -6782,15 +6786,16 @@ and `org-export-to-file' for more specialized functions."
              (process
 	      (apply
 	       #'start-process
-	       (append
-		(list "org-export-process"
-		      proc-buffer
-		      (expand-file-name invocation-name invocation-directory)
-		      "--batch")
-		(if org-export-async-init-file
-		    (list "-Q" "-l" org-export-async-init-file)
-		  (list "-l" user-init-file))
-		(list "-l" temp-file)))))
+               (delq nil
+	             (append
+		      (list "org-export-process"
+		            proc-buffer
+		            (expand-file-name invocation-name invocation-directory)
+		            "--batch")
+		      (if org-export-async-init-file
+		          (list "-Q" "-l" org-export-async-init-file)
+                        (and user-init-file (list "-l" user-init-file)))
+		      (list "-l" temp-file))))))
         ;; Register running process in stack.
         (org-export-add-to-stack (get-buffer proc-buffer) nil process)
         ;; Set-up sentinel in order to catch results.

@@ -163,7 +163,7 @@ You can also compile with =make=, generate the documentation with
 install Org with =make install=.  Please run =make help= to get the
 list of compilation/installation options.
 
-For more detailed explanations on Org's build system, please check the
+For more detailed explanations of Org's build system, please check the
 Org Build System page on [[https://orgmode.org/worg/dev/org-build-system.html][Worg]].
 
 *** Installing Org's contributed packages
@@ -259,7 +259,7 @@ respect the
 [[https://www.gnu.org/philosophy/kind-communication.html][GNU Kind
 Communications Guidelines]] when sending messages on this mailing
 list.  Please allow up to one month for a response and follow up if
-no response is received on the bug report.
+no response is received to the bug report.
 
 #+findex: org-version
 #+findex: org-submit-bug-report
@@ -534,7 +534,7 @@ Headlines are not numbered.  However, you may want to dynamically
 number some, or all, of them.  See [[*Dynamic Headline Numbering]].
 
 #+vindex: org-cycle-separator-lines
-An empty line after the end of a subtree is considered part of it and
+An empty line after the end of a subtree is considered part of that subtree and
 is hidden when the subtree is folded.  However, if you leave at least
 two empty lines, one empty line remains visible after folding the
 subtree, in order to structure the collapsed view.  See the variable
@@ -724,7 +724,7 @@ By default, Org prevents such edits for a limited set of user
 commands.  Users can control which commands are affected by
 customizing ~org-fold-catch-invisible-edits-commands~.
 
-The strategy used to decide if a given edit is dangerous is controlled
+The strategy used to decide whether a given edit is dangerous is controlled
 by ~org-fold-catch-invisible-edits~.  See the docstring of this option
 for the available strategies.  Set the option to ~nil~ to disable
 catching invisible edits completely.
@@ -775,7 +775,7 @@ The following commands jump to other headlines in the buffer.
   #+findex: org-goto
   #+vindex: org-goto-auto-isearch
   Jump to a different place without changing the current outline
-  visibility.  Shows the document structure in a temporary buffer,
+  visibility.  Show the document structure in a temporary buffer,
   where you can use the following keys to find your destination:
 
   #+attr_texinfo: :columns 0.3 0.7
@@ -847,14 +847,14 @@ The following commands jump to other headlines in the buffer.
   #+kindex: M-S-RET
   #+findex: org-insert-todo-heading
   #+vindex: org-treat-insert-todo-heading-as-state-change
-  Insert new TODO entry with same level as current heading.  See also
+  Insert a new TODO entry with the same level as the current heading.  See also
   the variable ~org-treat-insert-todo-heading-as-state-change~.
 
 - {{{kbd(C-S-RET)}}} (~org-insert-todo-heading-respect-content~) ::
 
   #+kindex: C-S-RET
   #+findex: org-insert-todo-heading-respect-content
-  Insert new TODO entry with same level as current heading.  Like
+  Insert a new TODO entry with the same level as the current heading.  Like
   {{{kbd(C-RET)}}}, the new headline is inserted after the current
   subtree.
 
@@ -882,8 +882,7 @@ The following commands jump to other headlines in the buffer.
   When there is an active region---i.e., when Transient Mark mode is
   active---promotion and demotion work on all headlines in the region.
   To select a region of headlines, it is best to set mark at the beginning of the first
-  headline, and point at the line just after the last headline to
-  change.
+  headline, and point at the line just after the last headline you want to change.
 
 - {{{kbd(M-S-LEFT)}}} (~org-promote-subtree~) ::
 
@@ -913,33 +912,33 @@ The following commands jump to other headlines in the buffer.
 
   #+kindex: C-c @@
   #+findex: org-mark-subtree
-  Mark the subtree at point.  Hitting it repeatedly marks subsequent
+  Mark the subtree at point.  Pressing the key repeatedly marks subsequent
   subtrees of the same level as the marked subtree.
 
 - {{{kbd(C-c C-x C-w)}}} (~org-cut-subtree~) ::
 
   #+kindex: C-c C-x C-w
   #+findex: org-cut-subtree
-  Kill subtree, i.e., remove it from the buffer but save in kill ring.
+  Kill subtree, i.e., remove it from the buffer but save it in the kill ring.
   With a numeric prefix argument N, kill N sequential subtrees.
 
 - {{{kbd(C-c C-x M-w)}}} (~org-copy-subtree~) ::
 
   #+kindex: C-c C-x M-w
   #+findex: org-copy-subtree
-  Copy subtree to kill ring.  With a numeric prefix argument N, copy
+  Copy subtree to the kill ring.  With a numeric prefix argument N, copy
   the N sequential subtrees.
 
 - {{{kbd(C-c C-x C-y)}}} (~org-paste-subtree~) ::
 
   #+kindex: C-c C-x C-y
   #+findex: org-paste-subtree
-  Yank subtree from kill ring.  This does modify the level of the
+  Yank subtree from the kill ring.  This modifies the level of the
   subtree to make sure the tree fits in nicely at the yank position.
   The yank level can also be specified with a numeric prefix argument,
   or by yanking after a headline marker like =****=.  With
-  {{{kbd(C-u)}}} prefix, force inserting as a sibling.  With
-  {{{kbd(C-u C-u)}}} prefix argument, force inserting as a child.
+  {{{kbd(C-u)}}} prefix, force inserting it as a sibling.  With
+  {{{kbd(C-u C-u)}}} prefix argument, force inserting it as a child.
 
 - {{{kbd(C-y)}}} (~org-yank~) ::
 
@@ -952,7 +951,7 @@ The following commands jump to other headlines in the buffer.
   subtrees folded and in a clever way, using the same command as
   {{{kbd(C-c C-x C-y)}}}.  With the default settings, no level
   adjustment takes place, but the yanked tree is folded unless doing
-  so would swallow text previously visible.  Any prefix argument to
+  so would swallow previously visible text.  Any prefix argument to
   this command forces a normal ~yank~ to be executed, with the prefix
   passed along.  A good way to force a normal yank is {{{kbd(C-u
   C-y)}}}.  If you use ~yank-pop~ after a yank, it yanks previous kill
@@ -6178,7 +6177,7 @@ or a dynamic block.
 To assist project planning, TODO items can be labeled with a date
 and/or a time.  The specially formatted string carrying the date and
 time information is called a /timestamp/ in Org mode.  This may be
-a little confusing because timestamp is often used as indicating when
+a little confusing because timestamp is often used to indicate when
 something was created or last changed.  However, in Org mode this term
 is used in a much wider sense.
 
@@ -6290,7 +6289,7 @@ the agenda (see [[*Weekly/daily agenda]]).  We distinguish:
   #+cindex: timestamp, inactive
   #+cindex: inactive timestamp
   Just like a plain timestamp, but with square brackets instead of
-  angular ones.  These timestamps are inactive in the sense that they
+  angle brackets.  These timestamps are inactive in the sense that they
   do /not/ trigger an entry to show up in the agenda.
 
   #+begin_example
@@ -6348,7 +6347,7 @@ format.
 
   #+kindex: C-c <
   #+findex: org-date-from-calendar
-  Insert a timestamp corresponding to point date in the calendar.
+  Insert a timestamp corresponding to the date at point in the calendar.
 
 - {{{kbd(C-c >)}}} (~org-goto-calendar~) ::
 
@@ -6362,8 +6361,8 @@ format.
 
   #+kindex: C-c C-o
   #+findex: org-open-at-point
-  Access the agenda for the date given by the timestamp or -range at
-  point (see [[*Weekly/daily agenda]]).
+  Access the agenda for the date given by the timestamp or timestamp
+  range at point (see [[*Weekly/daily agenda]]).
 
 - {{{kbd(S-LEFT)}}} (~org-timestamp-down-day~), {{{kbd(S-RIGHT)}}} (~org-timestamp-up-day~) ::
 
@@ -6379,7 +6378,7 @@ format.
 
   #+kindex: S-UP
   #+kindex: S-DOWN
-  On the beginning or enclosing bracket of a timestamp, change its
+  At the beginning or enclosing bracket of a timestamp, change its
   type.  Within a timestamp, change the item under point.  Point can
   be on a year, month, day, hour or minute.  When the timestamp
   contains a time range like =15:30-16:30=, modifying the first time
@@ -6396,7 +6395,7 @@ format.
   #+findex: org-evaluate-time-range
   #+cindex: evaluate time range
   Evaluate a time range by computing the difference between start and
-  end.  With a prefix argument, insert result after the time range (in
+  end.  With a prefix argument, insert the result after the time range (in
   a table: into the following column).
 
 *** The date/time prompt
@@ -6409,9 +6408,9 @@ format.
 #+vindex: org-read-date-prefer-future
 When Org mode prompts for a date/time, the default is shown in default
 date/time format, and the prompt therefore seems to ask for a specific
-format.  But it in fact accepts date/time information in a variety of
+format.  But in fact it accepts date/time information in a variety of
 formats.  Generally, the information should start at the beginning of
-the string.  Org mode finds whatever information is in there and
+the string.  Org mode finds whatever information is present and
 derives anything you have not specified from the /default date and
 time/.  The default is usually the current date and time, but when
 modifying an existing timestamp, or when entering the second stamp of
@@ -6473,8 +6472,8 @@ outside this range, read the docstring of the variable
 ~org-read-date-force-compatible-dates~.
 
 You can specify a time range by giving start and end times or by
-giving a start time and a duration (in HH:MM format).  Use one or two
-dash(es) as the separator in the former case and use =+= as the
+giving a start time and a duration (in HH:MM format).  Use one dash or
+two dashes as the separator in the former case and use =+= as the
 separator in the latter case, e.g.:
 
 | =11am-1:15pm=  | \rArr{} 11:00-13:15   |
@@ -6555,16 +6554,16 @@ it by customizing the variables ~org-display-custom-times~ and
 
 Org mode needs the default format for scanning, so the custom
 date/time format does not /replace/ the default format.  Instead, it
-is put /over/ the default format using text properties.  This has the
+is overlaid on the default format using text properties.  This has the
 following consequences:
 
-- You cannot place point onto a timestamp anymore, only before or
+- You cannot place point on a timestamp anymore, only before or
   after.
 
 - The {{{kbd(S-UP)}}} and {{{kbd(S-DOWN)}}} keys can no longer be used
   to adjust each component of a timestamp.  If point is at the
   beginning of the stamp, {{{kbd(S-UP)}}} and {{{kbd(S-DOWN)}}} change
-  the stamp by one day, just like {{{kbd(S-LEFT)}}}
+  the stamp by one day, just like {{{kbd(S-LEFT)}}} and
   {{{kbd(S-RIGHT)}}}.  At the end of the stamp, change the time by one
   minute.
 
@@ -6577,7 +6576,7 @@ following consequences:
 
 - If the custom timestamp format is longer than the default, and you
   are using dates in tables, table alignment will be messed up.  If
-  the custom format is shorter, things do work as expected.
+  the custom format is shorter, things work as expected.
 
 ** Deadlines and Scheduling
 :PROPERTIES:
@@ -6609,8 +6608,8 @@ immediately after the task they refer to.
 
   #+vindex: org-agenda-skip-deadline-prewarning-if-scheduled
   You can specify a different lead time for warnings for a specific
-  deadlines using the following syntax.  Here is an example with
-  a warning period of 5 days =DEADLINE: <2004-02-29 Sun -5d>=.  This
+  deadline using the following syntax.  Here is an example with a
+  warning period of 5 days =DEADLINE: <2004-02-29 Sun -5d>=.  This
   warning is deactivated if the task gets scheduled, and you set
   ~org-agenda-skip-deadline-prewarning-if-scheduled~ to ~t~.
 
@@ -6647,8 +6646,8 @@ immediately after the task they refer to.
   Scheduling an item in Org mode should /not/ be understood in the
   same way that we understand /scheduling a meeting/.  Setting a date
   for a meeting is just a simple appointment, you should mark this
-  entry with a simple plain timestamp, to get this item shown on the
-  date where it applies.  This is a frequent misunderstanding by Org
+  entry with a simple plain timestamp to get this item shown on the
+  date when it applies.  This is a frequent misunderstanding by Org
   users.  In Org mode, /scheduling/ means setting a date when you want
   to start working on an action item.
   #+end_quote
@@ -6684,7 +6683,7 @@ schedule an item:[fn:24]
   in the line directly following the headline.  Remove any =CLOSED=
   timestamp.  When called with a prefix argument, also remove any
   existing deadline from the entry.  Depending on the variable
-  ~org-log-redeadline~, take a note when changing an existing
+  ~org-log-redeadline~, take note when changing an existing
   deadline[fn:: Note the corresponding =STARTUP= options
   =logredeadline=, =lognoteredeadline=, and =nologredeadline=.].
 
@@ -6697,9 +6696,9 @@ schedule an item:[fn:24]
   happens in the line directly following the headline.  Remove any
   =CLOSED= timestamp.  When called with a prefix argument, also remove
   the scheduling date from the entry.  Depending on the variable
-  ~org-log-reschedule~, take a note when changing an existing
-  scheduling time[fn:: Note the corresponding =STARTUP= options
-  =logreschedule=, =lognotereschedule=, and =nologreschedule=.].
+  ~org-log-reschedule~, take note when changing an existing scheduling
+  time[fn:: Note the corresponding =STARTUP= options =logreschedule=,
+  =lognotereschedule=, and =nologreschedule=.].
 
 - {{{kbd(C-c / d)}}} (~org-check-deadlines~) ::
 
@@ -6707,7 +6706,7 @@ schedule an item:[fn:24]
   #+findex: org-check-deadlines
   #+cindex: sparse tree, for deadlines
   #+vindex: org-deadline-warning-days
-  Create a sparse tree with all deadlines that are either past-due, or
+  Create a sparse tree with all deadlines that are either past due, or
   which will become due within ~org-deadline-warning-days~.  With
   {{{kbd(C-u)}}} prefix, show all deadlines in the file.  With
   a numeric prefix, check that many days.  For example, {{{kbd(C-1 C-c
@@ -6725,7 +6724,7 @@ schedule an item:[fn:24]
   #+findex: org-check-after-date
   Sparse tree for deadlines and scheduled items after a given date.
 
-Note that ~org-schedule~ and ~org-deadline~ supports setting the date
+Note that ~org-schedule~ and ~org-deadline~ support setting the date
 by indicating a relative time e.g., =+1d= sets the date to the next
 day after today, and =--1w= sets the date to the previous week before
 any current timestamp.
@@ -6762,7 +6761,7 @@ Deadlines and scheduled items produce entries in the agenda when they
 are over-due, so it is important to be able to mark such an entry as
 done once you have done so.  When you mark a =DEADLINE= or a
 =SCHEDULED= with the TODO keyword =DONE=, it no longer produces
-entries in the agenda.  The problem with this is, however, is that
+entries in the agenda.  The problem with this, however, is that
 then also the /next/ instance of the repeated entry will not be
 active.  Org mode deals with this in the following way: when you try
 to mark such an entry as done, using {{{kbd(C-c C-t)}}}, it shifts the
@@ -6779,7 +6778,7 @@ state to =DONE= would actually switch the date like this:
    DEADLINE: <2005-11-01 Tue +1m>
 #+end_example
 
-When task contains multiple timestamps with repeater interval, all
+When a task contains multiple timestamps with repeater interval, all
 these timestamps are shifted.
 
 To mark a task with a repeater as DONE, use {{{kbd(C-- 1 C-c C-t)}}},
@@ -6856,7 +6855,7 @@ a project.  When you start working on an item, you can start the
 clock.  When you stop working on that task, or when you mark the task
 done, the clock is stopped and the corresponding time interval is
 recorded.  It also computes the total time spent on each
-subtree[fn:27] of a project.  And it remembers a history or tasks
+subtree[fn:27] of a project.  And it remembers a history of tasks
 recently clocked, so that you can jump quickly between a number of
 tasks absorbing your time.
 
@@ -6896,7 +6895,7 @@ about what to do with it.
   called with a {{{kbd(C-u)}}} prefix argument, select the task from
   a list of recently clocked tasks.  With two {{{kbd(C-u C-u)}}}
   prefixes, clock into the task at point and mark it as the default
-  task; the default task is always be available with letter
+  task; the default task is always available with letter
   {{{kbd(d)}}} when selecting a clocking task.  With three {{{kbd(C-u
   C-u C-u)}}} prefixes, force continuous clocking by starting the
   clock when the last clock stopped.
@@ -6930,7 +6929,7 @@ about what to do with it.
   #+vindex: org-log-note-clock-out
   Stop the clock (clock-out).  This inserts another timestamp at the
   same location where the clock was last started.  It also directly
-  computes the resulting time in inserts it after the time range as
+  computes the resulting time and inserts it after the time range as
   ==>HH:MM=.  See the variable ~org-log-note-clock-out~ for the
   possibility to record an additional note together with the clock-out
   timestamp[fn:: The corresponding in-buffer setting is: =#+STARTUP:
@@ -7182,7 +7181,7 @@ be selected:
 
 #+findex: org-clocktable-write-default
 Then there are options that determine the formatting of the table.
-There options are interpreted by the function
+These options are interpreted by the function
 ~org-clocktable-write-default~, but you can specify your own function
 using the =:formatter= parameter.
 
@@ -7338,7 +7337,7 @@ By customizing the variable ~org-clock-idle-time~ to some integer,
 such as 10 or 15, Emacs can alert you when you get back to your
 computer after being idle for that many minutes[fn:29], and ask what
 you want to do with the idle time.  There will be a question waiting
-for you when you get back, indicating how much idle time has passed
+for you when you get back, indicating how much idle time has passed,
 constantly updated with the current amount, as well as a set of
 choices to correct the discrepancy:
 
@@ -7413,11 +7412,11 @@ RET)}}} (or {{{kbd(C-c C-x C-z)}}}).
 #+cindex: continuous clocking
 
 #+vindex: org-clock-continuously
-You may want to start clocking from the time when you clocked out the
+You may want to start clocking from the time when you clocked out of the
 previous task.  To enable this systematically, set
 ~org-clock-continuously~ to non-~nil~.  Each time you clock in, Org
 retrieves the clock-out time of the last clocked entry for this
-session, and start the new clock from there.
+session, and starts the new clock from there.
 
 If you only want this from time to time, use three universal prefix
 arguments with ~org-clock-in~ and two {{{kbd(C-u C-u)}}} with
@@ -7517,7 +7516,7 @@ added to the load estimate of the day.
 Effort estimates can be used in secondary agenda filtering that is
 triggered with the {{{kbd(/)}}} key in the agenda (see [[*Commands in
 the Agenda Buffer]]).  If you have these estimates defined consistently,
-two or three key presses narrow down the list to stuff that fits into
+two or three key presses narrow down the list to items that fit into
 an available time slot.
 
 ** Taking Notes with a Relative Timer
@@ -7532,7 +7531,7 @@ Org provides two types of timers.  There is a relative timer that
 counts up, which can be useful when taking notes during, for example,
 a meeting or a video viewing.  There is also a countdown timer.
 
-The relative and countdown are started with separate commands.
+The relative timer and countdown timer are started with separate commands.
 
 - {{{kbd(C-c C-x 0)}}} (~org-timer-start~) ::
 
@@ -14817,13 +14816,16 @@ variables.
 #+cindex: example blocks, in @LaTeX{} export
 #+cindex: verbatim blocks, in @LaTeX{} export
 #+cindex: @samp{ATTR_LATEX}, keyword
+#+vindex: org-latex-default-example-environment
 
-The LaTeX export backend wraps the contents of example blocks in
-a =verbatim= environment.  To change this behavior to use another
-environment globally, specify an appropriate export filter (see
-[[*Advanced Export Configuration]]).  To change this behavior to use
-another environment for each block, use the =:environment= parameter
-to specify a custom environment.
+The LaTeX export backend wraps the contents of example blocks in a
+=verbatim= environment. To control the environment used globally, you
+can change the value of custom variable
+~org-latex-default-example-environment~, or specify an appropriate
+export filter (see [[*Advanced Export Configuration]]).
+
+To use a different environment for specific example blocks, use the
+=:environment= parameter:
 
 #+begin_example
 ,#+ATTR_LATEX: :environment myverbatim
@@ -14832,8 +14834,7 @@ to specify a custom environment.
 ,#+END_EXAMPLE
 #+end_example
 
-You can also pass options to the environment with the ~:options~
-parameter. For example:
+To pass options to the environment, use the ~:options~ parameter:
 
 #+begin_example
 ,#+ATTR_LATEX: :environment Verbatim :options [fontsize=\footnotesize]
@@ -14842,25 +14843,15 @@ parameter. For example:
 ,#+END_EXAMPLE
 #+end_example
 
-exports to:
+#+vindex: org-latex-packages-alist
+*Note:* when you use ~Verbatim~ in one or more example blocks, add ~fancyvrb~ to
+~org-latex-packages-alist~, or include:
 
-#+begin_example
-\begin{Verbatim}[fontsize=\footnotesize]
-  This sentence is false.
-\end{Verbatim}
-#+end_example
-
-#+vindex: org-latex-default-example-environment
-If you plan to use, for example the =Verbatim= environment for all
-example blocks in a document, you can change variable
-~org-latex-default-example-environment~ to the desired environment. In
-the example above, you could
-
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-default-example-environment "Verbatim")
+#+BEGIN_SRC org
+,#+LATEX_HEADER: \usepackage{fancyvrb}
 #+END_SRC
 
-to avoid having to set the environment for every example.
+in your document header.
 
 *** Special blocks in LaTeX export
 :PROPERTIES:

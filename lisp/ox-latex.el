@@ -825,6 +825,13 @@ set it to:
   :group 'org-export-latex
   :type 'string)
 
+(defcustom org-latex-default-example-environment "verbatim"
+  "Default environment used in example blocks."
+  :group 'org-export-latex
+  :package-version '(Org . "10.0")
+  :type 'string
+  :safe #'stringp)
+
 ;;;; Tables
 
 (defcustom org-latex-default-table-environment "tabular"
@@ -1487,7 +1494,7 @@ A better approach is to use a compiler suit such as `latexmk'."
   :package-version '(Org . "9.0"))
 
 (defcustom org-latex-pdf-process
-  (if (executable-find "latexmk")
+  (if (and (executable-find "latexmk") (executable-find "perl"))
       '("latexmk -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f")
     '("%latex -interaction nonstopmode -output-directory %o %f"
       "%latex -interaction nonstopmode -output-directory %o %f"
@@ -2944,7 +2951,7 @@ information."
   (when (org-string-nw-p (org-element-property :value example-block))
     (let ((environment (or (org-export-read-attribute
 			    :attr_latex example-block :environment)
-			   org-latex-default-example-environment))
+                           org-latex-default-example-environment))
           (options (or (org-export-read-attribute
                         :attr_latex example-block :options)
                        "")))

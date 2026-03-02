@@ -134,7 +134,7 @@ exporting the literal LaTeX source."
 	 "you need to install the programs: latex and dvipng."
 	 :image-input-type "dvi" :image-output-type "png"
 	 :image-size-adjust (1.0 . 1.0) :latex-compiler
-         ,(if (executable-find "latexmk")
+         ,(if (and (executable-find "latexmk") (executable-find "perl"))
               '("latexmk -f -pdf -latex -interaction=nonstopmode -output-directory=%o %f")
             '("latex -interaction nonstopmode -output-directory %o %f"
               "latex -interaction nonstopmode -output-directory %o %f"

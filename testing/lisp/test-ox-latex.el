@@ -667,52 +667,25 @@ Fake test document
       ;; And after this
       (should (search-forward "\\begin{document}" nil t))))
 
-(ert-deftest test-ox-latex/latex-example-with-options ()
-  "Test #+ATTR_LATEX: :environment ... :options "
-  (org-test-with-exported-text 'latex
-                               "#+TITLE: Test adding options to EXAMPLE
+(ert-deftest test-ox-latex/latex-default-example-with-options ()
+  "Test #+ATTR_LATEX: :options with custom environment"
+  (let ((org-latex-default-example-environment "Verbatim"))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: Test adding options to EXAMPLE
 
 * Test
 
-#+ATTR_LATEX: :environment Verbatim :options [frame=single]
+#+ATTR_LATEX: :options [frame=double]
 #+BEGIN_EXAMPLE
 How do you do?
 #+END_EXAMPLE
 "
       (goto-char (point-min))
-      (should (search-forward "\\begin{document}" nil t))
-      (should (search-forward "\\begin{Verbatim}[frame=single]" nil t))))
+      (should (search-forward "\\begin{document}\n" nil t))
+      (should (search-forward "\\begin{Verbatim}[frame=double]\n" nil t)))))
 
-(ert-deftest test-ox-latex/latex-graphics-path ()
-  "Test that the graphics path is inserted correctly "
-  (let ((org-latex-graphics-path "{./}{./images}"))
-  (org-test-with-exported-text 'latex
-                               "#+TITLE: Test adding a graphics path
-
-* Test
-
-Dummy graphics path test
-"
-      (goto-char (point-min))
-      (should (search-forward "\\graphicspath{{./}{./images}}" nil t))
-      (should (search-forward "\\begin{document}" nil t)))))
-
-(ert-deftest test-ox-latex/latex-graphics-path2 ()
-  "Test that the graphics path is inserted correctly "
-  (org-test-with-exported-text 'latex
-                               "#+TITLE: Test adding a graphics path
-#+LATEX_GRAPHICS_PATH: {./}{./logos}
-
-* Test
-
-Dummy graphics path test 2
-"
-      (goto-char (point-min))
-      (should (search-forward "\\graphicspath{{./}{./logos}}" nil t))
-      (should (search-forward "\\begin{document}" nil t))))
-
-
-(ert-deftest test-ox-latex/math-in-alt-title ()
+ (ert-deftest test-ox-latex/math-in-alt-title ()
   "Test math wrapping in ALT_TITLE properties."
   (org-test-with-exported-text
       'latex
