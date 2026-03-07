@@ -2,6 +2,16 @@
 #+TITLE: Org mode Testing
 #+PROPERTY: header-args:emacs-lisp :results silent
 
+The test suite is designed to ensure stability of Org mode code base
+as it evolves, being modified by numerous contributors. The tests are
+usually designed aiming to ensure the *expected* Org mode behavior.
+Thus, we should not add the tests that just mechanically check what
+the current implementation does. In particular, we should avoid (or,
+at least, explicitly mark) the tests that simply check for some
+arbitrary behavior related to the details of the implementation; not
+to the original design goals. The only exception is when users get
+used to certain ways the code behaves by muscle memory.
+
 * Dependencies
 
 The only dependency is [[http://www.emacswiki.org/emacs/ErtTestLibrary][ERT]] the Emacs testing library which ships with
