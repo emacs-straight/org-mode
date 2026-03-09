@@ -107,6 +107,14 @@ can be also written as:
 ,#+LATEX_CLASS_OPTIONS: a4paper,12pt
 #+END_SRC
 
+*** Updated custom variable ~org-babel-update-intermediate~
+
+The variable is now a custom variable, and it can take a new value:
+~cached~. In that case, only the intermediate blocks with =:cache yes=
+header argument will be updated. This allows for the cache feature to
+still work when a block is evaluated indirectly to resolve a reference
+in another block.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.

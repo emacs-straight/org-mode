@@ -70,9 +70,6 @@
 (declare-function org-narrow-to-subtree "org" (&optional element))
 (declare-function org-fold-show-context "org-fold" (&optional key))
 
-(defvar org-babel-update-intermediate nil
-  "Update the in-buffer results of code blocks executed to resolve references.")
-
 (defun org-babel-ref-parse (assignment)
   "Parse a variable ASSIGNMENT in a header argument.
 
@@ -161,7 +158,10 @@ Emacs Lisp representation of the value of the variable."
 	      (setq ref split-ref)))
 	  (org-with-wide-buffer
 	   (goto-char (point-min))
-	   (let* ((params (append args '((:results . "none"))))
+	   (let* ((params (if (and org-babel-update-intermediate
+                                   (not (eq 'cached org-babel-update-intermediate)))
+                              args
+                            (append args '((:results . "none")))))
 		  (regexp (org-babel-named-data-regexp-for-name ref))
 		  (result
 		   (catch :found
@@ -183,9 +183,7 @@ Emacs Lisp representation of the value of the variable."
 				(throw :found
 				       (org-babel-execute-src-block
 					nil nil
-					(and
-					 (not org-babel-update-intermediate)
-					 params))))
+                                        params)))
 			       ((and (let v (org-babel-read-element e))
 				     (guard v))
 				(throw :found v))
@@ -198,7 +196,7 @@ Emacs Lisp representation of the value of the variable."
 					    org-babel-library-of-babel))))
 		       (when info
 			 (throw :found
-				(org-babel-execute-src-block nil info params))))
+				(org-babel-execute-src-block nil info (append args '((:results . "none")))))))
 		     (error "Reference `%s' not found in this buffer" ref))))
 	     (cond
 	      ((and result (symbolp result)) (format "%S" result))
