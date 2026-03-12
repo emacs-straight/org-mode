@@ -21,6 +21,8 @@
 ;;; Code:
 (require 'ob-lilypond)
 
+(defvar org-babel-lilypond-here)
+
 (with-current-buffer (get-buffer-create "test-ob-lilypond.el")
   (setq org-babel-lilypond-here
         (file-name-directory

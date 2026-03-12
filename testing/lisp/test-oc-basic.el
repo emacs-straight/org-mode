@@ -25,6 +25,8 @@
 
 (require 'oc-basic)
 
+(defvar org-export-show-temporary-export-buffer)
+
 (ert-deftest test-org-cite-basic/parse-bibliography ()
   "Test `org-cite-basic--parse-bibliography'."
   ;; Bibtex bibliography.

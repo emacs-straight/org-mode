@@ -29,6 +29,8 @@
 (require 'ob-tangle)
 (require 'org)
 
+(defvar org-capture-templates)
+
 ;; TODO
 ;; (ert-deftest ob-tangle/noweb-on-tangle ()
 ;;   "Noweb header arguments tangle correctly.

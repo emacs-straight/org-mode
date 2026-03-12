@@ -23,6 +23,8 @@
 (require 'ol)
 (require 'org-id)
 
+(declare-function org-element-link-parser "org-element" ())
+
 
 ;;; Decode and Encode Links
 

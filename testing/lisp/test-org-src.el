@@ -23,6 +23,8 @@
 
 (require 'org-test "../testing/org-test")
 
+(defvar nxml-mode-syntax-table)
+
 
 
 (ert-deftest test-org-src/basic ()
