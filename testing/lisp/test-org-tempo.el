@@ -19,6 +19,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'org-tempo)
@@ -83,7 +87,7 @@
 			    '("s" "E" "L")))))
 
 (ert-deftest test-org-tempo/cursor-placement ()
-  "Test the placement of the cursor after tempo expand"
+  "Test the placement of the cursor after tempo expand."
   ;; Normal blocks place point "inside" block.
   (should
    (eq (org-test-with-temp-text "<l<point>"
@@ -113,4 +117,5 @@
      (assoc "<N" org-tempo-tags))))
 
 (provide 'test-org-tempo)
-;;; test-org-tempo.el end here
+
+;;; test-org-tempo.el ends here

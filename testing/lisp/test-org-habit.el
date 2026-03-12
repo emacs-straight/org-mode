@@ -214,7 +214,7 @@ SCHEDULED: <2009-10-28 Sat ++1d>
          (buffer-string)))))))
 
 (ert-deftest test-org-habit/graph-column ()
-  "Test how modifiying `org-habit-graph-column' affects habits in the agenda."
+  "Test how modifying `org-habit-graph-column' affects habits in the agenda."
   (org-test-at-time "2009-10-17"
     (org-test-habit
      (dolist (org-habit-graph-column '(0 1 2 3 10 20 40 100))
@@ -234,7 +234,7 @@ SCHEDULED: <2009-10-28 Sat ++1d>
            (buffer-string))))))))
 
 (ert-deftest test-org-habit/preceding-days ()
-  "Test how modifiying `org-habit-preceding-days' affects habits in the agenda."
+  "Test how modifying `org-habit-preceding-days' affects habits in the agenda."
   (org-test-at-time "2009-10-17"
     (org-test-habit
      (dolist (org-habit-preceding-days '(0 1 2 3 10 20 40 100))
@@ -255,7 +255,7 @@ SCHEDULED: <2009-10-28 Sat ++1d>
            (buffer-substring (+ 1 org-habit-graph-column) (point-max)))))))))
 
 (ert-deftest test-org-habit/following-days ()
-  "Test how modifiying `org-habit-following-days' affects habits in the agenda."
+  "Test how modifying `org-habit-following-days' affects habits in the agenda."
   ;; Avoid DST when TZ="America/New_York".  See `test-org-habit/dst'.
   (org-test-with-timezone "UTC0"
     (org-test-at-time "2009-10-17"

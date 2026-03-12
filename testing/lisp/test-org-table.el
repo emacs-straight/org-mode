@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;;; Comments:
+;;; Commentary:
 
 ;; Template test file for Org tests.  Many tests are also a howto
 ;; example collection as a user documentation, more or less all those
@@ -3173,7 +3173,7 @@ See also `test-org-table/copy-field'."
      (overlays-in (point-min) (point-max)))))
 
 (ert-deftest test-org-table/shrunk-columns ()
-  "Test behaviour of shrunk column."
+  "Test behavior of shrunk column."
   ;; Edition automatically expands a shrunk column.
   (should-not
    (org-test-with-temp-text "| <point>a |"

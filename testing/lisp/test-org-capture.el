@@ -1084,7 +1084,7 @@ before\nglobal-before\nafter\nglobal-after"
               (buffer-string))))))
 
 (ert-deftest test-org-capture/org-capture-expand-olp ()
-  "Test org-capture-expand-olp."
+  "Test `org-capture-expand-olp'."
   ;; `org-capture-expand-olp' accepts inlined outline path.
   (should
    (equal

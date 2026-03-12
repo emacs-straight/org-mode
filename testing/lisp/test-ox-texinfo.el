@@ -19,6 +19,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'cl-lib)
@@ -676,4 +680,5 @@ Headings exported as list items have no such problem."
           ))))))
 
 (provide 'test-ox-texinfo)
-;;; test-ox-texinfo.el end here
+
+;;; test-ox-texinfo.el ends here

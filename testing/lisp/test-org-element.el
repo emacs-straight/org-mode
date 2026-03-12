@@ -17,6 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
@@ -1017,7 +1021,7 @@ CLOCK: [2023-10-13 Fri 14:40]--[2023-10-13 Fri 14:51] =>  0:11"
 ;;;; Citation
 
 (ert-deftest test-org-element/citation-parser ()
-  "Test `citation' parser"
+  "Test `citation' parser."
   ;; Parse citations.  They must contain at least a bare key.
   (should
    (eq 'citation

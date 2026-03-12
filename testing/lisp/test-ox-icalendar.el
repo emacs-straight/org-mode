@@ -129,7 +129,7 @@ SCHEDULED: <2023-03-26 Sun .+1m>"
            (delete-file tmp-ics))))))))
 
 (ert-deftest test-ox-icalendar/diary-timestamp ()
-  "Test icalendar export of diary timestamps."
+  "Test iCalendar export of diary timestamps."
   (let* ((tmp-ics (org-test-with-temp-text-in-file
                    "* First Sunday of the month
 <%%(diary-float t 0 1)>"
@@ -144,7 +144,7 @@ SCHEDULED: <2023-03-26 Sun .+1m>"
       (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
 
 (ert-deftest test-ox-icalendar/exclude-diary-timestamp ()
-  "Test icalendar exclude of diary timestamps."
+  "Test iCalendar exclude of diary timestamps."
   (let* ((org-icalendar-with-timestamps 'active-exclude-diary)
          (tmp-ics (org-test-with-temp-text-in-file
                    "* Test entry with 2 timestamps

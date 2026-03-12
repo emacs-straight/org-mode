@@ -18,6 +18,12 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
+;;; Code:
+
 (require 'ob-core)
 
 (org-test-for-executable "octave")
@@ -25,43 +31,43 @@
   (signal 'missing-test-dependency '("Support for Octave code blocks")))
 
 (ert-deftest ob-octave/input-none ()
-  "Number output"
+  "Number output."
   (org-test-at-id "54dcd61d-cf6c-4d7a-b9e5-854953c8a753"
     (org-babel-next-src-block)
     (should (= 10 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-octave/output-vector ()
-  "Vector output"
+  "Vector output."
   (org-test-at-id "54dcd61d-cf6c-4d7a-b9e5-854953c8a753"
     (org-babel-next-src-block 2)
     (should (equal '((1 2 3 4)) (org-babel-execute-src-block)))))
 
 (ert-deftest ob-octave/input-variable ()
-  "Input variable"
+  "Input variable."
   (org-test-at-id "cc2d82bb-2ac0-45be-a0c8-d1463b86a3ba"
     (org-babel-next-src-block)
     (should (= 42 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-octave/input-array ()
-  "Input an array"
+  "Input an array."
   (org-test-at-id "cc2d82bb-2ac0-45be-a0c8-d1463b86a3ba"
     (org-babel-next-src-block 2)
     (should (equal '((1 2 3)) (org-babel-execute-src-block)))))
 
 (ert-deftest ob-octave/input-matrix ()
-  "Input a matrix"
+  "Input a matrix."
   (org-test-at-id "cc2d82bb-2ac0-45be-a0c8-d1463b86a3ba"
     (org-babel-next-src-block 3)
     (should (equal '((1 2) (3 4)) (org-babel-execute-src-block)))))
 
 (ert-deftest ob-octave/input-string ()
-  "Input a string"
+  "Input a string."
   (org-test-at-id "cc2d82bb-2ac0-45be-a0c8-d1463b86a3ba"
     (org-babel-next-src-block 4)
     (should (equal "te" (org-babel-execute-src-block)))))
 
 (ert-deftest ob-octave/input-nil ()
-  "Input elisp nil"
+  "Input elisp nil."
   (org-test-at-id "cc2d82bb-2ac0-45be-a0c8-d1463b86a3ba"
     (org-babel-next-src-block 5)
     (should (equal nil (org-babel-execute-src-block)))))
@@ -136,3 +142,5 @@ sombrero;
       (should (equal "x = 1" (org-babel-execute-src-block))))))
 
 (provide 'test-ob-octave)
+
+;;; test-ob-octave.el ends here

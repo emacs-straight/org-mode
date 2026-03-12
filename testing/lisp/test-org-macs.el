@@ -17,6 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 
@@ -110,7 +114,7 @@
 ;;; Template
 
 (ert-deftest test-org/fill-template ()
-  "Test `org-fill-template'"
+  "Test `org-fill-template'."
   (should
    (string= "working"
             (org-fill-template "%var-long"

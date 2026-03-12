@@ -18,13 +18,17 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (unless (featurep 'ob-sql)
   (signal 'missing-test-dependency '("Support for sql code blocks")))
 
 (defmacro ob-sql/command (&rest body)
-  "Execute body and return the command that would have been executed."
+  "Execute BODY and return the command that would have been executed."
   `(cl-letf (((symbol-function 'org-babel-eval)
               (lambda (command &rest _) (throw 'sql-command command))))
      (catch 'sql-command

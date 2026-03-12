@@ -380,7 +380,7 @@ v = 4
 
 
 (ert-deftest ob-haskell/not-defined-then-defined-1-fixed ()
-  "Like not-defined-then-defined-1, but using the mutiline marks."
+  "Like not-defined-then-defined-1, but using the multiline marks."
   (let ((r (test-ob-haskell-ghci "" "
 :{
   v :: Int

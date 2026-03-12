@@ -18,6 +18,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (unless (featurep 'ob-C)
   (signal 'missing-test-dependency '("Support for C code blocks")))
@@ -60,35 +64,35 @@
 		      (should (= 12 (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/two-integer-var ()
-  "Test of two input variables"
+  "Test of two input variables."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "fa6db330-e960-4ea2-ac67-94bb845b8577"
 		      (org-babel-next-src-block 6)
 		      (should (= 22 (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/two-integer-var ()
-  "Test of two input variables"
+  "Test of two input variables."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "fa6db330-e960-4ea2-ac67-94bb845b8577"
 		      (org-babel-next-src-block 7)
 		      (should (= 22 (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/string-var ()
-  "Test of a string input variable"
+  "Test of a string input variable."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "fa6db330-e960-4ea2-ac67-94bb845b8577"
 		      (org-babel-next-src-block 8)
 		      (should (equal "word 4" (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/string-var ()
-  "Test of a string input variable"
+  "Test of a string input variable."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "fa6db330-e960-4ea2-ac67-94bb845b8577"
 		      (org-babel-next-src-block 9)
 		      (should (equal "word 4" (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/preprocessor ()
-  "Test of a string variable"
+  "Test of a string variable."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "fa6db330-e960-4ea2-ac67-94bb845b8577"
 		      (org-babel-next-src-block 10)
@@ -97,7 +101,7 @@
 (ert-deftest ob-C/float-var ()
   "Test that floats are passed without unnecessary rounding."
   (if (executable-find org-babel-C++-compiler)
-      (org-test-with-temp-text 
+      (org-test-with-temp-text
 "#+source: float_var
 #+begin_src cpp :var x=1.123456789012345678 :includes \"<iostream>\" :results silent
 double y = 1.123456789012345678;
@@ -106,63 +110,63 @@ std::cout << (x == y);
 (should (= 1 (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/table ()
-  "Test of a table output"
+  "Test of a table output."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "2df1ab83-3fa3-462a-a1f3-3aef6044a874"
 		      (org-babel-next-src-block 1)
 		      (should (equal '((1) (2)) (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/table ()
-  "Test of a table output"
+  "Test of a table output."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "2df1ab83-3fa3-462a-a1f3-3aef6044a874"
 		      (org-babel-next-src-block 2)
 		      (should (equal '((1) (2)) (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/list-var ()
-  "Test of a list input variable"
+  "Test of a list input variable."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "cc65d6b3-8e8e-4f9c-94cd-f5a00cdeceb5"
 		      (org-babel-next-src-block 1)
 		      (should (string= "abcdef2" (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/list-var ()
-  "Test of a list input variable"
+  "Test of a list input variable."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "cc65d6b3-8e8e-4f9c-94cd-f5a00cdeceb5"
 		      (org-babel-next-src-block 2)
 		      (should (string= "abcdef2" (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/vector-var ()
-  "Test of a vector input variable"
+  "Test of a vector input variable."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "cc65d6b3-8e8e-4f9c-94cd-f5a00cdeceb5"
 		      (org-babel-next-src-block 3)
 		      (should (equal 122 (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/vector-var ()
-  "Test of a vector input variable"
+  "Test of a vector input variable."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "cc65d6b3-8e8e-4f9c-94cd-f5a00cdeceb5"
 		      (org-babel-next-src-block 4)
 		      (should (equal 122 (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/list-list-var ()
-  "Test of a list list input variable"
+  "Test of a list list input variable."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "cc65d6b3-8e8e-4f9c-94cd-f5a00cdeceb5"
 		      (org-babel-next-src-block 5)
 		      (should (equal '((1 3) (2 4)) (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/list-list-var ()
-  "Test of a list list input variable"
+  "Test of a list list input variable."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "cc65d6b3-8e8e-4f9c-94cd-f5a00cdeceb5"
 		      (org-babel-next-src-block 6)
 		      (should (equal '((1 3) (2 4)) (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/inhomogeneous_table ()
-  "Test inhomogeneous input table"
+  "Test inhomogeneous input table."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "e112bc2e-419a-4890-99c2-7ac4779531cc"
 		      (org-babel-next-src-block 1)
@@ -178,7 +182,7 @@ std::cout << (x == y);
 			       (org-babel-execute-src-block))))))
 
 (ert-deftest ob-D/inhomogeneous_table ()
-  "Test inhomogeneous input table"
+  "Test inhomogeneous input table."
   (if (executable-find org-babel-D-compiler)
       (org-test-at-id "e112bc2e-419a-4890-99c2-7ac4779531cc"
 		      (org-babel-next-src-block 2)
@@ -194,7 +198,7 @@ std::cout << (x == y);
 			       (org-babel-execute-src-block))))))
 
 (ert-deftest ob-C/ouput-doublequotes ()
-  "Double quotes not swallowed in raw output"
+  "Double quotes not swallowed in raw output."
   (if (executable-find org-babel-C++-compiler)
       (org-test-at-id "9386490b-4063-4400-842c-4a634edbedf5"
                       (org-babel-next-src-block 1)

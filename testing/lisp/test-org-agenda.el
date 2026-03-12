@@ -377,7 +377,7 @@ See https://list.orgmode.org/06d301d83d9e$f8b44340$ea1cc9c0$@tomdavey.com"
   (org-test-agenda--kill-all-agendas))
 
 (ert-deftest test-org-agenda/set-priority ()
-  "One informative line in the agenda. Check that org-agenda-priority updates the agenda."
+  "One informative line in the agenda.  Check that org-agenda-priority updates the agenda."
   (cl-assert (not org-agenda-sticky) nil "precondition violation")
   (cl-assert (not (org-test-agenda--agenda-buffers))
 	     nil "precondition violation")

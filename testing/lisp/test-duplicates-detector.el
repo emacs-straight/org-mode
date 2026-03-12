@@ -123,7 +123,7 @@ tests to skip duplicate forms inside the body."
 ;;;; ERT tests
 
 (ert-deftest test-org-tests/find-duplicates ()
-  "Try to find duplicate forms and ert-deftests in FILES."
+  "Try to find duplicate forms and `ert-deftest's in FILES."
   (should-not
    (test-duplicates-detector--find-duplicates
     test-duplicates-detector-files)))
@@ -131,7 +131,7 @@ tests to skip duplicate forms inside the body."
 ;;;; Auxiliary functions
 
 (defun test-duplicates-detector--find-duplicates (files)
-  "Try to find duplicate forms and ert-deftests in FILES.
+  "Try to find duplicate forms and `ert-deftest's in FILES.
 
 Duplicate forms will be written to
 `test-duplicates-detector-duplicate-forms'.

@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;; Comments:
+;;; Commentary:
 
 
 
@@ -93,7 +93,7 @@
       (buffer-string)))))
 
 (ert-deftest test-org-pcomplete/link ()
-  "Test link completion"
+  "Test link completion."
   (should
    (equal "[[org:"
 	  (org-test-with-temp-text "[[o<point>"

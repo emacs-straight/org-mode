@@ -1,4 +1,4 @@
-;;; test-ob-emacs-lisp.el  -*- lexical-binding: t; -*-
+;;; test-ob-emacs-lisp.el --- tests for test-ob-emacs-lisp.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2012-2026 Free Software Foundation, Inc.
 ;; Authors: Eric Schulte, Martyn Jago
@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;; Comments:
+;;; Commentary:
 
 ;; Org tests for ob-emacs-lisp.el live here
 
@@ -182,4 +182,4 @@ lexical-binding
 
 (provide 'test-ob-emacs-lisp)
 
- ;;; test-ob-emacs-lisp.el ends here
+;;; test-ob-emacs-lisp.el ends here

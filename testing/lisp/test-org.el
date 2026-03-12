@@ -18,6 +18,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+;;; Commentary:
+
 ;; Template test file for Org tests
 
 ;;; Code:
@@ -114,7 +116,7 @@ Otherwise, evaluate RESULT as an sexp and return its result."
      (org-test-with-temp-text "" (org-toggle-comment)))))
 
 (ert-deftest test-org/comment-dwim ()
-  "Test `comment-dwim' behaviour in an Org buffer."
+  "Test `comment-dwim' behavior in an Org buffer."
   ;; No region selected, no comment on current line and line not
   ;; empty: insert comment on line above.
   (should
@@ -228,7 +230,7 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 ;;; Date and time analysis
 
 (ert-deftest test-org/org-encode-time ()
-  "Test various ways to call `org-encode-time'"
+  "Test various ways to call `org-encode-time'."
   (cl-flet ((test-org-encode-time (input expected &optional (time-format-string "%F %T")
                                          zone)
               (should (string-equal
@@ -884,7 +886,7 @@ while the sphinx of black quartz judges my vow."
 	      (buffer-string))))))
 
 (ert-deftest test-org/fill-region ()
-  "Test `fill-region' behaviour."
+  "Test `fill-region' behavior."
   ;; fill-region should fill every item of a list
   (should
    (equal "\n- 2345678\n  9\n- 2345678\n  9"
@@ -4487,7 +4489,7 @@ text"
      (looking-at "Contents"))))
 
 (ert-deftest test-org/end-of-subtree ()
-  "Test `org-end-of-subtree' specifictions."
+  "Test `org-end-of-subtree' specifications."
   ;; Simple call with no arguments.
   (org-test-with-temp-text
       "
@@ -6446,12 +6448,12 @@ Also ensure undo works as expected."
   ;; Correctly find planning attached to inlinetasks.
   (when (featurep 'org-inlinetask)
     (should
-     (let ((org-inlinetask-min-level 3)) 
+     (let ((org-inlinetask-min-level 3))
        (org-test-with-temp-text
 	   "*** Inlinetask\n<point>DEADLINE: <2014-03-04 tue.>\n*** END"
          (org-at-planning-p))))
     (should-not
-     (let ((org-inlinetask-min-level 3)) 
+     (let ((org-inlinetask-min-level 3))
        (org-test-with-temp-text
            "*** Inlinetask\n<point>DEADLINE: <2014-03-04 tue.>"
          (org-at-planning-p))))
@@ -8532,7 +8534,7 @@ Paragraph<point>"
      (overlays-at (point)))))
 
 (ert-deftest test-org/set-tags-command ()
-  "Test `org-set-tags-command' specifications"
+  "Test `org-set-tags-command' specifications."
   ;; Set tags at current headline.
   (should
    (equal "* H1 :foo:"

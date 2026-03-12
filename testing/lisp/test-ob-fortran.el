@@ -18,6 +18,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (org-test-for-executable "gfortran")
 (unless (featurep 'ob-fortran)
@@ -30,62 +34,62 @@
     (should (equal "Hello world" (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/fortran-var-program ()
-  "Test a fortran variable"
+  "Test a fortran variable."
   (org-test-at-id "459384e8-1797-4f11-867e-dde0473ea7cc"
     (org-babel-next-src-block 2)
     (should (= 10 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/input-var ()
-  "Test :var"
+  "Test :var."
   (org-test-at-id "d8d1dfd3-5f0c-48fe-b55d-777997e02242"
     (org-babel-next-src-block)
     (should (= 15 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/preprocessor-var ()
-  "Test preprocessed fortran"
+  "Test preprocessed fortran."
   (org-test-at-id "d8d1dfd3-5f0c-48fe-b55d-777997e02242"
     (org-babel-next-src-block 2)
     (should (= 42 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/character-var ()
-  "Test string input"
+  "Test string input."
   (org-test-at-id "d8d1dfd3-5f0c-48fe-b55d-777997e02242"
     (org-babel-next-src-block 3)
     (should (equal "word" (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/list-var ()
-  "Test real array input"
+  "Test real array input."
   (org-test-at-id "c28569d9-04ce-4cad-ab81-1ea29f691465"
     (org-babel-next-src-block)
     (should (equal "1.00 2.00 3.00" (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/list-var-from-table ()
-  "Test real array from a table"
+  "Test real array from a table."
   (org-test-at-id "c28569d9-04ce-4cad-ab81-1ea29f691465"
     (org-babel-next-src-block 2)
     (should (equal "1.00 2.00" (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/list-matrix-from-table1 ()
-  "Test real matrix from a table"
+  "Test real matrix from a table."
   (org-test-at-id "3f73ab19-d25a-428d-8c26-e8c6aa933976"
     (org-babel-next-src-block 1)
     (should (= 42 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/list-matrix-from-table2 ()
-  "Test real matrix from a table"
+  "Test real matrix from a table."
   (org-test-at-id "3f73ab19-d25a-428d-8c26-e8c6aa933976"
     (org-babel-next-src-block 2)
     (should (= 42 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-fortran/no-variables-with-main ()
-  "Test :var with explicit 'program'"
+  "Test :var with explicit 'program'."
   (org-test-at-id "891ead4a-f87a-473c-9ae0-1cf348bcd04f"
     (org-babel-next-src-block)
     (should-error (org-babel-execute-src-block))
     :type 'error))
 
 (ert-deftest ob-fortran/wrong-list ()
-  "Test wrong input list"
+  "Test wrong input list."
   (org-test-at-id "891ead4a-f87a-473c-9ae0-1cf348bcd04f"
     (org-babel-next-src-block 2)
     (org-babel-execute-src-block)
@@ -94,7 +98,7 @@
     :type 'error))
 
 (ert-deftest ob-fortran/compiler-flags ()
-  "Test compiler's flags"
+  "Test compiler's flags."
   (org-test-at-id "891ead4a-f87a-473c-9ae0-1cf348bcd04f"
     (org-babel-next-src-block 3)
     (org-babel-execute-src-block)
@@ -103,7 +107,7 @@
     :type 'error))
 
 (ert-deftest ob-fortran/command-arguments ()
-  "Test real array from a table"
+  "Test real array from a table."
   (org-test-at-id "2d5330ea-9934-4737-9ed6-e1d3dae2dfa4"
     (org-babel-next-src-block)
     (should (= 23 (org-babel-execute-src-block)))))
