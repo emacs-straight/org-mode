@@ -15677,10 +15677,11 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
 	         (not current-prefix-arg))
 	    ;; This looks like s-up and s-down.  Change by one rounding step.
             (progn
-	      (setq increment (* dm (cond ((> n 0) 1) ((< n 0) -1) (t 0))))
-	      (unless (= 0 (setq rem (% (nth 1 time0) dm)))
-	        (setcar (cdr time0) (+ (nth 1 time0)
-				       (if (> n 0) (- rem) (- dm rem))))))
+              (setq increment (* dm (cond ((> n 0) 1) ((< n 0) -1) (t 0))))
+              (unless (= 0 (setq rem (% (decoded-time-minute time0) dm)))
+                (setf (decoded-time-minute time0)
+                      (+ (decoded-time-minute time0)
+                         (if (> n 0) (- rem) (- dm rem))))))
           ;; Do not round anything in `org-modify-ts-extra' when prefix
           ;; argument is supplied - just use whatever is provided by the
           ;; prefix argument.
@@ -15712,13 +15713,15 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
 	(setq extra (org-modify-ts-extra extra timestamp? n dm)))
       (when (eq what 'calendar)
 	(let ((cal-date (org-get-date-from-calendar)))
-	  (setcar (nthcdr 4 time0) (nth 0 cal-date)) ; month
-	  (setcar (nthcdr 3 time0) (nth 1 cal-date)) ; day
-	  (setcar (nthcdr 5 time0) (nth 2 cal-date)) ; year
-	  (setcar time0 (or (car time0) 0))
-	  (setcar (nthcdr 1 time0) (or (nth 1 time0) 0))
-	  (setcar (nthcdr 2 time0) (or (nth 2 time0) 0))
-	  (setq time (org-encode-time time0))))
+          (setq time (org-encode-time
+                      (decoded-time-set-defaults
+                       (make-decoded-time
+                        :month (calendar-extract-month cal-date)
+                        :day   (calendar-extract-day   cal-date)
+                        :year  (calendar-extract-year  cal-date)
+                        :second (decoded-time-second time0)
+                        :minute (decoded-time-minute time0)
+                        :hour   (decoded-time-hour   time0)))))))
       ;; Insert the new timestamp, and ensure point stays in the same
       ;; category as before (i.e. not after the last position in that
       ;; category).
