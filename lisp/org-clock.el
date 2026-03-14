@@ -1936,7 +1936,7 @@ Optional argument N tells to change by that many units."
 		    'org-timestamp-down))
 	(timestamp? (org-at-timestamp-p 'lax))
 	ts1 begts1 ts2 begts2 updatets1 tdiff)
-    (when timestamp?
+    (when (not (memq timestamp? '(nil bracket after)))
       (save-excursion
 	(move-beginning-of-line 1)
 	(re-search-forward org-ts-regexp3 nil t)
@@ -1967,7 +1967,7 @@ Optional argument N tells to change by that many units."
 	      (goto-char begts)
 	      (org-timestamp-change
 	       (round (/ (float-time tdiff)
-		         (pcase timestamp?
+		         (pcase-exhaustive timestamp?
 			   (`minute 60)
 			   (`hour 3600)
 			   (`day (* 24 3600))
