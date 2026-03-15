@@ -9521,7 +9521,20 @@ Behavior can be modified by setting `org-log-into-drawer', by keywords in
       ;; Year boundry
       (test-org-timestamp-change "<2025-12-31>"  1 'month "<2026-01-31>")
       (test-org-timestamp-change "<2025-12-31>"  2 'month "<2026-02-28>")
-      (test-org-timestamp-change "<2026-02-28>" -2 'month "<2025-12-28>"))))
+      (test-org-timestamp-change "<2026-02-28>" -2 'month "<2025-12-28>")))
+  ;; Rounding from `org-time-stamp-rounding-minutes'
+  (cl-flet ((test-time-stamp-rounding (text rounding amount expected)
+              (let ((org-time-stamp-rounding-minutes (list 0 rounding)))
+                (org-test-with-temp-text text
+                  (org-timestamp-change amount 'minute 'updown)
+                  (re-search-forward org-ts-regexp1)
+                  (should (equal expected (string-trim (match-string 6))))))))
+    (dotimes (i 9)
+      (test-time-stamp-rounding "<2026-03-14 12:00>" (1+ i) 1
+                                (concat "12:0" (number-to-string (1+ i)))))
+    (dotimes (i 9)
+      (test-time-stamp-rounding "<2026-03-14 12:00>" (1+ i) -1
+                                (concat "11:5" (number-to-string (- 9 i)))))))
 
 (ert-deftest test-org/timestamp ()
   "Test `org-timestamp' specifications."
