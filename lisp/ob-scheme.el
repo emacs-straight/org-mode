@@ -278,14 +278,14 @@ This function is called by `org-babel-execute-src-block'."
                port))) ; REPL port
 	(let ((table
 	       (org-babel-reassemble-table
-		result
+		(org-babel-scheme--table-or-string result)
 		(org-babel-pick-name (cdr (assq :colname-names params))
 				     (cdr (assq :colnames params)))
 		(org-babel-pick-name (cdr (assq :rowname-names params))
 				     (cdr (assq :rownames params))))))
 	  (org-babel-result-cond result-params
 	    result
-	    (org-babel-scheme--table-or-string table)))))))
+	    table))))))
 
 (defun org-babel-scheme-initiate-session (session params)
   "Return scheme buffer for SESSION according to PARAMS.
