@@ -9498,7 +9498,25 @@ Behavior can be modified by setting `org-log-into-drawer', by keywords in
               (should (string=
                        (buffer-substring (point-min) (point-max))
                        now-ts))
-              (forward-char 1))))))))
+              (forward-char 1)))))))
+  ;; Corner cases
+  (let ((org-timestamp-formats
+         (cons (replace-regexp-in-string
+                " %a" "" (car org-timestamp-formats))
+               (replace-regexp-in-string
+                " %a" "" (cdr org-timestamp-formats)))))
+    (cl-flet ((test-org-timestamp-change (text n what expected)
+                (org-test-with-temp-text text
+                  (org-timestamp-change n what)
+                  (should (equal expected (buffer-string))))))
+      ;; Changing between months with different number of days
+      (test-org-timestamp-change "<2026-01-31>"  1 'month "<2026-02-28>")
+      (test-org-timestamp-change "<2026-02-28>"  1 'month "<2026-03-28>")
+      (test-org-timestamp-change "<2026-03-31>" -1 'month "<2026-02-28>")
+      ;; Year boundry
+      (test-org-timestamp-change "<2025-12-31>"  1 'month "<2026-01-31>")
+      (test-org-timestamp-change "<2025-12-31>"  2 'month "<2026-02-28>")
+      (test-org-timestamp-change "<2026-02-28>" -2 'month "<2025-12-28>"))))
 
 (ert-deftest test-org/timestamp ()
   "Test `org-timestamp' specifications."

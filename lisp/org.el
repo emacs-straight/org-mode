@@ -15688,14 +15688,16 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
           (setq dm 1))
         (setq time
 	      (org-encode-time
-               (apply #'list
-                      (or (car time0) 0)
-                      (+ (if (eq timestamp? 'minute) increment 0) (nth 1 time0))
-                      (+ (if (eq timestamp? 'hour) increment 0)   (nth 2 time0))
-                      (+ (if (eq timestamp? 'day) increment 0)    (nth 3 time0))
-                      (+ (if (eq timestamp? 'month) increment 0)  (nth 4 time0))
-                      (+ (if (eq timestamp? 'year) increment 0)   (nth 5 time0))
-                      (nthcdr 6 time0)))))
+               (org-decoded-time-add
+                time0
+                (make-decoded-time
+                 (cl-ecase timestamp?
+                   (minute :minute)
+                   (hour :hour)
+                   (day :day)
+                   (month :month)
+                   (year :year))
+                 increment)))))
       (when (and (memq timestamp? '(hour minute))
 		 extra
 		 (string-match "-\\([012][0-9]\\):\\([0-5][0-9]\\)" extra))
