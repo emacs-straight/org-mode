@@ -86,6 +86,7 @@
 ;; `org-string-equal-ignore-case' is in _this_ file but isn't at the
 ;; top-level.
 (declare-function org-string-equal-ignore-case "org-compat" (string1 string2))
+(declare-function decoded-time-add "time-date" (time delta))
 
 (defvar calendar-mode-map)
 (defvar org-complex-heading-regexp)
@@ -110,6 +111,21 @@ METADATA should be an alist of completion metadata.  See
       (if (eq action 'metadata)
           `(metadata . ,metadata)
         (complete-with-action action table string pred)))))
+
+;; Broken for negative months before emacs commit bc33b70b280
+(if (version< "31" emacs-version)
+    (defalias 'org-decoded-time-add #'decoded-time-add)
+  (defun org-decoded-time-add (time delta)
+    "See doctring for `decoded-time-add'."
+    (if (decoded-time-month delta)
+        (let ((time (copy-sequence time))
+              (delta (copy-sequence delta)))
+          (let ((new (+ (1- (decoded-time-month time)) (decoded-time-month delta))))
+            (setf (decoded-time-month time) (1+ (mod new 12)))
+            (cl-incf (decoded-time-year time) (floor new 12)))
+          (setf (decoded-time-month delta) nil)
+          (decoded-time-add time delta))
+      (decoded-time-add time delta))))
 
 
 ;;; Emacs < 29 compatibility
