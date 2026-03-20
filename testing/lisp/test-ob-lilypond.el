@@ -18,8 +18,14 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (require 'ob-lilypond)
+
+(defvar org-babel-lilypond-here)
 
 (with-current-buffer (get-buffer-create "test-ob-lilypond.el")
   (setq org-babel-lilypond-here

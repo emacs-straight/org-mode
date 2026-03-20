@@ -17,6 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 ;;; Column view
@@ -1110,7 +1114,7 @@
 ** B
 "
             (let ((org-columns-default-format "%ITEM")) (org-columns)
-                 (next-line 1)
+                 (forward-line 1)
                  (org-columns-move-row-down)
                  (buffer-substring-no-properties (point-min) (point-max)))))))
 
@@ -1126,7 +1130,7 @@
 ** B
 "
             (let ((org-columns-default-format "%ITEM")) (org-columns)
-                 (next-line 2)
+                 (forward-line 2)
                  (org-columns-move-row-up)
                  (buffer-substring-no-properties (point-min) (point-max)))))))
 
@@ -1141,7 +1145,7 @@
 ** B
 "
             (org-columns)
-            (next-line 1)
+            (forward-line 1)
             (forward-char 2)
             (org-columns--move-row)
             (current-column)))))
@@ -1161,7 +1165,7 @@
 ** B
 "
           (let ((org-columns-default-format "%ITEM")) (org-columns)
-               (next-line 1)
+               (forward-line 1)
                (org-columns-move-row-down)
                (buffer-substring-no-properties (point-min) (point-max)))))))
 

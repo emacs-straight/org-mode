@@ -1,4 +1,4 @@
-;;; test-ob-table.el  -*- lexical-binding: t; -*-
+;;; test-ob-table.el --- tests for test-ob-table.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2011-2014, 2019 Eric Schulte
 ;; Authors: Eric Schulte
@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;; Comments:
+;;; Commentary:
 
 ;; Template test file for Org tests
 

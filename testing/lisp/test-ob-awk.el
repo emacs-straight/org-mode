@@ -18,31 +18,35 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (org-test-for-executable "awk")
 (unless (featurep 'ob-awk)
   (signal 'missing-test-dependency '("Support for Awk code blocks")))
 
 (ert-deftest ob-awk/input-none ()
-  "Test with no input file"
+  "Test with no input file."
   (org-test-at-id "9e998b2a-3581-43fe-b26d-07d3c507b86a"
     (org-babel-next-src-block)
     (should (= 42 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-awk/input-src-block-1 ()
-  "Test a code block as an input"
+  "Test a code block as an input."
   (org-test-at-id "9e998b2a-3581-43fe-b26d-07d3c507b86a"
     (org-babel-next-src-block 2)
     (should (= 43 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-awk/input-src-block-2 ()
-  "Test a code block as an input"
+  "Test a code block as an input."
   (org-test-at-id "9e998b2a-3581-43fe-b26d-07d3c507b86a"
     (org-babel-next-src-block 3)
     (should (= 150 (org-babel-execute-src-block)))))
 
 (ert-deftest ob-awk/tabular-input ()
-  "Test a code block as an input"
+  "Test a code block as an input."
   (org-test-at-id "9e998b2a-3581-43fe-b26d-07d3c507b86a"
     (org-babel-next-src-block 4)
     (should (equal '(("a" "b" "c")) (org-babel-execute-src-block)))))

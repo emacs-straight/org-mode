@@ -377,7 +377,7 @@ See https://list.orgmode.org/06d301d83d9e$f8b44340$ea1cc9c0$@tomdavey.com"
   (org-test-agenda--kill-all-agendas))
 
 (ert-deftest test-org-agenda/set-priority ()
-  "One informative line in the agenda. Check that org-agenda-priority updates the agenda."
+  "One informative line in the agenda.  Check that org-agenda-priority updates the agenda."
   (cl-assert (not org-agenda-sticky) nil "precondition violation")
   (cl-assert (not (org-test-agenda--agenda-buffers))
 	     nil "precondition violation")
@@ -899,11 +899,11 @@ both yesterday"))))))
              '("tag_b_2" "tag_b_1" "tag_a_2" "tag_a_1" "lonely" "groupless" "group_a" "blueberry")
              "\n"))
            ((or (pred (equal string-length<))
-                `(,string-length<))
+                `(,(pred (equal string-length<))))
             (string-join
              '("lonely" "group_a" "tag_a_2" "tag_b_2" "tag_a_1" "tag_b_1" "groupless" "blueberry")
              "\n"))
-           (`(,string-length< org-string<)
+           (`(,(pred (equal string-length<)) org-string<)
             (string-join
              '("lonely" "group_a" "tag_a_1" "tag_a_2" "tag_b_1" "tag_b_2" "blueberry" "groupless")
              "\n"))

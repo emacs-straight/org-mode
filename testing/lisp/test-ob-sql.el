@@ -18,20 +18,24 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (unless (featurep 'ob-sql)
   (signal 'missing-test-dependency '("Support for sql code blocks")))
 
 (defmacro ob-sql/command (&rest body)
-  "Execute body and return the command that would have been executed."
+  "Execute BODY and return the command that would have been executed."
   `(cl-letf (((symbol-function 'org-babel-eval)
               (lambda (command &rest _) (throw 'sql-command command))))
      (catch 'sql-command
        ,@body)))
 
 (defmacro ob-sql/command-should-contain (regexp sql-block)
-  "Check that REGEXP is contained in the command executed when evaluating SQL-BLOCK."
+  "Check that REGEXP is in the command executed when evaluating SQL-BLOCK."
   `(let ((regexps ,(if (listp regexp) regexp `(list ,regexp)))
          (command (ob-sql/command (org-test-with-temp-text
                                       ,sql-block
@@ -41,7 +45,7 @@
        (should (string-match-p regexp command)))))
 
 (defmacro ob-sql/command-should-not-contain (regexp sql-block)
-  "Check that REGEXP is not contained in the command executed when evaluating SQL-BLOCK."
+  "Check that REGEXP is not in the command executed when evaluating SQL-BLOCK."
   `(let ((command (ob-sql/command
                    (org-test-with-temp-text
                        ,sql-block

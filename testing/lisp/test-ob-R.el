@@ -18,6 +18,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (org-test-for-executable "R")
 (require 'ob-core)
@@ -110,7 +114,7 @@ x
 
 
 (ert-deftest test-ob-r/output-with-<> ()
-  "make sure angle brackets are well formatted"
+  "Make sure angle brackets are well formatted."
     (let (ess-ask-for-ess-directory ess-history-file)
       (should (string="[1] \"<X> <Y> <!>\"
 [1] \"one <two> three\"
@@ -127,7 +131,7 @@ x
 
 
 (ert-deftest test-ob-r/session-output-with->-bol ()
-  "make sure prompt-like strings are well formatted, even when at beginning of line."
+  "Make sure prompt-like strings are well formatted, even when at beginning of line."
     (let (ess-ask-for-ess-directory ess-history-file)
       (should (string="abc
 def> <ghi"
@@ -166,12 +170,12 @@ log10(10)
      (should (string= "[1] 14\n[1] 2.302585\n[1] 1\n[1] 20\n[1] 0.3333333\n[1] Inf\n" (org-babel-execute-src-block))))))
 
 (ert-deftest test-ob-r/NA-blank ()
-  "For :results value, NAs should be empty"
+  "For :results value, NAs should be empty."
   (let (ess-ask-for-ess-directory ess-history-file)
     (should (equal '(("A" "B") hline ("" 1) (1 2) (1 "") (1 4) (1 4))
   (org-test-with-temp-text "#+BEGIN_SRC R :results value :colnames yes
   data.frame(A=c(NA,1,1,1,1),B=c(1,2,NA,4,4))
-#+end_src"     
+#+end_src"
   (org-babel-execute-src-block))))))
 
 
@@ -297,7 +301,7 @@ log10(10)
 
 ;; test for printing of (nested) list
 (ert-deftest ob-R-nested-list ()
-  "List are printed as the first column of a table and nested lists are ignored"
+  "List are printed as the first column of a table and nested lists are ignored."
   (let (ess-ask-for-ess-directory
         ess-history-file
         org-confirm-babel-evaluate
@@ -322,7 +326,7 @@ x
     text
   (goto-char (point-min))
   (org-babel-next-src-block)
-  (should (progn  
+  (should (progn
             (org-babel-execute-src-block)
             (sleep-for 0.200)
             (string= (concat text result)

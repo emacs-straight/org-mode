@@ -127,7 +127,7 @@
 	     (delete-window)
 	     (switch-to-buffer org-buffer)
 	     (cl-assert (eq 'org-mode major-mode)))
-	   (beginning-of-buffer)
+           (goto-char (point-min))
 	   (search-forward "* foo")
 					; expectation.  tag ATTACH has been appended.
 	   (cl-reduce (lambda (x y) (or x y))
@@ -160,7 +160,7 @@
 	    (delete-window)
 	    (switch-to-buffer org-buffer))
 	  (cl-assert (eq 'org-mode major-mode))
-	  (beginning-of-buffer)
+          (goto-char (point-min))
 	  (search-forward "* foo")
 	  (and (file-exists-p (concat (org-attach-dir) "/"
 				      (file-name-nondirectory a-filename)))

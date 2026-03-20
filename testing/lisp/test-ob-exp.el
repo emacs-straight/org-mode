@@ -1,4 +1,4 @@
-;;; test-ob-exp.el  -*- lexical-binding: t; -*-
+;;; test-ob-exp.el --- tests for test-ob-exp.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2010-2015, 2019 Eric Schulte
 ;; Authors: Eric Schulte
@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;; Comments:
+;;; Commentary:
 
 ;; Template test file for Org tests
 
@@ -26,6 +26,8 @@
 
 (require 'ob-exp)
 (require 'org-src)
+(require 'org-element)
+(require 'ox)
 (require 'org-test "../testing/org-test")
 
 (defmacro org-test-with-expanded-babel-code (&rest body)

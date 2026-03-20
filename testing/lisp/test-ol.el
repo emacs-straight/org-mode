@@ -17,11 +17,17 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'cl-lib)
 (require 'ol)
 (require 'org-id)
+
+(declare-function org-element-link-parser "org-element" ())
 
 
 ;;; Decode and Encode Links

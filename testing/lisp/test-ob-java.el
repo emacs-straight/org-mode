@@ -20,6 +20,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'org-test "../testing/org-test")
@@ -28,6 +32,8 @@
 ;; default header arg value.
 (unless (featurep 'ob-java)
   (signal 'missing-test-dependency '("Support for java code blocks")))
+
+(require 'org-lint)
 
 ;;; No Java required
 
@@ -80,8 +86,8 @@
 ; simple tests
 
 (ert-deftest ob-java/simple ()
-  "Hello world program that writes output. Also tests that
-ob-java defaults to scripting mode."
+  "Hello world program that writes output.
+Also tests that ob-java defaults to scripting mode."
   (org-test-with-temp-text
       "#+begin_src java :dir 'nil :results silent
 System.out.print(42);
@@ -310,7 +316,7 @@ public class Main {
     (should (string= "42" (org-babel-execute-src-block)))))
 
 (ert-deftest ob-java/var-with-class-and-hanging-curlies ()
-  "Read and write an integer variable, with class with hanging curlies."
+  "Read and write an integer variable, with class with hanging curly brackets."
   (org-test-with-temp-text
       "#+begin_src java :dir 'nil :var a=42 :results output silent
 public class Main

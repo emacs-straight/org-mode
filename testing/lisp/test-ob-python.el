@@ -18,11 +18,17 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (org-test-for-executable "python")
 (require 'ob-core)
 (unless (featurep 'ob-python)
   (signal 'missing-test-dependency '("Support for Python code blocks")))
+
+(require 'ob-python)
 
 (ert-deftest test-ob-python/colnames-yes-header-argument ()
   (should

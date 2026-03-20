@@ -7,7 +7,7 @@
 ;; Released under the GNU General Public License version 3
 ;; see: https://www.gnu.org/licenses/gpl-3.0.html
 
-;;;; Comments
+;;; Commentary:
 
 
 
@@ -63,7 +63,7 @@ Return the clock line as a string."
             "\n")))
 
 (defun test-org-clock-clocktable-contents (options &optional initial no-move)
-  "Return contents of a Clock table for current buffer
+  "Return contents of a Clock table for current buffer.
 
 OPTIONS is a string of Clock table options.  Optional argument
 INITIAL is a string specifying initial contents within the Clock
@@ -1742,4 +1742,5 @@ foo"
            (org-clock-cancel)))))))
 
 (provide 'test-org-clock)
-;;; test-org-clock.el end here
+
+;;; test-org-clock.el ends here

@@ -18,6 +18,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+;;; Commentary:
+
 ;; Template test file for Org tests
 
 ;;; Code:
@@ -28,6 +30,8 @@
 (require 'org-inlinetask)
 (require 'org-refile)
 (require 'org-agenda)
+
+(require 'ert-x)
 
 
 ;;; Helpers
@@ -80,64 +84,39 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 
 (ert-deftest test-org/toggle-comment ()
   "Test `org-toggle-comment' specifications."
-  ;; Simple headline.
-  (should
-   (equal "* Test"
-	  (org-test-with-temp-text "* COMMENT Test"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  (should
-   (equal "* COMMENT Test"
-	  (org-test-with-temp-text "* Test"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  ;; Headline with a regular keyword.
-  (should
-   (equal "* TODO Test"
-	  (org-test-with-temp-text "* TODO COMMENT Test"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  (should
-   (equal "* TODO COMMENT Test"
-	  (org-test-with-temp-text "* TODO Test"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  ;; Empty headline.
-  (should
-   (equal "* "
-	  (org-test-with-temp-text "* COMMENT"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  (should
-   (equal "* COMMENT"
-	  (org-test-with-temp-text "* "
-	    (org-toggle-comment)
-	    (buffer-string))))
-  ;; Headline with a single keyword.
-  (should
-   (equal "* TODO "
-	  (org-test-with-temp-text "* TODO COMMENT"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  (should
-   (equal "* TODO COMMENT"
-	  (org-test-with-temp-text "* TODO"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  ;; Headline with a keyword, a priority cookie and contents.
-  (should
-   (equal "* TODO [#A] Headline"
-	  (org-test-with-temp-text "* TODO [#A] COMMENT Headline"
-	    (org-toggle-comment)
-	    (buffer-string))))
-  (should
-   (equal "* TODO [#A] COMMENT Headline"
-	  (org-test-with-temp-text "* TODO [#A] Headline"
-	    (org-toggle-comment)
-	    (buffer-string)))))
+  (cl-flet ((test-toggle-comment (input expected)
+              (should (equal expected
+                             (org-test-with-temp-text input
+                               (org-toggle-comment)
+                               (buffer-string))))))
+    ;; Simple headline.
+    (test-toggle-comment "* COMMENT Test" "* Test")
+    (test-toggle-comment "* Test" "* COMMENT Test")
+    ;; Delete extra spaces/tabs
+    (test-toggle-comment "* COMMENT   	   Test" "* Test")
+    ;; Sub-heading
+    (test-toggle-comment "* test\n<point>** subheading" "* test\n** COMMENT subheading")
+    (test-toggle-comment "* test\n<point>** COMMENT subheading" "* test\n** subheading")
+    ;; Headline with a regular keyword.
+    (test-toggle-comment "* TODO COMMENT Test" "* TODO Test")
+    (test-toggle-comment "* TODO Test" "* TODO COMMENT Test")
+    ;; Empty headline.
+    (test-toggle-comment "* COMMENT" "* ")
+    (test-toggle-comment "* " "* COMMENT")
+    ;; Headline with a single keyword.
+    (test-toggle-comment "* TODO COMMENT" "* TODO ")
+    (test-toggle-comment "* TODO" "* TODO COMMENT")
+    ;; Headline with a keyword, a priority cookie and contents.
+    (test-toggle-comment "* TODO [#A] COMMENT Headline" "* TODO [#A] Headline")
+    (test-toggle-comment "* TODO [#A] Headline" "* TODO [#A] COMMENT Headline")
+    ;; Before first headline
+    (should-error
+     (org-test-with-temp-text "<point>\n* Heading" (org-toggle-comment)))
+    (should-error
+     (org-test-with-temp-text "" (org-toggle-comment)))))
 
 (ert-deftest test-org/comment-dwim ()
-  "Test `comment-dwim' behaviour in an Org buffer."
+  "Test `comment-dwim' behavior in an Org buffer."
   ;; No region selected, no comment on current line and line not
   ;; empty: insert comment on line above.
   (should
@@ -251,61 +230,45 @@ Otherwise, evaluate RESULT as an sexp and return its result."
 ;;; Date and time analysis
 
 (ert-deftest test-org/org-encode-time ()
-  "Test various ways to call `org-encode-time'"
-  (org-test-with-timezone "UTC"
-    ;; list as the sole argument
-    (should (string-equal
-             "2022-03-24 23:30:01"
-             (format-time-string
-              "%F %T"
-              (org-encode-time '(1 30 23 24 3 2022 nil -1 nil)))))
-    ;; SECOND...YEAR
-    (should (string-equal
-             "2022-03-24 23:30:02"
-             (format-time-string
-              "%F %T"
-              (org-encode-time 2 30 23 24 3 2022))))
-    ;; SECOND...YEAR IGNORED DST ZONE
-    (should (string-equal
-             "2022-03-24 23:30:03"
-             (format-time-string
-              "%F %T"
-              (org-encode-time 3 30 23 24 3 2022 nil -1 nil))))
-    ;; function call
-    (should (string-equal
-             "2022-03-24 23:30:04"
-             (format-time-string
-              "%F %T"
-              (org-encode-time (apply #'list 4 30 23 '(24 3 2022 nil -1 nil))))))
-    ;; wrong number of arguments
-    (if (not (version< emacs-version "27.1"))
-        (should-error (string-equal
-                       "2022-03-24 23:30:05"
+  "Test various ways to call `org-encode-time'."
+  (cl-flet ((test-org-encode-time (input expected &optional (time-format-string "%F %T")
+                                         zone)
+              (should (string-equal
+                       expected
                        (format-time-string
-                        "%F %T"
-                        (org-encode-time 5 30 23 24 3 2022 nil))))))
-  ;; daylight saving time
-  (if (not (version< emacs-version "27.1"))
-      ;; DST value is not ignored for multiple arguments unlike for `encode-time'
-      (should (string-equal
-               "2022-04-01 00:30:06 +0200 CEST"
-               (format-time-string
-                "%F %T %z %Z"
-                (org-encode-time 6 30 23 31 3 2022 nil nil "Europe/Madrid")
-                "Europe/Madrid")))
-    (should (string-equal
-             "2022-03-31 23:30:07 +0200 CEST"
-             (format-time-string
-              "%F %T %z %Z"
-              (org-encode-time 7 30 23 31 3 2022 nil t "Europe/Madrid")
-              "Europe/Madrid"))))
-  (org-test-with-timezone "Europe/Madrid"
-    ;; Standard time is not forced when DST is not specified
-    (should (string-equal
-             "2022-03-31 23:30:08"
-             (format-time-string
-              "%F %T"
-              (org-encode-time 8 30 23 31 3 2022))))))
+                        time-format-string
+                        input
+                        zone)))))
+    (org-test-with-timezone "UTC"
+      ;; list as the sole argument
+      (test-org-encode-time (org-encode-time '(1 30 23 24 3 2022 nil -1 nil))
+                            "2022-03-24 23:30:01")
+      ;; SECOND...YEAR
+      (test-org-encode-time (org-encode-time 2 30 23 24 3 2022)
+                            "2022-03-24 23:30:02")
+      ;; SECOND...YEAR IGNORED DST ZONE
+      (test-org-encode-time (org-encode-time 3 30 23 24 3 2022 nil -1 nil)
+                            "2022-03-24 23:30:03")
+      ;; function call
+      (test-org-encode-time (org-encode-time (apply #'list 4 30 23 '(24 3 2022 nil -1 nil)))
+                            "2022-03-24 23:30:04")
+      ;; wrong number of arguments
+      (if (not (version< emacs-version "27.1"))
+          (should-error (org-encode-time 5 30 23 24 3 2022 nil))))
+    ;; daylight saving time
+    (if (not (version< emacs-version "27.1"))
+        ;; DST value is not ignored for multiple arguments unlike for `encode-time'
+        (test-org-encode-time (org-encode-time 6 30 23 31 3 2022 nil nil "Europe/Madrid")
+                              "2022-04-01 00:30:06 +0200 CEST"
+                              "%F %T %z %Z"
+                              "Europe/Madrid")
+      (test-org-encode-time (org-encode-time 7 30 23 31 3 2022 nil t "Europe/Madrid")
+                            "2022-03-31 23:30:07 +0200 CEST"
+                            "%F %T %z %Z"
+                            "Europe/Madrid"))
+    (org-test-with-timezone "Europe/Madrid"
+      ;; Standard time is not forced when DST is not specified
+      (test-org-encode-time (org-encode-time 8 30 23 31 3 2022) "2022-03-31 23:30:08"))))
 
 (ert-deftest test-org/org-time-string-to-time ()
   "Test `org-time-string-to-time' around DST transition."
@@ -431,79 +394,57 @@ Otherwise, evaluate RESULT as an sexp and return its result."
   "Test `org-closest-date' specifications."
   (require 'calendar)
   ;; Time stamps without a repeater are returned unchanged.
-  (should
-   (equal
-    '(3 29 2012)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-29>" "<2014-03-04>" nil))))
-  ;; Time stamps with a null repeater are returned unchanged.
-  (should
-   (equal
-    '(3 29 2012)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-29 +0d>" "<2014-03-04>" nil))))
-  ;; if PREFER is set to `past' always return a date before, or equal
-  ;; to CURRENT.
-  (should
-   (equal
-    '(3 1 2014)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-29 +1m>" "<2014-03-04>" 'past))))
-  (should
-   (equal
-    '(3 4 2014)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-04 +1m>" "<2014-03-04>" 'past))))
-  ;; if PREFER is set to `future' always return a date before, or equal
-  ;; to CURRENT.
-  (should
-   (equal
-    '(3 29 2014)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-29 +1m>" "<2014-03-04>" 'future))))
-  (should
-   (equal
-    '(3 4 2014)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-04 +1m>" "<2014-03-04>" 'future))))
-  ;; If PREFER is neither `past' nor `future', select closest date.
-  (should
-   (equal
-    '(3 1 2014)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-29 +1m>" "<2014-03-04>" nil))))
-  (should
-   (equal
-    '(5 4 2014)
-    (calendar-gregorian-from-absolute
-     (org-closest-date "<2012-03-04 +1m>" "<2014-04-28>" nil))))
-  ;; Test "day" repeater.
-  (should
-   (equal '(3 8 2014)
-	  (calendar-gregorian-from-absolute
-	   (org-closest-date "<2014-03-04 +2d>" "<2014-03-09>" 'past))))
-  (should
-   (equal '(3 10 2014)
-	  (calendar-gregorian-from-absolute
-	   (org-closest-date "<2014-03-04 +2d>" "<2014-03-09>" 'future))))
-  ;; Test "month" repeater.
-  (should
-   (equal '(1 5 2015)
-	  (calendar-gregorian-from-absolute
-	   (org-closest-date "<2014-03-05 +2m>" "<2015-02-04>" 'past))))
-  (should
-   (equal '(3 29 2014)
-	  (calendar-gregorian-from-absolute
-	   (org-closest-date "<2012-03-29 +2m>" "<2014-03-04>" 'future))))
-  ;; Test "year" repeater.
-  (should
-   (equal '(3 5 2014)
-	  (calendar-gregorian-from-absolute
-	   (org-closest-date "<2014-03-05 +2y>" "<2015-02-04>" 'past))))
-  (should
-   (equal '(3 29 2014)
-	  (calendar-gregorian-from-absolute
-	   (org-closest-date "<2012-03-29 +2y>" "<2014-03-04>" 'future)))))
+  (cl-flet ((test-closest-date (input expected)
+              (should (equal expected
+                             (calendar-gregorian-from-absolute
+                              (apply #'org-closest-date input))))))
+    (test-closest-date '("<2012-03-29>" "<2014-03-04>" nil)
+                       '(3 29 2012))
+    ;; Time stamps with a null repeater are returned unchanged.
+    (test-closest-date '("<2012-03-29 +0d>" "<2014-03-04>" nil)
+                       '(3 29 2012))
+    ;; if PREFER is set to `past' always return a date before, or equal
+    ;; to CURRENT.
+    (test-closest-date '("<2012-03-29 +1m>" "<2014-03-04>" past)
+                       '(3 1 2014))
+    (test-closest-date '("<2012-03-04 +1m>" "<2014-03-04>" past)
+                       '(3 4 2014))
+    ;; if PREFER is set to `future' always return a date before, or equal
+    ;; to CURRENT.
+    (test-closest-date '("<2012-03-29 +1m>" "<2014-03-04>" future)
+                       '(3 29 2014))
+    (test-closest-date '("<2012-03-04 +1m>" "<2014-03-04>" future)
+                       '(3 4 2014))
+    ;; If PREFER is neither `past' nor `future', select closest date.
+    (test-closest-date '("<2012-03-29 +1m>" "<2014-03-04>" nil)
+                       '(3 1 2014))
+    (test-closest-date '("<2012-03-04 +1m>" "<2014-04-28>" nil)
+                       '(5 4 2014))
+    ;; Test "hour" repeater.
+    (test-closest-date '("<2014-03-04 +50h>" "<2014-03-09>" past)
+                       '(3 8 2014))
+    (test-closest-date '("<2014-03-04 +50h>" "<2014-03-09>" future)
+                       '(3 10 2014))
+    ;; Test "day" repeater.
+    (test-closest-date '("<2014-03-04 +2d>" "<2014-03-09>" past)
+                       '(3 8 2014))
+    (test-closest-date '("<2014-03-04 +2d>" "<2014-03-09>" future)
+                       '(3 10 2014))
+    ;; Test "week" repeater.
+    (test-closest-date '("<2014-03-04 +1w>" "<2014-03-09>" past)
+                       '(3 4 2014))
+    (test-closest-date '("<2014-03-04 +1w>" "<2014-03-09>" future)
+                       '(3 11 2014))
+    ;; Test "month" repeater.
+    (test-closest-date '("<2014-03-05 +2m>" "<2015-02-04>" past)
+                       '(1 5 2015))
+    (test-closest-date '("<2012-03-29 +2m>" "<2014-03-04>" future)
+                       '(3 29 2014))
+    ;; Test "year" repeater.
+    (test-closest-date '("<2014-03-05 +2y>" "<2015-02-04>" past)
+                       '(3 5 2014))
+    (test-closest-date '("<2012-03-29 +2y>" "<2014-03-04>" future)
+                       '(3 29 2014))))
 
 (ert-deftest test-org/deadline-close-p ()
   "Test `org-deadline-close-p' specifications."
@@ -945,7 +886,7 @@ while the sphinx of black quartz judges my vow."
 	      (buffer-string))))))
 
 (ert-deftest test-org/fill-region ()
-  "Test `fill-region' behaviour."
+  "Test `fill-region' behavior."
   ;; fill-region should fill every item of a list
   (should
    (equal "\n- 2345678\n  9\n- 2345678\n  9"
@@ -2516,9 +2457,8 @@ Test
   (org-test-with-temp-text "
 Text.
 * Heading <point>"
-    (let ((pos (point)))
-      (should-not (org-up-heading-safe))
-      (should (looking-at-p "^\\* Heading"))))
+    (should-not (org-up-heading-safe))
+    (should (looking-at-p "^\\* Heading")))
   ;; Jump from inside a heading.
   (org-test-with-temp-text "
 * H1
@@ -2752,46 +2692,42 @@ test <point>
 
 (ert-deftest test-org/entry-blocked-p ()
   ;; Check other dependencies.
-  (should
-   (org-test-with-temp-text "* TODO Blocked\n** DONE one\n** TODO two"
-     (let ((org-enforce-todo-dependencies t)
-	   (org-blocker-hook
-	    '(org-block-todo-from-children-or-siblings-or-parent)))
-       (org-entry-blocked-p))))
-  (should-not
-   (org-test-with-temp-text "* TODO Blocked\n** DONE one\n** DONE two"
-     (let ((org-enforce-todo-dependencies t)
-	   (org-blocker-hook
-	    '(org-block-todo-from-children-or-siblings-or-parent)))
-       (org-entry-blocked-p))))
-  ;; Entry without a TODO keyword or with a DONE keyword cannot be
-  ;; blocked.
-  (should-not
-   (org-test-with-temp-text "* Blocked\n** TODO one"
-     (let ((org-enforce-todo-dependencies t)
-	   (org-blocker-hook
-	    '(org-block-todo-from-children-or-siblings-or-parent)))
-       (org-entry-blocked-p))))
-  (should-not
-   (org-test-with-temp-text "* DONE Blocked\n** TODO one"
-     (let ((org-enforce-todo-dependencies t)
-	   (org-blocker-hook
-	    '(org-block-todo-from-children-or-siblings-or-parent)))
-       (org-entry-blocked-p))))
-  ;; Follow :ORDERED: specifications.
-  (should
-   (org-test-with-temp-text
-       "* H\n:PROPERTIES:\n:ORDERED: t\n:END:\n** TODO one\n** <point>TODO two"
-     (let ((org-enforce-todo-dependencies t)
-	   (org-blocker-hook
-	    '(org-block-todo-from-children-or-siblings-or-parent)))
-       (org-entry-blocked-p))))
-  (should-not
-   (org-test-with-temp-text
-       "* H\n:PROPERTIES:\n:ORDERED: t\n:END:\n** <point>TODO one\n** DONE two"
-     (let ((org-enforce-todo-dependencies t)
-	   (org-blocker-hook
-	    '(org-block-todo-from-children-or-siblings-or-parent)))
+  (let ((org-enforce-todo-dependencies t))
+    (should
+     (org-test-with-temp-text "* TODO Blocked\n** DONE one\n** TODO two"
+       (org-entry-blocked-p)))
+    (should-not
+     (org-test-with-temp-text "* TODO Blocked\n** DONE one\n** DONE two"
+       (org-entry-blocked-p)))
+    ;; Entry without a TODO keyword or with a DONE keyword cannot be
+    ;; blocked.
+    (should-not
+     (org-test-with-temp-text "* Blocked\n** TODO one"
+       (org-entry-blocked-p)))
+    (should-not
+     (org-test-with-temp-text "* DONE Blocked\n** TODO one"
+       (org-entry-blocked-p)))
+    ;; Follow :ORDERED: specifications.
+    (should
+     (org-test-with-temp-text
+         "* H\n:PROPERTIES:\n:ORDERED: t\n:END:\n** TODO one\n** <point>TODO two"
+       (org-entry-blocked-p)))
+    (should-not
+     (org-test-with-temp-text
+         "* H\n:PROPERTIES:\n:ORDERED: t\n:END:\n** <point>TODO one\n** DONE two"
+       (org-entry-blocked-p)))
+    ;; Follow :NOBLOCKING:
+    (should-not
+     (org-test-with-temp-text "* TODO Blocked\n:PROPERTIES:\n:NOBLOCKING: t\n:END:\n** DONE one\n** TODO two"
+       (org-entry-blocked-p)))
+    (should-not
+     (org-test-with-temp-text "* TODO Blocked\n:PROPERTIES:\n:NOBLOCKING: \n:END:\n** DONE one\n** TODO two"
+       (org-entry-blocked-p)))
+    (should
+     (org-test-with-temp-text "* TODO Blocked\n:PROPERTIES:\n:NOBLOCKING: nil\n:END:\n** DONE one\n** TODO two"
+       (org-entry-blocked-p)))
+    (should
+     (org-test-with-temp-text "* TODO Blocked\n** DONE one\n** TODO two\n:PROPERTIES:\n:NOBLOCKING: \n:END:"
        (org-entry-blocked-p)))))
 
 (ert-deftest test-org/get-outline-path ()
@@ -2938,6 +2874,51 @@ test <point>
      (equal '(1 11)
 	    (org-test-with-temp-text "* Level 1\n** Level 2"
 	      (org-map-entries #'point))))
+    ;; Region scope.
+    (should
+     (equal nil
+            (org-test-with-temp-text "* Level 1\n** Level 2"
+              (org-map-entries #'point nil 'region))))
+    (should
+     (equal '(1 11)
+            (org-test-with-temp-text "* Level 1\n** Level 2"
+              (push-mark)
+              (push-mark (point-max) nil t)
+              (org-map-entries #'point t 'region))))
+    (should
+     (equal '(2)
+            (org-test-with-temp-text "\n* Level 1\n** Level 2"
+              (push-mark)
+              (push-mark (point-max) nil t)
+              (org-map-entries #'point t 'region-start-level))))
+    ;; Tree scope.
+    (should
+     (equal '(13 23)
+            (org-test-with-temp-text "* ignore me\n<point>* Level 1\n** Level 2\n* ignore me"
+              (org-map-entries #'point t 'tree))))
+    ;; File scope.
+    (should
+     (equal nil ;; FIXME: docstring implies this should work but it clearly doesn't
+            (org-test-with-temp-text "* Level 1\n** Level 2"
+              (org-map-entries #'point t 'file))))
+    (should
+     (equal '(1 11)
+            (org-test-with-temp-text-in-file "* Level 1\n** Level 2"
+              (org-map-entries #'point t 'file))))
+    (should
+     (equal '(1 11)
+            (org-test-with-temp-text-in-file "* Level 1\n** Level 2"
+              (org-map-entries #'point t (list buffer-file-name)))))
+    (should
+     (equal '(1 11)
+            (org-test-with-temp-text-in-file "* Level 1\n** Level 2"
+              (let ((org-agenda-files (list buffer-file-name)))
+                (org-map-entries #'point t 'agenda)))))
+    ;; Sexp scope. FIXME: not documented!
+    (should
+     (equal '(1 11)
+            (org-test-with-temp-text-in-file "* Level 1\n** Level 2"
+              (org-map-entries #'point t '(list (buffer-file-name (current-buffer)))))))
     ;; Level match.
     (should
      (equal '(1)
@@ -4508,7 +4489,7 @@ text"
      (looking-at "Contents"))))
 
 (ert-deftest test-org/end-of-subtree ()
-  "Test `org-end-of-subtree' specifictions."
+  "Test `org-end-of-subtree' specifications."
   ;; Simple call with no arguments.
   (org-test-with-temp-text
       "
@@ -5977,9 +5958,14 @@ Also ensure undo works as expected."
                  (should-error
                   (funcall func)
                   :type 'user-error)
-               (funcall func)
+               ;; Use `ert-simulate-command' so that `this-command'
+               ;; gets set which is used in `org--deactivate-mark'
+               (ert-simulate-command (list func))
                (should (equal expected
                               (buffer-string)))
+               ;; Mark will remain active depending on `org-edit-keep-region'
+               (should (eq (and selection (alist-get func org-edit-keep-region))
+                           mark-active))
                (deactivate-mark)
                (undo-boundary)
                (undo)
@@ -6029,7 +6015,12 @@ Also ensure undo works as expected."
     (test-move-subtree 'up
                        "* T\n** <point>H1\n** H2\n* T2\n"
                        'error
-                       "H2")))
+                       "H2")
+    (dolist (org-edit-keep-region '(nil ((org-metadown . nil)) ((org-metadown . t))))
+      (test-move-subtree 'down
+                         "* T\n** <point>H1\n** H2\n** H3\n"
+                         "* T\n** H3\n** H1\n** H2\n"
+                         "H2"))))
 
 (ert-deftest test-org/demote ()
   "Test `org-demote' specifications."
@@ -6457,12 +6448,12 @@ Also ensure undo works as expected."
   ;; Correctly find planning attached to inlinetasks.
   (when (featurep 'org-inlinetask)
     (should
-     (let ((org-inlinetask-min-level 3)) 
+     (let ((org-inlinetask-min-level 3))
        (org-test-with-temp-text
 	   "*** Inlinetask\n<point>DEADLINE: <2014-03-04 tue.>\n*** END"
          (org-at-planning-p))))
     (should-not
-     (let ((org-inlinetask-min-level 3)) 
+     (let ((org-inlinetask-min-level 3))
        (org-test-with-temp-text
            "*** Inlinetask\n<point>DEADLINE: <2014-03-04 tue.>"
          (org-at-planning-p))))
@@ -8543,7 +8534,7 @@ Paragraph<point>"
      (overlays-at (point)))))
 
 (ert-deftest test-org/set-tags-command ()
-  "Test `org-set-tags-command' specifications"
+  "Test `org-set-tags-command' specifications."
   ;; Set tags at current headline.
   (should
    (equal "* H1 :foo:"
@@ -9073,10 +9064,11 @@ Behavior can be modified by setting `org-log-done', by keywords in
                expected-string
                (org-test-with-temp-text
                    test-string
-                 (org-set-regexps-and-options)
-                 (org-todo "DONE")
-                 (when (memq 'org-add-log-note (default-value 'post-command-hook))
-                   (org-add-log-note))
+                 (org-set-regexps-and-options) ;; apply #+STARTUP: options
+                 ;; Use `ert-simulate-command' to run
+                 ;; `post-command-hook' where the logging actually
+                 ;; takes place
+                 (ert-simulate-command '(org-todo "DONE"))
                  (buffer-string)))))))
       (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
         (test-org-log-done nil t "* TODO task" "* DONE task")
@@ -9167,25 +9159,160 @@ CLOSED: %s
 - State \"DONE\"       from \"TODO\"       " time-string " \\\\
   note"))))))
 
+(ert-deftest test-org/org-log-into-drawer ()
+  "Test `org-log-into-drawer' specifications.
+Behavior can be modified by setting `org-log-into-drawer', by keywords in
+\"#+STARTUP:\", or by the property \"LOG_INTO_DRAWER\"."
+  (let* ((time-string
+          (org-test-with-temp-text ""
+            (org-insert-timestamp (current-time) t t)
+            (buffer-string)))
+         (state-change-string
+          (concat "- State \"WAIT\"       from \"TODO\"       " time-string))
+         (logbook-string (concat ":LOGBOOK:\n" state-change-string "\n:END:"))
+         (custom-logbook-string (concat ":custom:\n" state-change-string "\n:END:")))
+    (cl-flet*
+        ((test-org-log-into-drawer
+           (org-log-into-drawer-val test-string expected-string)
+           (let ((org-log-into-drawer org-log-into-drawer-val))
+             (should
+              (string=
+               expected-string
+               (org-test-with-temp-text
+                   test-string
+                 (org-set-regexps-and-options) ;; apply #+STARTUP: options
+                 ;; Use `ert-simulate-command' to run
+                 ;; `post-command-hook' where the logging actually
+                 ;; takes place
+                 (ert-simulate-command '(org-todo "WAIT"))
+                 (buffer-string))))))
+         (log-into-drawer-property (value)
+           (concat ":PROPERTIES:
+:LOG_INTO_DRAWER: " value "
+:END:\n")))
+      (let ((org-todo-keywords '((sequence "TODO" "WAIT(!)" "DONE"))))
+        (test-org-log-into-drawer nil "* TODO task"
+                                  (concat "* WAIT task\n" state-change-string))
+        (test-org-log-into-drawer t "* TODO task"
+                                  (concat "* WAIT task\n" logbook-string))
+        (test-org-log-into-drawer "custom" "* TODO task"
+                                  (concat "* WAIT task\n" custom-logbook-string))
+        ;; LOG_INTO_DRAWER property overrides `org-log-into-drawer'
+        (test-org-log-into-drawer t (concat "* TODO task\n" (log-into-drawer-property "nil"))
+                                  (concat "* WAIT task\n" (log-into-drawer-property "nil")
+                                          state-change-string))
+        (test-org-log-into-drawer t (concat "* TODO task\n" (log-into-drawer-property "t"))
+                                  (concat "* WAIT task\n" (log-into-drawer-property "t")
+                                          logbook-string "\n"))
+        ;; FIXME: Having an empty property results in a funny logbook
+        ;; (test-org-log-into-drawer t (concat "* TODO task\n" (log-into-drawer-property ""))
+        ;;                           (concat "* WAIT task\n" (log-into-drawer-property "")
+        ;;                                   logbook-string "\n"))
+        (test-org-log-into-drawer t (concat "* TODO task\n" (log-into-drawer-property "custom"))
+                                  (concat "* WAIT task\n" (log-into-drawer-property "custom")
+                                          custom-logbook-string "\n"))
+        (test-org-log-into-drawer nil "#+STARTUP: logdrawer\n<point>* TODO task"
+                                  (concat "#+STARTUP: logdrawer\n* WAIT task\n" logbook-string))
+        ;; LOG_INTO_DRAWER property overrides #+STARTUP: logdrawer
+        (test-org-log-into-drawer nil (concat "#+STARTUP: logdrawer\n<point>* TODO task\n"
+                                              (log-into-drawer-property "nil"))
+                                  (concat "#+STARTUP: logdrawer\n* WAIT task\n"
+                                          (log-into-drawer-property "nil")
+                                          state-change-string))
+        ;; LOG_INTO_DRAWER property overrides #+STARTUP: nologdrawer
+        (test-org-log-into-drawer nil (concat "#+STARTUP: nologdrawer\n<point>* TODO task\n"
+                                              (log-into-drawer-property "t"))
+                                  (concat "#+STARTUP: nologdrawer\n* WAIT task\n"
+                                          (log-into-drawer-property "t")
+                                          logbook-string "\n"))
+        ;; #+STARTUP: logdrawer overrides `org-log-into-drawer'
+        (test-org-log-into-drawer t (concat "#+STARTUP: nologdrawer\n<point>* TODO task")
+                                  (concat "#+STARTUP: nologdrawer\n* WAIT task\n"
+                                          state-change-string))))))
+
 (ert-deftest test-org/org-todo-prefix ()
   "Test `org-todo' prefix arg behavior."
-  ;; FIXME: Add tests for all other allowed prefix arguments.
-  ;; -1 prefix arg should cancel repeater and mark DONE.
+  ;; FIXME: Add tests `org-todo-keywords' set to a `type' list
+  ;; FIXME: Add tests for numeric prefix arg of 0
+  (cl-flet ((test-org-todo (input-text arg expected)
+              (should
+               (string-equal
+                (or (and (eq expected 'unchanged) input-text)
+                    expected)
+                (let ((org-todo-keywords '((sequence "TODO" "DONE")
+                                           (sequence "KWD1" "KWD2" "DONE"))))
+                  (org-test-with-temp-text input-text
+                    (org-todo arg)
+                    (buffer-string)))))))
+    (test-org-todo "* TODO H" nil "* DONE H")
+    ;; unsupported prefix argument
+    (dolist (arg '(-3 -2 "bad todo state"))
+      (should-error
+       (org-test-with-temp-text "* TODO test" (org-todo arg))))
+    (dolist (arg '(-1 -))
+      ;; -1 prefix arg should cancel repeater and mark DONE.
+      (test-org-todo "* TODO H\n<2012-03-29 Thu +2y>" arg
+                     "* DONE H\n<2012-03-29 Thu +0y>"))
+
+    ;; switch to next or previous sequence
+    (dolist (arg '(nextset (16) previousset))
+      (test-org-todo "* TODO H" arg "* KWD1 H")
+      (test-org-todo "* KWD1 H" arg "* TODO H"))
+
+    ;; FIXME: COMMENT keyword always comes after TODO keyword
+    ;; (test-org-todo "* COMMENT TODO H" nil "* TODO COMMENT TODO H")
+
+    (test-org-todo "* TODO COMMENT H" nil "* DONE COMMENT H")
+    (test-org-todo "* COMMENT H\n<point>** TODO H" nil "* COMMENT H\n** DONE H")
+
+    (test-org-todo "* H" 'right "* TODO H")
+    (test-org-todo "* TODO H" 'right "* DONE H")
+    (test-org-todo "* KWD1 H" 'right "* KWD2 H")
+    (test-org-todo "* KWD2 H" 'right "* DONE H")
+    (test-org-todo "* H" 'left "* DONE H")
+    (test-org-todo "* TODO H" 'left "* H")
+    (test-org-todo "* KWD2 H" 'left "* KWD1 H")
+
+    ;; Jump straight to specified state
+    (test-org-todo "* TODO H" 'done "* DONE H")
+    (test-org-todo "* TODO H" 3 "* KWD1 H")
+    (test-org-todo "* TODO H" "TODO" 'unchanged)
+    (test-org-todo "* DONE H" "DONE" 'unchanged)
+    (test-org-todo "* DONE H" 'done 'unchanged)
+
+    ;; Blocking
+    (let ((org-enforce-todo-dependencies t))
+      (test-org-todo "* TODO H\n** TODO block" nil 'unchanged)
+      (test-org-todo "* TODO H\n** TODO block" '(64) "* DONE H\n** TODO block")
+      (let ((org-inhibit-blocking t))
+        (test-org-todo "* TODO H\n** TODO block" nil "* DONE H\n** TODO block"))
+      (let ((noblocking-property ":PROPERTIES:
+:NOBLOCKING: t
+:END:"))
+        (test-org-todo (concat "* TODO H\n" noblocking-property "** TODO block")
+                       nil
+                       (concat "* DONE H\n" noblocking-property "** TODO block"))))
+
+    (let ((org-enforce-todo-checkbox-dependencies t))
+      (test-org-todo "* TODO H\n- [ ] block" nil 'unchanged)
+      (test-org-todo "* TODO H\n- [ ] block" '(64) "* DONE H\n- [ ] block")
+      (let ((org-inhibit-blocking t))
+        (test-org-todo "* TODO H\n- [ ] block" nil "* DONE H\n- [ ] block"))
+      (let ((noblocking-property ":PROPERTIES:
+:NOBLOCKING: t
+:END:"))
+        (test-org-todo (concat "* TODO H\n" noblocking-property "- [ ] block")
+                       nil
+                       (concat "* DONE H\n" noblocking-property "- [ ] block")))))
+  ;; Region
   (should
-   (string-match-p
-    "DONE H\\(.*\n\\)*<2012-03-29 Thu \\+0y>"
-    (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
-      (org-test-with-temp-text "* TODO H\n<2012-03-29 Thu +2y>"
-	(org-todo -1)
-	(buffer-string)))))
-  ;; - prefix arg should cancel repeater and mark DONE.
-  (should
-   (string-match-p
-    "DONE H\\(.*\n\\)*<2012-03-29 Thu \\+0y>"
-    (let ((org-todo-keywords '((sequence "TODO" "DONE"))))
-      (org-test-with-temp-text "* TODO H\n<2012-03-29 Thu +2y>"
-	(org-todo '-)
-	(buffer-string)))))
+   (string-equal
+    "* DONE H1\n* H2"
+    (org-test-with-temp-text "* TODO H1\n* DONE H2"
+      (push-mark)
+      (push-mark (point-max) nil t)
+      (org-todo)
+      (buffer-string))))
   ;; C-u forces logging note.
   ;; However, logging falls back to "time" when `org-inhibit-logging'
   ;; is 'note.

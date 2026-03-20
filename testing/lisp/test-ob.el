@@ -18,6 +18,9 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'ob-core)
@@ -1917,7 +1920,7 @@ nil
               (delete-file "t.sh"))))))
 
 (ert-deftest test-ob-core/dir-attach ()
-  "Test :dir header using special 'attach value"
+  "Test :dir header using special 'attach value."
   (should
    (org-test-with-temp-text-in-file
     "* 'attach Symbol
@@ -2737,7 +2740,7 @@ do not org-indent-block text here
               (t (should (= ok-col (current-column)))))))))
 
 (ert-deftest test-ob/demarcate-block-split-user-errors ()
-  "Test for `user-error's in splitting"
+  "Test for `user-error's in splitting."
   (let ((org-adapt-indentation t)
         (org-src-content-indentation 2)
         (org-src-preserve-indentation))
@@ -2860,4 +2863,4 @@ A
 
 (provide 'test-ob)
 
-;;; test-ob ends here
+;;; test-ob.el ends here

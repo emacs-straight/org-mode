@@ -30,6 +30,18 @@ Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 The "Tags and Priorities" section of the global context menu is split
 into a "Tags" section and a "Priorities" section.
 
+*** ~org-babel-tangle-single-block~ may return multiple target files
+
+When called with non-nil ONLY-THIS-BLOCK,
+~org-babel-tangle-single-block~ can now return multiple target file
+entries if a source block tangles to more than one file.
+
+Previously, the returned list always contained exactly one element.
+The return value structure is unchanged, but callers should no longer
+assume that the outer list has length one, which means ~(car
+(org-babel-tangle-single-block ...))~ is not guaranteed to return
+the correct ~(FILE . ...)~ cons.
+
 ** New features
 
 # We list the most important features, and the features that may
@@ -39,6 +51,40 @@ into a "Tags" section and a "Priorities" section.
 
 Priorities can now be increased, decreased, set to the default, and
 set interactively from the priority context menus.
+
+*** ob-tangle.el now supports tangling to multiple targets
+
+Source blocks can now be tangled to multiple target files using
+the ~:tangle~ header argument.  The following forms are now supported:
+
+- =:tangle "file1.el"= (existing behavior)
+- =:tangle '("file1.el" "file2.el")= (new: list of files)
+- =:tangle (get-tangle-targets)= (new: function returning paths)
+- =:tangle 'tangle-targets= (new: variable returning paths)
+
+Additionally, the new ~:tangle-directory~ header argument specifies
+base directories for relative tangle paths:
+
+- =:tangle-directory "/tmp"= (single directory)
+- =:tangle-directory '("/tmp/a" "/tmp/b")= (multiple directories)
+- =:tangle-directory (get-tangle-dirs)= (function returning directories)
+- =:tangle-directory 'tangle-dirs= (variable returning directories)
+
+When both ~:tangle-directory~ and multiple ~:tangle~ files are specified,
+the block is tangled to all combinations of directories and files.
+
+Example:
+#+begin_example
+,#+begin_src emacs-lisp :tangle '("config.el" "backup.el") :tangle-directory '("~/.config" "/backup")
+(message "Tangling to multiple targets specified by :tangle and :tangle-directory")
+,#+end_src
+#+end_example
+
+This tangles the block to four files:
+- ~/.config/config.el
+- ~/.config/backup.el
+- /backup/config.el
+- /backup/backup.el
 
 ** New and changed options
 
@@ -75,6 +121,14 @@ With a large number of tasks (N > 100) the percent cookie previously
 showed =0%= when a non-zero amount have been completed, e.g. 1/101.
 Those cases now show =1%= instead.  The same is true for the checkbox
 status summary type =X%= when defining columns for column view.
+
+*** ~org-babel-tangle-use-relative-file-links~ is ignored during tangling when =:tangle= specifies multiple targets
+
+Previously, when ~org-babel-tangle-use-relative-file-links~ was
+non-nil, Org Babel attempted to generate relative commented links in
+tangled files.  This behavior no longer applies when =:tangle=
+specifies multiple targets; in that case, absolute links are always
+used and the variable is ignored.
 
 * Version 9.8
 ** Important announcements and breaking changes

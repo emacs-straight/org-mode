@@ -18,9 +18,15 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 (unless (featurep 'ob-lua)
   (signal 'missing-test-dependency '("Support for Lua code blocks")))
+
+(require 'ob-lua)
 
 (ert-deftest test-ob-lua/simple-value ()
   "Test associative array return by value."
@@ -97,7 +103,7 @@ return x
 	    (org-babel-execute-src-block)))))
 
 (ert-deftest test-ob-lua/colnames-nil-header-argument ()
-  "Test table with `colnames' set to `nil'."
+  "Test table with `colnames' set to nil."
   (should
    (equal "1 = a\n2 = b"
 	  (org-test-with-temp-text

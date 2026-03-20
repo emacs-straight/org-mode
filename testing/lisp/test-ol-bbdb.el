@@ -40,4 +40,4 @@
 
 (provide 'test-ol-bbdb)
 
-;;; test-org-bbdb.el ends here
+;;; test-ol-bbdb.el ends here

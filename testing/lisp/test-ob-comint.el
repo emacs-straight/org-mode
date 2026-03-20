@@ -1,4 +1,4 @@
-;;; test-ob-comint.el  -*- lexical-binding: t; -*-
+;;; test-ob-comint.el --- tests for test-ob-comint.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2024 Matthew Trzcinski
 ;; Authors: Matthew Trzcinski
@@ -19,7 +19,7 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-;;; Comment:
+;;; Commentary:
 
 ;; See testing/README for how to run tests.
 

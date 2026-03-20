@@ -17,12 +17,17 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (unless (featurep 'ob-csharp)
   (signal 'missing-test-dependency '("Support for C# code blocks")))
 
 (require 'ob-core)
+(require 'ob-csharp)
 
 (org-test-for-executable org-babel-csharp-compiler)
 

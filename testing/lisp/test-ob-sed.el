@@ -18,6 +18,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'ob-sed)
@@ -59,4 +63,5 @@
 
 
 (provide 'test-ob-sed)
-;;; test-ob-sed ends here
+
+;;; test-ob-sed.el ends here

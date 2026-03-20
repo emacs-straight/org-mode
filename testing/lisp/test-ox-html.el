@@ -19,6 +19,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'ox-html)
@@ -818,7 +822,7 @@ $x$"
 ;;; Rendering checkboxes
 
 (ert-deftest ox-html/checkbox-ascii ()
-  "Test ascii checkbox rendering"
+  "Test ascii checkbox rendering."
   (skip-unless (libxml-available-p))
   (should
    (equal
@@ -850,7 +854,7 @@ $x$"
           (libxml-parse-html-region (point-min) (point-max))))))))
 
 (ert-deftest ox-html/checkbox-html ()
-  "Test HTML checkbox rendering"
+  "Test HTML checkbox rendering."
   (skip-unless (libxml-available-p))
   (should
    (equal
@@ -874,7 +878,7 @@ $x$"
           (libxml-parse-xml-region (point-min) (point-max))))))))
 
 (ert-deftest ox-html/checkbox-unicode ()
-  "Test HTML checkbox rendering"
+  "Test HTML checkbox rendering."
   (skip-unless (libxml-available-p))
   (should
    (equal
@@ -898,7 +902,7 @@ $x$"
 ;;; Rendering Timestamps
 
 (ert-deftest ox-html/plain-timestamps ()
-  "Test rendering of timestamps (outside of clock/planning)"
+  "Test rendering of timestamps (outside of clock/planning)."
   (org-test-with-temp-text "
 - [2025-01-31 Fri]
 - [2025-01-31 Fri 14:00]
@@ -919,7 +923,7 @@ $x$"
                 "<span class=\"timestamp\">[2025-02-17 Mon 17:00]&ndash;[2025-02-17 Mon 19:00]</span>"))))))
 
 (ert-deftest ox-html/clock ()
-  "Test rendering of clock elements"
+  "Test rendering of clock elements."
   (org-test-with-temp-text "
 * Test
 :LOGBOOK:
@@ -938,7 +942,7 @@ CLOCK: [2025-02-21 Fri 17:43]--[2025-02-21 Fri 17:48] =>  0:05
                  nil t))))))
 
 (ert-deftest ox-html/planning ()
-  "Test rendering of timestamps in planning elements"
+  "Test rendering of timestamps in planning elements."
   (org-test-with-temp-text "
 * Some Item
 SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25 Tue 19:09]
@@ -955,7 +959,7 @@ SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25
                 "<span class=\"timestamp-kwd\">SCHEDULED:</span> <span class=\"timestamp\">&lt;2025-03-26 Wed&gt; </span>"))))))
 
 (ert-deftest ox-html/html5-fancy-timestamps ()
-  "Test rendering of timestamps with fancy HTML5 enabled"
+  "Test rendering of timestamps with fancy HTML5 enabled."
   (org-test-with-temp-text "
 [2025-06-25 Wed]
 <2025-06-25 Wed 19:10>
@@ -976,7 +980,7 @@ SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25
 ;;; Postamble Format
 
 (ert-deftest ox-html/postamble-default ()
-  "Test default postamble"
+  "Test default postamble."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))
@@ -988,7 +992,7 @@ SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25
 
 
 (ert-deftest ox-html/postamble-custom ()
-  "Test custom postamble"
+  "Test custom postamble."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))
@@ -1000,7 +1004,7 @@ SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25
         (should (= 1 (how-many "Foobar")))))))
 
 (ert-deftest ox-html/postamble-custom-format ()
-  "Test a html-postamble option (not -format) containing a format string"
+  "Test a html-postamble option (not -format) containing a format string."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))
@@ -1013,7 +1017,7 @@ SCHEDULED: <2025-03-26 Wed> DEADLINE: <2025-03-27 Thu 13:00> CLOSED: [2025-03-25
         (should (= 1 (how-many "Author=Madame Orange")))))))
 
 (ert-deftest ox-html/postamble-none ()
-  "Test no postamble"
+  "Test no postamble."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))
@@ -1041,7 +1045,7 @@ entirely."
         (should (= 0 (how-many "Foobar")))))))
 
 (ert-deftest ox-html/postamble-format-proper-config ()
-  "Test a html-postamble-format option which is just a string"
+  "Test a html-postamble-format option which is just a string."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))
@@ -1054,7 +1058,7 @@ entirely."
         (should (= 1 (how-many "Foobar")))))))
 
 (ert-deftest ox-html/postamble-format-conflict ()
-  "Test conflicting postamble and postamble-format configs"
+  "Test conflicting postamble and postamble-format configs."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))
@@ -1068,7 +1072,7 @@ entirely."
         (should (= 1 (how-many "Regular postamble")))))))
 
 (ert-deftest ox-html/postamble-format-author ()
-  "Test a html-postamble-format option containing the author"
+  "Test a html-postamble-format option containing the author."
   (org-test-with-temp-text "Test, hi"
     (let ((export-buffer "*Test HTML Export*")
           (org-export-show-temporary-export-buffer nil))

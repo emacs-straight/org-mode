@@ -123,7 +123,7 @@ tests to skip duplicate forms inside the body."
 ;;;; ERT tests
 
 (ert-deftest test-org-tests/find-duplicates ()
-  "Try to find duplicate forms and ert-deftests in FILES."
+  "Try to find duplicate forms and `ert-deftest's in FILES."
   (should-not
    (test-duplicates-detector--find-duplicates
     test-duplicates-detector-files)))
@@ -131,7 +131,7 @@ tests to skip duplicate forms inside the body."
 ;;;; Auxiliary functions
 
 (defun test-duplicates-detector--find-duplicates (files)
-  "Try to find duplicate forms and ert-deftests in FILES.
+  "Try to find duplicate forms and `ert-deftest's in FILES.
 
 Duplicate forms will be written to
 `test-duplicates-detector-duplicate-forms'.
@@ -264,7 +264,7 @@ Write each form to `test-duplicates-detector-forms'"
 (ert-deftest test-org-tests/test-with-duplicates-at-root ()
   "Test with duplicates at the root."
   (should (message "123"))
-  (format "%s" "string")
+  (ignore (format "%s" "string"))
   (should
    (message "123")))
 
@@ -273,10 +273,10 @@ Write each form to `test-duplicates-detector-forms'"
   (let ((var "string"))
     (should
      (message "123 %s" var)))
-  (format "%s" "string")
+  (ignore (format "%s" "string"))
   (let ((var "string"))
     (should (message "123 %s" var)))
-  (format "%s" "string"))
+  (ignore (format "%s" "string")))
 
 ;;;;; Tests without duplicates
 
@@ -291,7 +291,7 @@ Write each form to `test-duplicates-detector-forms'"
 (ert-deftest test-org-tests/test-without-duplicates-2 ()
   "Test without duplicates.
 Equal `should' macros, but different nesting paths."
-  (let ((var "string"))
+  (let ((_var "string"))
     (should (format "123 %s" "asd")))
   (+ 5 6 9)
   (should (format "123 %s" "asd")))

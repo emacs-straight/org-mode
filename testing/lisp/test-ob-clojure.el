@@ -1,4 +1,4 @@
-;;; test-ob-clojure.el  -*- lexical-binding: t; -*-
+;;; test-ob-clojure.el --- tests for test-ob-clojure.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2018-2026 Free Software Foundation, Inc.
 ;; Authors: stardiviner
@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;; Comments:
+;;; Commentary:
 
 ;; Org tests for ob-clojure.el live here
 
@@ -31,4 +31,4 @@
 
 (provide 'test-ob-clojure)
 
- ;;; test-ob-clojure.el ends here
+;;; test-ob-clojure.el ends here

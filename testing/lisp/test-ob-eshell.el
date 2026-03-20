@@ -1,4 +1,4 @@
-;;; test-ob-eshell.el  -*- lexical-binding: t; -*-
+;;; test-ob-eshell.el --- tests for test-ob-eshell.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2018 stardiviner
 ;; Authors: stardiviner
@@ -18,7 +18,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-;;; Comment:
+;;; Commentary:
 
 ;; Template test file for Org tests
 

@@ -1,4 +1,4 @@
-;;; test-ob-shell.el  -*- lexical-binding: t; -*-
+;;; test-ob-shell.el --- tests for test-ob-shell.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2010-2014, 2019 Eric Schulte
 ;; Authors: Eric Schulte
@@ -19,7 +19,7 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-;;; Comment:
+;;; Commentary:
 
 ;; See testing/README for how to run tests.
 
@@ -33,6 +33,8 @@
   (signal 'missing-test-dependency '("Support for Shell code blocks")))
 
 (org-test-for-executable "sh")
+
+(require 'ob-shell)
 
 
 ;;; Code:
@@ -171,7 +173,7 @@ echo ${array}
   "Bash sees named array as a simple indexed array.
 
 In this test, we check that the returned value is indeed only the
-first item of the array, as opposed to the generic serialiation
+first item of the array, as opposed to the generic serialization
 that will return all elements of the array as a single string."
   (org-test-with-temp-text
       "#+NAME: sample_array
@@ -187,7 +189,7 @@ echo ${array}
     (should (equal "one" (org-trim (org-babel-execute-src-block))))))
 
 (ert-deftest test-ob-shell/generic-uses-no-assoc-arrays-simple-map ()
-  "Generic shell: no special handing for key-value mapping table
+  "Generic shell: no special handing for key-value mapping table.
 
 No associative arrays for generic.  The shell will see all values
 as a single string."
@@ -225,11 +227,11 @@ echo ${table}
             (org-trim (org-babel-execute-src-block))))))
 
 (ert-deftest test-ob-shell/bash-uses-assoc-arrays ()
-  "Bash shell: support for associative arrays
+  "Bash shell: support for associative arrays.
 
 Bash will see a table that contains the first column as the
 'index' of the associative array, and the second column as the
-value. "
+value."
   (skip-unless
    ;; Old GPLv2 BASH in macOSX does not support associative arrays.
    (if-let* ((bash (executable-find "bash")))
@@ -249,10 +251,10 @@ echo ${table[second]}
             (org-trim (org-babel-execute-src-block))))))
 
 (ert-deftest test-ob-shell/bash-uses-assoc-arrays-with-lists ()
-  "Bash shell: support for associative arrays with lists
+  "Bash shell: support for associative arrays with lists.
 
 Bash will see an associative array that contains each row as a single
-string. Bash cannot handle lists in associative arrays."
+string.  Bash cannot handle lists in associative arrays."
   (skip-unless
    ;; Old GPLv2 BASH in macOSX does not support associative arrays.
    (if-let* ((bash (executable-find "bash")))

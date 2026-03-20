@@ -19,6 +19,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
@@ -298,4 +302,5 @@ Also, mute output from `message'."
 
 
 (provide 'test-org-timer)
-;;; test-org-timer.el end here
+
+;;; test-org-timer.el ends here

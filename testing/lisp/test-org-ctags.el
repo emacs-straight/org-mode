@@ -18,6 +18,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 ;; Alternative implementation for `test-org-ctags/mock-command'
@@ -30,7 +34,7 @@
 ;;;; Helpers:
 
 (defun test-org-ctags/mock-command (temp-file command-name)
-  "Define shell function COMMAND-NAME wrining arguments to TEMP-FILE."
+  "Define shell function COMMAND-NAME writing arguments to TEMP-FILE."
   ;; Failure exit code is used to prevent further `org-ctags' actions.
   (format "%s() { printf '%%s\\n' %s \"$@\" >%s 2>&1 ; false ; } ; %s"
           command-name command-name
@@ -115,7 +119,7 @@ _COMMENTS should appear in failure message."
          (test-org-ctags/list-elements actual indicies)))
 
 (defun test-org-ctags/list-elements-equal-explain
-    (expect actual indicies &rest _comments)
+    (_expect actual indicies &rest _comments)
   "`ert-eplainer' for `test-org-ctags/list-elements-equal-p'."
   (if (listp actual)
       (list
@@ -189,4 +193,5 @@ _COMMENTS should appear in failure message."
       (delete-directory temp-dir))))
 
 (provide 'test-org-ctags)
-;;; test-org.el ends here
+
+;;; test-org-ctags.el ends here

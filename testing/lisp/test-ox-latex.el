@@ -183,7 +183,7 @@ MongoDB & MySQL & 2 \\\\
       "\\href{https://orgmode.org/worg/images/orgmode/org-mode-unicorn.svg}{\\includegraphics[width=.9\\linewidth]{/wallpaper.png}}"))))
 
 (ert-deftest test-ox-latex/num-t ()
-  "Test toc treatment for fixed num:t"
+  "Test toc treatment for fixed num:t."
   (org-test-with-exported-text
    'latex
    "#+TITLE: num: fix
@@ -241,7 +241,7 @@ is suppressed
 \\end{document}"))))
 
 (ert-deftest test-ox-latex/new-toc-as-org ()
-  "test toc treatment with `org-latex-toc-include-unnumbered' set to `t'"
+  "Test toc treatment with `org-latex-toc-include-unnumbered' set to t."
   (let ((org-latex-toc-include-unnumbered t))
     (org-test-with-exported-text 'latex
         "#+TITLE: num: fix
@@ -651,7 +651,7 @@ Fake test document
       (should (search-forward "\\begin{document}" nil t)))))
 
 (ert-deftest test-ox-latex/latex-class-pre ()
-  "Test #+LATEX_CLASS_PRE"
+  "Test #+LATEX_CLASS_PRE."
   (org-test-with-exported-text 'latex
                                "#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
 #+TITLE: Test prepending LaTeX before the preamble
@@ -668,7 +668,7 @@ Fake test document
       (should (search-forward "\\begin{document}" nil t))))
 
 (ert-deftest test-ox-latex/latex-default-example-with-options ()
-  "Test #+ATTR_LATEX: :options with custom environment"
+  "Test #+ATTR_LATEX: :options with custom environment."
   (let ((org-latex-default-example-environment "Verbatim"))
     (org-test-with-exported-text
      'latex

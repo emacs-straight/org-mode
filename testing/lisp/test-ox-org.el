@@ -17,6 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'ox-org)
@@ -41,4 +45,4 @@
 
 (provide 'test-ox-org)
 
-;; test-ox-org.el ends here
+;;; test-ox-org.el ends here

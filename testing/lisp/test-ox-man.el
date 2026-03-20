@@ -17,6 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'ox-man)
@@ -46,20 +50,20 @@ executable is available)."
                      ;; FIXME: ox-man does not yet support passing a
                      ;; project name.
                      (replace-regexp-in-string
-                      (rx bol (0+ any)
+                      (rx bol (0+ not-newline)
                           "style: .TH missing fourth argument; "
                           "suggest package/project name and version"
-                          (0+ any) eol)
+                          (0+ not-newline) eol)
                       "")
                      ;; We do support date via #+DATE keyword, but it
                      ;; is not enabled by default for historical
                      ;; reasons.
                      (replace-regexp-in-string
-                      (rx bol (0+ any)
+                      (rx bol (0+ not-newline)
                           "style: .TH missing third argument;"
                           " suggest document modification"
                           " date in ISO 8601 format (YYYY-MM-DD)"
-                          (0+ any) eol)
+                          (0+ not-newline) eol)
                       "")
                      (replace-regexp-in-string "\n+" ""))))))
            (kill-buffer output))))

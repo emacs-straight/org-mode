@@ -17,6 +17,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 'org-test "../testing/org-test")
@@ -490,9 +494,9 @@ Test updates of source and config file."
 		       :include ("index/file1.org" "index/file2.org"))
         (lambda (_)) nil t pub-dir t)
       ;; Pretend that a new Emacs session started as follows:
-      ;; Use empty transient cache.
+      ;; Use empty cache.
       ;; Touch file2.org as changed, while file1.org is skipped.
-      (setq org-publish-transient-cache nil)
+      (org-publish-reset-cache)
       (org-test-publish-touch (expand-file-name "index/file2.org" base))
       (let ((result
              (org-test-publish
