@@ -106,6 +106,38 @@ This tangles the block to four files:
 - /backup/config.el
 - /backup/backup.el
 
+*** iCalendar export blocks and keywords
+
+The iCalendar exporter now allows using export blocks and keywords
+to insert literal text into the exported document. For example:
+
+#+begin_src org
+  ,* An event
+  :PROPERTIES:
+  :ID:       abc123
+  :END:
+  <2026-03-12 Thu>
+
+  ,#+ICALENDAR: CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234
+
+  ,#+begin_export icalendar
+  ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=Henry
+   Cabot:mailto:hcabot@example.com
+  ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM="mailto:bob@
+   example.com";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@
+   example.com
+  ,#+end_export
+#+end_src
+
+Note that text from export blocks and keywords is inserted literally
+into the exported iCalendar without any syntax checking.  When
+icalendar-mode.el (from Emacs 31) is available, text in icalendar
+export blocks will have syntax highlighting.
+
+A current limitation is that export blocks and keywords are only
+implemented for events and todos, and not yet for calendar-wide
+properties.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
