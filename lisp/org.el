@@ -14872,17 +14872,28 @@ insert \".\"."
   (interactive)
   (org-funcall-in-calendar #'calendar-scroll-right nil 1))
 
+;; FIXME: Since Emacs 31, calendar.el has `calendar-total-months'.
+;; So, we are not neccesarily scrolling "three" months.
+;; Maybe rename.
 (defun org-calendar-scroll-three-months-left ()
   "Scroll the displayed calendar left by three months."
   (interactive)
   (org-funcall-in-calendar
-   #'calendar-scroll-left-three-months nil 1))
+   (if (fboundp 'calendar-scroll-calendar-left)
+       #'calendar-scroll-calendar-left
+     (with-suppressed-warnings ((obsolete calendar-scroll-left-three-months))
+       #'calendar-scroll-left-three-months))
+   nil 1))
 
 (defun org-calendar-scroll-three-months-right ()
   "Scroll the displayed calendar right by three months."
   (interactive)
   (org-funcall-in-calendar
-   #'calendar-scroll-right-three-months nil 1))
+   (if (fboundp 'calendar-scroll-calendar-right)
+       #'calendar-scroll-calendar-right
+     (with-suppressed-warnings ((obsolete calendar-scroll-right-three-months))
+       #'calendar-scroll-right-three-months))
+   nil 1))
 
 (defun org-calendar-select ()
   "Return to `org-read-date' with the date currently selected.
@@ -15330,7 +15341,11 @@ This uses the icalendar.el library."
 	 buf rtn b e)
     (unwind-protect
         (with-current-buffer frombuf
-          (icalendar-export-region (point-min) (point-max) tmpfile)
+          (if (fboundp 'diary-icalendar-export-region)
+              (diary-icalendar-export-region (point-min) (point-max) tmpfile)
+            ;; Emacs < 31
+            (with-suppressed-warnings ((obsolete icalendar-export-region))
+              (icalendar-export-region (point-min) (point-max) tmpfile)))
           (setq buf (find-buffer-visiting tmpfile))
           (set-buffer buf)
           (goto-char (point-min))

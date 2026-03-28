@@ -3474,6 +3474,17 @@ contextual information."
 					'latex)))))))
 	      "\\relax ")
 	     (t " "))
+            ;; In lists like
+            ;; - tag ::
+            ;;   1. foo
+            ;;   2. bar
+            ;; the inner list will go right after "tag", on the same line.
+            ;; Avoid such scenario, except when the very first child is
+            ;; paragraph.
+            (unless (org-element-type-p
+                     (car (org-element-contents item))
+                     'paragraph)
+              "\\leavevmode\\par")
 	    (and contents (org-trim contents)))))
 
 
