@@ -6306,8 +6306,8 @@ See also the user option `org-agenda-clock-consistency-checks'."
     (let* ((t1dec (decode-time t1))
 	   (t2dec (decode-time t2))
 	   ;; compute the minute on the day
-	   (min1 (+ (nth 1 t1dec) (* 60 (nth 2 t1dec))))
-	   (min2 (+ (nth 1 t2dec) (* 60 (nth 2 t2dec)))))
+	   (min1 (+ (decoded-time-minute t1dec) (* 60 (decoded-time-hour t1dec))))
+	   (min2 (+ (decoded-time-minute t2dec) (* 60 (decoded-time-hour t2dec)))))
       (when (< min2 min1)
 	;; if min2 is smaller than min1, this means it is on the next day.
 	;; Wrap it to after midnight.
@@ -10114,7 +10114,9 @@ When called programmatically, FORCE-DIRECTION can be `set', `up',
 		   (not (save-match-data (org-at-date-range-p))))
 	  (setq cdate (org-parse-time-string (match-string 0) 'nodefault)
 		cdate (calendar-absolute-from-gregorian
-		       (list (nth 4 cdate) (nth 3 cdate) (nth 5 cdate)))
+                       (list (decoded-time-month cdate)
+                             (decoded-time-day   cdate)
+                             (decoded-time-year  cdate)))
 		today (org-today))
 	  (when (> today cdate)
 	    ;; immediately shift to today
@@ -11234,7 +11236,7 @@ when defining today."
   "Like `org-agenda-todo' but the time of change will be 23:59 of yesterday."
   (interactive "P")
   (let* ((org-use-effective-time t)
-	 (hour (nth 2 (decode-time (org-current-time))))
+	 (hour (decoded-time-hour (decode-time (org-current-time))))
          (org-extend-today-until (1+ hour)))
     (org-agenda-todo arg)))
 

@@ -342,7 +342,7 @@ before running this command, even though the command tries to be smart."
 		    (string-match sre tmp))
 	    (throw 'next nil))
 	  (let* ((dct (decode-time (org-time-string-to-time (match-string 0))))
-		 (date (list (nth 4 dct) (nth 3 dct) (nth 5 dct)))
+		 (date (list (decoded-time-month dct) (decoded-time-day dct) (decoded-time-year dct)))
 		 (year  (calendar-extract-year  date))
 		 (month (calendar-extract-month date))
 		 (day   (calendar-extract-day   date))

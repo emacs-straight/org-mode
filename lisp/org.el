@@ -5385,7 +5385,7 @@ the rounding returns a past time."
       (let* ((time (decode-time now))
 	     (res (org-encode-time
                    (apply #'list
-                          0 (* r (round (nth 1 time) r))
+                          0 (* r (round (decoded-time-minute time) r))
                           (nthcdr 2 time)))))
 	(if (or (not past) (time-less-p res now))
 	    res
@@ -9608,8 +9608,8 @@ nil or a string to be used for the todo mark." )
 	  (cond
 	   (org-use-last-clock-out-time-as-effective-time
 	    (or (org-clock-get-last-clock-out-time) ct))
-	   ((and org-use-effective-time (< (nth 2 dct) org-extend-today-until))
-	    (org-encode-time 0 59 23 (1- (nth 3 dct)) (nth 4 dct) (nth 5 dct)))
+	   ((and org-use-effective-time (< (decoded-time-hour dct) org-extend-today-until))
+	    (org-encode-time 0 59 23 (1- (decoded-time-day dct)) (decoded-time-month dct) (decoded-time-year dct)))
 	   (t ct))))
     ct1))
 
@@ -9619,7 +9619,7 @@ nil or a string to be used for the todo mark." )
   (if (eq major-mode 'org-agenda-mode)
       (org-agenda-todo-yesterday arg)
     (let* ((org-use-effective-time t)
-	   (hour (nth 2 (decode-time (org-current-time))))
+	   (hour (decoded-time-hour (decode-time (org-current-time))))
 	   (org-extend-today-until (1+ hour)))
       (org-todo arg))))
 
@@ -14368,9 +14368,9 @@ user."
     ;; time is not given.
     (when (and (not default-time)
                (not org-overriding-default-time)
-               (< (nth 2 org-defdecode) org-extend-today-until))
-      (setf (nth 2 org-defdecode) -1)
-      (setf (nth 1 org-defdecode) 59)
+               (< (decoded-time-hour org-defdecode) org-extend-today-until))
+      (setf (decoded-time-hour org-defdecode) -1)
+      (setf (decoded-time-minute org-defdecode) 59)
       (setq org-def (org-encode-time org-defdecode))
       (setq org-defdecode (decode-time org-def)))
     (let* ((timestr (format-time-string
@@ -14456,9 +14456,11 @@ user."
       (setq final (decode-time final))
       (if (and (boundp 'org-time-was-given) org-time-was-given)
 	  (format "%04d-%02d-%02d %02d:%02d"
-		  (nth 5 final) (nth 4 final) (nth 3 final)
-		  (nth 2 final) (nth 1 final))
-	(format "%04d-%02d-%02d" (nth 5 final) (nth 4 final) (nth 3 final))))))
+		  (decoded-time-year final) (decoded-time-month final)
+                  (decoded-time-day final) (decoded-time-hour final)
+                  (decoded-time-minute final))
+	(format "%04d-%02d-%02d" (decoded-time-year final)
+                (decoded-time-month final) (decoded-time-day final))))))
 
 (defun org-read-date-display ()
   "Display the current date prompt interpretation in the minibuffer."
@@ -14618,51 +14620,51 @@ user."
 			  (substring ans (match-end 7))))))
 
     (setq tl (parse-time-string ans)
-	  day (or (nth 3 tl) (nth 3 org-defdecode))
+	  day (or (decoded-time-day tl) (decoded-time-day org-defdecode))
 	  month
-	  (cond ((nth 4 tl))
-		((not org-read-date-prefer-future) (nth 4 org-defdecode))
+	  (cond ((decoded-time-month tl))
+		((not org-read-date-prefer-future) (decoded-time-month org-defdecode))
 		;; Day was specified.  Make sure DAY+MONTH
 		;; combination happens in the future.
-		((nth 3 tl)
+		((decoded-time-day tl)
 		 (setq futurep t)
-		 (if (< day (nth 3 nowdecode)) (1+ (nth 4 nowdecode))
-		   (nth 4 nowdecode)))
-		(t (nth 4 org-defdecode)))
+		 (if (< day (decoded-time-day nowdecode)) (1+ (decoded-time-month nowdecode))
+		   (decoded-time-month nowdecode)))
+		(t (decoded-time-month org-defdecode)))
 	  year
-	  (cond ((and (not kill-year) (nth 5 tl)))
-		((not org-read-date-prefer-future) (nth 5 org-defdecode))
+	  (cond ((and (not kill-year) (decoded-time-year tl)))
+		((not org-read-date-prefer-future) (decoded-time-year org-defdecode))
 		;; Month was guessed in the future and is at least
 		;; equal to NOWDECODE's.  Fix year accordingly.
 		(futurep
-		 (if (or (> month (nth 4 nowdecode))
-			 (>= day (nth 3 nowdecode)))
-		     (nth 5 nowdecode)
-		   (1+ (nth 5 nowdecode))))
+		 (if (or (> month (decoded-time-month nowdecode))
+			 (>= day (decoded-time-day nowdecode)))
+		     (decoded-time-year nowdecode)
+		   (1+ (decoded-time-year nowdecode))))
 		;; Month was specified.  Make sure MONTH+YEAR
 		;; combination happens in the future.
-		((nth 4 tl)
+		((decoded-time-month tl)
 		 (setq futurep t)
-		 (cond ((> month (nth 4 nowdecode)) (nth 5 nowdecode))
-		       ((< month (nth 4 nowdecode)) (1+ (nth 5 nowdecode)))
-		       ((< day (nth 3 nowdecode)) (1+ (nth 5 nowdecode)))
-		       (t (nth 5 nowdecode))))
-		(t (nth 5 org-defdecode)))
-	  hour (or (nth 2 tl) (nth 2 org-defdecode))
-	  minute (or (nth 1 tl) (nth 1 org-defdecode))
-	  second (or (nth 0 tl) 0)
-	  wday (nth 6 tl))
+		 (cond ((> month (decoded-time-month nowdecode)) (decoded-time-year nowdecode))
+		       ((< month (decoded-time-month nowdecode)) (1+ (decoded-time-year nowdecode)))
+		       ((< day (decoded-time-day nowdecode)) (1+ (decoded-time-year nowdecode)))
+		       (t (decoded-time-year nowdecode))))
+		(t (decoded-time-year org-defdecode)))
+	  hour (or (decoded-time-hour tl) (decoded-time-hour org-defdecode))
+	  minute (or (decoded-time-minute tl) (decoded-time-minute org-defdecode))
+	  second (or (decoded-time-second tl) 0)
+	  wday (decoded-time-weekday tl))
 
     (when (and (eq org-read-date-prefer-future 'time)
-	       (not (nth 3 tl)) (not (nth 4 tl)) (not (nth 5 tl))
-	       (equal day (nth 3 nowdecode))
-	       (equal month (nth 4 nowdecode))
-	       (equal year (nth 5 nowdecode))
-	       (nth 2 tl)
-	       (or (< (nth 2 tl) (nth 2 nowdecode))
-		   (and (= (nth 2 tl) (nth 2 nowdecode))
-			(nth 1 tl)
-			(< (nth 1 tl) (nth 1 nowdecode)))))
+	       (not (decoded-time-day tl)) (not (decoded-time-month tl)) (not (decoded-time-year tl))
+	       (equal day (decoded-time-day nowdecode))
+	       (equal month (decoded-time-month nowdecode))
+	       (equal year (decoded-time-year nowdecode))
+	       (decoded-time-hour tl)
+	       (or (< (decoded-time-hour tl) (decoded-time-hour nowdecode))
+		   (and (= (decoded-time-hour tl) (decoded-time-hour nowdecode))
+			(decoded-time-minute tl)
+			(< (decoded-time-minute tl) (decoded-time-minute nowdecode)))))
       (setq day (1+ day)
 	    futurep t))
 
@@ -14694,7 +14696,9 @@ user."
       (setq futurep nil)
       (unless deltadef
 	(let ((now (decode-time)))
-	  (setq day (nth 3 now) month (nth 4 now) year (nth 5 now))))
+	  (setq day (decoded-time-day now)
+                month (decoded-time-month now)
+                year (decoded-time-year now))))
       ;; FIXME: Duplicated value in ‘cond’: ""
       (cond ((member deltaw '("h" ""))
              (when (boundp 'org-time-was-given)
@@ -14704,14 +14708,14 @@ user."
             ((equal deltaw "w") (setq day (+ day (* 7 deltan))))
             ((equal deltaw "m") (setq month (+ month deltan)))
             ((equal deltaw "y") (setq year (+ year deltan)))))
-     ((and wday (not (nth 3 tl)))
+     ((and wday (not (decoded-time-day tl)))
       ;; Weekday was given, but no day, so pick that day in the week
       ;; on or after the derived date.
-      (setq wday1 (nth 6 (decode-time (org-encode-time 0 0 0 day month year))))
+      (setq wday1 (decoded-time-weekday (decode-time (org-encode-time 0 0 0 day month year))))
       (unless (equal wday wday1)
 	(setq day (+ day (% (- wday wday1 -7) 7))))))
     (when (and (boundp 'org-time-was-given)
-	       (nth 2 tl))
+	       (decoded-time-hour tl))
       (setq org-time-was-given t))
     (when (< year 100) (setq year (+ 2000 year)))
     ;; Check of the date is representable
@@ -14724,7 +14728,7 @@ user."
       (condition-case nil
 	  (ignore (org-encode-time second minute hour day month year))
 	(error
-	 (setq year (nth 5 org-defdecode))
+	 (setq year (decoded-time-year org-defdecode))
 	 (setq org-read-date-analyze-forced-year t))))
     (setq org-read-date-analyze-futurep futurep)
     (list second minute hour day month year nil -1 nil)))
@@ -14757,7 +14761,7 @@ DEF-FLAG   is t when a double ++ or -- indicates shift relative to
 	   (what (if (match-end 3) (match-string 3 s) "d"))
 	   (wday1 (cdr (assoc (downcase what) parse-time-weekdays)))
 	   (date (if rel default today))
-	   (wday (nth 6 (decode-time date)))
+	   (wday (decoded-time-weekday (decode-time date)))
 	   delta)
       (if wday1
 	  (progn
@@ -14966,7 +14970,7 @@ The command returns the inserted time stamp."
       (when (string-match "\\(-[0-9]+:[0-9]+\\)?\\( [.+]?\\+[0-9]+[hdwmy]\\(/[0-9]+[hdwmy]\\)?\\)?\\'" ts)
 	(setq off (- (match-end 0) (match-beginning 0)))))
     (setq end (- end off))
-    (setq with-hm (and (nth 1 t1) (nth 2 t1))
+    (setq with-hm (and (decoded-time-minute t1) (decoded-time-hour t1))
 	  tf (org-time-stamp-format with-hm 'no-brackets 'custom)
 	  time (org-fix-decoded-time t1)
 	  str (org-add-props
@@ -15405,7 +15409,7 @@ day number."
 	      ("h"
 	       (let ((missing-hours
 		      (mod (+ (- (* 24 (- cday sday))
-				 (nth 2 (org-parse-time-string start)))
+				 (decoded-time-hour (org-parse-time-string start)))
 			      org-extend-today-until)
 			   value)))
 		 (setf n1 (if (= missing-hours 0) cday
@@ -15471,8 +15475,8 @@ day number."
 	((and (listp d) (= (length d) 3)) d)
 	((stringp d)
 	 (let ((d (org-parse-time-string d)))
-	   (list (nth 4 d) (nth 3 d) (nth 5 d))))
-	((listp d) (list (nth 4 d) (nth 3 d) (nth 5 d)))))
+	   (list (decoded-time-month d) (decoded-time-day d) (decoded-time-year d))))
+	((listp d) (list (decoded-time-month d) (decoded-time-day d) (decoded-time-year d)))))
 
 (defun org-timestamp-up (&optional arg)
   "Increase the date item at the cursor by one.
@@ -19478,8 +19482,8 @@ earliest time on the cursor date that Org treats as that date
 	(setq hod (string-to-number (match-string 1 tp))
 	      mod (string-to-number (match-string 2 tp))))
       (or tp (let ((now (decode-time)))
-	       (setq hod (nth 2 now)
-		     mod (nth 1 now)))))
+	       (setq hod (decoded-time-hour now)
+		     mod (decoded-time-minute now)))))
     (cond
      ((eq major-mode 'calendar-mode)
       (setq date (calendar-cursor-to-date)

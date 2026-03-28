@@ -35,11 +35,11 @@ Return the timestamp as a string."
                    input nil (decode-time (current-time))))))))
      (list 'timestamp
            (list :type (if inactive 'inactive 'active)
-                 :minute-start (and with-time (nth 1 time))
-                 :hour-start (and with-time (nth 2 time))
-                 :day-start (nth 3 time)
-                 :month-start (nth 4 time)
-                 :year-start (nth 5 time))))))
+                 :minute-start (and with-time (decoded-time-minute time))
+                 :hour-start (and with-time (decoded-time-hour time))
+                 :day-start (decoded-time-day time)
+                 :month-start (decoded-time-month time)
+                 :year-start (decoded-time-year time))))))
 
 (defun org-test-clock-create-clock (input1 &optional input2)
   "Create a clock line out of two date/time prompts.

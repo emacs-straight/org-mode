@@ -351,7 +351,7 @@ https://list.orgmode.org/orgmode/m2ilkwso8r.fsf@me.com"
 	(find-file full-path)
 	(insert
 	 ";;; " file-name "\n\n"
-	 ";; Copyright (c) " (nth 5 (decode-time (current-time)))
+	 ";; Copyright (c) " (decoded-time-year (decode-time (current-time)))
 	 " " user-full-name "\n"
 	 ";; Authors: " user-full-name "\n\n"
 	 ";; Released under the GNU General Public License version 3\n"

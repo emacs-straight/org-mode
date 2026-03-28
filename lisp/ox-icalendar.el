@@ -900,11 +900,11 @@ Return VTODO component as a string."
             (let ((now (decode-time)))
 	      (list 'timestamp
 		    (list :type 'active
-			  :minute-start (nth 1 now)
-			  :hour-start (nth 2 now)
-			  :day-start (nth 3 now)
-			  :month-start (nth 4 now)
-			  :year-start (nth 5 now)))))
+			  :minute-start (decoded-time-minute now)
+			  :hour-start (decoded-time-hour now)
+			  :day-start (decoded-time-day now)
+			  :month-start (decoded-time-month now)
+			  :year-start (decoded-time-year now)))))
            ((or (and (eq org-icalendar-todo-unscheduled-start
                          'deadline-warning)
                      dl)
