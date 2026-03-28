@@ -101,6 +101,8 @@
 (require 'org-macs)
 (require 'ol)
 
+(require 'calendar)
+
 ;;; Declare functions and variables
 
 (declare-function bbdb "ext:bbdb-com" (string elidep))
@@ -121,10 +123,6 @@
 (declare-function bbdb-record-note "ext:bbdb" (record label))
 ;; `bbdb-record-xfield' replaces it in recent BBDB v3.x+
 (declare-function bbdb-record-xfield "ext:bbdb" (record label))
-
-(declare-function calendar-absolute-from-gregorian "calendar" (date))
-(declare-function calendar-gregorian-from-absolute "calendar" (date))
-(declare-function calendar-leap-year-p "calendar" (year))
 
 (declare-function diary-ordinal-suffix "diary-lib" (n))
 
@@ -379,9 +377,9 @@ variable to be globally bound."
             (= 0 (hash-table-count org-bbdb-anniv-hash)))
     (org-bbdb-make-anniv-hash))
 
-  (let* ((m (car date))    ; month
-         (d (nth 1 date))  ; day
-         (y (nth 2 date))  ; year
+  (let* ((m (calendar-extract-month date))
+         (d (calendar-extract-day date))
+         (y (calendar-extract-year date))
          (annivs (gethash (list m d) org-bbdb-anniv-hash))
          (text ())
          rec recs)

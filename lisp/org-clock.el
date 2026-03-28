@@ -2471,9 +2471,9 @@ have priority."
 		    (list (string-to-number (match-string 2 skey))
 			  1
 			  (string-to-number (match-string 1 skey)))))))
-	(setq d (nth 1 date)
-	      month (car date)
-	      y (nth 2 date)
+	(setq d     (calendar-extract-day   date)
+	      month (calendar-extract-month date)
+	      y     (calendar-extract-year  date)
 	      dow 1
 	      key 'week)))
      ((string-match "\\`\\([0-9]+\\)-[qQ]\\([1-4]\\)\\'" skey)
@@ -2483,9 +2483,9 @@ have priority."
 		   (calendar-iso-to-absolute
 		    (org-quarter-to-date
 		     q (string-to-number (match-string 1 skey)))))))
-	(setq d (nth 1 date)
-	      month (car date)
-	      y (nth 2 date)
+	(setq d     (calendar-extract-day   date)
+	      month (calendar-extract-month date)
+	      y     (calendar-extract-year  date)
 	      dow 1
 	      key 'quarter)))
      ((string-match
@@ -2637,7 +2637,11 @@ the currently selected interval size."
 			(calendar-iso-to-absolute (list (+ mw n) 1 y))))
 	    (setq ins (format-time-string
 		       "%G-W%V"
-		       (org-encode-time 0 0 0 (nth 1 date) (car date) (nth 2 date)))))
+                       (org-encode-time
+                        0 0 0
+                        (calendar-extract-day date)
+                        (calendar-extract-month date)
+                        (calendar-extract-year date)))))
 	   ((and wp (string-match "q\\|Q" wp) mw (> (length wp) 0))
 	    (require 'cal-iso)
 					; if the 4th + 1 quarter is requested we flip to the 1st quarter of the next year
@@ -2654,7 +2658,11 @@ the currently selected interval size."
 			(calendar-iso-to-absolute (org-quarter-to-date (+ mw n) y))))
 	    (setq ins (format-time-string
 		       (concat (number-to-string y) "-Q" (number-to-string (+ mw n)))
-		       (org-encode-time 0 0 0 (nth 1 date) (car date) (nth 2 date)))))
+	               (org-encode-time
+                        0 0 0
+                        (calendar-extract-day date)
+                        (calendar-extract-month date)
+                        (calendar-extract-year date)))))
 	   (mw
 	    (setq ins (format-time-string
 		       "%Y-%m"
@@ -3162,9 +3170,15 @@ PROPERTIES: The list properties specified in the `:properties' parameter
     (when (integerp ts) (setq ts (calendar-gregorian-from-absolute ts)))
     (when (integerp te) (setq te (calendar-gregorian-from-absolute te)))
     (when (and ts (listp ts))
-      (setq ts (format "%4d-%02d-%02d" (nth 2 ts) (car ts) (nth 1 ts))))
+      (setq ts (format "%4d-%02d-%02d"
+                       (calendar-extract-year ts)
+                       (calendar-extract-month ts)
+                       (calendar-extract-day ts))))
     (when (and te (listp te))
-      (setq te (format "%4d-%02d-%02d" (nth 2 te) (car te) (nth 1 te))))
+      (setq te (format "%4d-%02d-%02d"
+                       (calendar-extract-year te)
+                       (calendar-extract-month te)
+                       (calendar-extract-day te))))
     ;; Now the times are strings we can parse.
     (if ts (setq ts (org-matcher-time ts)))
     (if te (setq te (org-matcher-time te)))

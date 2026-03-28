@@ -14687,9 +14687,9 @@ user."
 					;	      iso-date (calendar-gregorian-from-absolute
 					;			(calendar-iso-to-absolute
 					;			 (list iso-week day year)))))
-      (setq month (car iso-date)
-	    year (nth 2 iso-date)
-	    day (nth 1 iso-date)))
+      (setq month (calendar-extract-month iso-date)
+	    year (calendar-extract-year iso-date)
+	    day (calendar-extract-day iso-date)))
      (deltan
       (setq futurep nil)
       (unless deltadef
@@ -14787,7 +14787,11 @@ Unless KEEPDATE is non-nil, update `org-ans2' to the cursor date."
     (apply func args)
     (when (and (not keepdate) (calendar-cursor-to-date))
       (let* ((date (calendar-cursor-to-date))
-	     (time (org-encode-time 0 0 0 (nth 1 date) (nth 0 date) (nth 2 date))))
+	     (time (org-encode-time
+                    0 0 0
+                    (calendar-extract-day date)
+                    (calendar-extract-month date)
+                    (calendar-extract-year date))))
 	(setq org-ans2 (format-time-string "%Y-%m-%d" time))))
     (move-overlay org-date-ovl (1- (point)) (1+ (point)) (current-buffer))))
 
@@ -14898,7 +14902,11 @@ This is used by `org-read-date' in a temporary keymap for the calendar buffer."
   (interactive)
   (when (calendar-cursor-to-date)
     (let* ((date (calendar-cursor-to-date))
-	   (time (org-encode-time 0 0 0 (nth 1 date) (nth 0 date) (nth 2 date))))
+	   (time (org-encode-time
+                  0 0 0
+                  (calendar-extract-day date)
+                  (calendar-extract-month date)
+                  (calendar-extract-year date))))
       (setq org-ans1 (format-time-string "%Y-%m-%d" time)))
     (when (active-minibuffer-window) (exit-minibuffer))))
 
@@ -15018,7 +15026,11 @@ This is used by `org-read-date' in a temporary keymap for the calendar buffer."
   (mouse-set-point ev)
   (when (calendar-cursor-to-date)
     (let* ((date (calendar-cursor-to-date))
-	   (time (org-encode-time 0 0 0 (nth 1 date) (nth 0 date) (nth 2 date))))
+	   (time (org-encode-time
+                  0 0 0
+                  (calendar-extract-day date)
+                  (calendar-extract-month date)
+                  (calendar-extract-year date))))
       (setq org-ans1 (format-time-string "%Y-%m-%d" time)))
     (when (active-minibuffer-window) (exit-minibuffer))))
 
@@ -15285,7 +15297,11 @@ into a past one.  Any year larger than 99 is returned unchanged."
   "Return the time corresponding to date D.
 D may be an absolute day number, or a calendar-type list (month day year)."
   (when (numberp d) (setq d (calendar-gregorian-from-absolute d)))
-  (org-encode-time 0 0 0 (nth 1 d) (car d) (nth 2 d)))
+  (org-encode-time
+   0 0 0
+   (calendar-extract-day d)
+   (calendar-extract-month d)
+   (calendar-extract-year d)))
 
 (defvar org-agenda-current-date)
 (defun org-calendar-holiday ()
@@ -15405,16 +15421,16 @@ day number."
 			 ;; Add N months to gregorian date D, i.e.,
 			 ;; a list (MONTH DAY YEAR).  Return a valid
 			 ;; gregorian date.
-			 (let ((m (+ (nth 0 d) n)))
+			 (let ((m (+ (calendar-extract-month d) n)))
 			   (list (mod m 12)
-				 (nth 1 d)
-				 (+ (/ m 12) (nth 2 d))))))
+				 (calendar-extract-day d)
+				 (+ (/ m 12) (calendar-extract-year d))))))
 		      (months		; Complete months to TARGET.
-		       (* (/ (+ (* 12 (- (nth 2 target) (nth 2 base)))
-				(- (nth 0 target) (nth 0 base))
+		       (* (/ (+ (* 12 (- (calendar-extract-year target) (calendar-extract-year base)))
+				(- (calendar-extract-month target) (calendar-extract-month base))
 				;; If START's day is greater than
 				;; TARGET's, remove incomplete month.
-				(if (> (nth 1 target) (nth 1 base)) 0 -1))
+				(if (> (calendar-extract-day target) (calendar-extract-day base)) 0 -1))
 			     value)
 			  value))
 		      (before (funcall add-months base months)))
@@ -15423,18 +15439,18 @@ day number."
 		       (calendar-absolute-from-gregorian
 			(funcall add-months before value)))))
 	      (_
-	       (let* ((d (nth 1 base))
-		      (m (nth 0 base))
-		      (y (nth 2 base))
+	       (let* ((d (calendar-extract-day   base))
+		      (m (calendar-extract-month base))
+		      (y (calendar-extract-year  base))
 		      (years		; Complete years to TARGET.
-		       (* (/ (- (nth 2 target)
+		       (* (/ (- (calendar-extract-year target)
 				y
 				;; If START's month and day are
 				;; greater than TARGET's, remove
 				;; incomplete year.
-				(if (or (> (nth 0 target) m)
-					(and (= (nth 0 target) m)
-					     (> (nth 1 target) d)))
+				(if (or (> (calendar-extract-month target) m)
+					(and (= (calendar-extract-month target) m)
+					     (> (calendar-extract-day target) d)))
 				    0
 				  1))
 			     value)
@@ -15442,7 +15458,7 @@ day number."
 		      (before (list m d (+ y years))))
 		 (setf n1 (calendar-absolute-from-gregorian before))
 		 (setf n2 (calendar-absolute-from-gregorian
-			   (list m d (+ (nth 2 before) value)))))))
+			   (list m d (+ (calendar-extract-year before) value)))))))
 	    ;; Handle PREFER parameter, if any.
 	    (cond
 	     ((eq prefer 'past)   (if (= cday n2) n2 n1))
@@ -15867,7 +15883,11 @@ If there is already a time stamp at the cursor position, update it."
       (org-timestamp-change 0 'calendar)
     (let ((cal-date (org-get-date-from-calendar)))
       (org-insert-timestamp
-       (org-encode-time 0 0 0 (nth 1 cal-date) (car cal-date) (nth 2 cal-date))))))
+       (org-encode-time
+        0 0 0
+        (calendar-extract-day cal-date)
+        (calendar-extract-month cal-date)
+        (calendar-extract-year cal-date))))))
 
 (defcustom org-image-actual-width t
   "When non-nil, use the actual width of images when inlining them.
@@ -19464,13 +19484,17 @@ earliest time on the cursor date that Org treats as that date
      ((eq major-mode 'calendar-mode)
       (setq date (calendar-cursor-to-date)
 	    defd (org-encode-time 0 (or mod 0) (or hod org-extend-today-until)
-                                  (nth 1 date) (nth 0 date) (nth 2 date))))
+                                  (calendar-extract-day date)
+                                  (calendar-extract-month date)
+                                  (calendar-extract-year date))))
      ((eq major-mode 'org-agenda-mode)
       (setq day (get-text-property (point) 'day))
       (when day
 	(setq date (calendar-gregorian-from-absolute day)
 	      defd (org-encode-time 0 (or mod 0) (or hod org-extend-today-until)
-                                    (nth 1 date) (nth 0 date) (nth 2 date))))))
+                                    (calendar-extract-day date)
+                                    (calendar-extract-month date)
+                                    (calendar-extract-year date))))))
     (or defd (current-time))))
 
 (defun org-mark-subtree (&optional up)
