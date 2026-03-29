@@ -2049,17 +2049,21 @@ See initial version proposed by Juan Manuel Macías in URL
     ;; (message "=> Scripts used in document: %s" scripts)
     scripts))
 
-(defun org-latex--mk-options-list (opts)
-  "Return an options string for LaTeX from OPTS, e.g [opt] or [opt1,opt2].
+(defun org-latex--mk-options (str)
+  "Make STR be enclosed in [ ] or return an empty string if nil or empty.
 
-Return empty string if OPTS is nil or a zero-length string.
-If OPTS is a non-empty string, enclose it in square brackets.
-If OPTS is a list of strings, trim each string in the list before
-concatenating to a comma-separated list and returning the list
-enclosed in square brackets."
-  (cond ((null opts) "")
-        ((stringp opts) (if (length= opts 0 ) "" (format "[%s]" opts)))
-        (t (format "[%s]" (mapconcat #'string-trim opts ",")))))
+If STR is nil or an empty string, return an empty string.
+If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
+If the square brackets are missing, return STR enclosed in square brackets."
+  (if (or (not str) (length= str 0)) ""
+    (save-match-data  ; just in case it is used in a search/replace context
+      (when (listp str)
+        (setq str (mapconcat #'identity str ",")))
+      (let ((str (concat "[" str "]"))) ; make sure it is enclosed in []
+        (replace-regexp-in-string  ; remove excess [ at the beginning
+         "\\`\\[+" "["
+         (replace-regexp-in-string ; remove excess ] at the end
+          "]+\\'" "]" str))))))
 
 (defun org-latex--pdflatex-encode (lang)
   "Return the encoding for pdflatex based on LANG.
@@ -2083,7 +2087,7 @@ The first language in LANGS is considered the default language."
   ;; We get the encodings, then remove duplicates and finally reverse the order,
   ;; because the last encoding is used for the default language.
   (let* ((enc-list (mapcar #'org-latex--pdflatex-encode langs)))
-    (org-latex--mk-options-list (reverse (seq-uniq enc-list)))))
+    (org-latex--mk-options (reverse (seq-uniq enc-list)))))
 
 (defun org-latex--pdflatex-ldf (lang)
   "Return the ldf code for LANG from `org-latex-language-alist'.
@@ -2244,7 +2248,7 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
            (when-let* ((fallback-name (alist-get font-family fallback-alist nil nil #'string=))
                        (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-name))))
              (setq features (cl-concatenate #'list features (list fallback-spec))))
-           (insert (org-latex--mk-options-list features)))
+           (insert (org-latex--mk-options features)))
          (insert "\n")))))
 
 
@@ -2265,7 +2269,7 @@ Extract the information from INFO."
     (with-temp-buffer
       (insert "\\usepackage{fontspec}\n")
       (insert "\\usepackage{polyglossia}\n")
-      (insert (format "\\usepackage%s{unicode-math}\n" (org-latex--mk-options-list unicode-math-options)))
+      (insert (format "\\usepackage%s{unicode-math}\n" (org-latex--mk-options unicode-math-options)))
       (org-latex--insert-fontspec compiler
                                   fontspec-config
                                   current-default-features
@@ -2301,7 +2305,7 @@ Extract the information from INFO."
                                  ;; override with the user's :script choice when it is not appropriate
                                  font-family ;; if rm, sf, or tt are defined
                                  (or (plist-get props :script) (plist-get lang-plist :polyglossia))
-                                 (org-latex--mk-options-list
+                                 (org-latex--mk-options
                                   (or (plist-get props :props)
                                       (plist-get props :features)))  ;; add the additional properties
                                  (plist-get props :font)))))   ;; last but not least the actual font.
@@ -2404,7 +2408,7 @@ Use fontspec as a last resort and when defined."
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))
                               (feats (plist-get fprops :features)))
-                          (insert "\\set" fname "font{" font "}\n" (org-latex--mk-options-list feats))))
+                          (insert "\\set" fname "font{" font "}\n" (org-latex--mk-options feats))))
             (when with-cjk
               (when (string= compiler "lualatex")
                 (when (string= main-lang "zh")
@@ -2416,7 +2420,7 @@ Use fontspec as a last resort and when defined."
                               (if (string= compiler "lualatex") "\\zw" "em"))) ;; FIXME: Korean?
               (insert "\\linespread{1.333}")))))
       ;; FIXME: This works but needs to be fine-tuned:
-      (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options-list babel-options)))
+      (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
       ;; import the main language with a babelprovide
       ;; it is the fist language in the list.
       ;; FIXME: plain "import" or "import=*" ?
@@ -2450,7 +2454,7 @@ Use fontspec as a last resort and when defined."
                       (insert (format "\n\\babelfont%s{%s}%s{%s}"
                                       (org-latex--mk-options (and lang (org-latex--get-babel-lang lang)))
                                       (alist-get variant org-latex--long2short-family variant nil #'string=)
-                                      (org-latex--mk-options-list props)
+                                      (org-latex--mk-options props)
                                       font)))))
       (buffer-string))))
 
@@ -2726,19 +2730,6 @@ The default behaviour is to typeset with the Roman font family."
 
 
 ;;; Template
-(defun org-latex--mk-options (str)
-  "Make STR be enclosed in [ ] or return an empty string if nil or empty.
-
-If STR is nil or an empty string, return an empty string.
-If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
-If the square brackets are missing, return STR enclosed in square brackets."
-  (if (or (not str) (length= str 0)) ""
-    (save-match-data  ; just in case it is used in a search/replace context
-      (let ((str (concat "[" str "]"))) ; make sure it is enclosed in []
-        (replace-regexp-in-string  ; remove excess [ at the beginning
-         "\\`\\[+" "["
-         (replace-regexp-in-string ; remove excess ] at the end
-          "]+\\'" "]" str))))))
 
 ;;;###autoload
 (defun org-latex-make-preamble (info &optional template snippet?)
