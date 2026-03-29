@@ -14250,7 +14250,9 @@ general options (see [[*Export Settings]]).
 
   #+cindex: @samp{LATEX_CLASS_OPTIONS}, keyword
   Options the LaTeX export backend uses when calling the LaTeX
-  document class.
+  document class. Square brackets around the class options are
+  optional.  If missing, they will be added by Org.
+
 
 - =LATEX_COMPILER= ::
 
@@ -14338,10 +14340,16 @@ custom sectioning or custom classes.
 The LaTeX export backend sends the =LATEX_CLASS_OPTIONS= keyword and
 =EXPORT_LATEX_CLASS_OPTIONS= property as options to the LaTeX
 ~\documentclass~ macro.  The options and the syntax for specifying
-them, including enclosing them in square brackets, follow LaTeX
-conventions.
+them, follow LaTeX conventions.  Square brackets around them are
+optional:
 
-: #+LATEX_CLASS_OPTIONS: [a4paper,11pt,twoside,twocolumn]
+: #+LATEX_CLASS_OPTIONS: a4paper,11pt,twoside,twocolumn
+
+and
+
+: #+LATEX_CLASS_OPTIONS: a4paper,11pt,twoside,twocolumn
+
+are equivalent.
 
 #+cindex: @samp{LATEX_HEADER}, keyword
 #+cindex: @samp{LATEX_HEADER_EXTRA}, keyword

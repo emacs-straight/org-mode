@@ -97,6 +97,16 @@ This tangles the block to four files:
 You can set the LaTeX environment used in ~example~ blocks with this
 variable.
 
+*** Square brackets around LATEX_CLASS_OPTIONS are now optional.
+
+#+BEGIN_SRC org
+,#+LATEX_CLASS_OPTIONS: [a4paper,12pt]
+#+END_SRC
+can be also written as:
+#+BEGIN_SRC org
+,#+LATEX_CLASS_OPTIONS: a4paper,12pt
+#+END_SRC
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
