@@ -4481,21 +4481,21 @@ Assume point is at the beginning of the timestamp."
 	;; Parse date-start.
 	(unless diaryp
 	  (let ((date (org-parse-time-string date-start t)))
-	    (setq year-start (nth 5 date)
-		  month-start (nth 4 date)
-		  day-start (nth 3 date)
-		  hour-start (nth 2 date)
-		  minute-start (nth 1 date))))
+	    (setq year-start (decoded-time-year date)
+		  month-start (decoded-time-month date)
+		  day-start (decoded-time-day date)
+		  hour-start (decoded-time-hour date)
+		  minute-start (decoded-time-minute date))))
 	;; Compute date-end.  It can be provided directly in timestamp,
 	;; or extracted from time range.  Otherwise, it defaults to the
 	;; same values as date-start.
 	(unless diaryp
 	  (let ((date (and date-end (org-parse-time-string date-end t))))
-	    (setq year-end (or (nth 5 date) year-start)
-		  month-end (or (nth 4 date) month-start)
-		  day-end (or (nth 3 date) day-start)
-		  hour-end (or (nth 2 date) (car time-range) hour-start)
-		  minute-end (or (nth 1 date) (cdr time-range) minute-start))))
+	    (setq year-end (or (decoded-time-year date) year-start)
+		  month-end (or (decoded-time-month date) month-start)
+		  day-end (or (decoded-time-day date) day-start)
+		  hour-end (or (decoded-time-hour date) (car time-range) hour-start)
+		  minute-end (or (decoded-time-minute date) (cdr time-range) minute-start))))
         ;; Diary timestamp with time.
         (when (and diaryp
                    (string-match "\\([012]?[0-9]\\):\\([0-5][0-9]\\)\\(-\\([012]?[0-9]\\):\\([0-5][0-9]\\)\\)?" date-start))

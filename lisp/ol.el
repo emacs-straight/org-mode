@@ -34,6 +34,8 @@
 (require 'org-macs)
 (require 'org-fold)
 
+(require 'calendar)
+
 (defvar clean-buffer-list-kill-buffer-names)
 (defvar org-agenda-buffer-name)
 (defvar org-comment-string)
@@ -44,7 +46,6 @@
 (defvar org-src-source-file-name)
 (defvar org-ts-regexp)
 
-(declare-function calendar-cursor-to-date "calendar" (&optional error event))
 (declare-function dired-get-filename "dired" (&optional localp no-error-if-not-filep))
 (declare-function org-back-to-heading "org" (&optional invisible-ok))
 (declare-function org-before-first-heading-p "org" ())
@@ -2621,7 +2622,10 @@ NAME."
 	  (setq link
 		(format-time-string
                  (org-time-stamp-format)
-		 (org-encode-time 0 0 0 (nth 1 cd) (nth 0 cd) (nth 2 cd))))
+                 (org-encode-time 0 0 0
+                                  (calendar-extract-day cd)
+                                  (calendar-extract-month cd)
+                                  (calendar-extract-year cd))))
 	  (org-link-store-props :type "calendar" :date cd)))
 
        ;; Image mode

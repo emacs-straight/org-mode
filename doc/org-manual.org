@@ -9957,7 +9957,7 @@ the Internet, and outside of business hours, with something like this:
                (/= 0 (call-process "/sbin/ping" nil nil nil
                                    "-c1" "-q" "-t1" "mail.gnu.org")))
               ((member tag '("errand" "call"))
-               (let ((hr (nth 2 (decode-time))))
+               (let ((hr (decoded-time-hour (decode-time))))
                  (or (< hr 8) (> hr 21)))))
     (concat "-" tag)))
 

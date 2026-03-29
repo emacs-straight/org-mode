@@ -35,11 +35,11 @@ Return the timestamp as a string."
                    input nil (decode-time (current-time))))))))
      (list 'timestamp
            (list :type (if inactive 'inactive 'active)
-                 :minute-start (and with-time (nth 1 time))
-                 :hour-start (and with-time (nth 2 time))
-                 :day-start (nth 3 time)
-                 :month-start (nth 4 time)
-                 :year-start (nth 5 time))))))
+                 :minute-start (and with-time (decoded-time-minute time))
+                 :hour-start (and with-time (decoded-time-hour time))
+                 :day-start (decoded-time-day time)
+                 :month-start (decoded-time-month time)
+                 :year-start (decoded-time-year time))))))
 
 (defun org-test-clock-create-clock (input1 &optional input2)
   "Create a clock line out of two date/time prompts.
@@ -120,7 +120,50 @@ the buffer."
       (org-test-with-temp-text
           "CLOCK: [2023-02-19 Sun 2<point>3:30]--[2023-02-20 Mon 00:35] =>  1:05"
         (org-clock-timestamps-change 'up 1)
-        (buffer-string))))))
+        (buffer-string)))))
+  (let ((org-time-stamp-rounding-minutes '(1 1)) ;; No rounding!
+        (now (decode-time)) test-text point)
+    ;; Decrementing a month from March 31st yields February
+    ;; 28th.  This particular test is easier to write if the
+    ;; days don't change when modifying the month.
+    (setf (decoded-time-day now)
+          (min (decoded-time-day now) 27))
+    (setq now (encode-time now))
+    ;; loop over regular timestamp formats and weekday-less timestamp
+    ;; formats
+    (dolist (org-timestamp-formats
+             (list org-timestamp-formats
+                   (cons (replace-regexp-in-string
+                          " %a" "" (car org-timestamp-formats))
+                         (replace-regexp-in-string
+                          " %a" "" (cdr org-timestamp-formats)))))
+      (setq test-text
+            (concat "CLOCK: ["
+                    (format-time-string (cdr org-timestamp-formats) now)
+                    "]--["
+                    (format-time-string (cdr org-timestamp-formats) (time-add now (* 60 60)))
+                    "] =>  1:00"))
+      (org-test-with-temp-text test-text
+        (while (not (eolp))
+          ;; change the timestamp unit at point one down, two up,
+          ;; one down, which should give us the original timestamp
+          ;; again.  However, point can move backward during that
+          ;; operation, so take care of that.  *Not* using
+          ;; `save-excursion', which fails to restore point since
+          ;; the timestamp gets completely replaced.
+          (setq point (point))
+          (org-clock-timestamps-down)
+          (let ((current-prefix-arg '(2)))
+            ;; We supply the prefix argument 2 to increment the
+            ;; minutes by 2.  We supply the function argument 2 for
+            ;; everything else.  Is this a bug?  Probably.  FIXME.
+            (org-clock-timestamps-up 2))
+          (org-clock-timestamps-down)
+          (goto-char point)
+          (should (string=
+                   (buffer-substring (point-min) (point-max))
+                   test-text))
+          (forward-char 1))))))
 
 (ert-deftest test-org-clock/org-clock-update-time-maybe ()
   "Test `org-clock-update-time-maybe' specifications."
