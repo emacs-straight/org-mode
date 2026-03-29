@@ -667,6 +667,35 @@ Fake test document
       ;; And after this
       (should (search-forward "\\begin{document}" nil t))))
 
+(ert-deftest test-ox-latex/latex-class-options1 ()
+  "Test #+LATEX_CLASS_OPTIONS with square brackets."
+  (org-test-with-exported-text 'latex
+                               "#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [a4paper,12pt]
+#+TITLE: Confirm legagy class options
+
+* Test
+
+Fake test document
+"
+      (goto-char (point-min))
+      (should (search-forward "\\documentclass[a4paper,12pt]{article}" nil t))))
+
+(ert-deftest test-ox-latex/latex-class-options2 ()
+  "Test #+LATEX_CLASS_OPTIONS without square brackets."
+  (org-test-with-exported-text 'latex
+                               "#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: a4paper,12pt
+#+TITLE: Confirm class options without square brackets
+
+* Test
+
+Fake test document
+"
+      (goto-char (point-min))
+      (should (search-forward "\\documentclass[a4paper,12pt]{article}" nil t))))
+
+
 (ert-deftest test-ox-latex/latex-default-example-with-options ()
   "Test #+ATTR_LATEX: :options with custom environment."
   (let ((org-latex-default-example-environment "Verbatim"))

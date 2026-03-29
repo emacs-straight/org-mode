@@ -1126,7 +1126,7 @@ following syntax:
 	  (list
 	   (string :tag "Listings option name ")
 	   (string :tag "Listings option value")))
-  :safe #'nested-alist-p)
+  :safe #'listp)
 
 (defcustom org-latex-minted-langs
   '((emacs-lisp "common-lisp")
@@ -2726,6 +2726,19 @@ The default behaviour is to typeset with the Roman font family."
 
 
 ;;; Template
+(defun org-latex--mk-options (str)
+  "Make STR be enclosed in [ ] or return an empty string if nil or empty.
+
+If STR is nil or an empty string, return an empty string.
+If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
+If the square brackets are missing, return STR enclosed in square brackets."
+  (if (or (not str) (length= str 0)) ""
+    (save-match-data  ; just in case it is used in a search/replace context
+      (let ((str (concat "[" str "]"))) ; make sure it is enclosed in []
+        (replace-regexp-in-string  ; remove excess [ at the beginning
+         "\\`\\[+" "["
+         (replace-regexp-in-string ; remove excess ] at the end
+          "]+\\'" "]" str))))))
 
 ;;;###autoload
 (defun org-latex-make-preamble (info &optional template snippet?)
@@ -2739,7 +2752,7 @@ specified in `org-latex-default-packages-alist' or
   (let* ((class (plist-get info :latex-class))
 	 (class-template
 	  (or template
-	      (let* ((class-options (plist-get info :latex-class-options))
+	      (let* ((class-options (org-latex--mk-options (plist-get info :latex-class-options)))
 		     (header (nth 1 (assoc class (plist-get info :latex-classes)))))
 		(and (stringp header)
 	             (mapconcat #'org-element-normalize-string
