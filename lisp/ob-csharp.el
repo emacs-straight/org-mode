@@ -121,7 +121,7 @@ It must take one parameter defining the project to perform a restore on."
 This is taken as-is. It should be a string in XML-format."
   :group 'org-babel
   :package-version '(Org. "9.8")
-  :type 'string
+  :type '(choice string (const nil))
   :safe t)
 
 (defun org-babel-csharp--generate-project-file (refs framework)
