@@ -384,7 +384,7 @@ replacements.  See info node `(org)Advanced Export Configuration'."
   :type '(choice (const :tag "Leave forbidden characters as-is" t)
                  (const :tag "Err when forbidden characters encountered" nil)
                  (string :tag "Replacement string"))
-  :safe t)
+  :safe #'always)
 
 ;;;; Debugging
 
@@ -744,7 +744,7 @@ provided, process as `verbatim'."
                            (,(lambda (v)
                                (assq v org-preview-latex-process-alist))))
           (const :tag "Leave math verbatim" verbatim))
-  :safe t)
+  :safe #'always)
 
 
 ;;;; Links

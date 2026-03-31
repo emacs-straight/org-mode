@@ -52,7 +52,7 @@
   :group 'org-babel
   :package-version '(Org. "9.8")
   :type 'string
-  :safe nil)
+  :risky t)
 
 (defun org-babel-csharp--default-compile-command (dir-proj-sln bin-dir)
   "Construct the default compilation command for C#.
@@ -92,7 +92,7 @@ takes effect."
   :group 'org-babel
   :package-version '(Org. "9.8")
   :type 'string
-  :safe t)
+  :safe #'stringp)
 
 (defcustom org-babel-csharp-generate-compile-command
   #'org-babel-csharp--default-compile-command
@@ -103,7 +103,7 @@ a .sln file, .csproj file, or a base directory where either can be found."
   :group 'org-babel
   :package-version '(Org. "9.8")
   :type 'function
-  :safe nil)
+  :risky t)
 
 (defcustom org-babel-csharp-generate-restore-command
   #'org-babel-csharp--default-restore-command
@@ -113,7 +113,7 @@ It must take one parameter defining the project to perform a restore on."
   :group 'org-babel
   :package-version '(Org. "9.8")
   :type 'function
-  :safe nil)
+  :risky t)
 
 (defcustom org-babel-csharp-additional-project-flags nil
   "Will be passed in the \"PropertyGroup\" defining the project.
@@ -122,7 +122,7 @@ This is taken as-is. It should be a string in XML-format."
   :group 'org-babel
   :package-version '(Org. "9.8")
   :type '(choice string (const nil))
-  :safe t)
+  :safe (lambda (x) (or (eq x nil) (stringp x))))
 
 (defun org-babel-csharp--generate-project-file (refs framework)
   "Generate the file content to be used in a csproj-file.

@@ -246,7 +246,7 @@ but the mode to use is `tuareg-mode'."
 	  (cons
 	   (string :tag "Language name")
 	   (symbol :tag "Major mode")))
-  :safe t)
+  :safe #'listp)
 
 (defcustom org-src-block-faces nil
   "Alist of faces to be used for source-block.

@@ -69,7 +69,7 @@ then the name of the language is used."
 	  (cons
 	   (string "Language name")
 	   (string "File Extension")))
-  :safe t)
+  :safe #'listp)
 
 (defcustom org-babel-tangle-use-relative-file-links t
   "Use relative path names in links from tangled source back the Org file."

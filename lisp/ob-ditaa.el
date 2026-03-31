@@ -98,21 +98,21 @@ The executable can be configured via `org-ditaa-exec'."
   :package-version '(Org . "9.8")
   :type '(choice (const :tag "Use java together with a JAR file." jar)
                  (const :tag "Use ditaa executable." ditaa))
-  :safe t)
+  :safe (lambda (x) (memq x '(jar ditaa))))
 
 (defcustom org-ditaa-exec "ditaa"
   "File name of the ditaa executable."
   :group 'org-babel
   :package-version '(Org . "9.8")
   :type 'string
-  :safe nil)
+  :risky t)
 
 (define-obsolete-variable-alias 'org-babel-ditaa-java-cmd 'org-ditaa-java-exec "9.8")
 (defcustom org-ditaa-java-exec "java"
   "Java executable to use when evaluating ditaa blocks using a JAR."
   :group 'org-babel
   :type 'string
-  :safe nil)
+  :risky t)
 
 (defcustom org-ditaa-jar-path (expand-file-name
 			       "ditaa.jar"
