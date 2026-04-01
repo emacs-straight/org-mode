@@ -457,7 +457,7 @@ customize `org-html-head-include-default-style'."
   :group 'org-export-html
   :package-version '(Org . "9.8")
   :type 'string
-  :safe t)
+  :safe #'stringp)
 
 
 ;;; User Configuration Variables
@@ -1177,7 +1177,7 @@ components."
   :type '(cons string string)
   :group 'org-export-html
   :package-version '(Org . "9.8")
-  :safe t)
+  :safe #'consp)
 
 ;;;; Template :: Mathjax
 
@@ -1569,7 +1569,7 @@ or for publication projects using the :html-head property."
   :package-version '(Org . "9.8")
   :type '(choice (string :tag "Literal text to insert")
                  (function :tag "Function evaluating to a string"))
-  :safe t)
+  :safe #'stringp)
 ;;;###autoload
 (put 'org-html-head 'safe-local-variable 'stringp)
 
@@ -1584,7 +1584,7 @@ a string."
   :package-version '(Org . "9.8")
   :type '(choice (string :tag "Literal text to insert")
                  (function :tag "Function evaluating to a string"))
-  :safe t)
+  :safe #'stringp)
 ;;;###autoload
 (put 'org-html-head-extra 'safe-local-variable 'stringp)
 

@@ -215,7 +215,7 @@ link.
   :package-version '(Org . "9.8")
   :type '(alist :tag "Link display parameters"
 		:value-type plist)
-  :safe nil)
+  :risky t)
 
 (defun org-link--set-link-display (symbol value)
   "Set `org-link-descriptive' (SYMBOL) to VALUE.
@@ -389,7 +389,7 @@ another window."
 		(choice
 		 (const wl)
 		 (const wl-other-frame))))
-  :safe nil)
+  :risky t)
 
 (defcustom org-link-search-must-match-exact-headline 'query-to-create
   "Control fuzzy link behavior when specific matches not found.
@@ -553,7 +553,7 @@ expense of higher lag."
   :group 'org-link
   :package-version '(Org . "9.8")
   :type 'number
-  :safe t)
+  :safe #'numberp)
 
 (defcustom org-link-preview-batch-size 6
   "Number of links that are previewed at once with `org-link-preview'.
@@ -564,7 +564,7 @@ expense of higher lag."
   :group 'org-link
   :package-version '(Org . "9.8")
   :type 'natnum
-  :safe t)
+  :safe #'natnump)
 
 (defcustom org-display-remote-inline-images 'skip
   "How to display remote inline images.
@@ -603,7 +603,7 @@ Possible values:
           (const :tag "Limit to window width" window)
           (integer :tag "Limit to a number of pixels")
           (float :tag "Limit to a fraction of window width"))
-  :safe t)
+  :safe (lambda (x) (or (numberp x) (member x '(nil 'fill-column 'window)))))
 
 (defcustom org-image-align 'left
   "How to align images previewed using `org-link-preview-region'.

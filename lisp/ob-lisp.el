@@ -68,7 +68,7 @@ current directory string."
   :group 'org-babel
   :package-version '(Org . "9.8")
   :type 'string
-  :safe nil)
+  :risky t)
 
 (defun org-babel-expand-body:lisp (body params)
   "Expand BODY according to PARAMS, return the expanded body."

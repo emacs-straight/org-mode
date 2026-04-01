@@ -146,7 +146,7 @@ information."
 	      (const :tag "Outline path" olpath)
 	      (const :tag "Outline parent id" olid)
 	      (const :tag "Local tags" ltags))
-  :safe t)
+  :safe #'listp)
 
 (defcustom org-archive-hook nil
   "Hook run after successfully archiving a subtree.
@@ -155,7 +155,7 @@ original file.  At this stage, the subtree has been added to the
 archive location, but not yet deleted from the original file."
   :group 'org-archive
   :type 'hook
-  :safe nil)
+  :risky t)
 
 (defcustom org-archive-finalize-hook nil
   "Hook run after successfully archiving a subtree in final location.
@@ -167,7 +167,7 @@ original file."
   :group 'org-archive
   :package-version '(Org . "9.8")
   :type 'hook
-  :safe nil)
+  :risky t)
 
 ;;;###autoload
 (defun org-add-archive-files (files)

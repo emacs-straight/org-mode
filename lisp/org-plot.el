@@ -407,7 +407,7 @@ be set.
   :group 'org-plot
   :package-version '(Org . "9.8")
   :type 'alist
-  :safe nil)
+  :risky t)
 
 (defvar org--plot/radar-template
   "### spider plot/chart with gnuplot

@@ -301,7 +301,7 @@ This variable has the same form as `org-refile-targets', which see."
   :group 'org-id
   :type (get 'org-refile-targets 'custom-type)
   :package-version '(Org . "9.8")
-  :safe t)
+  :risky t)
 
 ;;; The API functions
 
