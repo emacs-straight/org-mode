@@ -798,7 +798,7 @@ command."
 			       (choice
 				(function)
 				(sexp)))))
-  :safe nil)
+  :risky t)
 
 (defun org--print-speed-command (speed-command)
   "Print information about SPEED-COMMAND in help buffer.

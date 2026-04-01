@@ -71,7 +71,7 @@ BibTeX provides the following default styles:
     (const :tag "IEEE" "ieeetr")
     (const :tag "SIAM" "siam")
     (string :tag "Other"))
-  :safe t)
+  :safe #'stringp)
 
 
 ;;; Export capability

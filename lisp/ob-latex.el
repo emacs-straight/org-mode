@@ -85,7 +85,7 @@ It takes 1 argument which is the parameters of the source block."
   :group 'org-babel
   :package-version '(Org . "9.8")
   :type 'function
-  :safe nil)
+  :risky t)
 
 (defcustom org-babel-latex-begin-env
   (lambda (_)
@@ -151,7 +151,7 @@ The following process symbols are recognized:
   :package-version '(Org . "9.8")
   :type '(alist :tag "LaTeX to image backends"
 		:value-type (plist))
-  :safe nil)
+  :risky t)
 
 (defun org-babel-expand-body:latex (body params)
   "Expand BODY according to PARAMS, return the expanded body."

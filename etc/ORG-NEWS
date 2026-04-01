@@ -140,12 +140,6 @@ tangled files.  This behavior no longer applies when =:tangle=
 specifies multiple targets; in that case, absolute links are always
 used and the variable is ignored.
 
-*** ~org-babel-execute:awk~ (~ob-awk.el~) updated for remote execution
-
-The temporary code file name is now filtered with
-~org-babel-process-file-name~, fixing a bug that prevented remote
-execution of ~awk~ code blocks.
-
 * Version 9.8
 ** Important announcements and breaking changes
 
@@ -1508,7 +1502,7 @@ This is no longer the case. ~display-buffer-alist~ is fully obeyed.
 
 ~org-switch-to-buffer-other-window~ and ~org-no-popups~ are now deprecated.
 
-*** Asynchronous code evaluatation in ~ob-shell~
+*** Asynchronous code evaluation in ~ob-shell~
 
 Running shell blocks with the ~:session~ header freezes Emacs until
 execution completes.  The new ~:async~ header allows users to continue
