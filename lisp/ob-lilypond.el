@@ -205,7 +205,7 @@ See `org-babel-execute-src-block' for BODY and PARAMS."
 			   ("eps" . "--eps ")))
 	  "--png ")
       "--output="
-      (file-name-sans-extension out-file)
+      (org-babel-process-file-name (file-name-sans-extension out-file))
       " "
       cmdline
       in-file)

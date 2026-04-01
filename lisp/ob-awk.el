@@ -84,7 +84,7 @@ This function is called by `org-babel-execute-src-block'."
 					    (org-babel-awk-var-to-awk
 					     (cdr pair))))
 				  (org-babel--get-vars params))
-			  (list in-file))
+			  (list (and in-file (org-babel-process-file-name in-file))))
 			 " ")))
     (org-babel-reassemble-table
      (let ((results
