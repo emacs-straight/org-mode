@@ -162,7 +162,10 @@ This function is called by `org-babel-execute-src-block'."
     (message "%s" cmd) (org-babel-eval cmd "")
     (if (and (string= (file-name-extension out-file) "svg")
              org-babel-plantuml-svg-text-to-path)
-        (org-babel-eval (format "inkscape %s -T -l %s" out-file out-file) ""))
+        (org-babel-eval (format "inkscape %s -T -l %s"
+                                (org-babel-process-file-name out-file)
+                                (org-babel-process-file-name out-file))
+                        ""))
     (unless do-export (with-temp-buffer
                         (insert-file-contents out-file)
                         (buffer-substring-no-properties
