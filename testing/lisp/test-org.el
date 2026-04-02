@@ -9536,6 +9536,37 @@ Behavior can be modified by setting `org-log-into-drawer', by keywords in
       (test-time-stamp-rounding "<2026-03-14 12:00>" (1+ i) -1
                                 (concat "11:5" (number-to-string (- 9 i)))))))
 
+(ert-deftest test-org/org-timestamp-change-dst ()
+  "Test that `org-timestamp-change' properly errors at DST boundaries."
+  (org-test-with-timezone "America/New_York"
+     ;; Testing the spring-forward DST Transition [2026-03-08 1:59] -> [2026-03-08 03:00]
+     ;; Shifting the hour from 3:05 to 2:05 (an invalid time) should error
+     (should-error
+      (org-test-with-temp-text "<2026-03-08 Sun 03:05>"
+                               (org-timestamp-change -1 'hour)
+                               :type 'user-error))
+     ;; Shifting the minutes from 3:00 to 2:55 (an invalid time) should error
+     (should-error
+      (org-test-with-temp-text "<2026-03-08 Sun 03:00>"
+                               (org-timestamp-change -1 'minute)
+                               :type 'user-error))
+     ;; Testing the fall-back DST transition [2025-11-02 1:59] -> [2025-11-02 2:00]
+     ;; For this case, we actually do not want wrapping because 2:00 is a valid time,
+     ;; and if we wrapped back to 1:00 then org-shiftup would basically get stuck at that
+     ;; boundary
+     (should
+      (string-equal
+       "<2025-11-02 Sun 02:00>"
+       (org-test-with-temp-text "<2025-11-02 Sun 01:55>"
+                                (org-test-with-result 'buffer-no-properties
+                                                      (org-timestamp-change 5 'minute)))))
+     (should
+      (string-equal
+       "<2025-11-02 Sun 02:05>"
+       (org-test-with-temp-text "<2025-11-02 Sun 01:05>"
+                                (org-test-with-result 'buffer-no-properties
+                                                      (org-timestamp-change 1 'hour)))))))
+
 (ert-deftest test-org/timestamp ()
   "Test `org-timestamp' specifications."
   ;; Insert chosen time stamp at point.
