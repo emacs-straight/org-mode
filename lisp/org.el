@@ -6793,7 +6793,7 @@ Return nil before first heading."
         ;; When using `org-fold-core--optimize-for-huge-buffers',
         ;; returned text will be invisible.  Clear it up.
         (save-match-data
-          (org-fold-core-remove-optimisation (match-beginning 0) (match-end 0)))
+          (org-fold-core-remove-optimization (match-beginning 0) (match-end 0)))
         (let ((todo (and (not no-todo) (match-string 2)))
 	      (priority (and (not no-priority) (match-string 3)))
 	      (headline (pcase (match-string 4)
@@ -6823,7 +6823,7 @@ This is a list with the following elements:
   (save-excursion
     (org-back-to-heading t)
     (when (let (case-fold-search) (looking-at org-complex-heading-regexp))
-      (org-fold-core-remove-optimisation (match-beginning 0) (match-end 0))
+      (org-fold-core-remove-optimization (match-beginning 0) (match-end 0))
       (prog1
           (list (length (match-string 1))
 	        (org-reduced-level (length (match-string 1)))
