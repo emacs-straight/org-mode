@@ -251,7 +251,7 @@
 ;; with `grab-invisible' option, folded regions copied to other
 ;; buffers (including buffers that do not use this library) will
 ;; remain invisible.  org-fold-core provides functions to work around
-;; this issue: `org-fold-core-remove-optimisation' and `org-fold-core-update-optimization', but
+;; this issue: `org-fold-core-remove-optimization' and `org-fold-core-update-optimization', but
 ;; it is unlikely that a random external package will use them.
 
 ;; Another possible bottleneck is the fragility check after the change
