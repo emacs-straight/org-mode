@@ -1624,7 +1624,7 @@ See `org-fold-core--optimize-for-huge-buffers'."
   'org-fold-core-update-optimisation
   #'org-fold-core-update-optimization "9.8")
 
-(defun org-fold-core-remove-optimisation (beg end)
+(defun org-fold-core-remove-optimization (beg end)
   "Remove huge buffer optimization between BEG and END.
 See `org-fold-core--optimize-for-huge-buffers'."
   (when (and (memql 'grab-invisible org-fold-core--optimize-for-huge-buffers)
@@ -1636,6 +1636,9 @@ See `org-fold-core--optimize-for-huge-buffers'."
             (remove-text-properties pos (org-fold-core-next-folding-state-change (caar org-fold-core--specs) pos end)
                                     '(invisible t)))
         (setq pos (org-fold-core-next-folding-state-change (caar org-fold-core--specs) pos end))))))
+(define-obsolete-function-alias
+  'org-fold-core-remove-optimisation
+  #'org-fold-core-remove-optimization "9.8")
 
 (provide 'org-fold-core)
 
