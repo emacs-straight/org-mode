@@ -120,6 +120,14 @@ cookie =[N%]=.
 
 ** Miscellaneous
 
+*** Attaching files, drag-and-drop, and ~yank-media~ will query about existing files
+
+Previously, ~org-attach~, drag-and-drop for files, and ~yank-media~
+either erred (when using ~cp~ attach/save method) or silently
+overwrote existing attachments/stored files (~mv~ method).  Now,
+an interactive yes/no query is displayed before attempting to store
+the files.
+
 *** =ox-latex=: ~#+BEGIN_EXAMPLE~ now checks for ~:options~ in ~#+ATTR_LATEX:~
 
 You can now pass options to the environment you choose for the

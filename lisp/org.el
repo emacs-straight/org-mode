@@ -20824,6 +20824,12 @@ end."
     (when (and (not (eq org-yank-image-save-method 'attach))
                (not (file-directory-p dirname)))
       (make-directory dirname t))
+    (when (file-exists-p absname)
+      (if (y-or-n-p
+           (format "Yank target %s already exists.  Overwrite?"
+                   absname))
+          (delete-file absname)
+        (error "Yank target already exists: %s" absname)))
     ;; DATA is a raw image.  Tell Emacs to write it raw, without
     ;; trying to auto-detect the coding system.
     (let ((coding-system-for-write 'emacs-internal))
@@ -21006,6 +21012,12 @@ SEPARATOR is the string to insert after each link."
                  (expand-file-name
                   (file-name-nondirectory filename)
                   org-yank-image-save-method)))
+            (when (file-exists-p stored-filename)
+              (if (y-or-n-p
+                   (format "DnD target %s already exists.  Overwrite?"
+                           stored-filename))
+                  (delete-file stored-filename)
+                (error "DnD target already exists: %s" stored-filename)))
             (funcall
              (pcase method
                ('cp #'copy-file)
