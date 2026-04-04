@@ -8535,14 +8535,21 @@ This function may modify the match data."
                         (condition-case-unless-debug err
                             (org-element--parse-to epom)
                           (error
-                           (org-element--cache-warn
-                            "Org parser error in %s::%S. Resetting.\n The error was: %S\n Backtrace:\n%S\n Please report this to Org mode mailing list (M-x org-submit-bug-report)."
-                            (buffer-name (current-buffer))
-                            epom
-                            err
-                            (when (and (fboundp 'backtrace-get-frames)
-                                       (fboundp 'backtrace-to-string))
-                              (backtrace-to-string (backtrace-get-frames 'backtrace))))
+                           ;; I am not sure if this is needed, but
+                           ;; I see in one report that the cache
+                           ;; is not being reset, so warning somehow
+                           ;; changing current buffer is the only
+                           ;; explanation I get. It does not hurt
+                           ;; anyway.
+                           (save-current-buffer
+                             (org-element--cache-warn
+                              "Org parser error in %s::%S. Resetting.\n The error was: %S\n Backtrace:\n%S\n Please report this to Org mode mailing list (M-x org-submit-bug-report)."
+                              (buffer-name (current-buffer))
+                              epom
+                              err
+                              (when (and (fboundp 'backtrace-get-frames)
+                                         (fboundp 'backtrace-to-string))
+                                (backtrace-to-string (backtrace-get-frames 'backtrace)))))
                            (org-element-cache-reset)
                            (org-element--parse-to epom)))))
         (when (and (org-element--cache-active-p)
