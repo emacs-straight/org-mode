@@ -7864,6 +7864,7 @@ the cache persistence in the buffer."
              'org-element--headline-cache
              (current-buffer)
              :inherit `((elisp org-element--cache) (version ,org-element-cache-version)))))
+        (org-element--cache-log-message "Resetting cache in %s" (current-buffer))
         (setq-local org-element--cache-change-tic (buffer-chars-modified-tick))
         (setq-local org-element--cache-last-buffer-size (buffer-size))
         (setq-local org-element--cache-gapless nil)
