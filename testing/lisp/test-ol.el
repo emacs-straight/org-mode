@@ -417,6 +417,26 @@ See https://github.com/yantar92/org/issues/4."
 
 (ert-deftest test-org-link/id-store-link ()
   "Test `org-id-store-link' specifications."
+  (let ((org-id-link-to-org-use-id t))
+    (should
+     (equal '("id:abc::myanchor" "myanchor")
+            (test-ol-stored-link-with-text "* H1\n:PROPERTIES:\n:ID: abc\n:END:\n<point><<myanchor>>\n"
+              (org-id-store-link)))))
+  (let ((org-id-link-to-org-use-id t))
+    (should
+     (equal '("id:abc" "H1")
+            (test-ol-stored-link-with-text "<point>* H1\n:PROPERTIES:\n:ID: abc\n:END:\n<<myanchor>>\n"
+              (org-id-store-link)))))
+  (let ((org-id-link-to-org-use-id t))
+    (should
+     (equal '("id:abc" "H1")
+            (test-ol-stored-link-with-text "* H1\n:PROPERTIES:\n:ID: abc\n:END:\n<<myanchor>>\n<point>"
+              (org-id-store-link)))))
+  (let ((org-id-link-to-org-use-id nil))
+    (should
+     (equal '("id:abc::myanchor" "myanchor")
+            (test-ol-stored-link-with-text "* H1\n:PROPERTIES:\n:ID: abc\n:END:\n<point><<myanchor>>\n"
+              (org-id-store-link)))))
   (let ((org-id-link-to-org-use-id nil))
     (should
      (equal '(nil nil)

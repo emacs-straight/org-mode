@@ -47,6 +47,26 @@ the correct ~(FILE . ...)~ cons.
 # We list the most important features, and the features that may
 # require user action to be used.
 
+*** Link targets can be used as search option in =id:= links
+
+When storing an =id:= link to target, the target will now be used as a
+search option. This mirrors what happens with =file:= links.
+You need to set ~org-id-link-to-org-use-id~ to make Org store =id:=
+link by default.
+
+See also ~org-id-link-use-context~ and ~org-link-context-for-files~.
+
+For example, link to =<<target>>=
+
+: * Heading
+: :PROPERTIES:
+: :ID: foo
+: :END:
+: Some text with <<target>>.
+
+will be stored as
+: [[id:foo::target][target]]
+
 *** New actions in the ~org-mouse~ priority menus
 
 Priorities can now be increased, decreased, set to the default, and
@@ -107,6 +127,14 @@ can be also written as:
 ,#+LATEX_CLASS_OPTIONS: a4paper,12pt
 #+END_SRC
 
+*** Updated custom variable ~org-babel-update-intermediate~
+
+The variable is now a custom variable, and it can take a new value:
+~cached~. In that case, only the intermediate blocks with =:cache yes=
+header argument will be updated. This allows for the cache feature to
+still work when a block is evaluated indirectly to resolve a reference
+in another block.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
@@ -119,6 +147,14 @@ cookie =[N%]=.
 ** Removed or renamed functions and variables
 
 ** Miscellaneous
+
+*** Attaching files, drag-and-drop, and ~yank-media~ will query about existing files
+
+Previously, ~org-attach~, drag-and-drop for files, and ~yank-media~
+either erred (when using ~cp~ attach/save method) or silently
+overwrote existing attachments/stored files (~mv~ method).  Now,
+an interactive yes/no query is displayed before attempting to store
+the files.
 
 *** =ox-latex=: ~#+BEGIN_EXAMPLE~ now checks for ~:options~ in ~#+ATTR_LATEX:~
 

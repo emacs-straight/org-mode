@@ -1961,9 +1961,14 @@ matches."
            ((derived-mode-p 'org-mode)
             (let* ((element (org-element-at-point))
                    (name (org-element-property :name element))
+                   (context (org-element-context element))
                    (heading (org-element-lineage element '(headline inlinetask) t))
                    (custom-id (org-entry-get heading "CUSTOM_ID")))
               (cond
+               ((org-element-type-p context 'target)
+                (list (org-element-property :value context)
+                      (org-element-property :value context)
+                      (org-element-begin context)))
                (name
                 (list name
                       name
@@ -2657,24 +2662,10 @@ NAME."
        ;; buffers
        ((and (buffer-file-name (buffer-base-buffer)) (derived-mode-p 'org-mode))
 	(org-with-limited-levels
-	 (cond
-	  ;; Store a link using the target at point
-	  ((org-in-regexp "[^<]<<\\([^<>]+\\)>>[^>]" 1)
-	   (setq link
-		 (concat "file:"
-			 (abbreviate-file-name
-			  (buffer-file-name (buffer-base-buffer)))
-			 "::" (match-string 1))
-                 ;; Target may be shortened when link is inserted.
-                 ;; Avoid [[target][file:~/org/test.org::target]]
-                 ;; links.  Maybe the case of identical target and
-                 ;; description should be handled by `org-insert-link'.
-                 desc nil))
-          (t
 	   ;; Just link to current headline.
            (let ((here (org-link--file-link-to-here)))
              (setq link (car here))
-             (setq desc (cdr here)))))))
+             (setq desc (cdr here)))))
 
        ;; Buffer linked to file, but not an org-mode buffer.
        ((buffer-file-name (buffer-base-buffer))

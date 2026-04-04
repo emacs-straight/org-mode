@@ -6563,7 +6563,11 @@ The buffer is: %s\n Current command: %S\n Backtrace:\n%S"
                     ;; unused.
                     (setf (org-element--request-end next) (org-element--request-end request)))
 	          (setq org-element--cache-sync-requests
-		        (cdr org-element--cache-sync-requests)))))
+		        (cdr org-element--cache-sync-requests))
+                  (org-element--cache-log-message
+                   "org-element-cache: Finished process. The cache size is %S. The remaining sync requests: %S"
+                   org-element--cache-size
+                   (let ((print-level 2)) (prin1-to-string org-element--cache-sync-requests))))))
 	    ;; If more requests are awaiting, set idle timer accordingly.
 	    ;; Otherwise, reset keys.
 	    (if org-element--cache-sync-requests
@@ -6946,11 +6950,7 @@ If this warning appears regularly, please report the warning text to Org mode ma
 			       (avl-tree--node-right node)
 			     (pop stack)))))))
         ;; We reached end of tree: synchronization complete.
-        t))
-    (org-element--cache-log-message
-     "org-element-cache: Finished process. The cache size is %S. The remaining sync requests: %S"
-     org-element--cache-size
-     (let ((print-level 2)) (prin1-to-string org-element--cache-sync-requests)))))
+        t))))
 
 (defun org-element--headline-parent-deferred (headline)
   "Parse parent for HEADLINE."
@@ -7864,6 +7864,7 @@ the cache persistence in the buffer."
              'org-element--headline-cache
              (current-buffer)
              :inherit `((elisp org-element--cache) (version ,org-element-cache-version)))))
+        (org-element--cache-log-message "Resetting cache in %s" (current-buffer))
         (setq-local org-element--cache-change-tic (buffer-chars-modified-tick))
         (setq-local org-element--cache-last-buffer-size (buffer-size))
         (setq-local org-element--cache-gapless nil)
@@ -8534,14 +8535,21 @@ This function may modify the match data."
                         (condition-case-unless-debug err
                             (org-element--parse-to epom)
                           (error
-                           (org-element--cache-warn
-                            "Org parser error in %s::%S. Resetting.\n The error was: %S\n Backtrace:\n%S\n Please report this to Org mode mailing list (M-x org-submit-bug-report)."
-                            (buffer-name (current-buffer))
-                            epom
-                            err
-                            (when (and (fboundp 'backtrace-get-frames)
-                                       (fboundp 'backtrace-to-string))
-                              (backtrace-to-string (backtrace-get-frames 'backtrace))))
+                           ;; I am not sure if this is needed, but
+                           ;; I see in one report that the cache
+                           ;; is not being reset, so warning somehow
+                           ;; changing current buffer is the only
+                           ;; explanation I get. It does not hurt
+                           ;; anyway.
+                           (save-current-buffer
+                             (org-element--cache-warn
+                              "Org parser error in %s::%S. Resetting.\n The error was: %S\n Backtrace:\n%S\n Please report this to Org mode mailing list (M-x org-submit-bug-report)."
+                              (buffer-name (current-buffer))
+                              epom
+                              err
+                              (when (and (fboundp 'backtrace-get-frames)
+                                         (fboundp 'backtrace-to-string))
+                                (backtrace-to-string (backtrace-get-frames 'backtrace)))))
                            (org-element-cache-reset)
                            (org-element--parse-to epom)))))
         (when (and (org-element--cache-active-p)

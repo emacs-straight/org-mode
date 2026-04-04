@@ -609,6 +609,12 @@ and DESCRIPTION be the file name."
         link description)
     (let* ((attach-dir (org-attach-dir 'get-create))
            (attach-file (expand-file-name basename attach-dir)))
+      (when (file-exists-p attach-file)
+        (if (y-or-n-p
+             (format "Attachment %s already exists.  Overwrite?"
+                     attach-file))
+            (delete-file attach-file)
+          (error "Attachment already exists: %s" attach-file)))
       (cond
        ((eq method 'mv) (rename-file file attach-file))
        ((eq method 'cp)

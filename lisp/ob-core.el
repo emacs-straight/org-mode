@@ -184,6 +184,22 @@ This string must include a \"%s\" which will be replaced by the results."
   :package-version '(Org . "9.1")
   :safe #'booleanp)
 
+(defcustom org-babel-update-intermediate nil
+  "Whether to update in-buffer results of blocks executed to resolve references.
+
+If value is nil, they will never be updated.  If value is non-nil, they
+will always be updated.  A value of `cached' means to only update them if
+the block has the cache header argument set to yes.  This is needed
+for the cache feature to work when resolving references as it relies
+on source block results being printed in the Org buffer."
+  :group 'org-babel
+  :package-version '(Org . "10.0")
+  :type '(choice
+          (const :tag "Never update intermediate results" nil)
+          (const :tag "Always update intermediate results" t)
+          (const :tag "Update results only if they should be cached" cache))
+  :safe (lambda (x) (memq x '(nil t cache))))
+
 (defun org-babel-noweb-wrap (&optional regexp)
   "Return regexp matching a Noweb reference.
 
@@ -953,7 +969,9 @@ guess will be made."
 		    (setq result (org-babel-ref-resolve post))
 		    (when file
 		      (setq result-params (remove "file" result-params))))))
-	      (unless (member "none" result-params)
+	      (unless (and (member "none" result-params)
+                           (not (and cache
+                                     (eq 'cached org-babel-update-intermediate))))
 	        (org-babel-insert-result
 	         result result-params info
                  ;; append/prepend cannot handle hash as we accumulate
