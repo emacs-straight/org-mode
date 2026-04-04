@@ -6563,7 +6563,11 @@ The buffer is: %s\n Current command: %S\n Backtrace:\n%S"
                     ;; unused.
                     (setf (org-element--request-end next) (org-element--request-end request)))
 	          (setq org-element--cache-sync-requests
-		        (cdr org-element--cache-sync-requests)))))
+		        (cdr org-element--cache-sync-requests))
+                  (org-element--cache-log-message
+                   "org-element-cache: Finished process. The cache size is %S. The remaining sync requests: %S"
+                   org-element--cache-size
+                   (let ((print-level 2)) (prin1-to-string org-element--cache-sync-requests))))))
 	    ;; If more requests are awaiting, set idle timer accordingly.
 	    ;; Otherwise, reset keys.
 	    (if org-element--cache-sync-requests
@@ -6946,11 +6950,7 @@ If this warning appears regularly, please report the warning text to Org mode ma
 			       (avl-tree--node-right node)
 			     (pop stack)))))))
         ;; We reached end of tree: synchronization complete.
-        t))
-    (org-element--cache-log-message
-     "org-element-cache: Finished process. The cache size is %S. The remaining sync requests: %S"
-     org-element--cache-size
-     (let ((print-level 2)) (prin1-to-string org-element--cache-sync-requests)))))
+        t))))
 
 (defun org-element--headline-parent-deferred (headline)
   "Parse parent for HEADLINE."
