@@ -49,7 +49,7 @@
   (should
    (equal "%ITEM{+}"
           (org-columns-uncompile-format `(("ITEM" "ITEM" nil "+" nil)))))
-  ;; Read operator printf
+  ;; Read operator format
   (should
    (equal "%ITEM{+;%.1f}"
           (org-columns-uncompile-format  `(("ITEM" "ITEM" nil "+" "%.1f"))))))
@@ -86,11 +86,16 @@
    (equal `(("ITEM" "ITEM" nil "+" nil))
           (org-columns-compile-format
            "%ITEM{+}")))
-  ;; Read operator printf
+  ;; Read operator format
   (should
    (equal `(("ITEM" "ITEM" nil "+" "%.1f"))
           (org-columns-compile-format
-           "%ITEM{+;%.1f}"))))
+           "%ITEM{+;%.1f}")))
+  (should
+   ;; Bug https://list.orgmode.org/orgmode/877ccczt83.fsf@gmail.com/
+   (equal '(("ITEM" "ITEM" nil "X" nil))
+          (org-columns-compile-format
+           "%ITEM(){X}"))))
 
 (ert-deftest test-org-colview/substring-below-width ()
   "Test `org-columns--truncate-below-width'."
@@ -1394,6 +1399,47 @@
 		(list (get-char-property (- (point) 1) 'org-columns-value)
 		      (get-char-property (point) 'org-columns-value))))))))
 
+(ert-deftest test-org-colview/column-property/clocksum ()
+  "Test `org-columns' display of the CLOCKSUM property."
+  (org-test-with-temp-text
+      "* H
+CLOCK: [2022-11-03 06:00]--[2022-11-03 06:03] =>  0:03
+** S1
+CLOCK: [2022-11-03 06:03]--[2022-11-03 06:05] =>  0:02
+** S2
+empty
+** S3
+CLOCK: [2022-11-03 06:05]--[2022-11-03 06:06] =>  0:01"
+    (let ((org-columns-default-format "%CLOCKSUM"))
+      (org-columns))
+    (should
+     (equal
+      '("0:06" "0:02" "" "0:01")
+      (org-map-entries
+       (lambda ()
+         (get-char-property (point) 'org-columns-value-modified)))))))
+
+(ert-deftest test-org-colview/column-property/clocksum_t ()
+  "Test `org-columns' display of the CLOCKSUM_T property."
+  (org-test-at-time "<2022-11-03>"
+    (org-test-with-temp-text
+        "* H
+CLOCK: [2022-11-02 12:00]--[2022-11-03 02:00] =>  14:00
+** S1
+CLOCK: [2022-11-03 23:50]--[2022-11-04 01:50] =>  2:00
+** S2
+empty
+** S3
+CLOCK: [2022-11-03 06:05]--[2022-11-03 06:06] =>  0:01
+"
+      (let ((org-columns-default-format "%CLOCKSUM_T"))
+        (org-columns))
+      (should
+       (equal
+        '("2:11" "0:10" "" "0:01")
+        (org-map-entries
+         (lambda ()
+           (get-char-property (point) 'org-columns-value-modified))))))))
 
 
 ;;; Dynamic block
@@ -1736,6 +1782,42 @@ there are 4 parameters
      "* H\n<point>#+BEGIN: columnview :link t\n#+END:"
      (let ((org-columns-default-format "%ITEM")) (org-update-dblock))
      (buffer-substring-no-properties (point) (point-max))))))
+
+(ert-deftest test-org-colview/priorities ()
+  "Test that column view properly handles priorities."
+  ;; test alphabetic priorities
+  (should
+   (equal "B"
+          (org-test-with-temp-text
+           "* [#B] Test"
+           (let ((org-columns-default-format "%PRIORITY"))
+             (org-columns)
+             (get-char-property (point) 'org-columns-value)))))
+  ;; test numeric single-digit priorities
+  (should
+   (equal "6"
+          (org-test-with-temp-text
+           "* [#6] Test"
+           (let ((org-columns-default-format "%PRIORITY"))
+             (org-columns)
+             (get-char-property (point) 'org-columns-value)))))
+  ;; test numeric double-digit priorities
+  (should
+   (equal "15"
+          (org-test-with-temp-text
+           "* [#15] Test"
+           (let ((org-columns-default-format "%PRIORITY"))
+             (org-columns)
+             (get-char-property (point) 'org-columns-value)))))
+  ;; test default numeric priority
+  (should
+   (equal "15"
+          (org-test-with-temp-text
+           "* Test"
+           (let ((org-columns-default-format "%PRIORITY")
+                 (org-default-priority 15))
+             (org-columns)
+             (get-char-property (point) 'org-columns-value))))))
 
 (provide 'test-org-colview)
 ;;; test-org-colview.el ends here

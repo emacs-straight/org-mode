@@ -78,7 +78,7 @@
   "Test that references to headers are expanded during noweb expansion."
   (org-test-at-id "2409e8ba-7b5f-4678-8888-e48aa02d8cb4"
     (org-babel-next-src-block 2)
-    (let ((expanded (org-babel-expand-noweb-references)))
+    (let ((expanded (org-babel-expand-noweb-references nil nil :tangle)))
       (should (string-match (regexp-quote "simple") expanded))
       (should (string-match (regexp-quote "length 14") expanded)))))
 
@@ -135,7 +135,6 @@ echo 1
            (org-babel-tangle)
            (with-temp-buffer
              (insert-file-contents "test-ob-tangle.el")
-             (buffer-string)
              (goto-char (point-min))
              (and (search-forward "[H:1]]" nil t)
                   (search-forward "[H:2]]" nil t))))
@@ -151,11 +150,11 @@ echo 1
 1
 #+end_src"
      (unwind-protect
-	 (let ((org-babel-tangle-use-relative-file-links t))
+	 (let ((org-babel-tangle-use-relative-file-links t)
+               (file buffer-file-name))
 	   (org-babel-tangle)
 	   (with-temp-buffer
 	     (insert-file-contents "test-ob-tangle.el")
-	     (buffer-string)
 	     (goto-char (point-min))
 	     (search-forward
 	      (concat "[file:" (file-name-nondirectory file))
@@ -169,11 +168,11 @@ echo 1
 1
 #+end_src"
      (unwind-protect
-	 (let ((org-babel-tangle-use-relative-file-links nil))
+	 (let ((org-babel-tangle-use-relative-file-links nil)
+               (file buffer-file-name))
 	   (org-babel-tangle)
 	   (with-temp-buffer
 	     (insert-file-contents "test-ob-tangle.el")
-	     (buffer-string)
 	     (goto-char (point-min))
 	     (search-forward (concat "[file:" file) nil t)))
        (delete-file "test-ob-tangle.el")))))
@@ -195,11 +194,11 @@ echo 1
 <<inner>>)
 #+end_src"
     (unwind-protect
-	(let ((org-babel-tangle-use-relative-file-links t))
+	(let ((org-babel-tangle-use-relative-file-links t)
+              (file buffer-file-name))
           (org-babel-tangle)
           (with-temp-buffer
             (insert-file-contents "test-ob-tangle.el")
-            (buffer-string)
             (goto-char (point-min))
             (and
              (search-forward (concat ";; [[file:" (file-name-nondirectory file) "::inner") nil t)
@@ -223,11 +222,11 @@ echo 1
 <<inner>>
 #+end_src"
      (unwind-protect
-	 (let ((org-babel-tangle-use-relative-file-links nil))
+	 (let ((org-babel-tangle-use-relative-file-links nil)
+               (file buffer-file-name))
 	   (org-babel-tangle)
 	   (with-temp-buffer
 	     (insert-file-contents "test-ob-tangle.el")
-	     (buffer-string)
 	     (goto-char (point-min))
              (and
               (search-forward (concat ";; [[file:" file "::inner") nil t)
@@ -555,17 +554,14 @@ another block
 
 (ert-deftest ob-tangle/tangle-to-self ()
   "Do not allow tangling into self."
-  (let ((file (make-temp-file "org-tangle-" nil ".org")))
-    (unwind-protect
-        (with-current-buffer (find-file-noselect file)
-          (insert
-           (format "
-#+begin_src elisp :tangle %s
+  (org-test-with-temp-text-in-file
+      "
+#+begin_src elisp :tangle <point>
 2
 #+end_src
-" file))
-          (should-error (org-babel-tangle)))
-      (delete-file file))))
+"
+    (insert buffer-file-name)
+    (should-error (org-babel-tangle))))
 
 (ert-deftest ob-tangle/detangle-false-positive ()
   "Test handling of false positive link during detangle."
@@ -628,6 +624,10 @@ another block
 \"H1: :tangle ~/../../tmp/absolute.el\"
 #+end_src
 
+#+begin_src
+\"H1: no language and inherited :tangle relative.el in properties\"
+#+end_src
+
 * H2 without :tangle in properties
 
 #+begin_src emacs-lisp
@@ -660,6 +660,10 @@ another block
 
 #+begin_src emacs-lisp :tangle ~/../../tmp/absolute.el
 \"H2: :tangle ~/../../tmp/absolute.el\"
+#+end_src
+
+#+begin_src
+\"H2: without language and thus without :tangle\"
 #+end_src"
                     `((?a . ,el-file-abs)
                       (?r . ,el-file-rel))))
@@ -684,7 +688,7 @@ another block
                                               collected-blocks)))))
         (should (equal (funcall normalize-expected-targets-alist
                                 `(("/tmp/absolute.el" . 4)
-                                  ("relative.el" . 5)
+                                  ("relative.el" . 6)
                                   ;; file name differs between tests
                                   (,el-file-abs . 4)))
                        (funcall count-blocks-in-target-files
@@ -699,13 +703,133 @@ another block
           (should (equal
                    (funcall normalize-expected-targets-alist
                             `(("/tmp/absolute.el" . 4)
-                              ("relative.el" . 5)
+                              ("relative.el" . 6)
                               ;; Default :tangle header now also
                               ;; points to the file name derived from the name of
-                              ;; the Org file, so 5 blocks should go there.
-                              (,el-file-abs . 5)))
+                              ;; the Org file, so 6 blocks should go there.
+                              (,el-file-abs . 6)))
                    (funcall count-blocks-in-target-files
                             (org-babel-tangle-collect-blocks)))))))))
+
+(ert-deftest ob-tangle/bibtex ()
+  "Tangle BibTeX into a `.bib' file."
+  (let ((bib "@Misc{example,
+  author = {Richard Stallman and {contributors}},
+  title = {{GNU} {Emacs}},
+  publisher = {Free Software Foundation},
+  url = {https://www.emacs.org/},
+}"))
+    (org-test-with-temp-text-in-file
+        (format "#+begin_src bibtex :tangle yes
+%s
+#+end_src" bib)
+      (org-babel-tangle)
+      (let ((bib-file
+             (if (fboundp 'file-name-with-extension)
+                 (file-name-with-extension buffer-file-name "bib")
+               ;; Emacs <28
+               (concat (file-name-sans-extension buffer-file-name) "." "bib"))))
+        (should (file-exists-p bib-file))
+        (should (string= (string-trim (org-file-contents bib-file))
+                         bib))))))
+
+;; See https://list.orgmode.org/87msfxd81c.fsf@localhost/T/#t
+(ert-deftest ob-tangle/tangle-from-capture-buffer ()
+  "Test tangling of source blocks from within a capture buffer.
+This is to ensure that we properly resolve the buffer name."
+  (org-test-with-temp-text-in-file
+   "* Header\n\nCapture after this point:\n<point>"
+   (let ((tangle-filename (format "%s.el" (buffer-file-name))))
+      (unwind-protect
+          (progn
+            (let ((org-capture-templates '(("t" "Test" entry (here) "* Test Header\n\n"))))
+              (org-capture nil "t")
+              (goto-char (point-max))
+              (insert
+               (format "
+#+begin_src elisp :tangle \"%s\" :comments org
+  (message \"FOO\")
+#+end_src" tangle-filename))
+              (search-backward "message")
+              ;; Confirm that we tangled to the right file
+              (should (equal (org-babel-tangle) (list tangle-filename)))))
+        ;; Clean up the tangled file with the filename from org-test-with-temp-text-in-file
+        (delete-file tangle-filename)))))
+
+(ert-deftest ob-tangle/noweb-tangle-recursive-expansion ()
+  "Test that :noweb tangle recursively expands nested noweb references."
+  (let ((file (make-temp-file "org-tangle-")))
+    (unwind-protect
+        (progn
+          (org-test-with-temp-text-in-file
+           (format "
+#+begin_src c :tangle %s :noweb tangle
+// some code
+<<noweb-ref1>>
+<<noweb-ref2>>
+#+end_src
+
+#+begin_src c :noweb-ref noweb-ref1
+// code from source block A
+#+end_src
+
+#+begin_src c :noweb-ref noweb-ref2 :noweb tangle
+// code from source block B
+<<noweb-ref3>>
+#+end_src
+
+#+begin_src c :noweb-ref noweb-ref3
+// code from source block C
+#+end_src
+" file)
+           (let ((org-babel-noweb-error-all-langs nil)
+                 (org-babel-noweb-error-langs nil))
+             (org-babel-tangle)))
+          (let ((tangled-content (with-temp-buffer
+                                   (insert-file-contents file)
+                                   (buffer-string))))
+            ;; The tangled output should contain the content from block C
+            ;; (not the unexpanded <<noweb-ref3>> reference)
+            (should (string-match-p "// code from source block C" tangled-content))
+            ;; The tangled output should NOT contain the unexpanded reference
+            (should-not (string-match-p "<<noweb-ref3>>" tangled-content))))
+      (delete-file file))))
+
+(ert-deftest ob-tangle/noweb-tangle-vs-export-contexts ()
+  "Test that noweb expansion respects different contexts during tangle vs export."
+  (let ((tangle-file (make-temp-file "org-tangle-")))
+    (unwind-protect
+        (progn
+          (org-test-with-temp-text-in-file
+           (format "
+#+begin_src c :tangle %s :noweb yes
+// tangled code
+<<tangle-only>>
+<<no-export>>
+#+end_src
+
+#+begin_src c :noweb-ref tangle-only :noweb tangle
+// visible during tangle
+#+end_src
+
+#+begin_src c :noweb-ref no-export :noweb no-export
+// visible during eval but not export
+#+end_src
+" tangle-file)
+           ;; Test tangling
+           (let ((org-babel-noweb-error-all-langs nil)
+                 (org-babel-noweb-error-langs nil))
+             (org-babel-tangle)))
+
+          ;; Check tangled content
+          (let ((tangled-content (with-temp-buffer
+                                   (insert-file-contents tangle-file)
+                                   (buffer-string))))
+            ;; Should have tangle-only content
+            (should (string-match-p "// visible during tangle" tangled-content))
+            ;; Should have no-export content since :noweb no-export allows tangle context
+            (should (string-match-p "// visible during eval but not export" tangled-content))))
+      (delete-file tangle-file))))
 
 (provide 'test-ob-tangle)
 

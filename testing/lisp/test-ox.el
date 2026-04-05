@@ -45,17 +45,14 @@ body to execute.  Parse tree is available under the `tree'
 variable, and communication channel under `info'."
   (declare (debug (form body)) (indent 1))
   `(org-test-with-temp-text ,data
-     (org-export--delete-comment-trees)
-     (let* ((tree (org-element-parse-buffer))
-	    (info (org-combine-plists
+     (let* ((org-export-process-citations nil) ; implict assumption in some tests
+            (info (org-combine-plists
 		   (org-export--get-export-attributes)
-		   (org-export-get-environment))))
-       (org-export--prune-tree tree info)
-       (org-export--remove-uninterpreted-data tree info)
-       (let ((info (org-combine-plists
-		    info (org-export--collect-tree-properties tree info))))
-	 (ignore info) ;; Don't warn if the var is unused.
-	 ,@body))))
+		   (org-export--get-buffer-attributes)))
+            (info (org-export--annotate-info (org-export-create-backend) info))
+            (tree (plist-get info :parse-tree)))
+       (ignore tree) ;; Don't warn if the var is unused.
+       ,@body)))
 
 
 
@@ -75,7 +72,8 @@ variable, and communication channel under `info'."
           "* Heading"
           (with-temp-buffer
             (insert-file-contents file)
-            (buffer-string)))))))
+            (buffer-string))))
+        (org-test-kill-buffer (current-buffer)))))
   ;; The copy must not show when re-opening the original file.
   (org-test-with-temp-text-in-file
       "* Heading"
@@ -93,58 +91,62 @@ variable, and communication channel under `info'."
 (ert-deftest test-org-export/bind-keyword ()
   "Test reading #+BIND: keywords."
   ;; Test with `org-export-allow-bind-keywords' set to t.
-  (should
-   (org-test-with-temp-text "#+BIND: test-ox-var value"
-     (let ((org-export-allow-bind-keywords t))
-       (org-export-get-environment)
-       (eq test-ox-var 'value))))
-  ;; Test with `org-export-allow-bind-keywords' set to nil.
-  (should-not
-   (org-test-with-temp-text "#+BIND: test-ox-var value"
-     (let ((org-export-allow-bind-keywords nil))
-       (org-export-get-environment)
-       (boundp 'test-ox-var))))
-  ;; BIND keywords are case-insensitive.
-  (should
-   (org-test-with-temp-text "#+bind: test-ox-var value"
-     (let ((org-export-allow-bind-keywords t))
-       (org-export-get-environment)
-       (eq test-ox-var 'value))))
-  ;; Preserve order of BIND keywords.
-  (should
-   (org-test-with-temp-text "#+BIND: test-ox-var 1\n#+BIND: test-ox-var 2"
-     (let ((org-export-allow-bind-keywords t))
-       (org-export-get-environment)
-       (eq test-ox-var 2))))
-  ;; Read BIND keywords in setup files.
-  (should
-   (org-test-with-temp-text
-       (format "#+SETUPFILE: \"%s/examples/setupfile.org\"" org-test-dir)
-     (let ((org-export-allow-bind-keywords t))
-       (org-export-get-environment)
-       ;; `variable' is bound inside the setupfile.
-       (eq variable 'value))))
-  ;; Verify that bound variables are seen during export.
-  (should
-   (equal "Yes\n"
-	  (org-test-with-temp-text "#+BIND: test-ox-var value"
-	    (let ((org-export-allow-bind-keywords t))
-	      (org-export-as
-	       (org-export-create-backend
-		:transcoders
-		'((section . (lambda (s c i)
-			       (if (eq test-ox-var 'value) "Yes" "No"))))))))))
-  ;; Seen from elisp code blocks as well.
-  (should
-   (string-match-p "::: \"test value\""
-	           (org-test-with-temp-text "#+BIND: test-ox-var \"test value\"
+  (with-suppressed-warnings ((free-vars test-ox-var))
+    (should
+     (org-test-with-temp-text "#+BIND: test-ox-var value"
+       (let ((org-export-allow-bind-keywords t))
+         (org-export-get-environment)
+         (eq test-ox-var 'value))))
+    ;; Test with `org-export-allow-bind-keywords' set to nil.
+    (should-not
+     (org-test-with-temp-text "#+BIND: test-ox-var value"
+       (let ((org-export-allow-bind-keywords nil))
+         (org-export-get-environment)
+         (boundp 'test-ox-var))))
+    ;; BIND keywords are case-insensitive.
+    (should
+     (org-test-with-temp-text "#+bind: test-ox-var value"
+       (let ((org-export-allow-bind-keywords t))
+         (org-export-get-environment)
+         (eq test-ox-var 'value))))
+    ;; Preserve order of BIND keywords.
+    (should
+     (org-test-with-temp-text "#+BIND: test-ox-var 1\n#+BIND: test-ox-var 2"
+       (let ((org-export-allow-bind-keywords t))
+         (org-export-get-environment)
+         (eq test-ox-var 2))))
+    ;; Read BIND keywords in setup files.
+    (should
+     (org-test-with-temp-text
+         (format "#+SETUPFILE: \"%s/examples/setupfile.org\"" org-test-dir)
+       (let ((org-export-allow-bind-keywords t))
+         (org-export-get-environment)
+         ;; `variable' is bound inside the setupfile.
+         (with-suppressed-warnings ((free-vars variable))
+           (eq variable 'value)))))
+    ;; Verify that bound variables are seen during export.
+    (should
+     (equal
+      "Yes\n"
+      (org-test-with-temp-text "#+BIND: test-ox-var value"
+        (let ((org-export-allow-bind-keywords t))
+          (org-export-as
+           (org-export-create-backend
+            :transcoders
+            '((section . (lambda (s c i)
+                           (if (eq test-ox-var 'value) "Yes" "No"))))))))))
+    ;; Seen from elisp code blocks as well.
+    (should
+     (string-match-p
+      "::: \"test value\""
+      (org-test-with-temp-text "#+BIND: test-ox-var \"test value\"
 
 #+begin_src emacs-lisp :results value :exports results :eval yes
 (format \"::: %S\" test-ox-var)
 #+end_src"
-	             (let ((org-export-allow-bind-keywords t))
-	               (org-export-as
-	                (org-test-default-backend)))))))
+        (let ((org-export-allow-bind-keywords t))
+          (org-export-as
+           (org-test-default-backend))))))))
 
 (ert-deftest test-org-export/parse-option-keyword ()
   "Test reading all standard #+OPTIONS: items."
@@ -212,7 +214,21 @@ num:2 <:active")))
           (plist-get options :section-numbers))))
   ;; Parse spaces inside brackets.
   (let ((options (org-export--parse-option-keyword "html-postamble:\"test space\"" 'html)))
-    (should (equal "test space" (plist-get options :html-postamble)))))
+    (should (equal "test space" (plist-get options :html-postamble))))
+  ;; Honor backend inheritance
+  (let* ((parent-backend (org-export-create-backend
+		          :options '((:k1 nil "parent-opt"))))
+         (child-backend (org-export-create-backend
+                         :parent parent-backend
+                         :options '((:k1 nil "child-opt")))))
+    (let ((options (org-export--parse-option-keyword "parent-opt:parent" parent-backend)))
+      (should (equal 'parent (plist-get options :k1))))
+    (let ((options (org-export--parse-option-keyword "child-opt:child parent-opt:parent" parent-backend)))
+      (should (equal 'parent (plist-get options :k1))))
+    (let ((options (org-export--parse-option-keyword "parent-opt:parent" child-backend)))
+      (should-not (plist-get options :k1)))
+    (let ((options (org-export--parse-option-keyword "child-opt:child parent-opt:parent" child-backend)))
+      (should (equal 'child (plist-get options :k1))))))
 
 (ert-deftest test-org-export/get-inbuffer-options ()
   "Test reading all standard export keywords."
@@ -322,6 +338,32 @@ num:2 <:active")))
 				     (:k2 "KEYWORD")))))
 	    (org-test-with-temp-text "#+KEYWORD: value"
 	      (org-export--get-inbuffer-options backend)))))
+  ;; Derived backend keyword takes precendence
+  (let* ((parent-backend (org-export-create-backend
+		          :options '(( :k1 "KEYWORD_PARENT"
+                                       nil "parent-default"))))
+         (child-backend (org-export-create-backend
+                         :parent parent-backend
+                         :options '(( :k1 "KEYWORD_CHILD"
+                                      nil "child-default")))))
+    (should
+     (equal '(:k1 "value")
+            (org-test-with-temp-text "#+KEYWORD_CHILD: value"
+              (org-export--get-inbuffer-options child-backend))))
+    (should
+     (equal '(:k1 "value")
+            (org-test-with-temp-text "#+KEYWORD_CHILD: value
+#+KEYWORD_PARENT: value2"
+              (org-export--get-inbuffer-options child-backend))))
+    (should
+     (equal '(:k1 "value")
+            (org-test-with-temp-text "#+KEYWORD_PARENT: value2
+#+KEYWORD_CHILD: value"
+              (org-export--get-inbuffer-options child-backend))))
+    (should
+     (equal nil ; Ignore KEYWORD_PARENT
+            (org-test-with-temp-text "#+KEYWORD_PARENT: value"
+              (org-export--get-inbuffer-options child-backend)))))
   ;; Keywords in commented subtrees are ignored.
   (should-not
    (equal "Me"
@@ -414,7 +456,48 @@ Paragraph"
 			     :options '((:k1 "A")
 					(:k2 "A"))))
 		   (options (org-export-get-environment backend t)))
-	      (list (plist-get options :k1) (plist-get options :k2)))))))
+	      (list (plist-get options :k1) (plist-get options :k2))))))
+  ;; Derived backend property takes precedence
+  (let* ((parent-backend (org-export-create-backend
+		          :options '(( :k1 "KEYWORD_PARENT"
+                                       nil "parent-default"))))
+         (child-backend (org-export-create-backend
+                         :parent parent-backend
+                         :options '(( :k1 "KEYWORD_CHILD"
+                                      nil "child-default")))))
+    (should
+     (equal "value"
+            (org-test-with-temp-text "* H
+:PROPERTIES:
+:EXPORT_KEYWORD_CHILD: value
+:END:
+<point>"
+              (plist-get (org-export-get-environment child-backend t) :k1))))
+    (should
+     (equal "value"
+            (org-test-with-temp-text "* H
+:PROPERTIES:
+:EXPORT_KEYWORD_CHILD: value
+:EXPORT_KEYWORD_PARENT: parent
+:END:
+<point>"
+              (plist-get (org-export-get-environment child-backend t) :k1))))
+    (should
+     (equal "child-default"
+            (org-test-with-temp-text "* H
+:PROPERTIES:
+:EXPORT_KEYWORD_PARENT: parent
+:END:
+<point>"
+              (plist-get (org-export-get-environment child-backend t) :k1))))
+    (should
+     (equal "parent-default"
+            (org-test-with-temp-text "* H
+:PROPERTIES:
+:EXPORT_KEYWORD_CHILD: parent
+:END:
+<point>"
+              (plist-get (org-export-get-environment parent-backend t) :k1))))))
 
 (ert-deftest test-org-export/get-ordinal ()
   "Test specifications for `org-export-get-ordinal'."
@@ -1302,6 +1385,16 @@ Text"
 	 org-test-dir)
       (org-export-expand-include-keyword)
       (buffer-string))))
+  ;; Keep indentation
+  (should
+   (equal
+    "   #+BEGIN_SRC emacs-lisp\n(+ 2 1)\n   #+END_SRC\n"
+    (org-test-with-temp-text
+	(format
+	 "   #+INCLUDE: \"%s/examples/include.org\" :lines \"4-5\" SRC emacs-lisp"
+	 org-test-dir)
+      (org-export-expand-include-keyword)
+      (buffer-string))))
   ;; Inclusion within an html export-block.
   (should
    (equal
@@ -1765,12 +1858,12 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 	    (buffer-string)))))
 
 (ert-deftest test-org-export/before-processing-hook ()
-  "Test `org-export-before-processing-hook'."
+  "Test `org-export-before-processing-functions'."
   (should
    (equal
     "#+macro: mac val\nTest\n"
     (org-test-with-temp-text "#+MACRO: mac val\n{{{mac}}} Test"
-      (let ((org-export-before-processing-hook
+      (let ((org-export-before-processing-functions
 	     '((lambda (backend)
 		 (while (re-search-forward "{{{" nil t)
 		   (let ((object (org-element-context)))
@@ -1780,17 +1873,17 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 			(org-element-property :end object)))))))))
 	(org-export-as (org-test-default-backend)))))))
 
-(ert-deftest test-org-export/before-parsing-hook ()
-  "Test `org-export-before-parsing-hook'."
+(ert-deftest test-org-export/before-parsing-functions ()
+  "Test `org-export-before-parsing-functions'."
   (should
    (equal "Body 1\nBody 2\n"
 	  (org-test-with-temp-text "* Headline 1\nBody 1\n* Headline 2\nBody 2"
-	    (let ((org-export-before-parsing-hook
+	    (let ((org-export-before-parsing-functions
 		   '((lambda (backend)
 		       (goto-char (point-min))
 		       (while (re-search-forward org-outline-regexp-bol nil t)
 			 (delete-region
-			  (point-at-bol) (progn (forward-line) (point))))))))
+			  (line-beginning-position) (progn (forward-line) (point))))))))
 	      (org-export-as (org-test-default-backend)))))))
 
 
@@ -3055,6 +3148,29 @@ Para2"
 	      (org-test-with-temp-text "*** TODO Inline"
 		(org-export-as (org-test-default-backend)
 			       nil nil nil '(:with-tasks nil))))))))
+
+(ert-deftest test-org-export/handle-numeric-priorities ()
+  "Test handling of numeric priorities in headers and inlinetasks."
+  ;; Properly handle numeric priorities in normal headers
+  (should
+   (equal "* [#3] H2\nContents\n"
+          (let ()
+            (org-test-with-temp-text "* [#3] H2\nContents"
+                                     (org-export-as (org-test-default-backend))))))
+  ;; Properly handle numeric priorities in inline tasks
+    (should
+     (equal "* H2\n*** [#8] Inline\nContents\n"
+            (let ((org-inlinetask-min-level 3))
+              (org-test-with-temp-text "* H2\n*** [#8] Inline\nContents"
+                                       (org-export-as (org-test-default-backend)
+                                                      nil nil nil '(:with-tasks t))))))
+    (should
+     (equal "* H2\n*** [#37] Inline\nContents\n"
+            (let ((org-inlinetask-min-level 3))
+              (org-test-with-temp-text "* H2\n*** [#37] Inline\nContents"
+                                       (org-export-as (org-test-default-backend)
+                                                      nil nil nil '(:with-tasks t))))))
+  )
 
 
 

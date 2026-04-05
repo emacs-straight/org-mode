@@ -25,7 +25,7 @@
 
 (require 'ox-ascii nil t)
 (unless (featurep 'ox-ascii)
-  (signal 'missing-test-dependency "org-export-ascii"))
+  (signal 'missing-test-dependency '("org-export-ascii")))
 
 
 
@@ -81,6 +81,32 @@ left or right
      "left or right")
     (should
      (equal org-ascii-text-width (org-current-text-column)))))
+
+(ert-deftest test-ox-ascii/build-title ()
+  "Test title creation."
+  ;; Alphabetical priority cookie
+   (org-test-with-exported-text
+    'ascii
+    "#+OPTIONS: pri:t\n* [#A] Test"
+    (goto-char (point-min))
+    (should
+     (search-forward "1. (#A) Test")))
+  ;; Single digit numeric priority cookie
+   (org-test-with-exported-text
+    'ascii
+    "#+PRIORITIES: 1 10 5\n#+OPTIONS: pri:t\n* [#7] Test"
+    (goto-char (point-min))
+    (should
+     (search-forward "1. (#7) Test")))
+  ;; Double digit numeric priority cookie
+   (org-test-with-exported-text
+    'ascii
+    "#+PRIORITIES: 1 20 5\n#+OPTIONS: pri:t\n* [#14] Test"
+    (goto-char (point-min))
+    (should
+     (search-forward "1. (#14) Test")))
+
+   )
 
 (provide 'test-ox-ascii)
 ;;; test-ox-ascii.el ends here

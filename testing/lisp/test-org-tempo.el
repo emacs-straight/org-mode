@@ -24,7 +24,7 @@
 (require 'org-tempo)
 
 (unless (featurep 'org-tempo)
-  (signal 'missing-test-dependency "org-tempo"))
+  (signal 'missing-test-dependency '("org-tempo")))
 
 (ert-deftest test-org-tempo/completion ()
   "Test that blocks and keywords are expanded correctly by org-tempo."
@@ -53,11 +53,12 @@
 	    (org-cycle)
 	    (buffer-string))))
   ;; Tempo should not expand unknown snippets
-  (equal (org-test-with-temp-text "<k"
+  (should
+   (equal (org-test-with-temp-text "<k"
 	    (org-tempo-setup)
 	    (call-interactively 'org-cycle)
 	    (buffer-string))
-	 "<k"))
+	  "<k")))
 
 (ert-deftest test-org-tempo/space-first-line ()
   "Test space on first line after expansion."

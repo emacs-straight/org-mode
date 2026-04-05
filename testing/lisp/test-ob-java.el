@@ -1,6 +1,6 @@
 ;;; test-ob-java.el --- tests for ob-java.el  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2020-2024 Free Software Foundation, Inc.
+;; Copyright (c) 2020-2026 Free Software Foundation, Inc.
 ;; Authors: Eric Schulte
 ;;          Dan Davison
 ;; Maintainer: Ian Martins <ianxm@jhu.edu>
@@ -27,7 +27,7 @@
 ;; ob-java is needed for linter tests as well.  org-lint relies on
 ;; default header arg value.
 (unless (featurep 'ob-java)
-  (signal 'missing-test-dependency "Support for java code blocks"))
+  (signal 'missing-test-dependency '("Support for java code blocks")))
 
 ;;; No Java required
 

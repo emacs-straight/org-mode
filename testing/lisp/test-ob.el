@@ -24,7 +24,7 @@
 (require 'org-src)
 (require 'ob-ref)
 (require 'org-table)
-(eval-and-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
 
 (ert-deftest test-ob/indented-cached-org-bracket-link ()
   "When the result of a source block is a cached indented link it
@@ -203,8 +203,8 @@ list, then it should be treated as such; not as the symbol nil."
     (should (= 4 (org-babel-execute-src-block)))
     (forward-line 5)
     (should (string= ": 4" (buffer-substring
-			    (point-at-bol)
-			    (point-at-eol)))))
+			    (line-beginning-position)
+			    (line-end-position)))))
   ;; Test reading lists.
   (org-test-with-temp-text-in-file "
 
@@ -223,8 +223,8 @@ list, then it should be treated as such; not as the symbol nil."
     (should (string=
              "| simple | list |"
              (buffer-substring
-	      (point-at-bol)
-	      (point-at-eol))))))
+	      (line-beginning-position)
+	      (line-end-position))))))
 
 (ert-deftest test-ob/block-content-resolution ()
   "Test block content resolution."
@@ -363,19 +363,19 @@ at the beginning of a line."
 	test-line
       (goto-char (point-min)) (org-babel-execute-maybe)
       (should (string=
-                      (concat test-line " {{{results(=1=)}}}")
-       	       (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+               (concat test-line " {{{results(=1=)}}}")
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
       (forward-char) (org-babel-execute-maybe)
       (should (string=
-                      (concat test-line " {{{results(=1=)}}}")
-       	       (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+               (concat test-line " {{{results(=1=)}}}")
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
       (re-search-forward "{{{")
-     ;;(should-error (org-ctrl-c-ctrl-c))
+      ;;(should-error (org-ctrl-c-ctrl-c))
       (backward-char 4) ;; last char of block body
       (org-babel-execute-maybe)
       (should (string=
-                      (concat test-line " {{{results(=1=)}}}")
-       	       (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+               (concat test-line " {{{results(=1=)}}}")
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position)))))
     ;; src_ follows space line 1...
     (let ((test-line " src_emacs-lisp{ 1 }"))
       (org-test-with-temp-text
@@ -384,11 +384,11 @@ at the beginning of a line."
 	(forward-char) (org-babel-execute-maybe)
 	(should (string=
 		 (concat test-line " {{{results(=1=)}}}")
-		 (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+		 (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
 	(re-search-forward "{ 1 ") (org-babel-execute-maybe)
 	(should (string=
 		 (concat test-line " {{{results(=1=)}}}")
-		 (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+		 (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
 	(forward-char 6)
 	(should-error (org-ctrl-c-ctrl-c))))
     ;; Results on a subsequent line are replaced.
@@ -435,7 +435,7 @@ at the beginning of a line."
       (should (string=
 	       (concat test-line " {{{results(=x=)}}}")
 	       (buffer-substring-no-properties
-		(point-at-bol) (point-at-eol))))))
+		(line-beginning-position) (line-end-position))))))
   (let ((test-line "Some text prior to block src_emacs-lisp{ \"y\" }")
 	(org-babel-inline-result-wrap "=%s="))
     (org-test-with-temp-text
@@ -445,11 +445,11 @@ at the beginning of a line."
       (re-search-backward "src") (org-babel-execute-maybe)
       (should (string=
 	       (concat test-line " {{{results(=y=)}}} end")
-	       (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+	       (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
       (re-search-forward "\" ") (org-babel-execute-maybe)
       (should (string=
 	       (concat test-line " {{{results(=y=)}}} end")
-	       (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+	       (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
       (forward-char 3)
       (should-error (org-ctrl-c-ctrl-c)))))
 
@@ -465,9 +465,9 @@ at the beginning of a line."
       (should-error (org-ctrl-c-ctrl-c))
       (forward-char) (org-babel-execute-maybe)
       (should (string=
-              (concat test-line " {{{results(=x=)}}}")
+               (concat test-line " {{{results(=x=)}}}")
       	       (buffer-substring-no-properties
-		(point-at-bol) (point-at-eol))))))
+		(line-beginning-position) (line-end-position))))))
   (let ((test-line (concat " Some text prior to block "
 			   "src_emacs-lisp[:results replace]{ \"y\" }"))
 	(org-babel-inline-result-wrap "=%s="))
@@ -476,12 +476,12 @@ at the beginning of a line."
       (insert (concat "\n" test-line " end"))
       (re-search-backward "src") (org-babel-execute-maybe)
       (should (string=
-              (concat test-line " {{{results(=y=)}}} end")
-    	       (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+               (concat test-line " {{{results(=y=)}}} end")
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
       (re-search-forward "\" ") (org-babel-execute-maybe)
       (should (string=
-              (concat test-line " {{{results(=y=)}}} end")
-    	       (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+               (concat test-line " {{{results(=y=)}}} end")
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
       (forward-char 3)
       (should-error (org-ctrl-c-ctrl-c)))))
 
@@ -491,7 +491,7 @@ at the beginning of a line."
       (org-babel-execute-maybe)
       (should (string= test-line
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))))
+			(line-beginning-position) (line-end-position))))))
   (let ((test-line (concat " Some text prior to block src_emacs-lisp"
 			   "[ :results silent ]{ \"y\" }")))
     (org-test-with-temp-text
@@ -501,11 +501,11 @@ at the beginning of a line."
       (re-search-backward "src_") (org-babel-execute-maybe)
       (should (string= (concat test-line " end")
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       (re-search-forward "\" ") (org-babel-execute-maybe)
       (should (string= (concat test-line " end")
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       (forward-char 2)
       (should-error (org-ctrl-c-ctrl-c)))))
 
@@ -521,11 +521,11 @@ at the beginning of a line."
       (re-search-forward "src_") (org-babel-execute-maybe)
       (should (string= (concat test-line " the end")
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       (re-search-forward "\" ") (org-babel-execute-maybe)
       (should (string= (concat test-line " the the end")
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       (forward-char 2)
       (should-error (org-ctrl-c-ctrl-c)))))
 
@@ -657,7 +657,7 @@ duplicate results block."
     'foo
   ,#+end_src
 #+end_src"
-	      (let ((org-edit-src-content-indentation 2)
+	      (let ((org-src-content-indentation 2)
 		    (org-src-preserve-indentation nil))
 		(org-babel-execute-src-block))))))
 
@@ -687,7 +687,6 @@ duplicate results block."
 #+end_src"
      (org-babel-execute-src-block)
      (org-babel-execute-src-block)
-     (buffer-string)
      (search-forward "#+begin_special" nil nil 2))))
 
 (ert-deftest test-ob/catches-all-references ()
@@ -829,7 +828,7 @@ x
 #+begin_src sh
   bar
 #+end_src"
-      (org-babel-expand-noweb-references))))
+      (org-babel-expand-noweb-references nil nil :eval))))
   ;; Handle :noweb-sep.
   (should
    (string=
@@ -845,7 +844,7 @@ x
 #+begin_src sh :noweb-ref foo :noweb-sep \"\"
   baz
 #+end_src"
-      (org-babel-expand-noweb-references))))
+      (org-babel-expand-noweb-references nil nil :eval))))
   ;; :noweb-ref is extracted from definition, not point of call.
   (should
    (string=
@@ -869,7 +868,7 @@ x
 #+begin_src sh :noweb-sep \"\"
   (+ 1 1)
 #+end_src"
-      (org-babel-expand-noweb-references))))
+      (org-babel-expand-noweb-references nil nil :eval))))
   ;; Handle recursive expansion.
   (should
    (equal "baz"
@@ -887,7 +886,7 @@ x
 #+begin_src emacs-lisp
   baz
 #+end_src"
-	    (org-babel-expand-noweb-references))))
+	    (org-babel-expand-noweb-references nil nil :eval))))
   ;; During recursive expansion, obey to `:noweb' property.
   (should
    (equal "<<bar>>"
@@ -905,7 +904,7 @@ x
 #+begin_src emacs-lisp
   baz
 #+end_src"
-	    (org-babel-expand-noweb-references))))
+	    (org-babel-expand-noweb-references nil nil :eval))))
   ;; Respect COMMENT headlines
   (should
    (equal "C"
@@ -929,7 +928,7 @@ x
 #+begin_src emacs-lisp :noweb-ref foo
   C
 #+end_src"
-	    (org-babel-expand-noweb-references))))
+	    (org-babel-expand-noweb-references nil nil :eval))))
   ;; Preserve case when replacing Noweb reference.
   (should
    (equal "(ignore)"
@@ -941,7 +940,7 @@ x
 #+begin_src emacs-lisp :noweb yes<point>
 <<AA>>
 #+end_src"
-	    (org-babel-expand-noweb-references))))
+	    (org-babel-expand-noweb-references nil nil :eval))))
   ;; Test :noweb-ref expansion.
   (should
    (equal "(message \"!! %s\" \"Running confpkg-test-setup\")
@@ -986,7 +985,7 @@ x
 "
             (goto-char (point-min))
             (search-forward "begin_src")
-            (org-babel-expand-noweb-references)))))
+            (org-babel-expand-noweb-references nil nil :eval)))))
 
 (ert-deftest test-ob/splitting-variable-lists-in-references ()
   (org-test-with-temp-text ""
@@ -1033,7 +1032,7 @@ x
     (should
      (string=
       ""
-      (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+      (buffer-substring-no-properties (line-beginning-position) (line-end-position)))))
   (org-test-with-temp-text-in-file "
 #+begin_src emacs-lisp
 \"some text\";;
@@ -1045,7 +1044,7 @@ x
     (should
      (string=
       ": some text"
-      (buffer-substring-no-properties (point-at-bol) (point-at-eol))))))
+      (buffer-substring-no-properties (line-beginning-position) (line-end-position))))))
 
 (ert-deftest test-ob/commented-last-block-line-with-var ()
   (org-test-with-temp-text-in-file "
@@ -1058,7 +1057,7 @@ x
     (forward-line)
     (should (string=
 	     ""
-	     (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+	     (buffer-substring-no-properties (line-beginning-position) (line-end-position)))))
   (org-test-with-temp-text-in-file "
 #+begin_src emacs-lisp :var a=2
 2;;
@@ -1069,7 +1068,7 @@ x
     (forward-line)
     (should (string=
 	     ": 2"
-	     (buffer-substring-no-properties (point-at-bol) (point-at-eol))))))
+	     (buffer-substring-no-properties (line-beginning-position) (line-end-position))))))
 
 (ert-deftest test-ob/org-babel-insert-result ()
   "Test `org-babel-insert-result' specifications."
@@ -1156,45 +1155,45 @@ x
       (org-babel-execute-maybe)
       (should (string= inline-sb-res-dot
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       ;; Delete whitespace and result.
       (org-babel-remove-inline-result)
       (should (string= inline-sb-dot
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       ;; Add whitespace and result before dot.
       (search-forward inline-sb)
       (insert "     " inline-res)
-      (goto-char (point-at-bol))
+      (goto-char (line-beginning-position))
       ;; Remove whitespace and result.
       (org-babel-remove-inline-result)
       (should (string= inline-sb-dot
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol))))
+			(line-beginning-position) (line-end-position))))
       ;; Add whitespace before dot.
       (search-forward inline-sb)
       (insert "     ")
-      (goto-char (point-at-bol))
+      (goto-char (line-beginning-position))
       ;; Add result before whitespace.
       (org-babel-execute-maybe)
       ;; Remove result - leave trailing whitespace and dot.
       (org-babel-remove-inline-result)
       (should (string= (concat inline-sb "     .")
 		       (buffer-substring-no-properties
-			(point-at-bol) (point-at-eol)))))))
+			(line-beginning-position) (line-end-position)))))))
 
 (ert-deftest test-ob/org-babel-remove-result--results-default ()
   "Test `org-babel-remove-result' with default :results."
-  (mapcar (lambda (language)
-	    (test-ob-verify-result-and-removed-result
-	     "\n"
-	     (concat
-	      "* org-babel-remove-result
+  (mapc (lambda (language)
+	  (test-ob-verify-result-and-removed-result
+	   "\n"
+	   (concat
+	    "* org-babel-remove-result
 #+begin_src " language "
 #+end_src
 
 * next heading")))
-	  '("emacs-lisp")))
+	'("emacs-lisp")))
 
 (ert-deftest test-ob/org-babel-results-indented-wrap ()
   "Ensure that wrapped results are inserted correction when indented.
@@ -1338,7 +1337,7 @@ replacement happens correctly."
     (forward-line)
     (should (string= result
 		     (buffer-substring-no-properties
-		      (point-at-bol)
+		      (line-beginning-position)
 		      (- (point-max) 16))))
     (org-babel-previous-src-block) (org-babel-remove-result)
     (should (string= buffer-text
@@ -2227,14 +2226,14 @@ default-directory
   "Test `org-babel-update-block-body' specifications."
   (should
    (equal "#+begin_src elisp\n  2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2))
+	  (let ((org-src-content-indentation 2))
 	    (org-test-with-temp-text "#+begin_src elisp\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "2")
 	      (buffer-string)))))
   ;; Preserve block indentation.
   (should
    (equal "  #+begin_src elisp\n   2\n  #+end_src"
-	  (let ((org-edit-src-content-indentation 1))
+	  (let ((org-src-content-indentation 1))
 	    (org-test-with-temp-text
 		"  #+begin_src elisp\n  (+ 1 1)\n  #+end_src"
 	      (org-babel-update-block-body "2")
@@ -2242,14 +2241,14 @@ default-directory
   ;; Ignore NEW-BODY global indentation.
   (should
    (equal "#+begin_src elisp\n  2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2))
+	  (let ((org-src-content-indentation 2))
 	    (org-test-with-temp-text "#+begin_src elisp\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "      2")
 	      (buffer-string)))))
   ;; When indentation should be preserved ignore the two rules above.
   (should
    (equal "  #+begin_src elisp\n2\n  #+end_src"
-	  (let ((org-edit-src-content-indentation 1)
+	  (let ((org-src-content-indentation 1)
 		(org-src-preserve-indentation t))
 	    (org-test-with-temp-text
 		"  #+begin_src elisp\n  (+ 1 1)\n  #+end_src"
@@ -2257,21 +2256,21 @@ default-directory
 	      (buffer-string)))))
   (should
    (equal "  #+begin_src elisp -i\n2\n  #+end_src"
-	  (let ((org-edit-src-content-indentation 1))
+	  (let ((org-src-content-indentation 1))
 	    (org-test-with-temp-text
 		"  #+begin_src elisp -i\n  (+ 1 1)\n  #+end_src"
 	      (org-babel-update-block-body "2")
 	      (buffer-string)))))
   (should
    (equal "#+begin_src elisp\n      2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2)
+	  (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation t))
 	    (org-test-with-temp-text "#+begin_src elisp\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "      2")
 	      (buffer-string)))))
   (should
    (equal "#+begin_src elisp -i\n      2\n#+end_src"
-	  (let ((org-edit-src-content-indentation 2)
+	  (let ((org-src-content-indentation 2)
 		(org-src-preserve-indentation t))
 	    (org-test-with-temp-text "#+begin_src elisp -i\n(+ 1 1)\n#+end_src"
 	      (org-babel-update-block-body "      2")
@@ -2661,7 +2660,7 @@ do not org-indent-block text here
 (ert-deftest test-ob/demarcate-block-split-prefix-point ()
   "Test prefix argument point splitting."
   (let ((org-adapt-indentation t)
-        (org-edit-src-content-indentation 2)
+        (org-src-content-indentation 2)
         (org-src-preserve-indentation nil)
         (ok-col 11)
         (stars "^\\*\\*\\*\\*\\*\\*\\*\\*\\*\\*"))
@@ -2684,14 +2683,14 @@ do not org-indent-block text here
         (cond ((string= regexp stars)
                (should (= 0 (current-column))))
               ((string-prefix-p ";;" regexp)
-               (should (= (+ ok-col org-edit-src-content-indentation)
+               (should (= (+ ok-col org-src-content-indentation)
                           (current-column))))
               (t (should (= ok-col (current-column)))))))))
 
 (ert-deftest test-ob/demarcate-block-split-prefix-region ()
   "Test prefix argument region splitting."
   (let ((org-adapt-indentation t)
-        (org-edit-src-content-indentation 2)
+        (org-src-content-indentation 2)
         (org-src-preserve-indentation nil)
         (ok-col 11)
         (stars "^\\*\\*\\*\\*\\*\\*\\*\\*\\*\\*")
@@ -2699,7 +2698,7 @@ do not org-indent-block text here
     (org-test-with-temp-text (format "
 ********** 10 stars with region between two lines
            #+header: :var b=\"also seen\"
-           #+begin_src any-language -i -n :var a=\"seen\"
+           #+begin_src any-language -n :var a=\"seen\"
              %s
              <point>%s
              %s
@@ -2719,7 +2718,7 @@ do not org-indent-block text here
           (should (string= (nth n parts) (org-trim (nth 1 info))))
           (should (string= "seen" (cdr (assq 'a vars))))
           (should (string= "also seen" (cdr (assq 'b vars))))
-          (should (string= "-i -n" (nth 3 info)))
+          (should (string= "-n" (nth 3 info)))
           (cl-incf n)))
       (goto-char (point-min))
       (dolist (regexp `(,stars
@@ -2733,14 +2732,14 @@ do not org-indent-block text here
         (cond ((string= regexp stars)
                (should (= 0 (current-column))))
               ((memq regexp parts)
-               (should (= (+ ok-col org-edit-src-content-indentation)
+               (should (= (+ ok-col org-src-content-indentation)
                           (current-column))))
               (t (should (= ok-col (current-column)))))))))
 
 (ert-deftest test-ob/demarcate-block-split-user-errors ()
   "Test for `user-error's in splitting"
   (let ((org-adapt-indentation t)
-        (org-edit-src-content-indentation 2)
+        (org-src-content-indentation 2)
         (org-src-preserve-indentation))
     (let* ((caption "#+caption: caption.")
            (within-body ";; within-body")
@@ -2827,6 +2826,37 @@ to upper block
         (should (string= region-text (org-trim (nth 1 info))))
         (should-not vars)
         (should (string= "" (nth 3 info)))))))
+
+(ert-deftest test-ob/keep-case ()
+  "Test keeping #+BEGIN_SRC/#+begin_src case."
+  (org-test-with-temp-text "
+#+begin_src any-language
+A
+<point>B
+#+end_src
+"
+    (org-babel-demarcate-block)
+    (goto-char (point-min))
+    (org-babel-next-src-block)
+    (let ((case-fold-search nil))
+      (should (looking-at-p "#\\+begin_src")))
+    (org-babel-next-src-block)
+    (let ((case-fold-search nil))
+      (should (looking-at-p "#\\+begin_src"))))
+  (org-test-with-temp-text "
+#+BEGIN_SRC any-language
+A
+<point>B
+#+END_SRC
+"
+    (org-babel-demarcate-block)
+    (goto-char (point-min))
+    (org-babel-next-src-block)
+    (let ((case-fold-search nil))
+      (should (looking-at-p "#\\+BEGIN_SRC")))
+    (org-babel-next-src-block)
+    (let ((case-fold-search nil))
+      (should (looking-at-p "#\\+BEGIN_SRC")))))
 
 (provide 'test-ob)
 

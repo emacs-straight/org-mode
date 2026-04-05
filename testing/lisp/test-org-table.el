@@ -763,8 +763,8 @@ Begin range with \"@II\" to handle multiline header.  Convert
 integer to float with \"+.0\" for sub-total of items c1 and c2.
 Sum empty fields as value zero but without ignoring them for
 \"vlen\" with format specifier \"EN\".  Format possibly empty
-results with the Calc formatter \"f-1\" instead of the printf
-formatter \"%.1f\"."
+results with the Calc formatter \"f-1\" instead of the `format'
+string \"%.1f\"."
   (org-test-table-target-expect
    "
 |-------+---------+---------|
@@ -1292,28 +1292,19 @@ See also `test-org-table/copy-field'."
 
 (ert-deftest test-org-table/org-table-calc-current-TBLFM-when-stop-because-of-error ()
   "org-table-calc-current-TBLFM should preserve the input as it was."
-  (org-test-with-temp-text-in-file
-      "
-| 1 | 1 |
-| 2 | 2 |
-#+TBLFM: $2=$1*1
-#+TBLFM: $2=$1*2::$2=$1*2
-#+TBLFM: $2=$1*3
-"
-    (let ((expect "
+  (let ((expect "
 | 1 | 1 |
 | 2 | 2 |
 #+TBLFM: $2=$1*1
 #+TBLFM: $2=$1*2::$2=$1*2
 #+TBLFM: $2=$1*3
 "))
+    (org-test-with-temp-text-in-file
+        expect
       (goto-char (point-min))
       (forward-line 4)
       (should-error (org-table-calc-current-TBLFM))
-      (setq got (buffer-string))
-      (message "%s" got)
-      (should (string= got
-		       expect)))))
+      (should (string= (buffer-string) expect)))))
 
 
 ;;; Tables as Lisp
@@ -1596,7 +1587,7 @@ See also `test-org-table/copy-field'."
 	  (orgtbl-to-generic
 	   (org-table-to-lisp "| a | b |\n| c | d |") '(:skipcols (2)))))
   (should
-   (equal "a\nc"
+   (equal "<c>\na\nc"
 	  (orgtbl-to-generic
 	   (org-table-to-lisp
 	    "| / | <c> | <c> |\n| # | a | b |\n|---+---+---|\n|   | c | d |")
@@ -1613,8 +1604,8 @@ See also `test-org-table/copy-field'."
    (equal
     "a\nb"
     (let* ((fun-list (list (lambda (_backend) (search-forward "a") (insert "hook"))))
-	   (org-export-before-parsing-hook fun-list)
-	   (org-export-before-processing-hook fun-list))
+	   (org-export-before-parsing-functions fun-list)
+	   (org-export-before-processing-functions fun-list))
       (orgtbl-to-generic (org-table-to-lisp "| a |\n|---|\n| b |")
 			 '(:hline nil)))))
   ;; User-defined export filters are ignored.
@@ -1908,13 +1899,18 @@ See also `test-org-table/copy-field'."
 	       (lambda (s1 s2 &optional _locale ignore-case)
 		 (funcall original-string-collate-lessp
 			  s1 s2 "C" ignore-case))))
+      ;; Sort alphabetically ignore case.
       (should
-       (equal "| a | x |\n| B | 4 |\n| c | 3 |\n"
+       (equal (if (org-test-string-collate-lessp-ignore-case-supported-p)
+                  "| a | x |\n| B | 4 |\n| c | 3 |\n"
+                "| B | 4 |\n| a | x |\n| c | 3 |\n")
 	      (org-test-with-temp-text "| <point>a | x |\n| c | 3 |\n| B | 4 |\n"
 				       (org-table-sort-lines nil ?a)
 				       (buffer-string))))
       (should
-       (equal "| c | 3 |\n| B | 4 |\n| a | x |\n"
+       (equal (if (org-test-string-collate-lessp-ignore-case-supported-p)
+                  "| c | 3 |\n| B | 4 |\n| a | x |\n"
+                "| c | 3 |\n| a | x |\n| B | 4 |\n")
 	      (org-test-with-temp-text "| <point>a | x |\n| c | 3 |\n| B | 4 |\n"
 				       (org-table-sort-lines nil ?A)
 				       (buffer-string))))
@@ -1925,9 +1921,9 @@ See also `test-org-table/copy-field'."
 				       (org-table-sort-lines t ?a)
 				       (buffer-string))))
       (should
-       (equal "| C |\n| b |\n| a |\n"
+       (equal "| b |\n| a |\n| C |\n"
 	      (org-test-with-temp-text "| <point>a |\n| C |\n| b |\n"
-				       (org-table-sort-lines nil ?A)
+				       (org-table-sort-lines t ?A)
 				       (buffer-string))))))
   ;; Sort by time (timestamps)
   (should

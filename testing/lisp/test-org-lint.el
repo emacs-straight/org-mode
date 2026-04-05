@@ -648,5 +648,29 @@ SCHEDULED: <2012-03-29 thu.>"
    (org-test-with-temp-text "[cite:@foo]"
      (org-lint '(incomplete-citation)))))
 
+(ert-deftest test-org-lint/priority ()
+  "Test `org-lint-priority'."
+  (dolist (bounds '((0 . 10) (?A . ?K)))
+    (let* ((org-priority-highest (car bounds))
+           (org-priority-lowest (cdr bounds)))
+      (let ((valid-buffer (mapconcat
+                           #'(lambda (p) (format "* [#%s]"
+                                            (org-priority-to-string p)))
+                           (number-sequence org-priority-highest
+                                            org-priority-lowest) "\n")))
+        (should-not (org-test-with-temp-text valid-buffer
+                      (org-lint '(priority)))))
+      (dolist (invalid-buffer
+               (let ((priorities (list (1- org-priority-highest)
+                                       (1+ org-priority-lowest)
+                                       (1- 0) (1+ ?Z) "" "]" "AA")))
+                 (append
+                  (mapcar #'(lambda (p) (format "* [#%s]" p))
+                          priorities)
+                  (mapcar #'(lambda (p) (format "* [#%s" p))
+                          priorities))))
+        (should (org-test-with-temp-text invalid-buffer
+                  (org-lint '(priority))))))))
+
 (provide 'test-org-lint)
 ;;; test-org-lint.el ends here

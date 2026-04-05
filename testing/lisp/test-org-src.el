@@ -33,7 +33,7 @@
   (message hello)
 #+end_src
 "
-    (let ((org-edit-src-content-indentation 2)
+    (let ((org-src-content-indentation 2)
           (org-src-preserve-indentation nil))
       (org-edit-special)
       (insert "blah")
@@ -76,7 +76,7 @@
 <point>#+begin_src emacs-lisp
 #+end_src
 "
-    (let ((org-edit-src-content-indentation 0)
+    (let ((org-src-content-indentation 0)
           (org-src-preserve-indentation nil))
       (org-edit-special)
       (insert "blah")
@@ -97,7 +97,7 @@ blah
 
 #+end_src
 "
-    (let ((org-edit-src-content-indentation 2)
+    (let ((org-src-content-indentation 2)
           (org-src-preserve-indentation nil))
       (goto-line 2)
       (org-edit-special)
@@ -122,7 +122,7 @@ blah
 #+begin_src emacs-lisp
 <point>This is a tab:\t.
 #+end_src"
-            (let ((org-edit-src-content-indentation 2)
+            (let ((org-src-content-indentation 2)
                   (org-src-preserve-indentation nil))
               (org-edit-special)
               (org-edit-src-exit)
@@ -138,7 +138,7 @@ This is a tab:\t.
 #+begin_src emacs-lisp
 <point>This is a tab:\t.
 #+end_src"
-            (let ((org-edit-src-content-indentation 2)
+            (let ((org-src-content-indentation 2)
                   (org-src-preserve-indentation t))
               (org-edit-special)
               (org-edit-src-exit)
@@ -160,11 +160,11 @@ This is a tab:\t.
 
   abc<point>
 #+end_src"
-           (let ((org-edit-src-content-indentation 2)
-                 (org-src-preserve-indentation nil))
-             (org-edit-special)
-             (org-edit-src-exit)
-             (buffer-string)))))
+            (let ((org-src-content-indentation 2)
+                  (org-src-preserve-indentation nil))
+              (org-edit-special)
+              (org-edit-src-exit)
+              (buffer-string)))))
   (should
    (equal "
 #+begin_src emacs-lisp
@@ -179,11 +179,11 @@ This is a tab:\t.
 <point>
   abc
 #+end_src"
-           (let ((org-edit-src-content-indentation 2)
-                 (org-src-preserve-indentation nil))
-             (org-edit-special)
-             (org-edit-src-exit)
-             (buffer-string))))))
+            (let ((org-src-content-indentation 2)
+                  (org-src-preserve-indentation nil))
+              (org-edit-special)
+              (org-edit-src-exit)
+              (buffer-string))))))
 
 (ert-deftest test-org-src/coderef-format ()
   "Test `org-src-coderef-format' specifications."
@@ -327,7 +327,7 @@ This is a tab:\t.
     "- Item\n  #+BEGIN_SRC emacs-lisp\n    Foo\n  #+END_SRC"
     (org-test-with-temp-text
 	"- Item\n<point>  #+BEGIN_SRC emacs-lisp\n    (+ 1 1)\n  #+END_SRC"
-      (let ((org-edit-src-content-indentation 2)
+      (let ((org-src-content-indentation 2)
 	    (org-src-preserve-indentation nil))
 	(org-edit-special)
 	(erase-buffer)
@@ -359,7 +359,7 @@ This is a tab:\t.
               argument2))
   #+END_SRC"
       (setq-local indent-tabs-mode t)
-      (let ((org-edit-src-content-indentation 2)
+      (let ((org-src-content-indentation 2)
 	    (org-src-preserve-indentation nil))
 	(org-edit-special)
 	(org-edit-src-exit)
@@ -375,7 +375,7 @@ This is a tab:\t.
     (progn\n      (function argument1\n    \targument2))
   #+END_SRC"
       (setq-local indent-tabs-mode nil)
-      (let ((org-edit-src-content-indentation 2)
+      (let ((org-src-content-indentation 2)
 	    (org-src-preserve-indentation nil))
 	(org-edit-special)
 	(org-edit-src-exit)
@@ -392,7 +392,7 @@ This is a tab:\t.
 #+END_SRC"
       (setq-local indent-tabs-mode t)
       (setq-local tab-width 4)
-      (let ((org-edit-src-content-indentation 2)
+      (let ((org-src-content-indentation 2)
 	    (org-src-preserve-indentation nil))
 	(org-edit-special)
         (setq-local indent-tabs-mode t)
@@ -411,18 +411,18 @@ This is a tab:\t.
   (progn
     (list argument1\n  \t<point>argument2))
 #+END_SRC"
-     (setq-local indent-tabs-mode t)
-     (setq-local tab-width 4)
-     (let ((org-edit-src-content-indentation 2)
-	   (org-src-preserve-indentation nil))
-       (font-lock-ensure)
-       ;;  `current-column' will not work with older versions of emacs
-       ;; before commit 4243747b1b8: Fix 'current-column' in the
-       ;; presence of display strings
-       (if (<= emacs-major-version 28)
-           (+ (progn (backward-char) (length (get-text-property (point) 'display)))
-              (current-column))
-         (current-column))))))
+      (setq-local indent-tabs-mode t)
+      (setq-local tab-width 4)
+      (let ((org-src-content-indentation 2)
+	    (org-src-preserve-indentation nil))
+        (font-lock-ensure)
+        ;;  `current-column' will not work with older versions of emacs
+        ;; before commit 4243747b1b8: Fix 'current-column' in the
+        ;; presence of display strings
+        (if (<= emacs-major-version 28)
+            (+ (progn (backward-char) (length (get-text-property (point) 'display)))
+               (current-column))
+          (current-column))))))
   ;; The initial tab characters respect org's `tab-width'.
   (should
    (equal
@@ -433,15 +433,15 @@ This is a tab:\t.
 \t(progn
 \t  (list argument1\n\t\t<point>argument2))
 #+END_SRC"
-     (setq-local indent-tabs-mode t)
-     (setq-local tab-width 2)
-     (let ((org-edit-src-content-indentation 2)
-	   (org-src-preserve-indentation nil))
-       (font-lock-ensure)
-       (if (<= emacs-major-version 28)
-           (+ (progn (backward-char) (length (get-text-property (point) 'display)))
-              (current-column))
-         (current-column)))))))
+      (setq-local indent-tabs-mode t)
+      (setq-local tab-width 2)
+      (let ((org-src-content-indentation 2)
+	    (org-src-preserve-indentation nil))
+        (font-lock-ensure)
+        (if (<= emacs-major-version 28)
+            (+ (progn (backward-char) (length (get-text-property (point) 'display)))
+               (current-column))
+          (current-column)))))))
 
 (ert-deftest test-org-src/indented-latex-fragments ()
   "Test editing multiline indented LaTeX fragment."
@@ -569,6 +569,63 @@ This is a tab:\t.
   (should (equal "#" (org-unescape-code-in-string "#")))
   (should (equal "," (org-unescape-code-in-string ","))))
 
+;;; Syntax Table Preservation
+
+(ert-deftest test-org-src/preserve-syntax-table ()
+  "Make sure we preserve the code's syntax-table where appropriate."
+  ;; Source blocks
+  (org-test-with-temp-text
+   "
+#+begin_src nxml
+<root><point>></root>
+#+end_src
+"
+   (should (looking-at-p "></root>"))
+   ;; nXML mode applies a different syntax-table to lone ">"
+   ;; characters, make sure we preserve that.
+   (should (equal (get-text-property (point) 'syntax-table)
+                  (string-to-syntax ".")))
+   ;; Everywhere else should use the mode's syntax table.
+   (dolist (pos (list (1+ (point)) (1- (point))
+                      (let ((inhibit-field-text-motion t))
+                        (line-beginning-position))
+                      (let ((inhibit-field-text-motion t))
+                        (line-end-position))))
+     (should (equal (get-text-property pos 'syntax-table)
+                    nxml-mode-syntax-table)))
+   ;; But not outside the source code.
+   (dolist (pos (list
+                 (let ((inhibit-field-text-motion t))
+                   (1- (line-beginning-position)))
+                 (let ((inhibit-field-text-motion t))
+                   (1+ (line-end-position)))))
+     (should-not (get-text-property pos 'syntax-table))))
+  ;; Inline source.
+  (org-test-with-temp-text
+   "src_nxml{<root><point>></root>}"
+   (should (looking-at-p "></root>"))
+   (should (equal (get-text-property (point) 'syntax-table)
+                  (string-to-syntax ".")))
+   ;; Everywhere else should use the mode's syntax table.
+   (dolist (pos (list (1+ (point)) (1- (point))))
+     (should (equal (get-text-property pos 'syntax-table)
+                    nxml-mode-syntax-table)))
+   ;; We should correctly parse this as an inline source block.
+   (let ((e (org-element-context)))
+     (should (eq (org-element-type e) 'inline-src-block)))
+   ;; And we should only add the syntax table to the code itself.
+   (save-excursion
+     (should (search-forward "}"))
+     (goto-char (match-beginning 0))
+     (should (eq (char-after) ?}))
+     (should-not (get-text-property (point) 'syntax-table))
+     (should (equal (get-text-property (1- (point)) 'syntax-table)
+                    nxml-mode-syntax-table)))
+   (save-excursion
+     (search-backward "{")
+     (should-not (get-text-property (point) 'syntax-table))
+     (should (equal (get-text-property (1+ (point)) 'syntax-table)
+                    nxml-mode-syntax-table)))))
 
 (provide 'test-org-src)
 ;;; test-org-src.el ends here

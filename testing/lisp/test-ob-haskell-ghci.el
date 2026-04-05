@@ -1,6 +1,6 @@
 ;;; test-ob-haskell-ghci.el --- tests for ob-haskell.el GHCi  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2023-2024 Free Software Foundation, Inc.
+;; Copyright (c) 2023-2026 Free Software Foundation, Inc.
 ;; Authors: Bruno BARBIER <brubar.cs@gmail.com>
 
 ;; This file is part of GNU Emacs.
@@ -32,9 +32,9 @@
 (require 'org-test "../testing/org-test")
 (org-test-for-executable "ghci")
 (unless (featurep 'haskell-mode)
-  (signal 'missing-test-dependency "haskell-mode"))
+  (signal 'missing-test-dependency '("haskell-mode")))
 (unless (featurep 'haskell)
-  (signal 'missing-test-dependency "haskell"))
+  (signal 'missing-test-dependency '("haskell")))
 
 
 ;;; Helpers
@@ -45,7 +45,7 @@
   (when (get-buffer "*haskell*")
     (error "A buffer named '*haskell*' exists.  Can't safely test haskell blocks"))
   (prog1 (funcall todo)
-    (when-let ((hb (get-buffer "*haskell*")))
+    (when-let* ((hb (get-buffer "*haskell*")))
       ;; We created a "*haskell*" buffer. That shouldn't happen.
       (error "'ob-haskell' created a buffer named '*haskell*'"))))
 

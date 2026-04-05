@@ -19,7 +19,7 @@ _ORGCM_ := dirall single native source slint1 slint2
 	install clean cleanauto cleanall cleanelc clean-install
 
 # do not clean here, done in toplevel make
-all compile compile-dirty::	 | autoloads
+all compile compile-dirty::	 autoloads
 ifeq ($(filter-out $(_ORGCM_),$(ORGCM)),)
 	$(MAKE) compile-$(ORGCM)
 else
@@ -27,11 +27,11 @@ else
 endif
 
 compile-dirall:	dirall
-compile-single: $(LISPC) | single
-compile-native: $(LISPN) | native
-compile-source:	| source dirall
-compile-slint1:	| dirall slint1
-compile-slint2:	| source dirall slint1
+compile-single: single $(LISPC)
+compile-native: native $(LISPN)
+compile-source:	source dirall
+compile-slint1:	dirall slint1
+compile-slint2:	source dirall slint1
 
 # internal
 dirall:

@@ -1,6 +1,6 @@
 ;;; test-ob-clojure.el  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2018-2024 Free Software Foundation, Inc.
+;; Copyright (c) 2018-2026 Free Software Foundation, Inc.
 ;; Authors: stardiviner
 
 ;; This file is not part of GNU Emacs.
@@ -25,7 +25,7 @@
 ;;; Code:
 
 (unless (featurep 'ob-clojure)
-  (signal 'missing-test-dependency "Support for Clojure code blocks"))
+  (signal 'missing-test-dependency '("Support for Clojure code blocks")))
 
 ;; FIXME: The old tests where totally off.  We need to write new tests.
 

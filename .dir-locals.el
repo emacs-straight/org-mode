@@ -1,4 +1,4 @@
-;;; Directory Local Variables
+;;; Directory Local Variables            -*- no-byte-compile: t; -*-
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((nil
@@ -11,7 +11,7 @@
  (org-mode
   (indent-tabs-mode)
   (org-adapt-indentation)
-  (org-edit-src-content-indentation . 0)
+  (org-src-content-indentation . 0)
   (org-footnote-auto-adjust . t)
   (org-footnote-auto-label . t)
   (org-footnote-define-inline . nil)

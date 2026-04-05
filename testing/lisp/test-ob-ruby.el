@@ -19,9 +19,9 @@
 ;;; Code:
 (org-test-for-executable "ruby")
 (unless (featurep 'ob-ruby)
-  (signal 'missing-test-dependency "Support for Ruby code blocks"))
+  (signal 'missing-test-dependency '("Support for Ruby code blocks")))
 (unless (featurep 'inf-ruby)
-  (signal 'missing-test-dependency "inf-ruby"))
+  (signal 'missing-test-dependency '("inf-ruby")))
 
 (ert-deftest test-ob-ruby/session-output-1 ()
     (should (equal (org-test-with-temp-text "#+begin_src ruby :session org-test-ruby :results output
@@ -77,6 +77,66 @@ s = \"6\"
 #+RESULTS:
 : 5
 ")))
+
+(ert-deftest test-ob-ruby/value ()
+  (should
+   (equal 3
+          (org-test-with-temp-text "#+begin_src ruby :results value
+1 + 2
+#+end_src"
+            (org-babel-execute-src-block)))))
+
+(ert-deftest test-ob-ruby/value-with-class-definition ()
+  (should
+   (equal 3
+          (org-test-with-temp-text "#+begin_src ruby :results value
+class Three
+  def result
+    1 + 2
+  end
+end
+Three.new.result
+#+end_src"
+            (org-babel-execute-src-block)))))
+
+(ert-deftest test-ob-ruby/value-with-return ()
+  (should
+   (equal 3
+          (org-test-with-temp-text "#+begin_src ruby :results value
+return 3
+2
+#+end_src"
+            (org-babel-execute-src-block)))))
+
+(ert-deftest test-ob-ruby/pp ()
+  (should
+   (equal "3\n"
+          (org-test-with-temp-text "#+begin_src ruby :results pp
+1 + 2
+#+end_src"
+                   (org-babel-execute-src-block)))))
+
+(ert-deftest test-ob-ruby/pp-with-class-definition ()
+  (should
+   (equal "3\n"
+          (org-test-with-temp-text "#+begin_src ruby :results pp
+class Three
+  def result
+    1 + 2
+  end
+end
+Three.new.result
+#+end_src"
+                   (org-babel-execute-src-block)))))
+
+(ert-deftest test-ob-ruby/pp-with-return ()
+  (should
+   (equal "3\n"
+          (org-test-with-temp-text "#+begin_src ruby :results pp
+return 3
+2
+#+end_src"
+                   (org-babel-execute-src-block)))))
 
 (provide 'test-ob-ruby)
 

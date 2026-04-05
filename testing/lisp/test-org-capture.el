@@ -214,14 +214,180 @@
   ;; Do not break next headline.
   (should
    (equal
-    "* A\n** H1 Capture text\n* B\n"
-    (org-test-with-temp-text-in-file "* A\n* B\n"
+    "* A\n* B\n** H1 Capture text\n* C\n"
+    (org-test-with-temp-text-in-file "* A\n* B\n* C\n"
       (let* ((file (buffer-file-name))
 	     (org-capture-templates
-	      `(("t" "Todo" entry (file+headline ,file "A") "** H1 %?"))))
+	      `(("t" "Todo" entry (file+headline ,file "B") "** H1 %?"))))
 	(org-capture nil "t")
 	(insert "Capture text")
 	(org-capture-finalize))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n* B\n** H1 Capture text\n* C\n"
+    (org-test-with-temp-text-in-file "* A\n* B\n* C\n"
+      (let* ((file (buffer-file-name))
+	     (org-capture-templates
+	      `(("t"
+                 "Todo"
+                 entry
+                 (file+headline ,file (lambda ()
+                                        (should (equal ,file (buffer-file-name)))
+                                        "B"))
+                 "** H1 %?"))))
+	(org-capture nil "t")
+	(insert "Capture text")
+	(org-capture-finalize))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n* B\n** H1 Capture text\n* C\n"
+    (org-test-with-temp-text-in-file "* A\n* B\n* C\n"
+      (org-dlet ((test-org-capture/entry/headline))
+        (let* ((file (buffer-file-name))
+	       (org-capture-templates
+	        `(("t" "Todo" entry (file+headline ,file test-org-capture/entry/headline) "** H1 %?"))))
+          (setq test-org-capture/entry/headline "B")
+	  (org-capture nil "t")
+	  (insert "Capture text")
+	  (org-capture-finalize)))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n** B\n*** H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (let* ((file (buffer-file-name))
+	     (org-capture-templates
+	      `(("t" "Todo" entry (file+olp ,file "A" "B") "* H1 %?"))))
+	(org-capture nil "t")
+	(insert "Capture text")
+	(org-capture-finalize))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n** B\n*** H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (let* ((file (buffer-file-name))
+	     (org-capture-templates
+	      `(("t"
+                 "Todo"
+                 entry
+                 (file+olp ,file (lambda ()
+                                    (should (equal ,file (buffer-file-name)))
+                                    '("A" "B")))
+                 "* H1 %?"))))
+	(org-capture nil "t")
+	(insert "Capture text")
+	(org-capture-finalize))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n** B\n*** H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (org-dlet ((test-org-capture/entry/file+olp))
+        (let* ((file (buffer-file-name))
+	       (org-capture-templates
+	        `(("t" "Todo" entry (file+olp ,file test-org-capture/entry/file+olp) "* H1 %?"))))
+          (setq test-org-capture/entry/file+olp '("A" "B"))
+	  (org-capture nil "t")
+	  (insert "Capture text")
+	  (org-capture-finalize)))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n** B\n*** 2024\n**** 2024-06 June\n***** 2024-06-16 Sunday\n****** H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (let* ((file (buffer-file-name))
+	     (org-capture-templates
+	      `(("t" "Todo" entry (file+olp+datetree ,file "A" "B") "* H1 %?"))))
+        (org-test-at-time "2024-06-16"
+	  (org-capture nil "t")
+	  (insert "Capture text")
+	  (org-capture-finalize)))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n** B\n*** 2024\n**** 2024-06 June\n***** 2024-06-16 Sunday\n****** H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (let* ((file (buffer-file-name))
+	     (org-capture-templates
+	      `(("t"
+                 "Todo"
+                 entry
+                 (file+olp+datetree ,file (lambda ()
+                                            (should (equal ,file (buffer-file-name)))
+                                            '("A" "B")))
+                 "* H1 %?"))))
+	(org-test-at-time "2024-06-16"
+	  (org-capture nil "t")
+	  (insert "Capture text")
+	  (org-capture-finalize)))
+      (buffer-string))))
+  ;; test datetree capture with list tree-type
+  (should
+   (equal
+    "* A\n** B\n*** 2024\n**** 2024-Q2\n***** 2024-06 June\n****** 2024-06-16 Sunday\n******* H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (let* ((file (buffer-file-name))
+            (org-capture-templates
+             `(("t"
+                 "Todo"
+                 entry
+                 (file+olp+datetree ,file (lambda ()
+                                            (should (equal ,file (buffer-file-name)))
+                                            '("A" "B")))
+                 "* H1 %?"
+                 :tree-type
+                 (year quarter month day)))))
+       (org-test-at-time "2024-06-16"
+                         (org-capture nil "t")
+                         (insert "Capture text")
+                         (org-capture-finalize)))
+      (buffer-string))))
+  ;; test datetree capture with function tree-type
+  (should
+   (equal
+    "* A\n** B\n*** 2024\n**** 05\n**** 06\n***** 16\n****** H1 Capture text\n****** H1 Capture text 2\n**** 07\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n*** 2024\n**** 05\n**** 07\n** C\n"
+      (let* ((file (buffer-file-name))
+            (org-capture-templates
+             `(("t"
+                 "Todo"
+                 entry
+                 (file+olp+datetree ,file (lambda ()
+                                            (should (equal ,file (buffer-file-name)))
+                                            '("A" "B")))
+                 "* H1 %?"
+                 :tree-type
+                 (lambda (d)
+                   `((,(format "%d" (calendar-extract-year d))
+                      (lambda (x y) (compare-strings x nil nil y nil nil)))
+                     (,(format "%02d" (calendar-extract-month d))
+                      (lambda (x y) (compare-strings x nil nil y nil nil)))
+                     (,(format "%02d" (calendar-extract-day d))
+                      (lambda (x y) (compare-strings x nil nil y nil nil)))))))))
+       (org-test-at-time "2024-06-16"
+                         (org-capture nil "t")
+                         (insert "Capture text")
+                         (org-capture-finalize)
+                         (org-capture nil "t")
+                         (insert "Capture text 2")
+                         (org-capture-finalize)))
+      (buffer-string))))
+  (should
+   (equal
+    "* A\n** B\n*** 2024\n**** 2024-06 June\n***** 2024-06-16 Sunday\n****** H1 Capture text\n** C\n"
+    (org-test-with-temp-text-in-file "* A\n** B\n** C\n"
+      (org-dlet ((test-org-capture/entry/file+olp+datetree))
+        (let* ((file (buffer-file-name))
+	       (org-capture-templates
+	        `(("t" "Todo" entry (file+olp+datetree ,file test-org-capture/entry/file+olp+datetree) "* H1 %?"))))
+          (setq test-org-capture/entry/file+olp+datetree '("A" "B"))
+          (org-test-at-time "2024-06-16"
+	    (org-capture nil "t")
+	    (insert "Capture text")
+	    (org-capture-finalize))))
       (buffer-string))))
   ;; Correctly save position of inserted entry.
   (should
@@ -244,6 +410,30 @@
 		:immediate-finish t))))
        (org-capture nil "t")
        (buffer-string))))
+  ;; Do not raise an error on templates that do not start with a heading.
+  (should
+   (org-test-with-temp-text-in-file ""
+     (let* ((file (buffer-file-name))
+            (org-capture-templates
+             `(("t" "Test" entry (file ,file) "Foo"
+                :immediate-finish t))))
+       (org-capture nil "t"))))
+  (should
+   (org-test-with-temp-text-in-file ""
+     (let* ((file (buffer-file-name))
+            (org-capture-templates
+             `(("t" "Test" entry (file ,file) "*bold*"
+                :immediate-finish t))))
+       (org-capture nil "t"))))
+  ;; Raise an error on templates with a lower level heading after a
+  ;; higher level one.
+  (should-error
+   (org-test-with-temp-text-in-file ""
+     (let* ((file (buffer-file-name))
+            (org-capture-templates
+             `(("t" "Test" entry (file ,file) "** X\n* Y"
+	        :immediate-finish t))))
+       (org-capture nil "t"))))
   ;; With a 0 prefix argument, ignore surrounding lists.
   (should
    (equal "Foo\n* X\nBar\n"
@@ -265,6 +455,44 @@
 		    `(("t" "Test" entry (file ,file) "* X"
 		       :immediate-finish t :empty-lines 1))))
 	      (org-capture 0 "t")
+	      (buffer-string)))))
+  ;; when :empty-lines not provided, obey `org-blank-before-new-entry'
+  (should
+   (equal "Foo\n* Bar\n\n* X\n"
+	  (org-test-with-temp-text-in-file "Foo\n* Bar"
+	    (forward-line)
+	    (let* ((file (buffer-file-name))
+                   (org-blank-before-new-entry
+                    '((heading . t)))
+		   (org-capture-templates
+		    `(("t" "Test" entry (file ,file) "* X"
+		       :immediate-finish t))))
+	      (org-capture nil "t")
+	      (buffer-string)))))
+  (should
+   (equal "Foo\n* Bar\n* X\n"
+	  (org-test-with-temp-text-in-file "Foo\n* Bar"
+	    (forward-line)
+	    (let* ((file (buffer-file-name))
+                   (org-blank-before-new-entry
+                    '((heading . nil)))
+		   (org-capture-templates
+		    `(("t" "Test" entry (file ,file) "* X"
+		       :immediate-finish t))))
+	      (org-capture nil "t")
+	      (buffer-string)))))
+  ;; but prefer :empty-lines
+  (should
+   (equal "Foo\n* Bar\n\n\n* X\n"
+	  (org-test-with-temp-text-in-file "Foo\n* Bar"
+	    (forward-line)
+	    (let* ((file (buffer-file-name))
+                   (org-blank-before-new-entry
+                    '((heading . nil)))
+		   (org-capture-templates
+		    `(("t" "Test" entry (file ,file) "* X"
+		       :immediate-finish t :empty-lines-before 2))))
+	      (org-capture nil "t")
 	      (buffer-string))))))
 
 (ert-deftest test-org-capture/item ()
@@ -503,7 +731,43 @@
 		    `(("t" "Test" item (file ,file) "- X"
 		       :immediate-finish t :empty-lines 1))))
 	      (org-capture 0 "t")
-	      (buffer-string))))))
+	      (buffer-string)))))
+  ;; FIXME: This is not currently working.
+  ;; when :empty-lines not provided, obey `org-blank-before-new-entry'
+  ;; (should
+  ;;  (equal "Foo\n- A\n- X\n"
+  ;;         (org-test-with-temp-text-in-file "Foo\n- A"
+  ;;           (let* ((file (buffer-file-name))
+  ;;                  (org-blank-before-new-entry
+  ;;                   '((plain-list-item . nil)))
+  ;;       	   (org-capture-templates
+  ;;       	    `(("t" "Test" item (file ,file) "- X"
+  ;;       	       :immediate-finish t))))
+  ;;             (org-capture nil "t")
+  ;;             (buffer-string)))))
+  ;; (should
+  ;;  (equal "Foo\n- A\n\n- X\n"
+  ;;         (org-test-with-temp-text-in-file "Foo\n- A"
+  ;;           (let* ((file (buffer-file-name))
+  ;;                  (org-blank-before-new-entry
+  ;;                   '((plain-list-item . t)))
+  ;;       	   (org-capture-templates
+  ;;       	    `(("t" "Test" item (file ,file) "- X"
+  ;;       	       :immediate-finish t))))
+  ;;             (org-capture nil "t")
+  ;;             (buffer-string)))))
+  ;; but prefer :empty-lines
+  (should
+   (equal "Foo\n- A\n\n- X\n"
+          (org-test-with-temp-text-in-file "Foo\n- A"
+            (let* ((file (buffer-file-name))
+                   (org-blank-before-new-entry
+                    '((plain-list-item . nil)))
+                   (org-capture-templates
+                    `(("t" "Test" item (file ,file) "- X"
+                       :immediate-finish t :empty-lines 1))))
+              (org-capture nil "t")
+              (buffer-string))))))
 
 (ert-deftest test-org-capture/table-line ()
   "Test `table-line' type in capture template."
@@ -589,6 +853,16 @@
 		       "| 2 |" :immediate-finish t))))
 	      (org-capture nil "t"))
 	    (buffer-string))))
+  ;; Prepend | when the template does not start with it
+  (should
+   (equal "| 1 |\n| 2 |\n"
+          (org-test-with-temp-text-in-file "| 1 |\n"
+            (let* ((file (buffer-file-name))
+                   (org-capture-templates
+                    `(("t" "Table" table-line (file ,file)
+                       "2 |" :immediate-finish t))))
+              (org-capture nil "t")
+              (buffer-string)))))
   ;; When `:prepend' is nil, add the row at the end of the table.
   (should
    (equal "| a |\n| x |\n"
@@ -808,6 +1082,29 @@ before\nglobal-before\nafter\nglobal-after"
                               (lambda () (insert "two")))))))
               (org-capture nil "t")
               (buffer-string))))))
+
+(ert-deftest test-org-capture/org-capture-expand-olp ()
+  "Test org-capture-expand-olp."
+  ;; `org-capture-expand-olp' accepts inlined outline path.
+  (should
+   (equal
+    '("A" "B" "C")
+    (org-test-with-temp-text-in-file ""
+      (org-capture-expand-olp buffer-file-name "A" "B" "C"))))
+  ;; The current buffer during the funcall of the lambda is the temporary
+  ;; test file.
+  (should
+   (org-test-with-temp-text-in-file ""
+     (equal
+      buffer-file-name
+      (org-capture-expand-olp buffer-file-name (lambda () (buffer-file-name))))))
+  ;; `org-capture-expand-olp' rejects outline path that is not
+  ;; inlined.
+  (should-error
+   (equal
+    '("A" "B" "C")
+    (org-test-with-temp-text-in-file ""
+      (org-capture-expand-olp buffer-file-name '("A" "B" "C"))))))
 
 (provide 'test-org-capture)
 ;;; test-org-capture.el ends here
