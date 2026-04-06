@@ -2433,11 +2433,17 @@ is the language used for CODE, as a string, or nil."
 			  (forward-char 1))))
 		    (org-src-mode)
 		    (set-buffer-modified-p nil)
-		    ;; Htmlize region.
-		    (let ((org-html-htmlize-output-type output-type)
-			  (org-html-htmlize-font-prefix font-prefix))
-		      (org-html-htmlize-region-for-paste
-		       (point-min) (point-max))))))
+                    ;; htmlize itself triggers re-fontification.
+                    ;; We do additional font manipulation, so
+                    ;; prevent font-lock from undoing our changes by
+                    ;; preventing `font-lock-mode' from re-fontifying
+                    ;; the buffer.
+                    (let ((font-lock-ensure-function #'ignore))
+		      ;; Htmlize region.
+		      (let ((org-html-htmlize-output-type output-type)
+			    (org-html-htmlize-font-prefix font-prefix))
+		        (org-html-htmlize-region-for-paste
+		         (point-min) (point-max)))))))
 	  ;; Strip any enclosing <pre></pre> tags.
 	  (let* ((beg (and (string-match "\\`<pre[^>]*>\n?" code) (match-end 0)))
 		 (end (and beg (string-match "</pre>\\'" code))))

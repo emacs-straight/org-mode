@@ -659,8 +659,8 @@ non-nil, return the full association list to be used by
 		link
 		source-name
 		params
-		(if (org-src-preserve-indentation-p) (org-trim body t)
-		  (org-trim (org-remove-indentation body)))
+		(if (org-src-preserve-indentation-p) body
+		  (org-remove-indentation body))
 		comment)))
     (if only-this-block
         (let* ((file-names (org-babel-tangle--compute-targets file info)))

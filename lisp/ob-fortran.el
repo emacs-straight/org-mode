@@ -95,30 +95,32 @@ This function is called by `org-babel-execute-src-block'."
                   (or (cdr (assq :defines params))
                       (org-babel-read (org-entry-get nil "defines" t))))))
     (mapconcat 'identity
-	       (list
-		;; includes
-		(mapconcat
-		 (lambda (inc) (format "#include %s" inc))
-		 (if (listp includes) includes (list includes)) "\n")
-		;; defines
-		(mapconcat
-		 (lambda (inc) (format "#define %s" inc))
-		 (if (listp defines) defines (list defines)) "\n")
-		;; body
-		(if main-p
-		    (org-babel-fortran-ensure-main-wrap
-		     (concat
-		      ;; variables
-		      (mapconcat 'org-babel-fortran-var-to-fortran vars "\n")
-                      (and prologue (concat prologue "\n"))
-		      body
-                      (and prologue (concat prologue "\n")))
-		     params)
-                  (concat
-                   (and prologue (concat prologue "\n"))
-		   body
-                   (and epilogue (concat "\n" epilogue "\n"))))
-                "\n")
+	       (delq nil
+		(list
+		 ;; includes
+		 (when includes
+		   (mapconcat
+		    (lambda (inc) (format "#include %s" inc))
+		    (if (listp includes) includes (list includes)) "\n"))
+		 ;; defines
+		 (when defines
+		   (mapconcat
+		    (lambda (inc) (format "#define %s" inc))
+		    (if (listp defines) defines (list defines)) "\n"))
+		 ;; body
+		 (if main-p
+		     (org-babel-fortran-ensure-main-wrap
+		      (concat
+		       ;; variables
+		       (mapconcat 'org-babel-fortran-var-to-fortran vars "\n")
+                       (and prologue (concat prologue "\n"))
+		       body
+                       (and prologue (concat prologue "\n")))
+		      params)
+                   (concat
+                    (and prologue (concat prologue "\n"))
+		    body
+                    (and epilogue (concat "\n" epilogue "\n"))))))
                "\n")))
 
 (defun org-babel-fortran-ensure-main-wrap (body params)

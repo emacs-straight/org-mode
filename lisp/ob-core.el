@@ -3254,7 +3254,7 @@ block but are passed literally to the \"example-block\"."
 		         (let ((cs (org-babel-tangle-comment-links ,i)))
 		           (concat (c-wrap (car cs)) "\n"
 			           b "\n"
-			           (c-wrap (cadr cs)) "\n")))))
+			           (c-wrap (cadr cs)))))))
 	          (expand-references
 	            (ref)
 	            `(pcase (gethash ,ref org-babel-expand-noweb-references--cache)
@@ -3276,6 +3276,7 @@ block but are passed literally to the \"example-block\"."
 	                (error "Cannot resolve %s (see `org-babel-noweb-error-langs')"
 		               (org-babel-noweb-wrap ,ref)))
 	               (_ ""))))
+      (let ((result
       (replace-regexp-in-string
        noweb-re
        (lambda (m)
@@ -3344,13 +3345,23 @@ block but are passed literally to the \"example-block\"."
 			      (push info (gethash ref org-babel-expand-noweb-references--cache))))))
                        (puthash 'buffer-processed t org-babel-expand-noweb-references--cache)
 		       (expand-references id)))))
-	       ;; Interpose PREFIX between every line.
-               (if noweb-prefix
-		   (mapconcat #'identity
-			      (split-string expansion "[\n\r]")
-			      (concat "\n" prefix))
-                 expansion)))))
-       body t t 2))))
+	       (let ((interposed
+	              ;; Interpose PREFIX between every line.
+		      (if noweb-prefix
+			  (mapconcat #'identity
+				     (split-string expansion "[\n\r]")
+				     (concat "\n" prefix))
+			expansion)))
+		 ;; Make sure each end comment is on its own line.
+		 (if comment (concat interposed "\n")
+		   interposed))))))
+       body t t 2)))
+	(if (and comment
+		 (string-suffix-p org-babel-noweb-wrap-end body))
+	    ;; Strip the last "\n" if last thing in the result is the
+	    ;; Noweb expansion.
+	    (substring result 0 -1)
+	  result)))))
 
 (defun org-babel--script-escape-inner (str)
   (let (in-single in-double backslash out)
