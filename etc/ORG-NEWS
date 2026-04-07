@@ -112,6 +112,20 @@ This tangles the block to four files:
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
 
+*** ~org-support-shift-select~ can now make shift-cursor selection work on timestamps
+
+Previously, when ~org-support-shift-select~ was set to ~always~,
+shift-cursor still triggered Org mode editing commands on timestamps.
+(As the docstring states, "it is too good to give up").
+Now, you can set ~org-support-shift-select~ to ~everywhere~ to make
+shift-selection work on timestamps as well, fully respecting
+~shift-select-mode~.
+
+The old value of ~always~ has been renamed to ~except-timestamps~ to
+avoid confusion.  The old value is still supported, but undocumented.
+We encourage users who explicitly set ~org-support-shift-select~ to
+~always~ in their configuration to use ~except-timestamps~ instead.
+
 *** New custom variable ~org-latex-default-example-environment~
 
 You can set the LaTeX environment used in ~example~ blocks with this

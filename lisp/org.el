@@ -1003,8 +1003,8 @@ enlarging regions.  To make this more effective, the bullet
 cycling will no longer happen anywhere in an item line, but only
 if the cursor is exactly on the bullet.
 
-If you set this variable to the symbol `always', then the keys
-will not be special in headlines, property lines, item lines, and
+If you set this variable to the symbol `except-timestamps', then the
+keys will not be special in headlines, property lines, item lines, and
 table cells, to make shift selection work there as well.  If this is
 what you want, you can use the following alternative commands:
 `\\[org-todo]' and `\\[org-priority]' \
@@ -1014,13 +1014,20 @@ can be used to switch TODO sets,
 `\\[org-ctrl-c-minus]' to cycle item bullet types,
 and properties can be edited by hand or in column view.
 
-However, when the cursor is on a timestamp, shift-cursor commands
-will still edit the time stamp - this is just too good to give up."
+However, when the cursor is on a timestamp, shift-cursor commands will
+still edit the timestamp - this is just too good to give up.  Set the
+value to symbol `everywhere' to disable shift-cursor commands on
+timestamps as well."
   :group 'org
+  :package-version '("Org" . "10.0")
   :type '(choice
 	  (const :tag "Never" nil)
 	  (const :tag "When outside special context" t)
-	  (const :tag "Everywhere except timestamps" always)))
+          ;; This used to be symbol `always', but it is confusing
+          ;; when we also have `everywhere', so renamed, keeping
+          ;; old symbol support in the code for backwards compatibility.
+	  (const :tag "Everywhere except timestamps" except-timestamps)
+          (const :tag "Everywhere" everywhere)))
 
 (defcustom org-loop-over-headlines-in-active-region t
   "Shall some commands act upon headlines in the active region?
@@ -17366,7 +17373,7 @@ same logic."
   (interactive)
   (cond
    ((and (eq system-type 'darwin)
-         (or (eq org-support-shift-select 'always)
+         (or (memq org-support-shift-select '(always except-timestamps everywhere))
              (and org-support-shift-select (org-region-active-p))))
     (org-call-for-shift-select 'backward-char))
    ((run-hook-with-args-until-success 'org-shiftmetaleft-hook))
@@ -17393,7 +17400,7 @@ same logic."
   (interactive)
   (cond
    ((and (eq system-type 'darwin)
-         (or (eq org-support-shift-select 'always)
+         (or (memq org-support-shift-select '(always except-timestamps everywhere))
              (and org-support-shift-select (org-region-active-p))))
     (org-call-for-shift-select 'forward-char))
    ((run-hook-with-args-until-success 'org-shiftmetaright-hook))
@@ -17723,17 +17730,18 @@ more information."
    ((run-hook-with-args-until-success 'org-shiftup-hook))
    ((and org-support-shift-select (org-region-active-p))
     (org-call-for-shift-select 'previous-line))
-   ((org-at-timestamp-p 'lax)
+   ((and (not (eq org-support-shift-select 'everywhere))
+         (org-at-timestamp-p 'lax))
     (call-interactively (if org-edit-timestamp-down-means-later
 			    'org-timestamp-down 'org-timestamp-up)))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 org-priority-enable-commands
 	 (org-at-heading-p))
     (call-interactively 'org-priority-up))
    ((and (not org-support-shift-select) (org-at-item-p))
     (call-interactively 'org-previous-item))
    ((org-clocktable-try-shift 'up arg))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-table-p))
     (org-table-move-cell-up))
    ((run-hook-with-args-until-success 'org-shiftup-final-hook))
@@ -17762,17 +17770,18 @@ more information."
    ((run-hook-with-args-until-success 'org-shiftdown-hook))
    ((and org-support-shift-select (org-region-active-p))
     (org-call-for-shift-select 'next-line))
-   ((org-at-timestamp-p 'lax)
+   ((and (not (eq org-support-shift-select 'everywhere))
+         (org-at-timestamp-p 'lax))
     (call-interactively (if org-edit-timestamp-down-means-later
 			    'org-timestamp-up 'org-timestamp-down)))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 org-priority-enable-commands
 	 (org-at-heading-p))
     (call-interactively 'org-priority-down))
    ((and (not org-support-shift-select) (org-at-item-p))
     (call-interactively 'org-next-item))
    ((org-clocktable-try-shift 'down arg))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-table-p))
     (org-table-move-cell-down))
    ((run-hook-with-args-until-success 'org-shiftdown-final-hook))
@@ -17804,8 +17813,10 @@ variable for more information."
    ((run-hook-with-args-until-success 'org-shiftright-hook))
    ((and org-support-shift-select (org-region-active-p))
     (org-call-for-shift-select 'forward-char))
-   ((org-at-timestamp-p 'lax) (call-interactively 'org-timestamp-up-day))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (eq org-support-shift-select 'everywhere))
+         (org-at-timestamp-p 'lax))
+    (call-interactively 'org-timestamp-up-day))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-heading-p))
     (let ((org-inhibit-logging
 	   (not org-treat-S-cursor-todo-selection-as-state-change))
@@ -17813,15 +17824,15 @@ variable for more information."
 	   (not org-treat-S-cursor-todo-selection-as-state-change)))
       (org-call-with-arg 'org-todo 'right)))
    ((or (and org-support-shift-select
-	     (not (eq org-support-shift-select 'always))
+	     (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	     (org-at-item-bullet-p))
 	(and (not org-support-shift-select) (org-at-item-p)))
     (org-call-with-arg 'org-cycle-list-bullet nil))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-property-p))
     (call-interactively 'org-property-next-allowed-value))
    ((org-clocktable-try-shift 'right arg))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-table-p))
     (org-table-move-cell-right))
    ((run-hook-with-args-until-success 'org-shiftright-final-hook))
@@ -17853,8 +17864,10 @@ variable for more information."
    ((run-hook-with-args-until-success 'org-shiftleft-hook))
    ((and org-support-shift-select (org-region-active-p))
     (org-call-for-shift-select 'backward-char))
-   ((org-at-timestamp-p 'lax) (call-interactively 'org-timestamp-down-day))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (eq org-support-shift-select 'everywhere))
+         (org-at-timestamp-p 'lax))
+    (call-interactively 'org-timestamp-down-day))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-heading-p))
     (let ((org-inhibit-logging
 	   (not org-treat-S-cursor-todo-selection-as-state-change))
@@ -17862,15 +17875,15 @@ variable for more information."
 	   (not org-treat-S-cursor-todo-selection-as-state-change)))
       (org-call-with-arg 'org-todo 'left)))
    ((or (and org-support-shift-select
-	     (not (eq org-support-shift-select 'always))
+	     (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	     (org-at-item-bullet-p))
 	(and (not org-support-shift-select) (org-at-item-p)))
     (org-call-with-arg 'org-cycle-list-bullet 'previous))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-property-p))
     (call-interactively 'org-property-previous-allowed-value))
    ((org-clocktable-try-shift 'left arg))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-table-p))
     (org-table-move-cell-left))
    ((run-hook-with-args-until-success 'org-shiftleft-final-hook))
@@ -17884,7 +17897,7 @@ variable for more information."
   (cond
    ((and org-support-shift-select (org-region-active-p))
     (org-call-for-shift-select 'forward-word))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-heading-p))
     (org-call-with-arg 'org-todo 'nextset))
    (org-support-shift-select
@@ -17897,7 +17910,7 @@ variable for more information."
   (cond
    ((and org-support-shift-select (org-region-active-p))
     (org-call-for-shift-select 'backward-word))
-   ((and (not (eq org-support-shift-select 'always))
+   ((and (not (memq org-support-shift-select '(always except-timestamps everywhere)))
 	 (org-at-heading-p))
     (org-call-with-arg 'org-todo 'previousset))
    (org-support-shift-select
@@ -17909,7 +17922,10 @@ variable for more information."
 Optional argument N tells to change by that many units."
   (interactive "P")
   (if (and (org-at-clock-log-p) (org-at-timestamp-p 'lax))
-      (let (org-support-shift-select)
+      (let ((org-support-shift-select
+             (if (eq org-support-shift-select 'everywhere)
+                 org-support-shift-select
+               nil)))
 	(org-clock-timestamps-up n))
     (user-error "Not at a clock log")))
 
@@ -17918,7 +17934,10 @@ Optional argument N tells to change by that many units."
 Optional argument N tells to change by that many units."
   (interactive "P")
   (if (and (org-at-clock-log-p) (org-at-timestamp-p 'lax))
-      (let (org-support-shift-select)
+      (let ((org-support-shift-select
+             (if (eq org-support-shift-select 'everywhere)
+                 org-support-shift-select
+               nil)))
 	(org-clock-timestamps-down n))
     (user-error "Not at a clock log")))
 
