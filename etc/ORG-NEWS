@@ -149,6 +149,20 @@ header argument will be updated. This allows for the cache feature to
 still work when a block is evaluated indirectly to resolve a reference
 in another block.
 
+*** ox-html: When able, prevent code block line numbers from being included in copy/paste actions
+
+Previously, HTML export of code blocks that included line numbers
+would prepend the numbers to the same html element as the line of code
+(wrapped in a ~<span>~).  Therefore, if you highlighted the line in a
+browser to copy/paste the code block, the line numbers were also
+highlighted and copied.
+
+Now, the line number is still prepended and wrapped in a ~<span>~ in
+addition to being added to a data attribute, ~data-linenr~, on that
+~<span>~.  The default CSS has been modified so that you can now
+highlight and copy/paste multiple lines from a code block without
+having the line numbers included.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
