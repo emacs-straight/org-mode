@@ -449,7 +449,7 @@ current time."
             (save-excursion
               (let ((end (point)))
                 (skip-chars-backward " \t")
-                (remove-text-properties (point) end '(face t))))
+                (remove-text-properties (point) end '(face t mouse-face t keymap t help-echo t))))
 	    (insert-before-markers
 	     (org-habit-build-graph
 	      habit
