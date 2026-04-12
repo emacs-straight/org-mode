@@ -1331,6 +1331,13 @@ CLOCK: [2023-10-13 Fri 14:40]--[2023-10-13 Fri 14:51] =>  0:11"
    (org-test-with-temp-text
        "#+BEGIN: myblock :param1 val1 :param2 val2\nText\n#+END:"
      (org-element-map (org-element-parse-buffer) 'dynamic-block 'identity)))
+  (org-test-with-temp-text
+      "#+BEGIN: block-with-dashes :param1 val1 :param2 val2\nText\n#+END:"
+    (org-element-map (org-element-parse-buffer) 'dynamic-block
+      (lambda (block)
+        (should
+         (equal "block-with-dashes"
+                (org-element-property :block-name block))))))
   ;; Ignore case.
   (should
    (org-test-with-temp-text
