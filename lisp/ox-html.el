@@ -441,7 +441,13 @@ This affects IDs that are determined from the ID property.")
   #org-div-home-and-up
    { text-align: right; font-size: 70%; white-space: nowrap; }
   textarea { overflow-x: auto; }
-  .linenr { font-size: smaller }
+  .linenr {
+    font-size: smaller;
+    @supports (content: attr(data-linenr)) {
+      visibility: hidden;
+      &::before { content: attr(data-linenr); visibility: visible; }
+    }
+  }
   .code-highlighted { background-color: #ffff00; }
   .org-info-js_info-navigation { border-style: none; }
   #org-info-js_console-label
@@ -2473,8 +2479,8 @@ wrapped in code elements."
 	     (concat
 	      ;; Add line number, if needed.
 	      (when num-start
-		(format "<span class=\"linenr\">%s</span>"
-			(format num-fmt line-num)))
+                (let ((ln (format num-fmt line-num)))
+		  (format "<span data-linenr=\"%s\" class=\"linenr\">%s</span>" ln ln)))
 	      ;; Transcoded src line.
 	      (if wrap-lines
 		  (format "<code%s>%s</code>"
@@ -3109,7 +3115,8 @@ INFO is a plist containing export properties."
 	      (concat (file-name-as-directory org-preview-latex-image-directory)
 		      (file-name-sans-extension
 		       (file-name-nondirectory bfn)))
-	      cache-dir (file-name-directory (plist-get info :output-file)))
+	      cache-dir (file-name-directory
+                         (or (plist-get info :output-file) bfn)))
 	;; Re-create LaTeX environment from original buffer in
 	;; temporary buffer so that dvipng/imagemagick can properly
 	;; turn the fragment into an image.

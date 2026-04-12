@@ -18648,13 +18648,12 @@ You can customize every aspect (/capability/) of citation handling
 using built-in or external /citation processors/.
 
 Org mode ships with several built-in citation processors tailored to
-work with LaTeX export and BibTeX bibliographies (=bibtex=,
-=biblatex=, and =natbib= processors), or with more generic formats
-described using [[https://citationstyles.org/][Citation Style
-Language]] (=csl= processor).
-The default citation processor is =basic= - it works with arbitrary
-export formats and recognizes both BibTeX and CSL bibliographies.
-More citation processors are distributed as Emacs packages.
+work with LaTeX export and BibTeX bibliographies, or with more generic
+formats described using [[https://citationstyles.org/][Citation Style
+Language]].  The default citation processor is =basic= - it works with
+arbitrary export formats and recognizes both BibTeX and CSL
+bibliographies.  More citation processors are distributed as Emacs
+packages.
 
 #+vindex: org-cite-activate-processor
 #+vindex: org-cite-follow-processor
@@ -18669,6 +18668,84 @@ select which processor to use for every citation capability:
 - follow :: At-point actions on citations via ~org-open-at-point~.
 - insert :: Add and edit citations via ~org-cite-insert~.
 - export :: Via different libraries for different target formats.
+
+** Citation export processors
+
+Org currently includes the following export processors:
+
+- Two processors can export to a variety of formats, including =latex=
+  (and therefore =pdf=), =html=, =odt= and plain (UTF8) text:
+
+  - basic :: a basic export processor, well adapted to situations
+    where backward compatibility is not a requirement and formatting
+    needs are minimal;
+
+  - csl :: this export processor uses format files written in
+    [[https://en.wikipedia.org/wiki/Citation_Style_Language][Citation
+    Style Language]] via
+    [[https://github.com/andras-simonyi/citeproc-el][citeproc-el]];
+
+- In contrast, three other processors target LaTeX and LaTeX-derived
+  formats exclusively:
+
+  - bibtex :: this export processor uses BibTeX, the historical
+    bibliographic processor used with LaTeX, thus allowing the use of
+    data and style files compatible with this processor (including a
+    large number of publishers' styles).  It only supports LaTeX's
+    =\cite= and =\nocite= commands.
+
+  - natbib :: as with the =bibtex= processor, but using the LaTeX
+    package =natbib=, allowing more stylistic variants than LaTeX's
+    =\cite= command.
+
+  - biblatex :: this backend allows the use of data and formats
+    prepared for BibLaTeX, an alternate bibliographic processor used
+    with LaTeX, which overcomes some serious BibTeX limitations, but
+    has not (yet?)\nbsp{}been widely adopted by publishers.
+
+#+cindex: @samp{CITE_EXPORT}, keyword
+The =CITE_EXPORT= keyword specifies the export processor, citation
+style, and bibliography style; for example (all arguments are
+optional)
+
+: #+cite_export: [export processor name] [bibliography style] [default citation style]
+: #+cite_export: basic author-year author
+
+#+texinfo: @noindent
+specifies the =basic= export processor with citations inserted as
+author's name and references indexed by author's names and year;
+
+: #+cite_export: csl /some/path/to/vancouver-brackets.csl
+
+#+texinfo: @noindent
+specifies the =csl= processor and CSL style, which in this case
+defines numeric citations and numeric references according to the
+=Vancouver= specification (as style used in many medical journals),
+following a typesetting variation putting citations between brackets;
+
+: #+cite_export: natbib kluwer
+
+#+texinfo: @noindent
+specifies the =natbib= export processor with a label citation style
+conformant to the Harvard style and the specification of the
+Wolkers-Kluwer publisher; since it relies on the ~bibtex~ processor of
+your LaTeX installation, it won't export to anything but PDF.
+
+: #+cite_export: biblatex numeric,backend=bibtex
+
+#+vindex: org-cite-biblatex-options
+#+texinfo: @noindent
+specifies the =biblatex= export processor with the default =numeric=
+style and the =bibtex= backend.  Always define the style first and then
+the rest of load-time options for the =biblatex=
+package.  Alternatively, you can use the ~key=val,key=val~ format for
+the options as documented in the =biblatex= package documentation:
+
+: #+cite_export: biblatex backend=bibtex,style=numeric
+
+The ~org-cite-biblatex-options~ variable in your Emacs configuration
+uses this format.  It will only export to PDF, since it relies on the
+~biblatex~ processor of your LaTeX installation.
 
 ** Citations
 
@@ -18913,84 +18990,6 @@ locator =p. 3-4= might be rendered "pp. 3--4" or just "3--4" in
 export, depending on the CSL style.
 
 : [cite:see @Tarski1965 p. 3-4 for an example]
-
-** Citation export processors
-
-Org currently includes the following export processors:
-
-- Two processors can export to a variety of formats, including =latex=
-  (and therefore =pdf=), =html=, =odt= and plain (UTF8) text:
-
-  - basic :: a basic export processor, well adapted to situations
-    where backward compatibility is not a requirement and formatting
-    needs are minimal;
-
-  - csl :: this export processor uses format files written in
-    [[https://en.wikipedia.org/wiki/Citation_Style_Language][Citation
-    Style Language]] via
-    [[https://github.com/andras-simonyi/citeproc-el][citeproc-el]];
-
-- In contrast, three other processors target LaTeX and LaTeX-derived
-  formats exclusively:
-
-  - bibtex :: this export processor uses BibTeX, the historical
-    bibliographic processor used with LaTeX, thus allowing the use of
-    data and style files compatible with this processor (including a
-    large number of publishers' styles).  It only supports LaTeX's
-    =\cite= and =\nocite= commands.
-
-  - natbib :: as with the =bibtex= processor, but using the LaTeX
-    package =natbib=, allowing more stylistic variants than LaTeX's
-    =\cite= command.
-
-  - biblatex :: this backend allows the use of data and formats
-    prepared for BibLaTeX, an alternate bibliographic processor used
-    with LaTeX, which overcomes some serious BibTeX limitations, but
-    has not (yet?)\nbsp{}been widely adopted by publishers.
-
-#+cindex: @samp{CITE_EXPORT}, keyword
-The =CITE_EXPORT= keyword specifies the export processor, citation
-style, and bibliography style; for example (all arguments are
-optional)
-
-: #+cite_export: [export processor name] [bibliography style] [default citation style]
-: #+cite_export: basic author-year author
-
-#+texinfo: @noindent
-specifies the =basic= export processor with citations inserted as
-author's name and references indexed by author's names and year;
-
-: #+cite_export: csl /some/path/to/vancouver-brackets.csl
-
-#+texinfo: @noindent
-specifies the =csl= processor and CSL style, which in this case
-defines numeric citations and numeric references according to the
-=Vancouver= specification (as style used in many medical journals),
-following a typesetting variation putting citations between brackets;
-
-: #+cite_export: natbib kluwer
-
-#+texinfo: @noindent
-specifies the =natbib= export processor with a label citation style
-conformant to the Harvard style and the specification of the
-Wolkers-Kluwer publisher; since it relies on the ~bibtex~ processor of
-your LaTeX installation, it won't export to anything but PDF.
-
-: #+cite_export: biblatex numeric,backend=bibtex
-
-#+vindex: org-cite-biblatex-options
-#+texinfo: @noindent
-specifies the =biblatex= export processor with the default =numeric=
-style and the =bibtex= backend.  Always define the style first and then
-the rest of load-time options for the =biblatex=
-package.  Alternatively, you can use the ~key=val,key=val~ format for
-the options as documented in the =biblatex= package documentation:
-
-: #+cite_export: biblatex backend=bibtex,style=numeric
-
-The ~org-cite-biblatex-options~ variable in your Emacs configuration
-uses this format.  It will only export to PDF, since it relies on the
-~biblatex~ processor of your LaTeX installation.
 
 ** Bibliography printing
 

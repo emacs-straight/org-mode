@@ -442,6 +442,14 @@ current time."
 	    (delete-char (min (+ 1 org-habit-preceding-days
 				 org-habit-following-days)
 			      (- (line-end-position) (point))))
+            ;; `move-to-column' uses `insert-and-inherit', which
+            ;; is not what we want when adding tabs/spaces past
+            ;; something like underlined link.
+            ;; Cleanup up faces.
+            (save-excursion
+              (let ((end (point)))
+                (skip-chars-backward " \t")
+                (remove-text-properties (point) end '(face t mouse-face t keymap t help-echo t))))
 	    (insert-before-markers
 	     (org-habit-build-graph
 	      habit
