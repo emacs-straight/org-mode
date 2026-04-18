@@ -95,6 +95,7 @@ For example, it could be set to \"allowframebreaks\"."
   :group 'org-export-beamer
   :version "24.4"
   :package-version '(Org . "8.0")
+  :safe #'string-or-null-p
   :type '(choice
 	  (const :tag "Do not insert a Beamer theme" nil)
 	  (string :tag "Beamer theme")))
@@ -129,12 +130,14 @@ close   The closing string of the environment."
 (defcustom org-beamer-outline-frame-title "Outline"
   "Default title of a frame containing an outline."
   :group 'org-export-beamer
+  :safe #'stringp
   :type '(string :tag "Outline frame title"))
 
 (defcustom org-beamer-outline-frame-options ""
   "Outline frame options appended after \\begin{frame}.
 You might want to put e.g. \"allowframebreaks=0.9\" here."
   :group 'org-export-beamer
+  :safe #'stringp
   :type '(string :tag "Outline frame options"))
 
 
@@ -144,6 +147,7 @@ The format string should have at most one \"%s\"-expression,
 which is replaced with the subtitle."
   :group 'org-export-beamer
   :version "26.1"
+  :safe #'stringp
   :package-version '(Org . "8.3")
   :type '(string :tag "Format string"))
 
