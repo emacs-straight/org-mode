@@ -3707,6 +3707,7 @@ A string will be inserted as-is in the header of the document."
   :group 'org-export-latex
   :set 'org-set-packages-alist
   :get 'org-get-packages-alist
+  :safe #'listp
   :package-version '(Org . "9.7")
   :type '(repeat
 	  (choice
@@ -3748,6 +3749,7 @@ Make sure that you only list packages here which:
     `org-latex-default-packages-alist'."
   :group 'org-latex
   :group 'org-export-latex
+  :safe #'listp
   :set 'org-set-packages-alist
   :get 'org-get-packages-alist
   :type
@@ -16941,6 +16943,11 @@ holder is missing, the positive one (without the \"NO-\") will be
 assumed to be present at the end of the template.
 DEF-PKG and PKG are assumed to be alists of options/packagename lists.
 EXTRA is a string.
+
+Note that setting `org-latex-default-packages-alist' to nil is equivalent
+to [NO-DEFAULT-PACKAGES] and setting `org-latex-packages-alist' to nil is
+equivalent to [NO-PACKAGES].
+
 SNIPPETS-P indicates if this is run to create snippet images for HTML."
   (let (rpl (end ""))
     ;; (message "Template:\n%s" tpl)

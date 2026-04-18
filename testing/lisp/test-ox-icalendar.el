@@ -158,5 +158,114 @@ SCHEDULED: <2023-03-26 Sun .+1m>"
             (should (not (search-forward "RRULE:FREQ=MONTHLY;BYDAY=1SU" nil t)))))
       (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
 
+(ert-deftest test-ox-icalendar/export-block ()
+  "Test export blocks are exported verbatim."
+  (let ((tmp-ics (org-test-with-temp-text-in-file
+                  "* Test event
+:PROPERTIES:
+:ID:       b17d8f92-1beb-442e-be4d-d2060fa3c7ff
+:END:
+<2023-03-30 Thu>
+
+#+begin_export icalendar
+CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234
+#+end_export"
+                  (expand-file-name (org-icalendar-export-to-ics)))))
+    (unwind-protect
+        (with-temp-buffer
+          (insert-file-contents tmp-ics)
+          (save-excursion
+            (should (search-forward "SUMMARY:Test event")))
+          (save-excursion
+            (should (search-forward "CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234"))))
+      (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
+
+(ert-deftest test-ox-icalendar/keyword ()
+  "Test keywords are exported verbatim."
+  (let ((tmp-ics (org-test-with-temp-text-in-file
+                  "* Test event
+:PROPERTIES:
+:ID:       b17d8f92-1beb-442e-be4d-d2060fa3c7ff
+:END:
+<2023-03-30 Thu>
+
+#+ICALENDAR: CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234"
+                  (expand-file-name (org-icalendar-export-to-ics)))))
+    (unwind-protect
+        (with-temp-buffer
+          (insert-file-contents tmp-ics)
+          (save-excursion
+            (should (search-forward "SUMMARY:Test event")))
+          (save-excursion
+            (should (search-forward "CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234"))))
+      (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
+
+(ert-deftest test-ox-icalendar/list ()
+  "Test lists are exported in DESCRIPTION."
+  (let ((tmp-ics (org-test-with-temp-text-in-file
+                  "* Test event
+:PROPERTIES:
+:ID:       b17d8f92-1beb-442e-be4d-d2060fa3c7ff
+:END:
+<2023-03-30 Thu>
+
+- Item 1
+- Item 2
+- Item 3"
+                  (expand-file-name (org-icalendar-export-to-ics)))))
+    (unwind-protect
+        (with-temp-buffer
+          (insert-file-contents tmp-ics)
+          (save-excursion
+            (should (search-forward "SUMMARY:Test event")))
+          (save-excursion
+            (should (search-forward "• Item 1"))))
+      (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
+
+(ert-deftest test-ox-icalendar/fixed-width ()
+  "Test that fixed width lines are exported in DESCRIPTION."
+  (let ((tmp-ics (org-test-with-temp-text-in-file
+                  "* Test event
+:PROPERTIES:
+:ID:       b17d8f92-1beb-442e-be4d-d2060fa3c7ff
+:END:
+<2023-03-30 Thu>
+
+: Hello world"
+                  (expand-file-name (org-icalendar-export-to-ics)))))
+    (unwind-protect
+        (with-temp-buffer
+          (insert-file-contents tmp-ics)
+          (save-excursion
+            (should (search-forward "SUMMARY:Test event")))
+          (save-excursion
+            (should (search-forward "Hello world"))))
+      (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
+
+(ert-deftest test-ox-icalendar/inline-task-keyword ()
+  "Test that keywords are not included from inline tasks"
+  (let ((tmp-ics (org-test-with-temp-text-in-file
+                  "* This is test
+<2026-03-15 Sun>
+foo
+- item
+: fixed
+*************** this is test
+<2026-03-17 Tue>
+#+ICALENDAR: CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234
+*************** END
+** More test
+<2026-03-16 Mon>
+"
+                  (expand-file-name (org-icalendar-export-to-ics)))))
+    (unwind-protect
+        (with-temp-buffer
+          (insert-file-contents tmp-ics)
+          (save-excursion
+            (should (search-forward "CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234")))
+          (save-excursion
+            (should (not (search-forward "CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234" nil t 2)))))
+      (when (file-exists-p tmp-ics) (delete-file tmp-ics)))))
+
 (provide 'test-ox-icalendar)
 ;;; test-ox-icalendar.el ends here
