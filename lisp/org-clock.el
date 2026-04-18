@@ -1919,13 +1919,13 @@ to, overriding the existing value of `org-clock-out-switch-to-state'."
 (defun org-clock-timestamps-up (&optional n)
   "Increase CLOCK timestamps at cursor.
 Optional argument N tells to change by that many units."
-  (interactive "P")
+  (interactive "P" org-mode)
   (org-clock-timestamps-change 'up n))
 
 (defun org-clock-timestamps-down (&optional n)
   "Decrease CLOCK timestamps at cursor.
 Optional argument N tells to change by that many units."
-  (interactive "P")
+  (interactive "P" org-mode)
   (org-clock-timestamps-change 'down n))
 
 (defun org-clock-timestamps-change (updown &optional n)
@@ -2197,7 +2197,7 @@ With `\\[universal-argument] \ \\[universal-argument] \
 echo area.
 
 Use `\\[org-clock-remove-overlays]' to remove the subtree times."
-  (interactive "P")
+  (interactive "P" org-mode)
   (org-clock-remove-overlays)
   (let* ((todayp (equal arg '(4)))
 	 (customp (member arg '((16) today yesterday
@@ -2271,7 +2271,7 @@ on a headline."
   "Remove the occur highlights from the buffer.
 If NOREMOVE is nil, remove this function from the
 `before-change-functions' in the current buffer."
-  (interactive)
+  (interactive nil org-mode)
   (unless org-inhibit-highlight-removal
     (mapc #'delete-overlay org-clock-overlays)
     (setq org-clock-overlays nil)
@@ -2341,7 +2341,7 @@ heading).
 
 When called with a prefix argument, move to the first clock table
 in the buffer and update it."
-  (interactive "P")
+  (interactive "P" org-mode)
   (org-clock-remove-overlays)
   (when arg
     (org-find-dblock "clocktable")
@@ -3247,7 +3247,7 @@ PROPERTIES: The list properties specified in the `:properties' parameter
 (defun org-clock-update-time-maybe ()
   "If this is a CLOCK line, update it and return t.
 Otherwise, return nil."
-  (interactive)
+  (interactive nil org-mode)
   (let ((origin (point))) ;; `save-excursion' may not work when deleting.
     (prog1
         (save-excursion

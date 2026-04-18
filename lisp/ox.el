@@ -3241,7 +3241,7 @@ the user will be prompted for a category.
 
 If SUBTREEP is non-nil, export configuration will be set up
 locally for the subtree through node properties."
-  (interactive)
+  (interactive nil org-mode)
   (unless (derived-mode-p 'org-mode) (user-error "Not in an Org mode buffer"))
   (when (and subtreep (org-before-first-heading-p))
     (user-error "No subtree to set export options for"))
@@ -7047,13 +7047,13 @@ removed beforehand.  Return the new stack."
 
 (defun org-export-stack-refresh ()
   "Refresh the export stack."
-  (interactive)
+  (interactive nil org-export-stack-mode)
   (tabulated-list-print t))
 
 (defun org-export-stack-remove (&optional source)
   "Remove export results at point from stack.
 If optional argument SOURCE is non-nil, remove it instead."
-  (interactive)
+  (interactive nil org-export-stack-mode)
   (let ((source (or source (org-export--stack-source-at-point))))
     (setq org-export-stack-contents
 	  (cl-remove-if (lambda (el) (equal (car el) source))
@@ -7063,7 +7063,7 @@ If optional argument SOURCE is non-nil, remove it instead."
   "View export results at point in stack.
 With an optional prefix argument IN-EMACS, force viewing files
 within Emacs."
-  (interactive "P")
+  (interactive "P" org-export-stack-mode)
   (let ((source (org-export--stack-source-at-point)))
     (cond ((processp source)
 	   (switch-to-buffer-other-window (process-buffer source)))

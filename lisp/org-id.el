@@ -310,7 +310,7 @@ This variable has the same form as `org-refile-targets', which see."
   "Create an ID for the current entry and return it.
 If the entry already has an ID, just return it.
 With optional argument FORCE, force the creation of a new ID."
-  (interactive "P")
+  (interactive "P" org-mode)
   (when force
     (org-entry-put (point) "ID" nil))
   (org-id-get (point) 'create))
@@ -319,7 +319,7 @@ With optional argument FORCE, force the creation of a new ID."
 (defun org-id-copy ()
   "Copy the ID of the entry at point to the kill ring.
 Create an ID if necessary."
-  (interactive)
+  (interactive nil org-mode)
   (org-kill-new (org-id-get nil 'create)))
 
 (defvar org-id-overriding-file-name nil
@@ -793,7 +793,7 @@ description is then based on the search string target.
 When in addition `org-id-link-consider-parent-id' is non-nil, the
 ID can be inherited from a parent entry, with the search string
 used to still link to the current location."
-  (interactive)
+  (interactive nil org-mode)
   (when (and (buffer-file-name (buffer-base-buffer))
              (derived-mode-p 'org-mode))
     ;; Get the precise target first, in case looking for an id causes

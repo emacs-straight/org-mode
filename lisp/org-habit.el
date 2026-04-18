@@ -465,7 +465,7 @@ current time."
 
 (defun org-habit-toggle-habits ()
   "Toggle display of habits in an agenda buffer."
-  (interactive)
+  (interactive nil org-agenda)
   (org-agenda-check-type t 'agenda)
   (setq org-habit-show-habits (not org-habit-show-habits))
   (org-agenda-redo)
@@ -477,7 +477,7 @@ current time."
   "Toggle display of habits in agenda.
 With ARG toggle display of all vs. undone scheduled habits.
 See `org-habit-show-all-today'."
-  (interactive "P")
+  (interactive "P" org-agenda)
   (if (not arg)
       (org-habit-toggle-habits)
     (org-agenda-check-type t 'agenda)

@@ -101,7 +101,8 @@ Returns the resulting property list."
 (defun org-plot/goto-nearest-table ()
   "Move the point forward to the beginning of nearest table.
 Return value is the point at the beginning of the table."
-  (interactive) (move-beginning-of-line 1)
+  (interactive nil org-mode)
+  (move-beginning-of-line 1)
   (while (not (or (org-at-table-p) (< 0 (forward-line 1)))))
   (goto-char (org-table-begin)))
 
@@ -646,7 +647,7 @@ manner suitable for prepending to a user-specified script."
   "Plot table using gnuplot.  Gnuplot options can be specified with PARAMS.
 If not given options will be taken from the +PLOT
 line directly before or after the table."
-  (interactive)
+  (interactive nil org-mode)
   (org-require-package 'gnuplot)
   (save-window-excursion
     ;; `gnuplot-send-buffer-to-gnuplot' will display *gnuplot* buffer

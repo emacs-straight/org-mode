@@ -4454,7 +4454,7 @@ file-local settings.
 Export is done in a buffer named \"*Org LATEX Export*\", which
 will be displayed when `org-export-show-temporary-export-buffer'
 is non-nil."
-  (interactive)
+  (interactive nil org-mode)
   (defvar TeX-parse-self) ;; defined in tex.el
   (let (;; FIXME: Working around LaTeX-mode being broken in non-file buffers.
         ;; To be removed once we drop Emacs 30 and earlier, where the problem
@@ -4504,7 +4504,7 @@ between \"\\begin{document}\" and \"\\end{document}\".
 EXT-PLIST, when provided, is a property list with external
 parameters overriding Org default settings, but still inferior to
 file-local settings."
-  (interactive)
+  (interactive nil org-mode)
   (let ((outfile (org-export-output-file-name ".tex" subtreep)))
     (org-export-to-file 'latex outfile
       async subtreep visible-only body-only ext-plist)))
@@ -4538,7 +4538,7 @@ parameters overriding Org default settings, but still inferior to
 file-local settings.
 
 Return PDF file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((outfile (org-export-output-file-name ".tex" subtreep)))
     (org-export-to-file 'latex outfile
       async subtreep visible-only body-only ext-plist

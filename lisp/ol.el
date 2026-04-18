@@ -2062,7 +2062,8 @@ This command is designed for interactive use.  From Elisp, you can
 also use `org-link-preview-region'."
   (interactive (cons current-prefix-arg
                      (when (use-region-p)
-                       (list (region-beginning) (region-end)))))
+                       (list (region-beginning) (region-end))))
+               org-mode)
   (let* ((include-linked
           (cond
            ((member arg '(nil (4) (16)) ) nil)
@@ -2146,7 +2147,7 @@ also use `org-link-preview-region'."
 ;;;###autoload
 (defun org-link-preview-refresh ()
   "Assure display of link previews in buffer and refresh them."
-  (interactive)
+  (interactive nil org-mode)
   (org-link-preview-region nil t (point-min) (point-max)))
 
 (defun org-link-preview-region (&optional include-linked refresh beg end)
@@ -2179,7 +2180,7 @@ only if necessary.
 
 BEG and END define the considered part.  They default to the
 buffer boundaries with possible narrowing."
-  (interactive "P")
+  (interactive "P" org-mode)
   (when refresh (org-link-preview-clear beg end))
   (org-with-point-at (or beg (point-min))
     (let ((case-fold-search t)
@@ -2260,7 +2261,8 @@ Previews are generated from the specs in
 
 (defun org-link-preview-clear (&optional beg end)
   "Clear link previews in region BEG to END."
-  (interactive (and (use-region-p) (list (region-beginning) (region-end))))
+  (interactive (and (use-region-p) (list (region-beginning) (region-end)))
+               org-mode)
   (let* ((beg (or beg (point-min)))
          (end (or end (point-max)))
          (overlays (overlays-in beg end)))
@@ -2463,7 +2465,7 @@ PATH is the command to execute, as a string."
   "Move forward to the next link.
 If the link is in hidden text, expose it.  When SEARCH-BACKWARD
 is non-nil, move backward."
-  (interactive)
+  (interactive nil org-mode)
   (let ((pos (point))
 	(search-fun (if search-backward #'re-search-backward
 		      #'re-search-forward)))
@@ -2505,13 +2507,13 @@ is non-nil, move backward."
 (defun org-previous-link ()
   "Move backward to the previous link.
 If the link is in hidden text, expose it."
-  (interactive)
+  (interactive nil org-mode)
   (org-next-link t))
 
 ;;;###autoload
 (defun org-toggle-link-display ()
   "Toggle the literal or descriptive display of links in current buffer."
-  (interactive)
+  (interactive nil org-mode)
   (setq org-link-descriptive (not org-link-descriptive))
   (org-restart-font-lock))
 
@@ -2772,7 +2774,7 @@ docstring.  Otherwise, if `org-link-make-description-function' is
 non-nil, this function will be called with the link target, and
 the result will be the default link description.  When called
 non-interactively, don't allow editing the default description."
-  (interactive "P")
+  (interactive "P" org-mode)
   (let* ((wcf (current-window-configuration))
 	 (origbuf (current-buffer))
 	 (region (when (org-region-active-p)
@@ -2902,7 +2904,7 @@ When a universal prefix, do not delete the links from `org-stored-links'.
 When `ARG' is a number, insert the last N link(s).
 `PRE' and `POST' are optional arguments to define a string to
 prepend or to append."
-  (interactive "P")
+  (interactive "P" org-mode)
   (let ((org-link-keep-stored-after-insertion (equal arg '(4)))
 	(links (copy-sequence org-stored-links))
 	(pr (or pre "- "))
@@ -2922,7 +2924,7 @@ prepend or to append."
 ;;;###autoload
 (defun org-insert-last-stored-link (arg)
   "Insert the last link stored in `org-stored-links'."
-  (interactive "p")
+  (interactive "p" org-mode)
   (org-insert-all-links arg "" "\n"))
 
 ;;;###autoload
@@ -2970,7 +2972,7 @@ INHIBIT-MODIFY is passed to `looking-at'."
 (defun org-update-radio-target-regexp ()
   "Find all radio targets in this file and update the regular expression.
 Also refresh fontification if needed."
-  (interactive)
+  (interactive nil org-mode)
   (let ((old-regexp org-target-link-regexp)
 	;; Some languages, e.g., Chinese, do not use spaces to
         ;; separate words.  Also allow surrounding radio targets with

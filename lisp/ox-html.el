@@ -4081,7 +4081,7 @@ file-local settings.
 Export is done in a buffer named \"*Org HTML Export*\", which
 will be displayed when `org-export-show-temporary-export-buffer'
 is non-nil."
-  (interactive)
+  (interactive nil org-mode)
   (org-export-to-buffer 'html "*Org HTML Export*"
     async subtreep visible-only body-only ext-plist
     (lambda () (set-auto-mode t))))
@@ -4126,7 +4126,7 @@ parameters overriding Org default settings, but still inferior to
 file-local settings.
 
 Return output file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let* ((extension (concat
 		     (when (> (length org-html-extension) 0) ".")
 		     (or (plist-get ext-plist :html-extension)
