@@ -520,7 +520,6 @@ for the duration of the command.")
 
 (defun org-columns--display-here-title ()
   "Overlay the newline before the current line with the table title."
-  (interactive)
   (let ((title "")
 	(linum-offset (org-line-number-display-width 'columns))
 	(i 0))
@@ -1350,7 +1349,6 @@ properties drawers."
   "Summarize the values of PROPERTY hierarchically.
 Also update existing values for PROPERTY according to the first
 column specification."
-  (interactive)
   (let ((main-flag t)
 	(upcase-prop (upcase property)))
     (dolist (spec org-columns-current-fmt-compiled)

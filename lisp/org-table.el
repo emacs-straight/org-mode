@@ -5295,7 +5295,6 @@ to execute outside of tables."
 
 (defun orgtbl-error ()
   "Error when there is no default binding for a table key."
-  (interactive)
   (user-error "This key has no function outside tables"))
 
 ;; Fill in orgtbl keymap.

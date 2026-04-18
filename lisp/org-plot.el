@@ -109,7 +109,6 @@ Return value is the point at the beginning of the table."
   "Collect options from an org-plot `#+Plot:' line.
 Accepts an optional property list PARAMS, to which the options
 will be added.  Returns the resulting property list."
-  (interactive)
   (let ((line (thing-at-point 'line)))
     (if (string-match "#\\+PLOT: +\\(.*\\)$" line)
 	(org-plot/add-options-to-plist params (match-string 1 line))
@@ -149,7 +148,6 @@ Pass PARAMS through to `orgtbl-to-generic' when exporting TABLE."
 This means in a format appropriate for grid plotting by gnuplot.
 PARAMS specifies which columns of TABLE should be plotted as independent
 and dependent variables."
-  (interactive)
   (let* ((ind (- (plist-get params :ind) 1))
 	 (deps (if (plist-member params :deps)
 		   (mapcar (lambda (val) (- val 1)) (plist-get params :deps))

@@ -940,7 +940,6 @@ See also `org-src-mode-hook'."
   "Associate edit buffer with comint session.
 INFO should be a list similar in format to the return value of
 `org-babel-get-src-block-info'."
-  (interactive)
   (let ((session (cdr (assq :session (nth 2 info)))))
     (and session (not (string= session "none"))
 	 (let ((f (intern (format "org-babel-%s-associate-session"

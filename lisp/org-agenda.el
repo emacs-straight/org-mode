@@ -8566,7 +8566,6 @@ grouptags."
 
 (defun org-agenda-remove-filter (type)
   "Remove filter of type TYPE from the agenda buffer."
-  (interactive)
   (save-excursion
     (goto-char (point-min))
     (let ((inhibit-read-only t) pos)
