@@ -161,7 +161,7 @@ Otherwise, execute block according to header settings."
 
 (defun org-babel-lilypond-tangle ()
   "Tangle lilypond blocks, then `org-babel-lilypond-execute-tangled-ly'."
-  (interactive)
+  (interactive nil org-mode)
   (if (org-babel-tangle nil "yes" "lilypond")
       (org-babel-lilypond-execute-tangled-ly) nil))
 

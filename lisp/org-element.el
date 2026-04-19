@@ -7840,7 +7840,7 @@ When optional argument ALL is non-nil, reset cache in all Org
 buffers.
 When optional argument NO-PERSISTENCE is non-nil, do not try to update
 the cache persistence in the buffer."
-  (interactive "P")
+  (interactive "P" org-mode)
   (dolist (buffer (if all (buffer-list) (list (current-buffer))))
     (org-with-base-buffer buffer
       (when (and org-element-use-cache (derived-mode-p 'org-mode))

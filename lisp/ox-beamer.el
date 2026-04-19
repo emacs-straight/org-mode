@@ -1061,7 +1061,7 @@ file-local settings.
 Export is done in a buffer named \"*Org BEAMER Export*\", which
 will be displayed when `org-export-show-temporary-export-buffer'
 is non-nil."
-  (interactive)
+  (interactive nil org-mode)
   (org-export-to-buffer 'beamer "*Org BEAMER Export*"
     async subtreep visible-only body-only ext-plist
     (if (fboundp 'major-mode-remap)
@@ -1097,7 +1097,7 @@ parameters overriding Org default settings, but still inferior to
 file-local settings.
 
 Return output file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((file (org-export-output-file-name ".tex" subtreep)))
     (org-export-to-file 'beamer file
       async subtreep visible-only body-only ext-plist)))
@@ -1131,7 +1131,7 @@ parameters overriding Org default settings, but still inferior to
 file-local settings.
 
 Return PDF file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((file (org-export-output-file-name ".tex" subtreep)))
     (org-export-to-file 'beamer file
       async subtreep visible-only body-only ext-plist
@@ -1146,7 +1146,7 @@ the entry is set.
 
 In addition to this, the command will also set a tag as a visual
 aid, but the tag does not have any semantic meaning."
-  (interactive)
+  (interactive nil org-mode)
   ;; Make sure `org-beamer-environments-special' has a higher
   ;; priority than `org-beamer-environments-extra'.
   (let* ((envs (append org-beamer-environments-special

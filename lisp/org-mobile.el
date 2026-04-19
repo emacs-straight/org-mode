@@ -799,7 +799,7 @@ If nothing new has been added, return nil."
 (defun org-mobile-apply (&optional beg end)
   "Apply all change requests in the current buffer.
 If BEG and END are given, only do this in that region."
-  (interactive)
+  (interactive nil org-mode)
   (require 'org-archive)
   (setq org-mobile-last-flagged-files nil)
   (setq beg (or beg (point-min)) end (or end (point-max)))

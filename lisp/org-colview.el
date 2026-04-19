@@ -182,7 +182,7 @@ See `org-columns-summary-types' for details.")
 
 (defun org-columns-content ()
   "Switch to contents view while in columns view."
-  (interactive)
+  (interactive nil org-mode)
   (org-cycle-overview)
   (org-cycle-content))
 
@@ -520,7 +520,6 @@ for the duration of the command.")
 
 (defun org-columns--display-here-title ()
   "Overlay the newline before the current line with the table title."
-  (interactive)
   (let ((title "")
 	(linum-offset (org-line-number-display-width 'columns))
 	(i 0))
@@ -558,7 +557,7 @@ for the duration of the command.")
 ;;;###autoload
 (defun org-columns-remove-overlays ()
   "Remove all currently active column overlays."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (when org-columns-header-line-remap
     (face-remap-remove-relative org-columns-header-line-remap)
     (setq org-columns-header-line-remap nil))
@@ -585,7 +584,7 @@ for the duration of the command.")
 
 (defun org-columns-show-value ()
   "Show the full value of the property."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let ((value (get-char-property (point) 'org-columns-value)))
     (message "Value is: %s" (or value ""))))
 
@@ -593,7 +592,7 @@ for the duration of the command.")
 
 (defun org-columns-quit ()
   "Remove the column overlays and in this way exit column editing."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (with-silent-modifications
     (org-columns-remove-overlays)
     (let ((inhibit-read-only t))
@@ -614,12 +613,12 @@ for the duration of the command.")
 
 (defun org-columns-todo (&optional _arg)
   "Change the TODO state during column view."
-  (interactive "P")
+  (interactive "P" org-mode org-agenda-mode)
   (org-columns-edit-value "TODO"))
 
 (defun org-columns-toggle-or-columns-quit ()
   "Toggle checkbox at point, or quit column view."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (or (org-columns--toggle)
       (org-columns-quit)))
 
@@ -646,7 +645,7 @@ dynamic scoping for `org-overriding-columns-format'.")
 (defun org-columns-edit-value (&optional key)
   "Edit the value of the property at point in column view.
 Where possible, use the standard interface for changing this line."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (org-columns-check-computed)
   (let* ((col (current-column))
 	 (bol (line-beginning-position))
@@ -722,7 +721,7 @@ Where possible, use the standard interface for changing this line."
 
 (defun org-columns-edit-allowed ()
   "Edit the list of allowed values for the current property."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let* ((pom (or (org-get-at-bol 'org-marker)
 		  (org-get-at-bol 'org-hd-marker)
 		  (point)))
@@ -753,14 +752,14 @@ FUN is a function called with no argument."
 
 (defun org-columns-previous-allowed-value ()
   "Switch to the previous allowed value for this column."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (org-columns-next-allowed-value t))
 
 (defun org-columns-next-allowed-value (&optional previous nth)
   "Switch to the next allowed value for this column.
 When PREVIOUS is set, go to the previous value.  When NTH is
 an integer, select that value."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (org-columns-check-computed)
   (let* ((column (org-current-text-column))
          (visible-column (current-column))
@@ -836,7 +835,7 @@ around it."
 	      (list time-before time time-after)))))
 
 (defun org-columns-open-link (&optional arg)
-  (interactive "P")
+  (interactive "P" org-mode org-agenda-mode)
   (let ((value (get-char-property (point) 'org-columns-value)))
     (org-link-open-from-string value arg)))
 
@@ -852,7 +851,7 @@ When optional argument FMT-STRING is non-nil, use it as the
 current specifications.  This function also sets
 `org-columns-current-fmt-compiled' and
 `org-columns-current-fmt'."
-  (interactive)
+  (interactive nil org-mode)
   (let ((format
 	 (or fmt-string
 	     (org-entry-get nil "COLUMNS" t)
@@ -893,7 +892,7 @@ headline.  With a `\\[universal-argument]' prefix argument, GLOBAL,
 turn on column view for the whole buffer unconditionally.
 
 When COLUMNS-FMT-STRING is non-nil, use it as the column format."
-  (interactive "P")
+  (interactive "P" org-mode)
   (org-columns-remove-overlays)
   (setq-local org-columns-global global)
   (save-excursion
@@ -968,7 +967,7 @@ specification SPEC is provided, edit it instead.
 When optional argument ATTRIBUTES is provided, it should be a list of
 column specification attributes to create the new column
 non-interactively.  See `org-columns-compile-format' for details."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let ((new (or attributes
 		 (let ((prop
 			(completing-read
@@ -1003,7 +1002,7 @@ non-interactively.  See `org-columns-compile-format' for details."
 
 (defun org-columns-delete ()
   "Delete the column at point from column view."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
     (when (y-or-n-p (format "Are you sure you want to remove column %S? "
 			    (nth 1 spec)))
@@ -1019,12 +1018,12 @@ non-interactively.  See `org-columns-compile-format' for details."
 
 (defun org-columns-edit-attributes ()
   "Edit the attributes of the current column."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (org-columns-new (nth (org-current-text-column) org-columns-current-fmt-compiled)))
 
 (defun org-columns-widen (arg)
   "Make the column wider by ARG characters."
-  (interactive "p")
+  (interactive "p" org-mode org-agenda-mode)
   (let* ((n (org-current-text-column))
 	 (entry (nth n org-columns-current-fmt-compiled))
 	 (width (aref org-columns-current-maxwidths n)))
@@ -1035,13 +1034,13 @@ non-interactively.  See `org-columns-compile-format' for details."
 
 (defun org-columns-narrow (arg)
   "Make the column narrower by ARG characters."
-  (interactive "p")
+  (interactive "p" org-mode org-agenda-mode)
   (org-columns-widen (- arg)))
 
 (defun org-columns-move-up ()
   "In column view, move cursor up one row.
 When in agenda column view, also call `org-agenda-do-context-action'."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let ((col (current-column)))
     (forward-line -1)
     (while (and (org-invisible-p2) (not (bobp)))
@@ -1053,7 +1052,7 @@ When in agenda column view, also call `org-agenda-do-context-action'."
 (defun org-columns-move-down ()
   "In column view, move cursor down one row.
 When in agenda column view, also call `org-agenda-do-context-action'."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let ((col (current-column)))
     (forward-line 1)
     (while (and (org-invisible-p2) (not (eobp)))
@@ -1064,7 +1063,7 @@ When in agenda column view, also call `org-agenda-do-context-action'."
 
 (defun org-columns-move-right ()
   "Swap this column with the one to the right."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let* ((n (org-current-text-column))
 	 (cell (nthcdr n org-columns-current-fmt-compiled))
 	 e)
@@ -1088,7 +1087,7 @@ When in agenda column view, also call `org-agenda-do-context-action'."
 
 (defun org-columns-move-left ()
   "Swap this column with the one to the left."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (let* ((n (org-current-text-column)))
     (when (= n 0)
       (error "Cannot shift this column further to the left"))
@@ -1109,12 +1108,12 @@ With non-nil optional argument UP, move it up."
 
 (defun org-columns-move-row-down ()
   "Move the current table row down."
-  (interactive)
+  (interactive nil org-mode)
   (org-columns--move-row))
 
 (defun org-columns-move-row-up ()
   "Move the current table row up."
-  (interactive)
+  (interactive nil org-mode)
   (org-columns--move-row 'up))
 
 (defun org-columns-store-format ()
@@ -1176,7 +1175,7 @@ the current buffer."
 
 (defun org-columns-redo ()
   "Construct the column display again."
-  (interactive)
+  (interactive nil org-mode org-agenda-mode)
   (when org-columns-overlays
     (message "Recomputing columns...")
     (org-with-point-at org-columns-begin-marker
@@ -1350,7 +1349,6 @@ properties drawers."
   "Summarize the values of PROPERTY hierarchically.
 Also update existing values for PROPERTY according to the first
 column specification."
-  (interactive)
   (let ((main-flag t)
 	(upcase-prop (upcase property)))
     (dolist (spec org-columns-current-fmt-compiled)
@@ -1726,7 +1724,7 @@ definition."
 ;;;###autoload
 (defun org-columns-insert-dblock ()
   "Create a dynamic block capturing a column view table."
-  (interactive)
+  (interactive nil org-mode)
   (let ((id (completing-read
 	     "Capture columns (local, global, entry with :ID: property) [local]: "
 	     (append '(("global") ("local"))
@@ -1750,7 +1748,7 @@ definition."
 ;;;###autoload
 (defun org-agenda-columns ()
   "Turn on or update column view in the agenda."
-  (interactive)
+  (interactive nil org-agenda-mode)
   (org-columns-remove-overlays)
   (if (markerp org-columns-begin-marker)
       (move-marker org-columns-begin-marker (point))

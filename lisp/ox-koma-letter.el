@@ -912,7 +912,7 @@ file-local settings.
 Export is done in a buffer named \"*Org KOMA-LETTER Export*\".  It
 will be displayed if `org-export-show-temporary-export-buffer' is
 non-nil."
-  (interactive)
+  (interactive nil org-mode)
   (let (org-koma-letter-special-contents)
     (org-export-to-buffer 'koma-letter "*Org KOMA-LETTER Export*"
       async subtreep visible-only body-only ext-plist
@@ -952,7 +952,7 @@ When optional argument PUB-DIR is set, use it as the publishing
 directory.
 
 Return output file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((outfile (org-export-output-file-name ".tex" subtreep))
         (org-koma-letter-special-contents))
     (org-export-to-file 'koma-letter outfile
@@ -987,7 +987,7 @@ parameters overriding Org default settings, but still inferior to
 file-local settings.
 
 Return PDF file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((file (org-export-output-file-name ".tex" subtreep))
         (org-koma-letter-special-contents))
     (org-export-to-file 'koma-letter file

@@ -252,7 +252,7 @@ Optional argument TARGET-FILE can be used to specify a default
 export file for all source blocks.  Optional argument LANG-RE can
 be used to limit the exported source code blocks by languages
 matching a regular expression."
-  (interactive "P")
+  (interactive "P" org-mode)
   (run-hooks 'org-babel-pre-tangle-hook)
   ;; Possibly Restrict the buffer to the current code block
   (save-restriction

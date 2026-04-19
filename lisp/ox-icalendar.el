@@ -1143,7 +1143,7 @@ When optional argument BODY-ONLY is non-nil, only write code
 between \"BEGIN:VCALENDAR\" and \"END:VCALENDAR\".
 
 Return ICS file name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((file (buffer-file-name (buffer-base-buffer))))
     (when (and file org-icalendar-store-UID)
       (org-icalendar-create-uid file 'warn-user)))

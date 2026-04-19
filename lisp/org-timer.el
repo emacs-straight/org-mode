@@ -259,7 +259,7 @@ the buffer."
 (defun org-timer-item (&optional arg)
   "Insert a description-type item with the current timer value.
 Prefix argument ARG is passed to `org-timer'."
-  (interactive "P")
+  (interactive "P" org-mode)
   (let ((itemp (org-in-item-p)) (pos (point)))
     (cond
      ;; In a timer list, insert with `org-list-insert-item',

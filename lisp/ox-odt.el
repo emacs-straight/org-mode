@@ -4313,7 +4313,7 @@ parameters overriding Org default settings, but still inferior to
 file-local settings.
 
 Return output file's name."
-  (interactive)
+  (interactive nil org-mode)
   (let ((outfile (org-export-output-file-name ".odt" subtreep)))
     (if async
 	(org-export-async-start (lambda (f) (org-export-add-to-stack f 'odt))
