@@ -401,6 +401,18 @@ Fake test document
       (goto-char (point-min))
       (should (search-forward "\\documentclass[a4paper,12pt]{article}" nil t))))
 
+(ert-deftest test-ox-latex/latex-class-options3 ()
+  "Don't overwrite class options in class template"
+  (let ((org-latex-classes '(("my-letter" "\\documentclass[a4paper,12pt]{letter}"))))
+      (org-test-with-exported-text
+       'latex
+       "#+LATEX_CLASS: my-letter
+
+Fake test letter
+"
+      (goto-char (point-min))
+      (should (search-forward "\\documentclass[a4paper,12pt]{letter}" nil t)))))
+
 
 (ert-deftest test-ox-latex/latex-default-example-with-options ()
   "Test #+ATTR_LATEX: :options with custom environment."

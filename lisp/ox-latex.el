@@ -2021,10 +2021,10 @@ The default behaviour is to typeset with the Roman font family."
 (defun org-latex--mk-options (str)
   "Make STR be enclosed in [ ] or return an empty string if nil or empty.
 
-If STR is nil or an empty string, return an empty string.
+If STR is nil or an empty string, return STR.
 If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
 If the square brackets are missing, return STR enclosed in square brackets."
-  (if (or (not str) (length= str 0)) ""
+  (if (or (not str) (length= str 0)) str
     (save-match-data  ; just in case it is used in a search/replace context
       (let ((str (concat "[" str "]"))) ; make sure it is enclosed in []
         (replace-regexp-in-string  ; remove excess [ at the beginning
