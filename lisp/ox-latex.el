@@ -2055,15 +2055,15 @@ See initial version proposed by Juan Manuel Macías in URL
 If STR is nil or an empty string, return an empty string.
 If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
 If the square brackets are missing, return STR enclosed in square brackets."
-  (if (or (not str) (length= str 0)) ""
+  (if (or (null str) (equal str "")) str
     (save-match-data  ; just in case it is used in a search/replace context
-      (when (listp str)
-        (setq str (mapconcat #'identity str ",")))
-      (let ((str (concat "[" str "]"))) ; make sure it is enclosed in []
-        (replace-regexp-in-string  ; remove excess [ at the beginning
-         "\\`\\[+" "["
-         (replace-regexp-in-string ; remove excess ] at the end
-          "]+\\'" "]" str))))))
+      (replace-regexp-in-string  ; remove excess [ at the beginning
+       "\\`\\[+" "["
+       (replace-regexp-in-string ; remove excess ] at the end
+        "]+\\'" "]"
+        (if (stringp str)
+            (concat "[" str "]")
+          (concat "[" (mapconcat #'identity str ",")"]")))))))
 
 (defun org-latex--pdflatex-encode (lang)
   "Return the encoding for pdflatex based on LANG.

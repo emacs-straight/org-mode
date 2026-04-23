@@ -15656,7 +15656,7 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
 	with-hm inactive
 	(dm (max (nth 1 org-time-stamp-rounding-minutes) 1))
 	extra rem
-	ts time time0 fixnext clrgx)
+	ts time time-original time0 fixnext clrgx)
     (unless timestamp? (user-error "Not at a timestamp"))
     (if (and (not what) (eq timestamp? 'bracket))
 	(org-toggle-timestamp-type)
@@ -15688,6 +15688,8 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
       (when (string-match "^.\\{10\\}.*?[0-9]+:[0-9][0-9]" ts)
 	(setq with-hm t))
       (setq time0 (org-parse-time-string ts))
+      ;; Capture the original timestamp for direction validation later
+      (setq time-original (org-encode-time time0))
       (let ((increment n))
         (if (and updown
 	         (eq timestamp? 'minute)
@@ -15715,6 +15717,23 @@ When SUPPRESS-TMP-DELAY is non-nil, suppress delays like
                    (month :month)
                    (year :year))
                  increment)))))
+      ;; Validation if we're modifying hour or minute fields
+      (when (and with-hm
+                 (memq timestamp? '(hour minute))
+                 (not (zerop n)))
+        ;; Use time-less-p to compare the original timestamp to the
+        ;; new one so that we ensure that the direction was
+        ;; respected. In the case of the DST gap, normalization of the
+        ;; timestamp post-shift results in wrapping that does not
+        ;; match the intended direction e.g. 3:00 on the DST date
+        ;; shifted down by 5 minutes results in 3:55
+        (unless (if (> n 0)
+                    (time-less-p time-original time)
+                  (time-less-p time time-original))
+          (insert ts)
+          (user-error "Cannot shift %s into the DST gap (according to current timezone '%s')"
+                      ts
+                      (cadr (current-time-zone time-original)))))
       (when (and (memq timestamp? '(hour minute))
 		 extra
 		 (string-match "-\\([012][0-9]\\):\\([0-5][0-9]\\)" extra))
