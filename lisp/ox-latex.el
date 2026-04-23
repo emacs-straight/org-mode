@@ -2049,13 +2049,17 @@ See initial version proposed by Juan Manuel Macías in URL
     ;; (message "=> Scripts used in document: %s" scripts)
     scripts))
 
-(defun org-latex--mk-options (str)
+(defun org-latex--mk-options (str &optional keep-nil)
   "Make STR be enclosed in [ ] or return an empty string if nil or empty.
 
-If STR is nil or an empty string, return an empty string.
+If STR is nil or an empty string, return STR if KEEP-NIL is t or
+an empty string otherwise.
 If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
-If the square brackets are missing, return STR enclosed in square brackets."
-  (if (or (null str) (equal str "")) str
+If STR is a string that is not enclosed in [ ], return STR enclosed in square
+brackets.
+If STR is a list of string, return comma-separated concatenation enclosed in
+square brackets."
+  (if (or (null str) (equal str "")) (if keep-nil str "")
     (save-match-data  ; just in case it is used in a search/replace context
       (replace-regexp-in-string  ; remove excess [ at the beginning
        "\\`\\[+" "["
@@ -2087,7 +2091,7 @@ The first language in LANGS is considered the default language."
   ;; We get the encodings, then remove duplicates and finally reverse the order,
   ;; because the last encoding is used for the default language.
   (let* ((enc-list (mapcar #'org-latex--pdflatex-encode langs)))
-    (org-latex--mk-options (reverse (seq-uniq enc-list)))))
+    (or (org-latex--mk-options (reverse (seq-uniq enc-list))) "")))
 
 (defun org-latex--pdflatex-ldf (lang)
   "Return the ldf code for LANG from `org-latex-language-alist'.
@@ -2110,9 +2114,10 @@ Triggers an error for languages that are not based on ldf files.  See URL
 This is the recommended strategy for babel on pdflatex.
 LANGS is a list of Org language names.
 Mark first one with main="
-  (org-latex--mk-options
+  (or (org-latex--mk-options
    (concat "main="
-           (mapconcat #'org-latex--pdflatex-ldf langs ","))))
+           (mapconcat #'org-latex--pdflatex-ldf langs ",")))
+      "" ))
 
 (defun org-latex--pdflatex-fontconfig (info)
   "Return the font configuration preamble for pdflatex.
@@ -2248,7 +2253,7 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
            (when-let* ((fallback-name (alist-get font-family fallback-alist nil nil #'string=))
                        (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-name))))
              (setq features (cl-concatenate #'list features (list fallback-spec))))
-           (insert (org-latex--mk-options features)))
+           (insert (or (org-latex--mk-options features) "")))
          (insert "\n")))))
 
 
@@ -2269,7 +2274,7 @@ Extract the information from INFO."
     (with-temp-buffer
       (insert "\\usepackage{fontspec}\n")
       (insert "\\usepackage{polyglossia}\n")
-      (insert (format "\\usepackage%s{unicode-math}\n" (org-latex--mk-options unicode-math-options)))
+      (insert (format "\\usepackage%s{unicode-math}\n" (or (org-latex--mk-options unicode-math-options) "")))
       (org-latex--insert-fontspec compiler
                                   fontspec-config
                                   current-default-features
@@ -2288,7 +2293,7 @@ Extract the information from INFO."
                      (setq lang-variant (concat "variant=" lang-variant)))
                    (insert (format "\n\\set%slanguage%s{%s}"
                                    lang-type
-                                   (org-latex--mk-options lang-variant)
+                                   (or (org-latex--mk-options lang-variant) "")
                                    lang))
                    (setq lang-type "other"))))
       (cl-loop for (lang . props) in polyglossia-font-config
@@ -2305,9 +2310,10 @@ Extract the information from INFO."
                                  ;; override with the user's :script choice when it is not appropriate
                                  font-family ;; if rm, sf, or tt are defined
                                  (or (plist-get props :script) (plist-get lang-plist :polyglossia))
-                                 (org-latex--mk-options
-                                  (or (plist-get props :props)
-                                      (plist-get props :features)))  ;; add the additional properties
+                                 (or (org-latex--mk-options
+                                      (or (plist-get props :props)
+                                          (plist-get props :features)))
+                                     "")  ;; add the additional properties
                                  (plist-get props :font)))))   ;; last but not least the actual font.
       (buffer-string))))
 
@@ -2367,7 +2373,7 @@ Use fontspec as a last resort and when defined."
       (insert "\\tracinglostchars=2\n")
       ;; do *not* include languages here
       (insert (format "\\usepackage%s{unicode-math}\n"
-                      (org-latex--mk-options unicode-math-options)))
+                      (or (org-latex--mk-options unicode-math-options) "")))
       ;; jp and zh support:
       ;; use fontspec to configure fonts and babel to localize
       ;; FIXME: check for other languages
@@ -2408,7 +2414,7 @@ Use fontspec as a last resort and when defined."
             (cl-loop for (fname . fprops) in doc-fontspec
                      do (let ((font  (plist-get fprops :font))
                               (feats (plist-get fprops :features)))
-                          (insert "\\set" fname "font{" font "}\n" (org-latex--mk-options feats))))
+                          (insert "\\set" fname "font{" font "}\n" (or (org-latex--mk-options feats) ""))))
             (when with-cjk
               (when (string= compiler "lualatex")
                 (when (string= main-lang "zh")
@@ -2420,7 +2426,7 @@ Use fontspec as a last resort and when defined."
                               (if (string= compiler "lualatex") "\\zw" "em"))) ;; FIXME: Korean?
               (insert "\\linespread{1.333}")))))
       ;; FIXME: This works but needs to be fine-tuned:
-      (insert (format "\n\\usepackage%s{babel}" (org-latex--mk-options babel-options)))
+      (insert (format "\n\\usepackage%s{babel}" (or (org-latex--mk-options babel-options) "")))
       ;; import the main language with a babelprovide
       ;; it is the fist language in the list.
       ;; FIXME: plain "import" or "import=*" ?
@@ -2432,7 +2438,7 @@ Use fontspec as a last resort and when defined."
                          (provide-string (or (plist-get props :provide) "import")))
                     ;; \\babelprovide needs language and provide
                     (insert (format "\n\\babelprovide%s{%s}"
-                                    (org-latex--mk-options provide-string)
+                                    (or (org-latex--mk-options provide-string) "")
                                     (org-latex--get-babel-lang bab-lang)))))
       ;; support \babelfont with_out_ language like in
       ;; https://latex3.github.io/babel/guides/locale-tamil.html
@@ -2452,9 +2458,9 @@ Use fontspec as a last resort and when defined."
                       ;; \\babelfont{rm}[Renderer=Harfbuzz]{Amiri}
                       ;; \\babelfont[malayalam]{rm}[Renderer=Harfbuzz]{FreeSerif}
                       (insert (format "\n\\babelfont%s{%s}%s{%s}"
-                                      (org-latex--mk-options (and lang (org-latex--get-babel-lang lang)))
+                                      (or (org-latex--mk-options (and lang (org-latex--get-babel-lang lang))) "")
                                       (alist-get variant org-latex--long2short-family variant nil #'string=)
-                                      (org-latex--mk-options props)
+                                      (or (org-latex--mk-options props) "")
                                       font)))))
       (buffer-string))))
 
@@ -2743,7 +2749,8 @@ specified in `org-latex-default-packages-alist' or
   (let* ((class (plist-get info :latex-class))
 	 (class-template
 	  (or template
-	      (let* ((class-options (org-latex--mk-options (plist-get info :latex-class-options)))
+              ;; format `class-options' if `:latex-class-options' is not nil, else make it nil.
+	      (let* ((class-options (org-latex--mk-options (plist-get info :latex-class-options) t))
 		     (header (nth 1 (assoc class (plist-get info :latex-classes)))))
 		(and (stringp header)
 	             (mapconcat #'org-element-normalize-string
