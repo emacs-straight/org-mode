@@ -321,7 +321,7 @@ A random text.
      (goto-char (point-min))
      (should-not (search-forward "\\directlua" nil t))
      (goto-char (point-min))
-     (should (search-forward "\\setmainfont{FreeSans}" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSans}\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-features ()
   "Test that font features are generated when declared."
@@ -339,9 +339,9 @@ A random text.
 A random text.
 "
      (goto-char (point-min))
-     (should (search-forward "\\setmainfont{FreeSans}" nil t))
+     (should (search-forward "\\setmainfont{FreeSans}\n" nil t))
      (goto-char (point-min))
-     (should (search-forward "\\setmonofont{FreeMono}[Scale=MatchLowercase]" nil t)))))
+     (should (search-forward "\\setmonofont{FreeMono}[Scale=MatchLowercase]\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-directlua ()
   "Test that directlua block is created"
@@ -363,7 +363,7 @@ A random text with emoji: 👍
      (goto-char (point-min))
      (should (search-forward "\\directlua" nil t))
      (should (search-forward "Noto Color Emoji" nil t))
-     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-fallback-plist ()
   "Test that directlua block is created"
@@ -385,7 +385,7 @@ A random text with emoji: 👍
      (goto-char (point-min))
      (should (search-forward "\\directlua" nil t))
      (should (search-forward "Noto Color Emoji" nil t))
-     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-noemoji ()
   "Test that directlua block is not created because it is not needed
@@ -410,7 +410,7 @@ A random text without emojis.
      (goto-char (point-min))
      (should-not (search-forward "Noto Color Emoji" nil t))
      (goto-char (point-min))
-     (should (search-forward "\\setmainfont{FreeSerif}" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-unicode-math-config ()
   "Test that the unicode-math package can be passed options using
@@ -473,8 +473,8 @@ A random text without emojis.
 "
      ;; (message "--> %s" (buffer-string))
      (goto-char (point-min))
-     (should (search-forward "\\defaultfontfeatures{Ligatures=TeX,Numbers=OldStyle}" nil t))
-     (should (search-forward "\\setmainfont{FreeSerif}" nil t)))))
+     (should (search-forward "\\defaultfontfeatures{Ligatures=TeX,Numbers=OldStyle}\n" nil t))
+     (should (search-forward "\\setmainfont{FreeSerif}\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-babel-langs ()
   "Test that babel is handled correctly.
