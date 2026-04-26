@@ -5183,6 +5183,7 @@ The following commands are available:
      'match-hash :read-related t))
   (org-set-regexps-and-options)
   (add-to-invisibility-spec '(org-link))
+  (add-to-invisibility-spec '(org-emphasis))
   (org-fold-initialize (or (and (stringp org-ellipsis) (not (equal "" org-ellipsis)) org-ellipsis)
                            "..."))
   (make-local-variable 'org-link-descriptive)
@@ -5450,6 +5451,10 @@ stacked delimiters is N.  Escaping delimiters is not possible."
 (defsubst org-rear-nonsticky-at (pos)
   (add-text-properties (1- pos) pos (list 'rear-nonsticky org-nonsticky-props)))
 
+(defvar org-do-emphasis-hook nil
+  "Hook to run at the end of `org-do-emphasis-faces'.
+Match data from the emphasized text will be valid when called.")
+
 (defun org-do-emphasis-faces (limit)
   "Run through the buffer and emphasize strings."
   (let ((quick-re (format "\\([%s]\\|^\\)\\([~=*/_+]\\)"
@@ -5495,11 +5500,11 @@ stacked delimiters is N.  Escaping delimiters is not possible."
 	      (when (and org-hide-emphasis-markers
 			 (not (org-at-comment-p)))
 		(add-text-properties (match-end 4) (match-beginning 5)
-				     '(invisible t))
+				     '(invisible org-emphasis))
                 ;; https://orgmode.org/list/8b691a7f-6b62-d573-e5a8-80fac3dc9bc6@vodafonemail.de
                 (org-rear-nonsticky-at (match-beginning 5))
 		(add-text-properties (match-beginning 3) (match-end 3)
-				     '(invisible t))
+				     '(invisible org-emphasis))
                 ;; FIXME: This would break current behavior with point
                 ;; being adjusted before hidden emphasis marker when
                 ;; using M-b.  A proper fix would require custom
@@ -5507,7 +5512,7 @@ stacked delimiters is N.  Escaping delimiters is not possible."
                 ;; word constituents where appropriate.
                 ;; https://orgmode.org/list/87edl41jf0.fsf@localhost
                 ;; (org-rear-nonsticky-at (match-end 3))
-                )
+                (run-hooks 'org-do-emphasis-hook))
 	      (throw :exit t))))))))
 
 (defun org-emphasize (&optional char)
@@ -6379,16 +6384,21 @@ If TAG is a number, get the corresponding match group."
 			   (list 'font-lock-fontified t))
       (backward-char 1))))
 
+(defvar org-extra-unfontify-properties nil
+  "Extra properties to unfontify.
+Specify as `(PROP1 t PROP2 t ...)'.")
+
 (defun org-unfontify-region (beg end &optional _maybe_loudly)
   "Remove fontification and activation overlays from links."
   (font-lock-default-unfontify-region beg end)
   (with-silent-modifications
     (decompose-region beg end)
     (remove-text-properties beg end
-			    '(mouse-face t keymap t org-linked-text t
+			    `(mouse-face t keymap t org-linked-text t
 					 invisible t intangible t
 					 org-emphasis t
-                                         syntax-table t))
+                                         syntax-table t
+                                         ,@org-extra-unfontify-properties))
     (org-fold-core-update-optimization beg end)
     (org-remove-font-lock-display-properties beg end)))
 
