@@ -141,6 +141,7 @@ change is made."
 
 (defvar 'org-inside-mode)
 
+;; Not needed for v31+
 (defun org-inside--frame-changed (frame)
   "Handle window buffer change for windows on FRAME."
   (dolist (win (window-list frame))
@@ -198,6 +199,9 @@ markers.  Additionally, the markers can be temporarily unhidden.  See
    (org-inside-mode (org-inside--setup))
    (t (org-inside--teardown))))
 
+;; N.B. this will not be needed in v31+, as buffer-local
+;; window-buffer-change-functions for a buffer appearing and
+;; disappearing:
 (add-hook 'window-buffer-change-functions #'org-inside--frame-changed)
 
 (provide 'org-inside)
