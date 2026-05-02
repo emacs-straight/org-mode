@@ -150,7 +150,7 @@ change is made."
       (org-inside--clear-overlay win)
       (org-inside--restore-cursor win))))
 
-(defun org-inside--buffer-appeared (win)
+(defun org-inside--maybe-sense (&optional win)
   "Handle `org-inside' buffers appearing in window WIN."
   (with-current-buffer (window-buffer win)
     (when-let* ((csf (get-text-property (point) 'cursor-sensor-functions))
@@ -169,18 +169,20 @@ change is made."
   (cl-pushnew 'cursor-sensor-functions
               (buffer-local-value 'org-extra-unfontify-properties
                                   (current-buffer)))
-  (add-hook 'window-buffer-change-functions #'org-inside--buffer-appeared nil t)
+  (add-hook 'window-buffer-change-functions #'org-inside--maybe-sense nil t)
   (add-hook 'org-do-emphasis-hook #'org-inside--add-emphasis-props nil t)
-  (font-lock-flush))
+  (font-lock-flush) ;; does not call sensor functions
+  (org-inside--maybe-sense))
 
 (defun org-inside--teardown ()
   "Tear down `org-inside-mode' in buffer."
+  (org-inside--restore-cursor)
+  (org-inside--clear-overlay)
   (cursor-sensor-mode -1)
-    (setq-local org-extra-unfontify-properties
-                (delq 'cursor-sensor-functions org-extra-unfontify-properties))
-    (org-inside--clear-overlay)
-    (remove-hook 'window-buffer-change-functions #'org-inside--buffer-appeared t)
-    (remove-hook 'org-do-emphasis-hook #'org-inside--add-emphasis-props t))
+  (setq-local org-extra-unfontify-properties
+              (delq 'cursor-sensor-functions org-extra-unfontify-properties))
+  (remove-hook 'window-buffer-change-functions #'org-inside--maybe-sense t)
+  (remove-hook 'org-do-emphasis-hook #'org-inside--add-emphasis-props t))
 
 ;;;###autoload
 (define-minor-mode org-inside-mode
