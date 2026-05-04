@@ -5560,6 +5560,11 @@ prompted for."
     (insert string)
     (and move (backward-char 1))))
 
+(defvar org-activate-hidden-links-functions nil
+  "Abnormal hook for formatting hidden links after activation.
+Each function should take four arguments: the starting and ending buffer
+position of the full link, and similar for the visible portion.")
+
 (defun org-activate-links (limit)
   "Add link properties to links.
 This includes angle, plain, and bracket links."
@@ -5575,13 +5580,13 @@ This includes angle, plain, and bracket links."
 	(if (and (memq style org-highlight-links)
 		 ;; Do not span over paragraph boundaries.
 		 (not (string-match-p org-element-paragraph-separate
-				    (match-string 0)))
+				      (match-string 0)))
 		 ;; Do not confuse plain links with tags.
 		 (not (and (eq style 'plain)
-			 (let ((face (get-text-property
-				      (max (1- start) (point-min)) 'face)))
-			   (if (consp face) (memq 'org-tag face)
-			     (eq 'org-tag face))))))
+			   (let ((face (get-text-property
+				        (max (1- start) (point-min)) 'face)))
+			     (if (consp face) (memq 'org-tag face)
+			       (eq 'org-tag face))))))
 	    (let* ((link-object (save-excursion
 				  (goto-char start)
 				  (save-match-data (org-element-link-parser))))
@@ -5627,7 +5632,9 @@ This includes angle, plain, and bracket links."
 		  (add-text-properties visible-start visible-end properties)
 		  (add-text-properties visible-end end hidden)
 		  (org-rear-nonsticky-at visible-start)
-		  (org-rear-nonsticky-at visible-end)))
+		  (org-rear-nonsticky-at visible-end)
+                  (run-hook-with-args 'org-activate-hidden-links-functions
+                                      start end visible-start visible-end)))
 	      (let ((f (org-link-get-parameter type :activate-func)))
 	        (when (functionp f)
 		  (funcall f start end path (eq style 'bracket))))
