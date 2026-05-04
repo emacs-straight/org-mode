@@ -109,6 +109,10 @@ consult this window parameter to restore the cursor type."
            (showing-p (overlay-get ov 'invisible))) ; non-nil = unhidden!
       (message "Setting appearance with inside: %s showing: %s beg: %d end: %d"
                inside-p showing-p beg end)
+      ;; We move the overlay when returning to the run-loop to avoid
+      ;; the cursor-sensor race for point adjustment, since our
+      ;; overlay and the underlying text both target the same
+      ;; cursor-sensor-functions.
       (run-at-time 0 nil (lambda () (move-overlay ov beg end)))
       ;; more natural movement moving out when hidden text is visible
       (unless (or (not showing-p) inside-p)
