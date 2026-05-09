@@ -118,6 +118,11 @@
              (should (check "1…2" 3 "1…2"))
              (should (check "……………………" 7 "…………………"))))))
 
+(ert-deftest test-org-colview/overlay-fmt ()
+  "Test `org-columns--overlay-fmt'."
+  (should (equal "%-3.3s | " (org-columns--overlay-fmt 3)))
+  (should (equal "%-3.3s |" (org-columns--overlay-fmt 3 t))))
+
 (ert-deftest test-org-colview/get-format ()
   "Test `org-columns-get-format' specifications."
   ;; Without any clue, use `org-columns-default-format'.
@@ -1822,6 +1827,58 @@ there are 4 parameters
                  (org-default-priority 15))
              (org-columns)
              (get-char-property (point) 'org-columns-value))))))
+
+(ert-deftest test-org-colview/quit-leaves-buffer-editable ()
+  "Test that the buffer is editable again after exiting column view.
+Column view restricts editing of the buffer text it covers to prevent
+accidental edits while column view is active.  After `org-columns-quit'
+the buffer must accept edits as normal."
+  (should
+   (org-test-with-temp-text "* H"
+     (let ((org-columns-default-format "%ITEM")) (org-columns))
+     (org-columns-quit)
+     ;; Insert inside the heading text would error with `text-read-only'
+     ;; if column view's protection were still active.
+     (goto-char 2)
+     (insert "X")
+     (string= "*X H" (buffer-string)))))
+
+(ert-deftest test-org-colview/quit-does-not-modify-buffer ()
+  "Test that exiting column view does not leave the buffer marked as modified.
+Column view is a read-only display layered over the buffer. It does not
+change buffer content, so entering and exiting it must not be visible as
+a buffer modification.  Exiting must leave the modified flag clean."
+  (should-not
+   (org-test-with-temp-text "* H"
+     (set-buffer-modified-p nil)
+     (let ((org-columns-default-format "%ITEM")) (org-columns))
+     (org-columns-quit)
+     (buffer-modified-p))))
+
+(ert-deftest test-org-colview/org-columns-suspends-conflicting-modes ()
+  "`org-columns' turns off `flyspell-mode' / `org-num-mode' while active."
+  (dolist (mode '(flyspell-mode org-num-mode))
+    (cl-letf (((symbol-function mode)
+               (lambda (&optional arg)
+                 (set (make-local-variable mode)
+                      (and (numberp arg) (> arg 0))))))
+      (org-test-with-temp-text "* H"
+        (funcall mode 1)
+        (let ((org-columns-default-format "%ITEM")) (org-columns))
+        (should-not (symbol-value mode))))))
+
+(ert-deftest test-org-colview/org-columns-quit-restores-conflicting-modes ()
+  "`org-columns-quit' re-enables modes that were on before `org-columns'."
+  (dolist (mode '(flyspell-mode org-num-mode))
+    (cl-letf (((symbol-function mode)
+               (lambda (&optional arg)
+                 (set (make-local-variable mode)
+                      (and (numberp arg) (> arg 0))))))
+      (org-test-with-temp-text "* H"
+        (funcall mode 1)
+        (let ((org-columns-default-format "%ITEM")) (org-columns))
+        (org-columns-quit)
+        (should (symbol-value mode))))))
 
 (provide 'test-org-colview)
 ;;; test-org-colview.el ends here

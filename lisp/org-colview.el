@@ -3,6 +3,7 @@
 ;; Copyright (C) 2004-2026 Free Software Foundation, Inc.
 
 ;; Author: Carsten Dominik <carsten.dominik@gmail.com>
+;; Maintainer: Slawomir Grochowski <slawomir.grochowski@gmail.com>
 ;; Keywords: outlines, hypermedia, calendar, text
 ;; URL: https://orgmode.org
 ;;
@@ -350,6 +351,14 @@ integers greater than 0."
     (push ov org-columns-overlays)
     ov))
 
+(defun org-columns--overlay-fmt (width &optional lastp)
+  "Return `format' template for a column overlay cell of WIDTH characters.
+The template pads and truncates its argument to WIDTH characters,
+followed by \" | \" separator.  When optional argument LASTP is
+non-nil, omit the trailing space after the separator, since no
+further column follows."
+  (format (if lastp "%%-%d.%ds |" "%%-%d.%ds | ") width width))
+
 (defun org-columns--summarize (operator)
   "Return summary function associated to string OPERATOR."
   (pcase (or (assoc operator org-columns-summary-types)
@@ -395,6 +404,24 @@ ORIGINAL is the real string, i.e., before it is modified by
 This is needed to later remove this relative remapping.")
 
 (defvar org-columns--read-only-string nil)
+
+(defun org-columns--pad-line-for-overlays ()
+  "Pad current line with spaces, one per column if needed.
+Kludge: column display modifies the buffer here, which it should not.
+Each column is rendered as an overlay anchored on a character, so the
+underlying line must contain at least as many characters as there are
+columns in `org-columns-current-fmt-compiled'.  Short lines (e.g.
+empty headlines) are padded with trailing spaces under
+`inhibit-read-only' so the overlays have something to attach to.
+FIXME: find a way to display columns without inserting characters."
+  (let ((columns (length org-columns-current-fmt-compiled))
+	(chars (- (line-end-position) (line-beginning-position))))
+    (when (> columns chars)
+      (save-excursion
+	(end-of-line)
+	(let ((inhibit-read-only t))
+	  (insert (make-string (- columns chars) ?\s)))))))
+
 (defun org-columns--display-here (columns &optional dateline)
   "Overlay the current line with column display.
 COLUMNS is an alist (SPEC VALUE DISPLAYED).  Optional argument
@@ -417,16 +444,7 @@ DATELINE is non-nil when the face used should be
 	   (font (list :family (face-attribute 'default :family)))
 	   (face (list color font 'org-column ref-face))
 	   (face1 (list color font 'org-agenda-column-dateline ref-face)))
-      ;; Each column is an overlay on top of a character.  So there has
-      ;; to be at least as many characters available on the line as
-      ;; columns to display.
-      (let ((columns (length org-columns-current-fmt-compiled))
-	    (chars (- (line-end-position) (line-beginning-position))))
-	(when (> columns chars)
-	  (save-excursion
-	    (end-of-line)
-	    (let ((inhibit-read-only t))
-	      (insert (make-string (- columns chars) ?\s))))))
+      (org-columns--pad-line-for-overlays)
       ;; Display columns.  Create and install the overlay for the
       ;; current column on the next character.
       (let ((i 0)
@@ -436,9 +454,7 @@ DATELINE is non-nil when the face used should be
 	    (`(,spec ,original ,value)
 	     (let* ((property (car spec))
 		    (width (aref org-columns-current-maxwidths i))
-		    (fmt (format (if (= i last) "%%-%d.%ds |"
-				   "%%-%d.%ds | ")
-				 width width))
+		    (fmt (org-columns--overlay-fmt width (= i last)))
 		    (ov (org-columns--new-overlay
 			 (point) (1+ (point))
 			 (org-columns--overlay-text
@@ -518,23 +534,40 @@ for the duration of the command.")
 (defvar header-line-format)
 (defvar org-columns-previous-hscroll 0)
 
+(defun org-columns--suspend-conflicting-modes ()
+  "Suspend minor modes that conflict with column view."
+  (when (setq-local org-columns-flyspell-was-active
+                    (bound-and-true-p flyspell-mode))
+    (flyspell-mode 0))
+  (when (setq-local org-columns-org-num-was-active
+                    (bound-and-true-p org-num-mode))
+    (org-num-mode 0)))
+
+(defun org-columns--resume-conflicting-modes ()
+  "Resume minor modes that were suspended by column view."
+  (when org-columns-flyspell-was-active
+    (flyspell-mode 1))
+  (when org-columns-org-num-was-active
+    (org-num-mode 1)))
+
 (defun org-columns--display-here-title ()
-  "Overlay the newline before the current line with the table title."
+  "Prepare the table heading with column titles for the window's header line."
   (let ((title "")
 	(linum-offset (org-line-number-display-width 'columns))
-	(i 0))
+	(i 0)
+	(last (1- (length org-columns-current-fmt-compiled))))
     (dolist (column org-columns-current-fmt-compiled)
       (pcase column
 	(`(,property ,name . ,_)
 	 (let* ((width (aref org-columns-current-maxwidths i))
-		(fmt (format "%%-%d.%ds | " width width)))
+		(fmt (org-columns--overlay-fmt width (= i last))))
 	   (setq title (concat title (format fmt (or name property)))))))
       (cl-incf i))
     (setq-local org-previous-header-line-format header-line-format)
     (setq org-columns-full-header-line-format
 	  (concat
 	   (org-add-props " " nil 'display `(space :align-to ,linum-offset))
-	   (org-add-props (substring title 0 -1) nil 'face 'org-column-title)))
+	   (org-add-props title nil 'face 'org-column-title)))
     (setq org-columns-previous-hscroll -1)
     (add-hook 'post-command-hook #'org-columns-hscroll-title nil 'local)))
 
@@ -575,10 +608,7 @@ for the duration of the command.")
       (setq org-columns-overlays nil)
       (let ((inhibit-read-only t))
 	(remove-text-properties (point-min) (point-max) '(read-only t))))
-    (when org-columns-flyspell-was-active
-      (flyspell-mode 1))
-    (when org-columns-org-num-was-active
-      (org-num-mode 1))
+    (org-columns--resume-conflicting-modes)
     (when (local-variable-p 'org-colview-initial-truncate-line-value)
       (setq truncate-lines org-colview-initial-truncate-line-value))))
 
@@ -593,10 +623,7 @@ for the duration of the command.")
 (defun org-columns-quit ()
   "Remove the column overlays and in this way exit column editing."
   (interactive nil org-mode org-agenda-mode)
-  (with-silent-modifications
-    (org-columns-remove-overlays)
-    (let ((inhibit-read-only t))
-      (remove-text-properties (point-min) (point-max) '(read-only t))))
+  (org-columns-remove-overlays)
   (if (not (eq major-mode 'org-agenda-mode))
       (setq org-columns-current-fmt nil)
     (setq org-agenda-columns-active nil)
@@ -921,12 +948,7 @@ When COLUMNS-FMT-STRING is non-nil, use it as the column format."
 	  (when cache
 	    (org-columns--set-widths cache)
 	    (org-columns--display-here-title)
-	    (when (setq-local org-columns-flyspell-was-active
-			      (bound-and-true-p flyspell-mode))
-	      (flyspell-mode 0))
-            (when (setq-local org-columns-org-num-was-active
-			      (bound-and-true-p org-num-mode))
-	      (org-num-mode 0))
+	    (org-columns--suspend-conflicting-modes)
 	    (unless (local-variable-p 'org-colview-initial-truncate-line-value)
 	      (setq-local org-colview-initial-truncate-line-value
 			  truncate-lines))
@@ -1233,11 +1255,11 @@ This function updates `org-columns-current-fmt-compiled'."
 	     (title (or (org-string-nw-p (match-string-no-properties 3 fmt)) prop))
 	     (operator (org-string-nw-p (match-string-no-properties 4 fmt))))
 	(push (if (not operator) (list (upcase prop) title width nil nil)
-		(let (fmt)
+		(let (operator-fmt)
 		  (when (string-match ";" operator)
-		    (setq fmt (substring operator (match-end 0)))
+		    (setq operator-fmt (substring operator (match-end 0)))
 		    (setq operator (substring operator 0 (match-beginning 0))))
-		  (list (upcase prop) title width operator fmt)))
+		  (list (upcase prop) title width operator operator-fmt)))
 	      org-columns-current-fmt-compiled)))
     (setq org-columns-current-fmt-compiled
 	  (nreverse org-columns-current-fmt-compiled))))
@@ -1799,12 +1821,7 @@ definition."
 	(when cache
 	  (org-columns--set-widths cache)
 	  (org-columns--display-here-title)
-	  (when (setq-local org-columns-flyspell-was-active
-			    (bound-and-true-p flyspell-mode))
-	    (flyspell-mode 0))
-          (when (setq-local org-columns-org-num-was-active
-			    (bound-and-true-p org-num-mode))
-	    (org-num-mode 0))
+	  (org-columns--suspend-conflicting-modes)
 	  (dolist (entry cache)
 	    (goto-char (car entry))
 	    (org-columns--display-here (cdr entry)))
