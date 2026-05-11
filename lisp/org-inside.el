@@ -182,9 +182,10 @@ change is made."
 
 (defun org-inside--add-emphasis-props ()
   "Add text properties to emphasized text for org-inside functionality."
-  (put-text-property (match-beginning 4) (match-end 2)
-		     'cursor-sensor-functions '(org-inside--sensor))
-  (org-rear-nonsticky-at (match-end 3)))
+  (when org-hide-emphasis-markers
+    (put-text-property (match-beginning 4) (match-end 2)
+		       'cursor-sensor-functions '(org-inside--sensor))
+    (org-rear-nonsticky-at (match-end 3))))
 
 (defun org-inside--add-link-props (_beg _end visible-beg visible-end)
   "Add text properties to bracket links for org-inside functionality.

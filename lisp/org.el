@@ -5512,7 +5512,8 @@ Match data from the emphasized text will be valid when called.")
                 ;; word constituents where appropriate.
                 ;; https://orgmode.org/list/87edl41jf0.fsf@localhost
                 ;; (org-rear-nonsticky-at (match-end 3))
-                (run-hooks 'org-do-emphasis-hook))
+                )
+              (run-hooks 'org-do-emphasis-hook)
 	      (throw :exit t))))))))
 
 (defun org-emphasize (&optional char)
