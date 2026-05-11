@@ -323,22 +323,38 @@ displayed without leading stars."
 (defun org-columns--set-widths (cache)
   "Compute the maximum column widths from the format and CACHE.
 This function sets `org-columns-current-maxwidths' as a vector of
-integers greater than 0."
+integers greater than 0.
+
+CACHE is a list of entries.  Each entry is a cons cell:
+
+  (POSITION . ((SPEC VALUE DISPLAYED-VALUE) ...))
+
+where:
+
+  POSITION       a marker (or integer) pointing to the buffer position
+                 where this cell row's column overlay are displayed
+
+  Each element of the cdr is a list (SPEC VALUE DISPLAYED-VALUE) where
+  VALUE is the raw property value as a string (or \"\" if empty)
+  and DISPLAYED-VALUE is the value as it should be displayed, as a string.
+  SPEC is a list as returned by `org-columns-compile-format'."
   (setq org-columns-current-maxwidths
-	(apply #'vector
-	       (mapcar
-		(lambda (spec)
-		  (pcase spec
-		    (`(,_ ,_ ,(and width (pred wholenump)) . ,_) width)
-		    (`(,_ ,name . ,_)
-		     ;; No width is specified in the columns format.
-		     ;; Compute it by checking all possible values for
-		     ;; PROPERTY.
-		     (let ((width (length name)))
-		       (dolist (entry cache width)
-			 (let ((value (nth 2 (assoc spec (cdr entry)))))
-			   (setq width (max (length value) width))))))))
-		org-columns-current-fmt-compiled))))
+	(let ((widths (mapcar (lambda (spec)
+				(pcase spec
+				  (`(,_ ,_ ,(and width (pred wholenump)) . ,_) width)
+				  (`(,_ ,title . ,_) (string-width title))))
+			      org-columns-current-fmt-compiled)))
+	  (dolist (entry cache)
+	    (let ((triplets (cdr entry))
+		  (specs org-columns-current-fmt-compiled)
+		  (w widths))
+	      (while (and triplets specs w)
+		(unless (wholenump (nth 2 (car specs)))
+		  (setcar w (max (car w) (string-width (nth 2 (car triplets))))))
+		(setq triplets (cdr triplets))
+		(setq specs (cdr specs))
+		(setq w (cdr w)))))
+	  (apply #'vector widths))))
 
 (defun org-columns--new-overlay (beg end &optional string face)
   "Create a new column overlay and add it to the list."
@@ -718,7 +734,8 @@ COL is the column to move to after update."
     ;; Some properties can modify headline (e.g., "TODO"), and
     ;; possible shuffle overlays.  Make sure they are still all at
     ;; the right place on the current line.
-    (let ((org-columns-inhibit-recalculation)) (org-columns-redo))
+    (when (member key '("ITEM" "TODO" "PRIORITY" "TAGS"))
+      (let ((org-columns-inhibit-recalculation)) (org-columns-redo)))
     (org-columns-update key)
     (org-move-to-column col))))
 
