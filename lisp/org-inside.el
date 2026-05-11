@@ -164,8 +164,6 @@ change is made."
     (delete-overlay ov)
     (set-window-parameter win 'org-inside-overlay nil)))
 
-(defvar 'org-inside-mode)
-
 ;; Not needed for v31+
 (defun org-inside--frame-changed (frame)
   "Handle window buffer change for windows on FRAME."
