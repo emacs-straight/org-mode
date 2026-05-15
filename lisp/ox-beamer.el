@@ -869,6 +869,8 @@ CONTENTS is the transcoded contents string.  INFO is a plist
 holding export options."
   (let ((title (org-export-data (plist-get info :title) info))
 	(subtitle (org-export-data (plist-get info :subtitle) info)))
+    (setq info
+          (plist-put info :doc-scripts (org-latex--get-string-scripts contents)))
     (concat
      ;; Timestamp.
      (and (plist-get info :time-stamp-file)

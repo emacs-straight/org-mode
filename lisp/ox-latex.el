@@ -2051,22 +2051,25 @@ Return the new header."
 		  ""))
 	 t t header 0)))))
 
-(defun org-latex--get-doc-scripts ()
-  "Return the list of char-scripts used in the current buffer.
+(defun org-latex--get-string-scripts (str)
+  "This function gets the char-scripts that appear in STR
+Returns a list of strings with the char-scripts.
 
-See initial version proposed by Juan Manuel Macías in URL
-`https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/'"
-  ;; FIXME: Ignore text that will not be exported. (somehow difficult though)
-  (let ((scripts))
-    (save-excursion
-      (goto-char (point-min))
-      (while
-          (re-search-forward "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" nil t)
-        (let ((script (aref char-script-table
-                            (string-to-char (match-string 1)))))
-          (cl-pushnew (prin1-to-string script) scripts :test #'equal))))
-    ;; (message "=> Scripts used in document: %s" scripts)
-    scripts))
+Derived from the initial version proposed by Juan Manuel Macías in
+https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
+"
+  (save-match-data
+    (let ((scripts)
+          (match-offset t)
+          (offset 0))
+      (while match-offset
+        (setq match-offset (string-match "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" str offset))
+        (when match-offset
+          (when-let* ((matched (match-string 0 str))
+                      (script (aref char-script-table (string-to-char matched))))
+            (setq offset (match-end 1))
+            (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
+      scripts)))
 
 (defun org-latex--mk-options (str &optional keep-nil)
   "Make STR be enclosed in [ ] or return an empty string if nil or empty.
@@ -2287,7 +2290,7 @@ Extract the information from INFO."
          (fontspec-config org-latex-fontspec-config)
          (current-default-features org-latex-fontspec-default-features)
          (polyglossia-font-config org-latex-polyglossia-font-config)
-         (doc-scripts (org-latex--get-doc-scripts)))
+         (doc-scripts (plist-get info :doc-scripts)))
     (when (equal compiler "pdflatex")
       (warn "LaTeX package polyglossia isn't supported by pdflatex!"))
     (with-temp-buffer
@@ -2492,7 +2495,7 @@ INFO is the export communication channel."
         ;; Copy these to temp variable... (with-temp-buffer) overwrites them
         (current-fontspec-config org-latex-fontspec-config)
         (current-default-features org-latex-fontspec-default-features)
-        (doc-scripts (org-latex--get-doc-scripts))
+        (doc-scripts (plist-get info :doc-scripts))
         (cjk-packages nil)) ;; will we need the packages to support CJK fonts?
     (with-temp-buffer
       ;; (message "FONTSPEC: Intended compiler: %s" compiler)
@@ -2818,6 +2821,9 @@ CONTENTS is the transcoded contents string.  INFO is a plist
 holding export options."
   (let ((title (org-export-data (plist-get info :title) info))
 	(spec (org-latex--format-spec info)))
+    ;; This will get the scripts in the complete exported text.
+    (setq info
+          (plist-put info :doc-scripts (org-latex--get-string-scripts contents)))
     (concat
      ;; Timestamp.
      (and (plist-get info :time-stamp-file)
