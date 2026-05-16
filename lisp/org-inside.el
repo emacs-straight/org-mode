@@ -65,16 +65,22 @@ marker unhiding.  The value is a plist, with possible keys and values:
      hidden markers (unhiding can also be toggled by command; see
      `org-inside-toggle-hidden')
 
-All appearance keys are optional, and can be freely combined."
+All appearance keys are optional, and can be freely combined.  If
+`org-inside-appearance' is nil, no appearance changes will be applied
+when point is inside hidden markers, but `org-inside-toggle-hidden' can
+be used to unhide markers."
   :group 'org-appearance
-  :type `(plist
-          :options
-          ((:cursor ,(get 'cursor-type 'custom-type)
-                    :tag "Cursor Type")
-           (:face (choice (face :tag "Face Name")
-                          (plist :tag "Attribute List"))
-                  :tag "Cursor Face")
-           (:unhide boolean :tag "Unhide hidden markers")))
+  :type `(choice
+          (const :value nil :tag "No appearance changes: unhide on command only")
+          (plist
+           :tag "Specific appearance options"
+	   :options
+	   ((:cursor ,(get 'cursor-type 'custom-type)
+		     :tag "Cursor Type")
+	    (:face (choice (face :tag "Face Name")
+			   (plist :tag "Attribute List"))
+		   :tag "Cursor Face")
+	    (:unhide boolean :tag "Unhide hidden markers"))))
   :set (lambda (sym val)
          (set-default-toplevel-value sym val)
          (org-inside--reset-all)))
