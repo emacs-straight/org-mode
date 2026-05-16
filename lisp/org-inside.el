@@ -164,7 +164,7 @@ change is made."
     (delete-overlay ov)
     (set-window-parameter win 'org-inside-overlay nil)))
 
-;; Not needed for v31+
+;; Not necessary for Emacs v31+
 (defun org-inside--frame-changed (frame)
   "Handle window buffer change for windows on FRAME."
   (dolist (win (window-list frame))
@@ -173,12 +173,19 @@ change is made."
       (org-inside--clear-overlay win)
       (org-inside--restore-cursor win))))
 
-(defun org-inside--maybe-sense (&optional win)
-  "Handle `org-inside' buffers appearing in window WIN."
-  (with-current-buffer (window-buffer win)
-    (when-let* ((csf (get-text-property (point) 'cursor-sensor-functions))
-                (_ (memq 'org-inside--sensor csf)))
-      (org-inside--sensor win (point) 'entered))))
+(defun org-inside--buffer-change (&optional win)
+  "Handle `org-inside' buffers appearing and disappearing from window WIN."
+  (let ((buf (window-buffer win)))
+    (if (buffer-local-value 'org-inside-mode buf)
+        ;; org-inside buffer appeared
+        (with-current-buffer buf
+          (when-let* ((csf (get-text-property (window-point win)
+                                              'cursor-sensor-functions))
+                      (_ (memq 'org-inside--sensor csf)))
+            (org-inside--sensor win nil 'entered)))
+      ;; org-inside buffer disappeared
+      (org-inside--clear-overlay win)
+      (org-inside--restore-cursor win))))
 
 (defun org-inside--add-emphasis-props ()
   "Add text properties to emphasized text for org-inside functionality."
@@ -217,10 +224,10 @@ portion."
   (cl-pushnew 'cursor-sensor-functions
               (buffer-local-value 'org-extra-unfontify-properties
                                   (current-buffer)))
-  (add-hook 'window-buffer-change-functions #'org-inside--maybe-sense nil t)
+  (add-hook 'window-buffer-change-functions #'org-inside--buffer-change nil t)
   (add-hook 'org-hidden-text-functions #'org-inside--add-properties nil t)
   (font-lock-flush) ;; does not call sensor functions
-  (org-inside--maybe-sense))
+  (org-inside--buffer-change))
 
 (defun org-inside--teardown ()
   "Tear down `org-inside-mode' in buffer."
@@ -229,14 +236,15 @@ portion."
   (cursor-sensor-mode -1)
   (setq-local org-extra-unfontify-properties
               (delq 'cursor-sensor-functions org-extra-unfontify-properties))
-  (remove-hook 'window-buffer-change-functions #'org-inside--maybe-sense t)
   (remove-hook 'org-hidden-text-functions #'org-inside--add-properties t)
+  (remove-hook 'window-buffer-change-functions #'org-inside--buffer-change t))
 
 (defun org-inside-toggle-hidden ()
   "Toggle visibility of hidden text for entity at point.
-Operates only when inside an entity wrapped by hidden text.  Text will
-be re-hidden when point leaves the entity.  See `org-inside-appearance'
-to enable automatic unhiding."
+Operates only when inside an entity wrapped by hidden text and
+`org-inside-mode' is enabled.  Text will be re-hidden when point leaves
+the entity.  See `org-inside-appearance' to enable automatic unhiding or
+configure other appearance settings."
   (interactive)
   (when-let* ((ov (window-parameter nil 'org-inside-overlay))
               (_ (and (> (overlay-start ov) 0)
@@ -271,10 +279,10 @@ what appearance changes occur."
    (org-inside-mode (org-inside--setup))
    (t (org-inside--teardown))))
 
-;; N.B. this will not be needed in v31+, as buffer-local
-;; window-buffer-change-functions for a buffer appearing and
-;; disappearing:
-(add-hook 'window-buffer-change-functions #'org-inside--frame-changed)
+;; In v31+, buffer-local window-buffer-change-functions fire for a
+;; buffer appearing AND disappearing from a window.
+(when (< emacs-major-version 31)
+  (add-hook 'window-buffer-change-functions #'org-inside--frame-changed))
 
 (provide 'org-inside)
 ;;; org-inside.el ends here
