@@ -73,7 +73,10 @@ All appearance keys are optional, and can be freely combined."
            (:face (choice (face :tag "Face Name")
                           (plist :tag "Attribute List"))
                   :tag "Cursor Face")
-           (:unhide boolean :tag "Unhide hidden markers"))))
+           (:unhide boolean :tag "Unhide hidden markers")))
+  :set (lambda (sym val)
+         (set-default-toplevel-value sym val)
+         (org-inside--reset-all)))
 
 (defun org-inside--overlay (win face unhide)
   "Return an appropriately styled overlay for window WIN.
@@ -236,6 +239,15 @@ portion."
               (delq 'cursor-sensor-functions org-extra-unfontify-properties))
   (remove-hook 'org-hidden-text-functions #'org-inside--add-properties t)
   (remove-hook 'window-buffer-change-functions #'org-inside--buffer-change t))
+
+(defun org-inside--reset-all ()
+  "Reset org-inside in all `org-inside' buffers."
+  (walk-windows
+   (lambda (win)
+     (when (window-parameter win 'org-inside-overlay)
+       (with-selected-window win
+         (org-inside--teardown)
+         (org-inside--setup))))))
 
 (defun org-inside-toggle-hidden ()
   "Toggle visibility of hidden text for entity at point.
