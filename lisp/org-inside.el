@@ -47,6 +47,7 @@
 
 ;;; Code:
 (require 'org)
+(require 'org-element)
 (require 'face-remap)
 (eval-when-compile (require 'cl-lib))
 
@@ -137,15 +138,19 @@ consult this window parameter to restore the cursor type."
   "Handle cursor appearance and unhiding inside hidden text wrapped entities.
 To be set via the `cursor-sensor-functions' property on hidden-marker
 text, as well as the overlay returned by `org-inside--overlay' .  WIN
-and TYPE are the window and cursor movement type."
+POS, and TYPE are the window, former position, and cursor movement
+type."
   (cond
-   ((eq type 'entered)         ; called from the in-text cursor-sensor
-    (when-let*
-        ((prop (cl-loop for prop in '(org-emphasis htmlize-link)
-                        if (get-text-property (point) prop) return prop))
-         (beg (previous-single-property-change (point) prop nil (point-min)))
-         (end (next-single-property-change (point) prop nil (point-max))))
-      (org-inside--set-appearance win beg end)))
+   ((eq type 'entered)       ; called from the in-text cursor-sensor
+    (when-let* ((ctx (org-element-context))
+                (elem (org-element-lineage ctx '(link bold code italic verbatim
+                                                      underline strike-through)
+                                           t))
+                (beg (org-element-begin elem))
+                (end (- (org-element-end elem) (org-element-post-blank elem))))
+      (unless (and (eq (org-element-type elem) 'link)
+                   (not org-link-descriptive))
+        (org-inside--set-appearance win beg end))))
    ((eq type 'left)          ; called from the overlay's cursor-sensor
     (org-inside--set-appearance win 0 0))))
 
