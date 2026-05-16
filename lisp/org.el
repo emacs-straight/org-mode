@@ -5451,9 +5451,22 @@ stacked delimiters is N.  Escaping delimiters is not possible."
 (defsubst org-rear-nonsticky-at (pos)
   (add-text-properties (1- pos) pos (list 'rear-nonsticky org-nonsticky-props)))
 
-(defvar org-do-emphasis-hook nil
-  "Hook to run at the end of `org-do-emphasis-faces'.
-Match data from the emphasized text will be valid when called.")
+;;* 
+(defvar org-hidden-text-functions nil
+  "Abnormal hook called when hiding certain text during fontification.
+
+Each function on the hook should take five arguments:
+
+  TYPE: the type of text being hidden
+  BEG, END: the starting and ending buffer positions of the text
+  VBEG, VEND: the start and end of the visible portion of the text
+
+Currently supported types (symbols) are:
+
+  `emphasis': emphasized text with hidden markers, with non-nil
+              `org-hide-emphasis-markers'.
+
+  `link': bracket links, with non-nil `org-link-descriptive'.")
 
 (defun org-do-emphasis-faces (limit)
   "Run through the buffer and emphasize strings."
@@ -5512,8 +5525,9 @@ Match data from the emphasized text will be valid when called.")
                 ;; word constituents where appropriate.
                 ;; https://orgmode.org/list/87edl41jf0.fsf@localhost
                 ;; (org-rear-nonsticky-at (match-end 3))
-                )
-              (run-hooks 'org-do-emphasis-hook)
+                (run-hook-with-args 'org-hidden-text-functions 'emphasis
+                                    (match-beginning 2) (match-end 2)
+                                    (match-beginning 4) (match-end 4)))
 	      (throw :exit t))))))))
 
 (defun org-emphasize (&optional char)
@@ -5560,11 +5574,6 @@ prompted for."
       (insert " ") (backward-char 1))
     (insert string)
     (and move (backward-char 1))))
-
-(defvar org-activate-hidden-links-functions nil
-  "Abnormal hook for formatting hidden links after activation.
-Each function should take four arguments: the starting and ending buffer
-position of the full link, and similar for the visible portion.")
 
 (defun org-activate-links (limit)
   "Add link properties to links.
@@ -5633,8 +5642,9 @@ This includes angle, plain, and bracket links."
 		  (add-text-properties visible-start visible-end properties)
 		  (add-text-properties visible-end end hidden)
 		  (org-rear-nonsticky-at visible-start)
-		  (org-rear-nonsticky-at visible-end)
-                  (run-hook-with-args 'org-activate-hidden-links-functions
+		  (org-rear-nonsticky-at visible-end))
+                (when org-link-descriptive
+                  (run-hook-with-args 'org-hidden-text-functions 'link
                                       start end visible-start visible-end)))
 	      (let ((f (org-link-get-parameter type :activate-func)))
 	        (when (functionp f)

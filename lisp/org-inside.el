@@ -187,11 +187,28 @@ change is made."
 		       'cursor-sensor-functions '(org-inside--sensor))
     (org-rear-nonsticky-at (match-end 3))))
 
-(defun org-inside--add-link-props (_beg _end visible-beg visible-end)
-  "Add text properties to bracket links for org-inside functionality.
-BEG, END, VISIBLE-BEG, VISIBLE-END are the buffer positions of the link
-text and its visible portion."
-  (put-text-property visible-beg (1+ visible-end)
+(defun org-inside--add-properties (type _beg _end visible-beg visible-end)
+  "Add text properties to invisible text for org-inside functionality.
+TYPE is the type of text being hidden.  BEG, END, VISIBLE-BEG,
+VISIBLE-END are the buffer positions of the link text and its visible
+portion."
+  ;; Emacs 31+ fires cursor-sensor at positions where an inserted
+  ;; character would inherit the `cursor-sensor-function' property
+  ;; (including rear stickiness).  Prior versions do not respect
+  ;; stickiness.  To get the same functionality, we include the next
+  ;; trailing (marker) char in the "inside" region in earlier
+  ;; versions, but do not inherit the sensor property for characters
+  ;; inserted after it.
+  (when (< emacs-major-version 31)      ;; TODO: use static-if when available
+    (setq visible-end (min (1+ visible-end) (point-max)))
+    (add-text-properties (1- visible-end) visible-end
+                         '(rear-nonsticky (cursor-sensor-functions))))
+  ;; for proper point adjustment
+  (when (eq type 'emphasis)
+    (org-rear-nonsticky-at visible-beg)
+     (when (< emacs-major-version 31)
+       (org-rear-nonsticky-at visible-end)))
+  (put-text-property visible-beg visible-end
 		     'cursor-sensor-functions '(org-inside--sensor)))
 
 (defun org-inside--setup ()
@@ -201,10 +218,7 @@ text and its visible portion."
               (buffer-local-value 'org-extra-unfontify-properties
                                   (current-buffer)))
   (add-hook 'window-buffer-change-functions #'org-inside--maybe-sense nil t)
-  (add-hook 'org-do-emphasis-hook #'org-inside--add-emphasis-props nil t)
-  (when (memq 'bracket org-highlight-links)
-    (add-hook 'org-activate-hidden-links-functions
-              #'org-inside--add-link-props nil t))
+  (add-hook 'org-hidden-text-functions #'org-inside--add-properties nil t)
   (font-lock-flush) ;; does not call sensor functions
   (org-inside--maybe-sense))
 
@@ -216,9 +230,7 @@ text and its visible portion."
   (setq-local org-extra-unfontify-properties
               (delq 'cursor-sensor-functions org-extra-unfontify-properties))
   (remove-hook 'window-buffer-change-functions #'org-inside--maybe-sense t)
-  (remove-hook 'org-activate-hidden-links-functions
-               #'org-inside--add-link-props t)
-  (remove-hook 'org-do-emphasis-hook #'org-inside--add-emphasis-props t))
+  (remove-hook 'org-hidden-text-functions #'org-inside--add-properties t)
 
 (defun org-inside-toggle-hidden ()
   "Toggle visibility of hidden text for entity at point.
