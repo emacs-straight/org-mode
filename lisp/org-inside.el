@@ -107,8 +107,6 @@ consult this window parameter to restore the cursor type."
       org-inside-appearance
     (let* ((ov (org-inside--overlay win face unhide))
            (showing-p (overlay-get ov 'invisible))) ; non-nil = unhidden!
-      (message "Setting appearance with inside: %s showing: %s beg: %d end: %d"
-               inside-p showing-p beg end)
       ;; We move the overlay when returning to the run-loop to avoid
       ;; the cursor-sensor race for point adjustment, since our
       ;; overlay and the underlying text both target the same
@@ -138,14 +136,14 @@ To be set via the `cursor-sensor-functions' property on hidden-marker
 text, as well as the overlay returned by `org-inside--overlay' .  WIN
 and TYPE are the window and cursor movement type."
   (cond
-   ((eq type 'entered) ; called from the in-text cursor-sensor
+   ((eq type 'entered)         ; called from the in-text cursor-sensor
     (when-let*
         ((prop (cl-loop for prop in '(org-emphasis htmlize-link)
                         if (get-text-property (point) prop) return prop))
          (beg (previous-single-property-change (point) prop nil (point-min)))
          (end (next-single-property-change (point) prop nil (point-max))))
       (org-inside--set-appearance win beg end)))
-   ((eq type 'left)  ; called from the overlay's cursor-sensor
+   ((eq type 'left)          ; called from the overlay's cursor-sensor
     (org-inside--set-appearance win 0 0))))
 
 (defsubst org-inside--restore-cursor (&optional win)
