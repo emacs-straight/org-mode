@@ -251,7 +251,8 @@ portion."
   (add-hook 'window-buffer-change-functions #'org-inside--buffer-change nil t)
   (add-hook 'org-hidden-text-functions #'org-inside--add-properties nil t)
   (font-lock-flush) ;; does not call sensor functions
-  (org-inside--buffer-change))
+  (dolist (w (get-buffer-window-list))
+    (org-inside--buffer-change w)))
 
 (defun org-inside--teardown ()
   "Tear down `org-inside-mode' in buffer."
