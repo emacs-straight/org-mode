@@ -121,7 +121,11 @@ consult this window parameter to restore the cursor type."
       ;; the cursor-sensor race for point adjustment, since our
       ;; overlay and the underlying text both target the same
       ;; cursor-sensor-functions.
-      (run-at-time 0 nil (lambda () (move-overlay ov beg end)))
+      (run-at-time 0 nil (lambda (buf)
+                           (with-current-buffer buf
+                             (if inside-p (move-overlay ov beg end)
+                               (delete-overlay ov))))
+                   (current-buffer))
       ;; more natural movement moving out when hidden text is visible
       (unless (or (not showing-p) inside-p)
         (setq disable-point-adjustment t))
@@ -276,8 +280,7 @@ the entity.  See `org-inside-appearance' to enable automatic unhiding or
 configure other appearance settings."
   (interactive)
   (when-let* ((ov (window-parameter nil 'org-inside-overlay))
-              (_ (and (> (overlay-start ov) 0)
-                      (> (overlay-end ov) 0))))
+              (_ (overlay-buffer ov)))
     (let ((inv (overlay-get ov 'invisible)))
       (overlay-put ov 'invisible
                    (if inv nil 'org-inside--not-hidden)))))
