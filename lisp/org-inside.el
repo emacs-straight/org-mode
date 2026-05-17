@@ -33,13 +33,13 @@
 ;;
 ;; To help with this problem, `org-inside' changes the appearance
 ;; "inside" such an entity, to make it clear where you are.
-;; 
+;;
 ;; Appearance changes are highly configurable, and can include
 ;; changing cursor type, text face (e.g. adding a colorful underline),
 ;; and/or unhiding the hidden text.  A command to hide/unhide the
 ;; hidden text on demand is also provided; see
 ;; `org-inside-toggle-hidden'.
-;; 
+;;
 ;; This mode is intended to be used with
 ;; e.g. `org-hide-emphasis-markers', and/or `org-highlight-links'
 ;; (with `bracket') to make editing the ends of links and emphasized
