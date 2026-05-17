@@ -68,7 +68,7 @@ marker unhiding.  The value is a plist, with possible keys and values:
 All appearance keys are optional, and can be freely combined.  If
 `org-inside-appearance' is nil, no appearance changes will be applied
 when point is inside hidden markers, but `org-inside-toggle-hidden' can
-be used to unhide markers."
+still be used to unhide hidden markers for the entity you are inside."
   :group 'org-appearance
   :type `(choice
           (const :value nil :tag "No appearance changes: unhide on command only")
@@ -300,9 +300,8 @@ what appearance changes occur."
   :global nil
   (cond
    ((and org-inside-mode
-         (not (and org-inside-appearance
-                   (cl-loop for key in org-inside-appearance by #'cddr
-                            always (memq key '(:cursor :face :unhide))))))
+         (not (cl-loop for key in org-inside-appearance by #'cddr
+                       always (memq key '(:cursor :face :unhide)))))
     (setq org-inside-mode nil)
     (user-error "`org-inside-appearance' malformed"))
    (org-inside-mode (org-inside--setup))
