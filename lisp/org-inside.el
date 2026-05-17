@@ -136,9 +136,10 @@ consult this window parameter to restore the cursor type."
         (if (eq win-cursor-type nil)
 	    ;; Do not override a hidden (nil) cursor; set it pending instead
             (set-window-parameter win 'pending-cursor-type cursor)
-          (when inside-p          ; save the outside cursor type
-	    (set-window-parameter win 'org-inside-old-cursor win-cursor-type))
-          (set-window-cursor-type win cursor))))))
+          (unless (eq cursor win-cursor-type) ; guard against double entry
+            (when inside-p              ; save the outside cursor type
+	      (set-window-parameter win 'org-inside-old-cursor win-cursor-type))
+            (set-window-cursor-type win cursor)))))))
 
 (defun org-inside--sensor (win _pos type)
   "Handle cursor appearance and unhiding inside hidden text wrapped entities.
@@ -176,28 +177,35 @@ change is made."
     (delete-overlay ov)
     (set-window-parameter win 'org-inside-overlay nil)))
 
-;; Not necessary for Emacs v31+
-(defun org-inside--frame-changed (frame)
-  "Handle window buffer change for windows on FRAME."
-  (dolist (win (window-list frame))
-    (when-let* ((buf (window-buffer win))
-                (_ (not (and buf (buffer-local-value 'org-inside-mode buf)))))
+(defsubst org-inside--in-hidden-marker-text (&optional pos)
+  "Return non-nil if inside hidden marker text.
+If POS is nil, use point."
+  (and-let* ((csf (get-text-property (or pos (point))
+                                     'cursor-sensor-functions))
+             (_ (memq 'org-inside--sensor csf)))))
+
+(defvar org-inside-mode)
+(defun org-inside--buffer-change (&optional win)
+  "Handle `org-inside' buffers appearing and disappearing from window WIN."
+  (with-current-buffer (window-buffer win)
+    (if org-inside-mode
+        ;; an org-inside buffer appeared: set appearance
+        (if (org-inside--in-hidden-marker-text)
+            (org-inside--sensor win nil 'entered)
+          (org-inside--sensor win nil 'left))
+      ;; org-inside buffer disappeared: clear overlays and restore cursor
       (org-inside--clear-overlay win)
       (org-inside--restore-cursor win))))
 
-(defun org-inside--buffer-change (&optional win)
-  "Handle `org-inside' buffers appearing and disappearing from window WIN."
-  (let ((buf (window-buffer win)))
-    (if (buffer-local-value 'org-inside-mode buf)
-        ;; org-inside buffer appeared
-        (with-current-buffer buf
-          (when-let* ((csf (get-text-property (window-point win)
-                                              'cursor-sensor-functions))
-                      (_ (memq 'org-inside--sensor csf)))
-            (org-inside--sensor win nil 'entered)))
-      ;; org-inside buffer disappeared
-      (org-inside--clear-overlay win)
-      (org-inside--restore-cursor win))))
+;; Not necessary for Emacs v31+
+(defun org-inside--frame-changed (frame)
+  "Handle window buffer change for windows on FRAME."
+  (walk-windows 
+   (lambda (win)
+     (unless (buffer-local-value 'org-inside-mode (window-buffer win))
+       (org-inside--clear-overlay win)
+       (org-inside--restore-cursor win)))
+   nil frame))
 
 (defun org-inside--add-emphasis-props ()
   "Add text properties to emphasized text for org-inside functionality."
