@@ -272,7 +272,8 @@ portion."
      (when (window-parameter win 'org-inside-overlay)
        (with-selected-window win
          (org-inside--teardown)
-         (org-inside--setup))))))
+         (org-inside--setup))))
+   nil t))
 
 (defun org-inside-toggle-hidden ()
   "Toggle visibility of hidden text for entity at point.
