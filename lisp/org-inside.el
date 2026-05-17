@@ -83,7 +83,7 @@ still be used to unhide hidden markers for the entity you are inside."
 	    (:unhide boolean :tag "Unhide hidden markers"))))
   :set (lambda (sym val)
          (set-default-toplevel-value sym val)
-         (org-inside--reset-all)))
+         (when (featurep 'org-inside) (org-inside--reset-all))))
 
 (defun org-inside--overlay (win face unhide)
   "Return an appropriately styled overlay for window WIN.
