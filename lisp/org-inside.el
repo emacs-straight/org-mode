@@ -255,8 +255,9 @@ portion."
 
 (defun org-inside--teardown ()
   "Tear down `org-inside-mode' in buffer."
-  (org-inside--restore-cursor)
-  (org-inside--clear-overlay)
+  (dolist (w (get-buffer-window-list))
+    (org-inside--restore-cursor w)
+    (org-inside--clear-overlay w))
   (cursor-sensor-mode -1)
   (setq-local org-extra-unfontify-properties
               (delq 'cursor-sensor-functions org-extra-unfontify-properties))
