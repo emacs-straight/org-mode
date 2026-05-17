@@ -49,6 +49,7 @@
 (require 'org)
 (require 'org-element)
 (require 'face-remap)
+(require 'cus-start)
 (eval-when-compile (require 'cl-lib))
 
 (defcustom org-inside-appearance '(:cursor bar)
