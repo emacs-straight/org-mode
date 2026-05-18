@@ -15106,7 +15106,7 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :CUSTOM_ID: lang-charset-latex
 :DESCRIPTION: Localisation and font management
 :end:
-#+cindex: @samp{LANGUAGE} keyword, @samp{LATEX_MULTI_LANG} keyword
+#+cindex: @samp{LANGUAGE} keyword, @samp{LATEX_MULTI_LANG} keyword, @samp{SELECT_LANG} keyword
 #+vindex: org-latex-multi-lang
 #+vindex: org-export-default-language
 
@@ -15206,6 +15206,28 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 
   Consult the package manuals to get the language name[fn:52] for the
   LaTeX markup.
+
+  Additionally, when set the =#+LATEX_MULTI_LANG:= to =babel= or
+  =polyglossia= =#+LATEX_MULTI_LANG:= you can use the
+  =#+SELECT_LANGUAGE= keyword to switch between languages inside your
+  document.
+
+  #+begin_src org
+,#+SELECT_LANG: <lang>
+  #+end_src
+
+  #+texinfo: @noindent
+  allows you to switch to language =<lang>= in the document, using *Org*
+  language codes.
+
+  The previous example can be expanded to:
+  #+begin_src org
+,#+SELECT_LANG: fr
+Ce passage est en français.
+
+,#+SELECT_LANG: en-gb
+And back to British English.
+  #+end_src
 
   See [[#lualatex-polyglossia]] and [[#babel-fontconfig]] for more
   details about how to configure fonts using ~babel~ and
@@ -15881,6 +15903,7 @@ produce a Japanese document typeset with the =Noto= font family:
 Note that when ~lualatex~ and thus ~luatexja~ is used, setting
 ~CJKmono~ has no effect, while ~CJKsans~ will be used for verbatim
 environment.
+
 
 ** Markdown Export
 :PROPERTIES:

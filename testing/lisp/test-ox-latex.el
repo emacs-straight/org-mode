@@ -740,6 +740,29 @@ How do you do?
     (should (search-forward
              "\\section[\\(\\psi\\) wraps too]{\\(\\phi\\) wraps}"))))
 
+(ert-deftest test-ox-latex/babel-switch-lang ()
+  "Test that babel can manage fonts stabdalone."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: Switchinf¡g languages
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+Babel managing languages.
+#+SELECT_LANG: es
+Babel gestiona mis idiomas
+#+SELECT_LANG: en-gb
+Babel back to British English.
+"
+   ;; (message "babel: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (re-search-forward "\\usepackage\\[.*?\\]{babel}" nil t))
+   (should (search-forward "\\selectlanguage{spanish}" nil t))
+   (should (search-forward "\\selectlanguage{british}" nil t))))
+
 (ert-deftest test-ox-latex/numeric-priority-headline ()
   "Test numeric priorities in headlines."
   (org-test-with-exported-text

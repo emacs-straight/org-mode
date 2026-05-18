@@ -9377,7 +9377,7 @@ keywords relative to each registered export backend."
     "EXCLUDE_TAGS:" "FILETAGS:" "INCLUDE:" "INDEX:" "KEYWORDS:" "LANGUAGE:"
     "MACRO:" "OPTIONS:" "PROPERTY:" "PRINT_BIBLIOGRAPHY:" "PRIORITIES:"
     "SELECT_TAGS:" "SEQ_TODO:" "SETUPFILE:" "STARTUP:" "TAGS:" "TITLE:" "TODO:"
-    "TYP_TODO:" "SELECT_TAGS:" "EXCLUDE_TAGS:" "EXPORT_FILE_NAME:"))
+    "TYP_TODO:" "SELECT_LANG:" "EXCLUDE_TAGS:" "EXPORT_FILE_NAME:"))
 
 (defcustom org-structure-template-alist
   '(("a" . "export ascii")

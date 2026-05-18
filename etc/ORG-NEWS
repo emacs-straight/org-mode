@@ -138,6 +138,17 @@ A current limitation is that export blocks and keywords are only
 implemented for events and todos, and not yet for calendar-wide
 properties.
 
+*** New tag SELECT_LANG to control languages in LaTex export
+
+~#+SELECT_LANG:~ switches the language of the text following it for th
+
+language management package =babel= or =polyglossia=
+
+*** Backported ~org-latex-babel-font-config~
+
+This variable from feature/all-tex-fonts controls the fonts used when
+=babel= manages the languages in a LaTeX document.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
