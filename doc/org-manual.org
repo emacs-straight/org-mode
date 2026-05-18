@@ -125,7 +125,7 @@ To avoid interference with the built-in Org mode, you can use the
 command line (you need Emacs 30 or later):
 
 #+begin_src sh
-emacs -Q -batch -eval "(progn (require 'package) (package-initialize) (package-refresh-contents) (package-upgrade 'org))"
+emacs -Q -batch -eval "(progn (package-refresh-contents) (package-upgrade 'org))"
 #+end_src
 
 This approach has the advantage of isolating the upgrade process from
@@ -10226,7 +10226,8 @@ the other commands, point needs to be in the desired line.
 
   #+kindex: J
   #+findex: org-agenda-clock-goto
-  Go to the currently clocked-in task /in the agenda buffer/.
+  Jump to the currently clocked-in task /in the agenda buffer/ if
+  visible, or in another window if not.
 
 - {{{kbd(D)}}} (~org-agenda-toggle-diary~) ::
 
@@ -10605,7 +10606,8 @@ the other commands, point needs to be in the desired line.
 
   #+kindex: J
   #+findex: org-agenda-clock-goto
-  Jump to the running clock in another window.
+  Jump to the currently clocked-in task /in the agenda buffer/ if
+  visible, or in another window if not.
 
 - {{{kbd(k)}}} (~org-agenda-capture~) ::
 

@@ -28,6 +28,7 @@
 ;; This file contains the column view for Org.
 
 ;;; Code:
+;;;; Require other packages
 
 (require 'org-macs)
 (org-assert-version)
@@ -51,13 +52,15 @@
 (declare-function face-remap-add-relative "face-remap" (face &rest specs))
 
 (defvar org-agenda-columns-add-appointments-to-effort-sum)
+(defvar org-agenda-columns-active) ;; defined in org-agenda.el
 (defvar org-agenda-columns-compute-summary-properties)
 (defvar org-agenda-columns-show-summaries)
 (defvar org-agenda-view-columns-initially)
 (defvar org-inlinetask-min-level)
+(defvar org-columns-summary-types-default) ; defined below
 
 
-;;; Configuration
+;;;; Customizable variables
 
 (defcustom org-columns-checkbox-allowed-values '("[ ]" "[X]")
   "Allowed values for columns with SUMMARY-TYPE that uses checkbox.
@@ -132,6 +135,8 @@ For more information, see `org-columns-dblock-write-default'."
 
 ;;; Column View
 
+;;;; State
+
 (defvar-local org-columns-overlays nil
   "Holds the list of current column overlays.")
 (put 'org-columns-overlays 'permanent-local t)
@@ -161,25 +166,16 @@ This is the compiled version of the format.")
 (defvar org-columns-map (make-sparse-keymap)
   "The keymap valid in column display.")
 
-(defconst org-columns-summary-types-default
-  '(("+"     . org-columns--summary-sum)
-    ("$"     . org-columns--summary-currencies)
-    ("X"     . org-columns--summary-checkbox)
-    ("X/"    . org-columns--summary-checkbox-count)
-    ("X%"    . org-columns--summary-checkbox-percent)
-    ("max"   . org-columns--summary-max)
-    ("mean"  . org-columns--summary-mean)
-    ("min"   . org-columns--summary-min)
-    (":"     . org-columns--summary-sum-times)
-    (":max"  . org-columns--summary-max-time)
-    (":mean" . org-columns--summary-mean-time)
-    (":min"  . org-columns--summary-min-time)
-    ("@max"  . org-columns--summary-max-age)
-    ("@mean" . org-columns--summary-mean-age)
-    ("@min"  . org-columns--summary-min-age)
-    ("est+"  . org-columns--summary-estimate))
-  "Map operators to summary functions.
-See `org-columns-summary-types' for details.")
+;;;; Column specifications
+
+(cl-defstruct (org-columns--spec
+	       (:type list)
+	       (:constructor org-columns--make-spec
+		   (property title width operator format-string)))
+  "Compiled column specification."
+  property title width operator format-string)
+
+;;;; Keymap and menu
 
 (defun org-columns-content ()
   "Switch to contents view while in columns view."
@@ -249,6 +245,8 @@ See `org-columns-summary-types' for details.")
     "--"
     ["Quit" org-columns-quit t]))
 
+;;;; Value collection
+
 (defun org-columns--displayed-value (spec value &optional no-star)
   "Return displayed value for specification SPEC in current entry.
 
@@ -260,7 +258,7 @@ When NO-STAR is non-nil, do not add asterisks before displayed
 value for ITEM property."
   (or (and (functionp org-columns-modify-value-for-display-function)
 	   (funcall org-columns-modify-value-for-display-function
-		    (nth 1 spec)	;column name
+		    (org-columns--spec-title spec)
 		    value))
       (pcase spec
 	(`("ITEM" . ,_)
@@ -312,13 +310,15 @@ displayed without leading stars."
 	(fmt (or compiled-fmt org-columns-current-fmt-compiled)))
     (mapcar
      (lambda (spec)
-       (let* ((property (car spec))
+       (let* ((property (org-columns--spec-property spec))
 	      (value (or (cdr (assoc spec summaries))
 			 (org-entry-get (point) property 'selective t)
 			 (org-columns--agenda-effort-fallback property agenda-marker)
 			 "")))
 	 (list spec value (org-columns--displayed-value spec value agenda-mode))))
      fmt)))
+
+;;;; Column widths
 
 (defun org-columns--set-widths (cache)
   "Compute the maximum column widths from the format and CACHE.
@@ -349,12 +349,16 @@ where:
 		  (specs org-columns-current-fmt-compiled)
 		  (w widths))
 	      (while (and triplets specs w)
-		(unless (wholenump (nth 2 (car specs)))
+		(unless (wholenump (org-columns--spec-width (car specs)))
 		  (setcar w (max (car w) (string-width (nth 2 (car triplets))))))
 		(setq triplets (cdr triplets))
 		(setq specs (cdr specs))
 		(setq w (cdr w)))))
 	  (apply #'vector widths))))
+
+;;;; Overlay rendering
+
+;;;;; Overlay helpers
 
 (defun org-columns--new-overlay (beg end &optional string face)
   "Create a new column overlay and add it to the list."
@@ -371,25 +375,6 @@ followed by \" | \" separator.  When optional argument LASTP is
 non-nil, omit the trailing space after the separator, since no
 further column follows."
   (format (if lastp "%%-%d.%ds |" "%%-%d.%ds | ") width width))
-
-(defun org-columns--summarize (operator)
-  "Return summary function associated to string OPERATOR."
-  (pcase (or (assoc operator org-columns-summary-types)
-	     (assoc operator org-columns-summary-types-default))
-    (`nil (error "Unknown %S operator" operator))
-    (`(,_ . ,(and (pred functionp) summarize)) summarize)
-    (`(,_ ,summarize ,_) summarize)
-    (_ (error "Invalid definition for operator %S" operator))))
-
-(defun org-columns--collect (operator)
-  "Return collect function associated to string OPERATOR.
-Return nil if no collect function is associated to OPERATOR."
-  (pcase (or (assoc operator org-columns-summary-types)
-	     (assoc operator org-columns-summary-types-default))
-    (`nil (error "Unknown %S operator" operator))
-    (`(,_ . ,(pred functionp)) nil)	;default value
-    (`(,_ ,_ ,collect) collect)
-    (_ (error "Invalid definition for operator %S" operator))))
 
 (defun org-columns--overlay-text (value fmt width property original)
   "Return decorated VALUE string for columns overlay display.
@@ -412,11 +397,9 @@ ORIGINAL is the real string, i.e., before it is modified by
               ("TODO" (propertize v 'face (org-get-todo-face original)))
               (_ v)))))
 
-(defvar-local org-columns-header-line-remap nil
-  "Store the relative remapping of column header-line.
-This is needed to later remove this relative remapping.")
-
 (defvar org-columns--read-only-string nil)
+
+;;;;; Line rendering
 
 (defun org-columns--pad-line-for-overlays ()
   "Pad current line with spaces, one per column if needed.
@@ -443,12 +426,11 @@ DATELINE non-nil selects the agenda dateline variant."
 	 (ref-face (or level-face
 		       (and (eq major-mode 'org-agenda-mode)
 			    (org-get-at-bol 'face))
-		       'default))
-	 (color (list :foreground (face-attribute ref-face :foreground)))
-	 (font (list :family (face-attribute 'default :family))))
-    (list color font
-	  (if dateline 'org-agenda-column-dateline 'org-column)
-	  ref-face)))
+		       'default)))
+    (cons (list :foreground (face-attribute ref-face :foreground)
+		:family (face-attribute 'default :family))
+	  (list (if dateline 'org-agenda-column-dateline 'org-column)
+		ref-face))))
 
 (defun org-columns--mark-line-read-only ()
   "Mark the column view rendered line as read-only.
@@ -466,27 +448,22 @@ line-beginning, keeping the rendered overlay region uneditable."
 		  "Type \\<org-columns-map>`\\[org-columns-edit-value]' \
 to edit property" t)))))))
 
-(defun org-columns--remap-header-line ()
-  "Remap the header line to default face if not already done."
-  (unless org-columns-header-line-remap
-    (setq org-columns-header-line-remap
-	  (face-remap-add-relative 'header-line '(:inherit default)))))
-
-(defun org-columns--display-columns (columns face)
+(defun org-columns--make-row (columns face)
   "Create and install the overlay for each column on the next character."
   (let ((i 0)
 	(last (1- (length columns))))
     (dolist (column columns)
       (pcase column
 	(`(,spec ,original ,value)
-	 (let* ((property (car spec))
+	 (let* ((property (org-columns--spec-property spec))
 		(width (aref org-columns-current-maxwidths i))
 		(fmt (org-columns--overlay-fmt width (= i last))))
-	   (org-columns--display-here-column
+	   (org-columns--make-cell-overlay
 	    value fmt width property original face))))
+      (forward-char)
       (cl-incf i))))
 
-(defun org-columns--display-here-column (value fmt width property original face)
+(defun org-columns--make-cell-overlay (value fmt width property original face)
   "Place an overlay rendering one column on the next character at point.
 The overlay covers a single character starting at point and shows VALUE
 formatted with FMT to WIDTH, associated with column PROPERTY whose
@@ -502,8 +479,7 @@ advances by one character so the next column may be installed."
     (overlay-put ov 'org-columns-value-modified value)
     (overlay-put ov 'org-columns-format fmt)
     (overlay-put ov 'line-prefix "")
-    (overlay-put ov 'wrap-prefix ""))
-  (forward-char))
+    (overlay-put ov 'wrap-prefix "")))
 
 (defun org-columns--hide-rest-of-line ()
   "Make the rest of the line disappear using overlays."
@@ -527,9 +503,11 @@ DATELINE is non-nil when the face used should be
     (forward-line 0)
     (let ((face (org-columns--display-here-face dateline)))
       (org-columns--pad-line-for-overlays)
-      (org-columns--display-columns columns face)
+      (org-columns--make-row columns face)
       (org-columns--hide-rest-of-line)
       (org-columns--mark-line-read-only))))
+
+;;;; Display string formatting
 
 (defun org-columns--truncate-below-width (string width)
   "Return a substring of STRING no wider than WIDTH.
@@ -556,10 +534,8 @@ substring whose `string-width' does not exceed WIDTH."
         string (- width (string-width org-columns-ellipses)))
        org-columns-ellipses))))
 
-(defvar org-columns-full-header-line-format nil
-  "The full header line format, will be shifted by horizontal scrolling." )
-(defvar org-previous-header-line-format nil
-  "The header line format before column view was turned on.")
+;;;; View environment
+
 (defvar org-columns-inhibit-recalculation nil
   "Inhibit recomputing of columns on column view startup.")
 (defvar org-columns-flyspell-was-active nil
@@ -570,9 +546,8 @@ for the duration of the command.")
   "Remember the state of `org-num-mode' before column view.
 Org-num mode can cause problems in columns view, so it is turned off
 for the duration of the command.")
-
-(defvar header-line-format)
-(defvar org-columns-previous-hscroll 0)
+(defvar org-colview-initial-truncate-line-value nil
+  "Remember the value of `truncate-lines' across colview.")
 
 (defun org-columns--suspend-conflicting-modes ()
   "Suspend minor modes that conflict with column view."
@@ -595,13 +570,31 @@ for the duration of the command.")
 Saved value is restored by `org-columns--resume-line-wrapping'."
   (unless (local-variable-p 'org-colview-initial-truncate-line-value)
     (setq-local org-colview-initial-truncate-line-value truncate-lines))
-  (if (not global-visual-line-mode)
-      (setq truncate-lines t)))
+  (unless global-visual-line-mode
+    (setq truncate-lines t)))
 
 (defun org-columns--resume-line-wrapping ()
   "Resume line wrapping suspended by `org-columns--suspend-line-wrapping'."
   (when (local-variable-p 'org-colview-initial-truncate-line-value)
     (setq truncate-lines org-colview-initial-truncate-line-value)))
+
+;;;; Header line
+
+(defvar org-columns-full-header-line-format nil
+  "The full header line format, will be shifted by horizontal scrolling." )
+(defvar org-previous-header-line-format nil
+  "The header line format before column view was turned on.")
+(defvar header-line-format)
+(defvar-local org-columns-header-line-remap nil
+  "Store the relative remapping of column header-line.
+This is needed to later remove this relative remapping.")
+(defvar org-columns-previous-hscroll 0)
+
+(defun org-columns--remap-header-line ()
+  "Remap the header line to default face if not already done."
+  (unless org-columns-header-line-remap
+    (setq org-columns-header-line-remap
+	  (face-remap-add-relative 'header-line '(:inherit default)))))
 
 (defun org-columns--display-here-title ()
   "Prepare the table heading with column titles for the window's header line."
@@ -637,8 +630,7 @@ Saved value is restored by `org-columns--resume-line-wrapping'."
 	    org-columns-previous-hscroll hscroll)
       (force-mode-line-update))))
 
-(defvar org-colview-initial-truncate-line-value nil
-  "Remember the value of `truncate-lines' across colview.")
+;;;; Removing overlays / quitting
 
 ;;;###autoload
 (defun org-columns-remove-overlays ()
@@ -664,14 +656,6 @@ Saved value is restored by `org-columns--resume-line-wrapping'."
     (org-columns--resume-conflicting-modes)
     (org-columns--resume-line-wrapping)))
 
-(defun org-columns-show-value ()
-  "Show the full value of the property."
-  (interactive nil org-mode org-agenda-mode)
-  (let ((value (get-char-property (point) 'org-columns-value)))
-    (message "Value is: %s" (or value ""))))
-
-(defvar org-agenda-columns-active) ;; defined in org-agenda.el
-
 (defun org-columns-quit ()
   "Remove the column overlays and in this way exit column editing."
   (interactive nil org-mode org-agenda-mode)
@@ -682,13 +666,13 @@ Saved value is restored by `org-columns--resume-line-wrapping'."
     (message
      "Modification not yet reflected in Agenda buffer, use `r' to refresh")))
 
-(defun org-columns-check-computed ()
-  "Throw an error if current column value is computed."
-  (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
-    (and
-     (nth 3 spec)
-     (assoc spec (get-text-property (line-beginning-position) 'org-summaries))
-     (error "This value is computed from the entry's children"))))
+;;;; Cell actions
+
+(defun org-columns-show-value ()
+  "Show the full value of the property."
+  (interactive nil org-mode org-agenda-mode)
+  (let ((value (get-char-property (point) 'org-columns-value)))
+    (message "Value is: %s" (or value ""))))
 
 (defun org-columns-todo (&optional _arg)
   "Change the TODO state during column view."
@@ -709,17 +693,20 @@ See info documentation about realizing a suitable checkbox."
     (org-columns-next-allowed-value)
     t))
 
-(defvar org-overriding-columns-format nil
-  "When set, overrides any other format definition for the agenda.
-Don't set this, this is meant for dynamic scoping.  Set
-`org-columns-default-format' and `org-columns-default-format-for-agenda'
-instead.  You should use this variable only in the local settings
-section for a custom agenda view.")
+(defun org-columns-open-link (&optional arg)
+  (interactive "P" org-mode org-agenda-mode)
+  (let ((value (get-char-property (point) 'org-columns-value)))
+    (org-link-open-from-string value arg)))
 
-(defvar-local org-local-columns-format nil
-  "When set, overrides any other format definition for the agenda.
-This can be set as a buffer local value to avoid interfering with
-dynamic scoping for `org-overriding-columns-format'.")
+;;;; Cell editing and value selection
+
+(defun org-columns-check-computed ()
+  "Throw an error if current column value is computed."
+  (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
+    (and
+     (org-columns--spec-operator spec)
+     (assoc spec (get-text-property (line-beginning-position) 'org-summaries))
+     (error "This value is computed from the entry's children"))))
 
 (defun org-columns--execute-and-update (action pom key col)
   "Execute ACTION and update column view.
@@ -900,16 +887,29 @@ around it."
       (mapcar (lambda (x) (format-time-string fmt (org-encode-time x)))
 	      (list time-before time time-after)))))
 
-(defun org-columns-open-link (&optional arg)
-  (interactive "P" org-mode org-agenda-mode)
-  (let ((value (get-char-property (point) 'org-columns-value)))
-    (org-link-open-from-string value arg)))
+;;;; Format selection and startup
+
+(defvar org-overriding-columns-format nil
+  "When set, overrides any other format definition for the agenda.
+Don't set this, this is meant for dynamic scoping.  Set
+`org-columns-default-format' and `org-columns-default-format-for-agenda'
+instead.  You should use this variable only in the local settings
+section for a custom agenda view.")
+
+(defvar-local org-local-columns-format nil
+  "When set, overrides any other format definition for the agenda.
+This can be set as a buffer local value to avoid interfering with
+dynamic scoping for `org-overriding-columns-format'.")
 
 ;;;###autoload
 (defun org-columns-get-format-and-top-level ()
   (let ((fmt (org-columns-get-format)))
     (org-columns-goto-top-level)
     fmt))
+
+(defun org-columns--get-columns-keyword ()
+  "Return the first COLUMNS keyword value in the current buffer."
+  (cdr (assoc "COLUMNS" (org-collect-keywords '("COLUMNS") '("COLUMNS")))))
 
 (defun org-columns-get-format (&optional fmt-string)
   "Return columns format specifications.
@@ -921,15 +921,7 @@ current specifications.  This function also sets
   (let ((format
 	 (or fmt-string
 	     (org-entry-get nil "COLUMNS" t)
-	     (org-with-wide-buffer
-	      (goto-char (point-min))
-	      (catch :found
-		(let ((case-fold-search t))
-		  (while (re-search-forward "^[ \t]*#\\+COLUMNS: .+$" nil t)
-		    (let ((element (org-element-at-point)))
-		      (when (org-element-type-p element 'keyword)
-			(throw :found (org-element-property :value element)))))
-		  nil)))
+	     (org-columns--get-columns-keyword)
 	     org-columns-default-format)))
     (setq org-columns-current-fmt format)
     (org-columns-compile-format format)
@@ -993,6 +985,8 @@ When COLUMNS-FMT-STRING is non-nil, use it as the column format."
 	      (goto-char (car entry))
 	      (org-columns--display-here (cdr entry)))))))))
 
+;;;; Column definition editing
+
 (defun org-columns--summary-types-completion-function (string pred flag)
   (let ((completion-table
          (org-completion-table-with-metadata
@@ -1030,26 +1024,28 @@ non-interactively.  See `org-columns-compile-format' for details."
 			(completing-read
 			 "Property: "
 			 (mapcar #'list (org-buffer-property-keys t nil t))
-			 nil nil (nth 0 spec))))
+			 nil nil (org-columns--spec-property spec))))
 		   (list prop
                          ;; Discard useless whitespace-only titles.
 			 (org-string-nw-p
                           (read-string (format "Column title [%s]: " prop)
-				       (nth 1 spec)))
+				       (org-columns--spec-title spec)))
 			 ;; Use `read-string' instead of `read-number'
 			 ;; to allow empty width.
 			 (let ((w (read-string
 				   "Column width: "
-				   (and (nth 2 spec)
-					(number-to-string (nth 2 spec))))))
+				   (and (org-columns--spec-width spec)
+					(number-to-string
+					 (org-columns--spec-width spec))))))
 			   (and (org-string-nw-p w) (string-to-number w)))
 			 (org-string-nw-p
                           (completing-read
                            "Summary: "
                            'org-columns--summary-types-completion-function
-                           nil t (nth 3 spec)))
+                           nil t (org-columns--spec-operator spec)))
 			 (org-string-nw-p
-			  (read-string "Format: " (nth 4 spec))))))))
+			  (read-string "Format: "
+				       (org-columns--spec-format-string spec))))))))
     (if spec
 	(progn (setcar spec (car new))
 	       (setcdr spec (cdr new)))
@@ -1062,7 +1058,7 @@ non-interactively.  See `org-columns-compile-format' for details."
   (interactive nil org-mode org-agenda-mode)
   (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
     (when (y-or-n-p (format "Are you sure you want to remove column %S? "
-			    (nth 1 spec)))
+			    (org-columns--spec-title spec)))
       (setq org-columns-current-fmt-compiled
 	    (delq spec org-columns-current-fmt-compiled))
       (org-columns-store-format)
@@ -1094,29 +1090,30 @@ non-interactively.  See `org-columns-compile-format' for details."
   (interactive "p" org-mode org-agenda-mode)
   (org-columns-widen (- arg)))
 
+;;;; Navigation and reordering
+
+(defun org-columns--move-cursor (up)
+  "Move cursor up or down one row.
+When UP is non-nil, move up; otherwise, move down."
+  (let ((col (current-column)))
+    (forward-line (if up -1 1))
+    (while (and (org-invisible-p2) (not (if up (bobp) (eobp))))
+      (forward-line (if up -1 1)))
+    (move-to-column col)
+    (when (derived-mode-p 'org-agenda-mode)
+      (org-agenda-do-context-action))))
+
 (defun org-columns-move-up ()
-  "In column view, move cursor up one row.
+  "Move cursor up one row.
 When in agenda column view, also call `org-agenda-do-context-action'."
   (interactive nil org-mode org-agenda-mode)
-  (let ((col (current-column)))
-    (forward-line -1)
-    (while (and (org-invisible-p2) (not (bobp)))
-      (forward-line -1))
-    (move-to-column col)
-    (if (eq major-mode 'org-agenda-mode)
-	(org-agenda-do-context-action))))
+  (org-columns--move-cursor t))
 
 (defun org-columns-move-down ()
-  "In column view, move cursor down one row.
+  "Move cursor down one row.
 When in agenda column view, also call `org-agenda-do-context-action'."
   (interactive nil org-mode org-agenda-mode)
-  (let ((col (current-column)))
-    (forward-line 1)
-    (while (and (org-invisible-p2) (not (eobp)))
-      (forward-line 1))
-    (move-to-column col)
-    (if (derived-mode-p 'org-agenda-mode)
-	(org-agenda-do-context-action))))
+  (org-columns--move-cursor nil))
 
 (defun org-columns-move-right ()
   "Swap this column with the one to the right."
@@ -1173,35 +1170,7 @@ With non-nil optional argument UP, move it up."
   (interactive nil org-mode)
   (org-columns--move-row 'up))
 
-(defun org-columns-store-format ()
-  "Store the text version of the current columns format.
-The format is stored either in the COLUMNS property of the node
-starting the current column display, or in a #+COLUMNS line of
-the current buffer."
-  (let ((fmt (org-columns-uncompile-format org-columns-current-fmt-compiled)))
-    (setq-local org-columns-current-fmt fmt)
-    (when org-columns-overlays
-      (org-with-point-at org-columns-top-level-marker
-	(if (and (org-at-heading-p) (org-entry-get nil "COLUMNS"))
-	    (org-entry-put nil "COLUMNS" fmt)
-	  (goto-char (point-min))
-	  (let ((case-fold-search t))
-	    ;; Try to replace the first COLUMNS keyword available.
-	    (catch :found
-	      (while (re-search-forward "^[ \t]*#\\+COLUMNS:\\(.*\\)" nil t)
-		(let ((element (save-match-data (org-element-at-point))))
-		  (when (and (org-element-type-p element 'keyword)
-			     (equal (org-element-property :key element)
-				    "COLUMNS"))
-		    (replace-match (concat " " fmt) t t nil 1)
-		    (throw :found nil))))
-	      ;; No COLUMNS keyword in the buffer.  Insert one at the
-	      ;; beginning, right before the first heading, if any.
-	      (goto-char (point-min))
-	      (unless (org-at-heading-p) (outline-next-heading))
-	      (let ((inhibit-read-only t))
-		(insert-before-markers "#+COLUMNS: " fmt "\n"))))
-	  (setq-local org-columns-default-format fmt))))))
+;;;; Display update
 
 (defun org-columns-update (property)
   "Recompute PROPERTY, and update the columns display for it."
@@ -1245,6 +1214,49 @@ the current buffer."
 	(call-interactively #'org-agenda-columns)))
     (message "Recomputing columns...done")))
 
+;;;; Format storage
+
+(defun org-columns--replace-columns-keyword (fmt)
+  "Replace the first COLUMNS keyword value with FMT.
+Return non-nil when a COLUMNS keyword was replaced."
+  (let ((case-fold-search t))
+    (catch :found
+      (while (re-search-forward "^[ \t]*#\\+COLUMNS:\\(.*\\)" nil t)
+        (let ((element (save-match-data (org-element-at-point))))
+          (when (and (org-element-type-p element 'keyword)
+                     (equal (org-element-property :key element) "COLUMNS"))
+            (replace-match (concat " " fmt) t t nil 1)
+            (throw :found t))))
+      nil)))
+
+(defun org-columns--insert-columns-keyword (fmt)
+  "Insert a COLUMNS keyword with value FMT before the first heading."
+  (goto-char (point-min))
+  ;; FIXME: This preserves the historical behavior of inserting the
+  ;; keyword before the first heading.  A better policy may be to insert
+  ;; it after the initial block of file-level keywords.
+  (unless (org-at-heading-p) (outline-next-heading))
+  (let ((inhibit-read-only t))
+    (insert-before-markers "#+COLUMNS: " fmt "\n")))
+
+(defun org-columns-store-format ()
+  "Store the text version of the current columns format.
+The format is stored either in the COLUMNS property of the node
+starting the current column display, or in a #+COLUMNS line of
+the current buffer."
+  (let ((fmt (org-columns-uncompile-format org-columns-current-fmt-compiled)))
+    (setq-local org-columns-current-fmt fmt)
+    (when org-columns-overlays
+      (org-with-point-at org-columns-top-level-marker
+	(if (and (org-at-heading-p) (org-entry-get nil "COLUMNS"))
+	    (org-entry-put nil "COLUMNS" fmt)
+	  (goto-char (point-min))
+	  (unless (org-columns--replace-columns-keyword fmt)
+	    (org-columns--insert-columns-keyword fmt))
+	  (setq-local org-columns-default-format fmt))))))
+
+;;;; Format compilation
+
 (defun org-columns-uncompile-format (compiled)
   "Turn the compiled columns format back into a string representation.
 
@@ -1269,11 +1281,11 @@ COMPILED is an alist, as returned by `org-columns-compile-format'."
 The result is a list with one entry per column.  Each entry has the
 form (PROPERTY TITLE WIDTH OPERATOR FORMAT-STRING), where:
 
-  PROPERTY       the property name, as an upper-case string
-  TITLE          the column title, as a string
-  WIDTH          the column width in characters, or nil for automatic width
-  OPERATOR       the summary operator, as a string, or nil
-  FORMAT-STRING  a `format' string for computed values, or nil
+  PROPERTY       Property name, as an upper-case string.
+  TITLE          Column title, as a string.
+  WIDTH          Column width, as an integer, or nil for automatic width.
+  OPERATOR       Summary operator, as a string, or nil.
+  FORMAT-STRING  Format string for `format', used for computed values, or nil.
 
 Set and return `org-columns-current-fmt-compiled'."
   (setq org-columns-current-fmt-compiled
@@ -1296,12 +1308,15 @@ Set and return `org-columns-current-fmt-compiled'."
                 (operator (org-string-nw-p (match-string-no-properties 4 fmt))))
            (if operator
                (seq-let (operator format-string) (split-string operator ";")
-                 (list (upcase prop) title width operator
-                       (if (equal operator "$") "%.2f" format-string)))
-             (list (upcase prop) title width nil nil))))))
+                 (org-columns--make-spec
+		  (upcase prop) title width operator
+		  (if (equal operator "$") "%.2f" format-string)))
+             (org-columns--make-spec (upcase prop) title width nil nil))))))
 
 
 ;;;; Column View Summary
+
+;;;;; Summary helpers
 
 (defun org-columns--age-to-minutes (s)
   "Turn age string S into a number of minutes.
@@ -1329,6 +1344,27 @@ Return the result as a duration."
    (apply fun (mapcar #'org-duration-to-minutes times))
    (org-duration-h:mm-only-p times)))
 
+(defun org-columns--summarize (operator)
+  "Return summary function associated to string OPERATOR."
+  (pcase (or (assoc operator org-columns-summary-types)
+	     (assoc operator org-columns-summary-types-default))
+    (`nil (error "Unknown %S operator" operator))
+    (`(,_ . ,(and (pred functionp) summarize)) summarize)
+    (`(,_ ,summarize ,_) summarize)
+    (_ (error "Invalid definition for operator %S" operator))))
+
+(defun org-columns--collect (operator)
+  "Return collect function associated to string OPERATOR.
+Return nil if no collect function is associated to OPERATOR."
+  (pcase (or (assoc operator org-columns-summary-types)
+	     (assoc operator org-columns-summary-types-default))
+    (`nil (error "Unknown %S operator" operator))
+    (`(,_ . ,(pred functionp)) nil)	;default value
+    (`(,_ ,_ ,collect) collect)
+    (_ (error "Invalid definition for operator %S" operator))))
+
+;;;;; Tree summary computation
+
 (defun org-columns--compute-spec (spec &optional update)
   "Update tree according to SPEC.
 SPEC is a column format specification.  When optional argument
@@ -1341,13 +1377,13 @@ properties drawers."
 	 (level 0)
 	 (inminlevel lmax)
 	 (last-level lmax)
-	 (property (car spec))
-	 (fmt (nth 4 spec))
+	 (property (org-columns--spec-property spec))
+	 (fmt (org-columns--spec-format-string spec))
          ;; Special properties cannot be collected nor summarized, as
          ;; they have their own way to be computed.  Therefore, ignore
          ;; any operator attached to them.
 	 (operator (and (not (member property org-special-properties))
-                        (nth 3 spec)))
+                        (org-columns--spec-operator spec)))
 	 (collect (and operator (org-columns--collect operator)))
 	 (summarize (and operator (org-columns--summarize operator))))
     (org-with-wide-buffer
@@ -1423,11 +1459,33 @@ column specification."
   (let ((org-columns--time (float-time))
 	seen)
     (dolist (spec org-columns-current-fmt-compiled)
-      (let ((property (car spec)))
+      (let ((property (org-columns--spec-property spec)))
 	;; Property value is updated only the first time a given
 	;; property is encountered.
 	(org-columns--compute-spec spec (not (member property seen)))
 	(push property seen)))))
+
+;;;;; Summary operators
+
+(defconst org-columns-summary-types-default
+  '(("+"     . org-columns--summary-sum)
+    ("$"     . org-columns--summary-currencies)
+    ("X"     . org-columns--summary-checkbox)
+    ("X/"    . org-columns--summary-checkbox-count)
+    ("X%"    . org-columns--summary-checkbox-percent)
+    ("max"   . org-columns--summary-max)
+    ("mean"  . org-columns--summary-mean)
+    ("min"   . org-columns--summary-min)
+    (":"     . org-columns--summary-sum-times)
+    (":max"  . org-columns--summary-max-time)
+    (":mean" . org-columns--summary-mean-time)
+    (":min"  . org-columns--summary-min-time)
+    ("@max"  . org-columns--summary-max-age)
+    ("@mean" . org-columns--summary-mean-age)
+    ("@min"  . org-columns--summary-min-age)
+    ("est+"  . org-columns--summary-estimate))
+  "Map operators to summary functions.
+See `org-columns-summary-types' for details.")
 
 (defun org-columns--summary-sum (values fmt)
   "Compute the sum of VALUES.
@@ -1535,6 +1593,8 @@ and variances (respectively) of the individual estimates."
 
 ;;; Dynamic block for Column view
 
+;;;; Capturing
+
 (defun org-columns--capture-view (maxlevel match skip-empty exclude-tags format local)
   "Get the column view of the current buffer.
 
@@ -1585,7 +1645,7 @@ the columns according to FORMAT."
      'archive 'comment)
     (org-columns-quit)
     ;; Add column titles and a horizontal rule in front of the table.
-    (cons (mapcar #'cadr org-columns-current-fmt-compiled)
+    (cons (mapcar #'org-columns--spec-title org-columns-current-fmt-compiled)
 	  (cons 'hline (nreverse table)))))
 
 (defun org-columns--clean-item (item)
@@ -1602,6 +1662,8 @@ an inline src-block."
     (org-quote-vert
      (org-no-properties
       (org-element-interpret-data data)))))
+
+;;;; Writing
 
 ;;;###autoload
 (defun org-dblock-write:columnview (params)
@@ -1703,7 +1765,7 @@ PARAMS is the parameter property list obtained from the dynamic block
 definition."
   (let ((link (plist-get params :link))
 	(width-specs
-	 (mapcar (lambda (spec) (nth 2 spec))
+	 (mapcar #'org-columns--spec-width
 		 org-columns-current-fmt-compiled)))
     (when table
       ;; Prune level information from the table.  Also normalize
@@ -1778,6 +1840,8 @@ definition."
 	(org-table-align)
         (when (seq-find #'identity width-specs)
           (org-table-shrink))))))
+
+;;;; Insertion and registration
 
 ;;;###autoload
 (defun org-columns-insert-dblock ()
@@ -1873,11 +1937,11 @@ This will add overlays to the date lines, to show the summary for each day."
 		(pcase spec
 		  (`(,property ,title ,width . ,_)
 		   (if (member property '("CLOCKSUM" "CLOCKSUM_T"))
-		       (list property title width ":" nil)
+		       (org-columns--make-spec property title width ":" nil)
 		     spec))))
 	      org-columns-current-fmt-compiled)))
     ;; Ensure there's at least one summation column.
-    (when (cl-some (lambda (spec) (nth 3 spec)) fmt)
+    (when (cl-some #'org-columns--spec-operator fmt)
       (goto-char (point-max))
       (catch :complete
 	(while t
@@ -1940,13 +2004,14 @@ This will add overlays to the date lines, to show the summary for each day."
 	 (goto-char (point-min))
 	 (org-columns-get-format-and-top-level)
 	 (dolist (spec fmt)
-	   (let ((prop (car spec)))
+	   (let ((prop (org-columns--spec-property spec)))
 	     (cond
 	      ((equal prop "CLOCKSUM") (org-clock-sum))
 	      ((equal prop "CLOCKSUM_T") (org-clock-sum-today))
-	      ((and (nth 3 spec)
+	      ((and (org-columns--spec-operator spec)
 		    (let ((a (assoc prop org-columns-current-fmt-compiled)))
-		      (equal (nth 3 a) (nth 3 spec))))
+		      (equal (org-columns--spec-operator a)
+			     (org-columns--spec-operator spec))))
 	       (org-columns-compute prop))))))))))
 
 
