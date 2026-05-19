@@ -596,6 +596,22 @@ Irgend etwas.
      (save-excursion
        (should (search-forward "\\babelprovide[onchar=ids fonts]{greek}" nil t))))))
 
+(ert-deftest test-ox-latex/dont-generate-usepackage-polyglossia-with-pdflatex()
+  :expected-result :failed
+  (org-test-with-exported-text
+   'latex
+   "#+LATEX_COMPILER: pdflatex
+#+LATEX_MULTI_LANG: polyglossia
+#+LANGUAGE: es
+* Title
+Test
+"
+   ("polyglossia with pdflatex:\n%s" (buffer-string))
+   (goto-char (point-min))
+   (should-not (search-forward "\\usepackage{polyglossia}" nil t))
+   (should (search-forward "\\begin{document}"))))
+
+
 (ert-deftest test-ox-latex/use-sans-variable ()
   "Test `org-latex-use-sans' set to t."
   (let ((org-latex-use-sans t))
@@ -757,7 +773,7 @@ Babel gestiona mis idiomas
 #+SELECT_LANG: en-gb
 Babel back to British English.
 "
-   ;; (message "babel: %s" (buffer-string))
+   ;; (message "babel-switch: %s" (buffer-string))
    (goto-char (point-min))
    (should (re-search-forward "\\usepackage\\[.*?\\]{babel}" nil t))
    (should (search-forward "\\selectlanguage{spanish}" nil t))

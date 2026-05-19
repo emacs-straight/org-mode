@@ -2292,7 +2292,7 @@ Extract the information from INFO."
          (polyglossia-font-config org-latex-polyglossia-font-config)
          (doc-scripts (plist-get info :doc-scripts)))
     (when (equal compiler "pdflatex")
-      (warn "LaTeX package polyglossia isn't supported by pdflatex!"))
+      (error "LaTeX package polyglossia isn't supported by pdflatex!"))
     (with-temp-buffer
       (insert "\\usepackage{fontspec}\n")
       (insert "\\usepackage{polyglossia}\n")
@@ -2691,7 +2691,7 @@ INFO is a plist used as a communication channel."
   "Return the long language name for the first element in LANGS.
 LANG is a list of languages."
     (let* ((main-lang (car langs))
-           (plist (cdr (assoc main-lang org-latex-language-alist))))
+           (plist (alist-get main-lang org-latex-language-alist nil nil #'string=)))
       (or (plist-get plist :lang-name) main-lang)))
 
 (defun org-latex--format-spec (info)
@@ -2803,9 +2803,8 @@ specified in `org-latex-default-packages-alist' or
                                    (plist-get info :latex-header-extra))
                               (and (not snippet?)
                                    (plist-get info :latex-use-sans)
-                                   "\\renewcommand*\\familydefault{\\sfdefault}"))
-		        "")
-             (org-latex-fontspec-to-string info))))) ;; this will return an empty string if multi-lang is nil
+                                   "\\renewcommand*\\familydefault{\\sfdefault}")
+                              (org-latex-fontspec-to-string info))))))) ;; this will return an empty string if multi-lang is nil
       (if multi-lang
           ;; Full headers are generated using the new drivers
           new-template
@@ -3536,12 +3535,12 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
      ((string= key "INDEX") (format "\\index{%s}" value))
      ((string= key "SELECT_LANG")
       (let ((multi-lang (plist-get info :latex-multi-lang))
-            (lang-info (cdr (assoc value org-latex-language-alist))))
+            (lang-info  (alist-get value org-latex-language-alist nil nil #'string=)))
         (if (null lang-info)
-            (warn "Unknown language in SELECT_LANG %s" value)
+            (warn "Unknown language in SELECT_LANG `%s'" value)
           (cond* ((string= multi-lang "babel")
                   (format "\\selectlanguage{%s}"
-                          (org-latex--org-lang-to-babel value)))
+                          (org-latex--get-babel-lang value)))
                  ((string= multi-lang "polyglossia")
                   (format "\\selectlanguage{%s}"
                           (plist-get lang-info :polyglossia)))
