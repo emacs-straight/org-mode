@@ -174,6 +174,8 @@
     (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang)
     (:latex-descriptive-env "LATEX_DESCRIPTIVE_ENV" nil org-latex-descriptive-environment)
     (:latex-use-sans nil "latex-use-sans" org-latex-use-sans)
+    (:latex-fontspec-config nil nil org-latex-fontspec-config)
+    (:latex-fontspec-defaults nil nil org-latex-fontspec-default-features)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1751,7 +1753,9 @@ which will result in the following LaTeX code:
   "A string with extra options to pass to the babel package.
 
 By default, only the bidi setting is passed.
-Some versions of babel will also need \"import=*\".")
+Some versions of babel will also need \"import=*\"."
+  :type 'string
+  :safe #'stringp)
 
 (defcustom org-latex-babel-provides-alist nil
   "Mapping of language names to parameters passed to \\babelprovides{}.
@@ -2293,8 +2297,8 @@ Extract the information from INFO."
          ;; FIXME: Read more about unicode-math and its options
          (unicode-math-options org-latex-unicode-math-options)
          ;; These change inside `with-temp-buffer'
-         (fontspec-config org-latex-fontspec-config)
-         (current-default-features org-latex-fontspec-default-features)
+         (fontspec-config (plist-get info :latex-fontspec-config))
+         (current-default-features (plist-get info :latex-fontspec-defaults))
          (polyglossia-font-config org-latex-polyglossia-font-config)
          (doc-scripts (plist-get info :doc-scripts)))
     (when (equal compiler "pdflatex")
@@ -2389,7 +2393,7 @@ The structure is intended to cover most examples from URL
 Use fontspec as a last resort and when defined."
   (let* ((compiler (plist-get info :latex-compiler))
          (latex-babel-langs (plist-get info :languages))
-         (doc-fontspec org-latex-fontspec-config)
+         (doc-fontspec (plist-get info :latex-fontspec-config))
          (doc-babel-font-config org-latex-babel-font-config)
          (doc-babel-provides org-latex-babel-provides-alist)
          ;; Depending on the LaTeX compiler, the bidi= option varies.
@@ -2510,8 +2514,8 @@ INFO is the export communication channel."
   (let ((compiler (plist-get info :latex-compiler))
         (unicode-math-options org-latex-unicode-math-options)
         ;; Copy these to temp variable... (with-temp-buffer) overwrites them
-        (current-fontspec-config org-latex-fontspec-config)
-        (current-default-features org-latex-fontspec-default-features)
+        (current-fontspec-config (plist-get info :latex-fontspec-config))
+        (current-default-features (plist-get info :latex-fontspec-defaults))
         (doc-scripts (plist-get info :doc-scripts))
         (cjk-packages nil)) ;; will we need the packages to support CJK fonts?
     (with-temp-buffer
