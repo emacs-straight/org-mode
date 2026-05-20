@@ -1747,6 +1747,12 @@ which will result in the following LaTeX code:
 		 (alist :tag "polyglossia font config"))
   :safe #'listp)
 
+(defcustom org-latex-babel-extra-settings nil
+  "A string with extra options to pass to the babel package.
+
+By default, only the bidi setting is passed.
+Some versions of babel will also need \"import=*\".")
+
 (defcustom org-latex-babel-provides-alist nil
   "Mapping of language names to parameters passed to \\babelprovides{}.
 A list of entries that maps a language to a `:provides' property for
@@ -2386,8 +2392,19 @@ Use fontspec as a last resort and when defined."
          (doc-fontspec org-latex-fontspec-config)
          (doc-babel-font-config org-latex-babel-font-config)
          (doc-babel-provides org-latex-babel-provides-alist)
-         ;; Depending on the version of babel, "import=*" may be needed
-         (babel-options (concat "bidi=" (if (equal compiler "lualatex") "basic" "default") ",import=*"))
+         ;; Depending on the LaTeX compiler, the bidi= option varies.
+         (babel-options
+          (concat "bidi=" (if (equal compiler "lualatex") "basic" "default")))
+         ;; Depending on the version of babel, "import=*" may be needed or not.
+         ;; Depending on your document, babel may need more options.
+         ;; Use `org-latex-babel-extra-settings' to tune the output.
+         (babel-options
+          (if org-latex-babel-extra-settings
+              (mapconcat #'identity
+                         `(,babel-options
+                           ,org-latex-babel-extra-settings)
+                         ",")
+            babel-options))
          (unicode-math-options org-latex-unicode-math-options))
     ;; FIXME: add preliminary checks to flag potential configuration clashes
     (with-temp-buffer

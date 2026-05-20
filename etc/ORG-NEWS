@@ -219,6 +219,12 @@ environment for descriptive lists when exporting to LaTeX.
 Use it when the default ~description~ environment does not fit your
 needs. The recommended alternative value is ~itemize~.
 
+*** New custom variable ~org-latex-babel-settings-extra~
+
+This variable allows you to fine-tune the produced LaTeX to your
+system's TeX distribution. The =babel= package is changing and some
+systems need more parameters that just bidi control.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.

@@ -504,7 +504,30 @@ Irgend etwas.
      (save-excursion
        (should (search-forward "\\babelprovide[import]{greek}" nil t))))))
 
-(ert-deftest test-ox-latex/lualatex-babel-cjk ()
+(ert-deftest test-ox-latex/lualatex-babel-cjk-jp ()
+  "Just generate some test document with the Japanese settings.
+We check that extra settings for babel are added."
+
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-babel-extra-settings "import=*"))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: CJK
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: jp
+#+LATEX_MULTI_LANG: babel
+
+* タムです。学生です
+
+- はるさんハウスはどこですか
+"
+     ;; (message "JP BABEL:\n%s" (buffer-string))
+     (goto-char (point-min))
+     (should (search-forward "\\usepackage{luatexja}"))
+     (should (search-forward "\\usepackage[bidi=basic,import=*]{babel}"))
+     (should (search-forward "\\babelprovide[main,import]{japanese}")))))
+
+(ert-deftest test-ox-latex/lualatex-babel-cjk-zh ()
   "Test that Chinese text are handled correctly.
 In this test we default to Fandol font for Chinese."
   (let ((org-latex-compiler "lualatex"))
@@ -519,6 +542,7 @@ In this test we default to Fandol font for Chinese."
 
 正文。
 "
+     (message "ZH BABEL:\n%s" (buffer-string))
      (goto-char (point-min))
      (save-excursion
        (should (search-forward "\\usepackage{indentfirst}")))
@@ -533,6 +557,7 @@ In this test we default to Fandol font for Chinese."
      (should (search-forward "\\setCJKsansfont{FandolHei}"))
      (should (search-forward "\\def\\ltj@stdyokojfm{quanjiao}"))
      (should (search-forward "\\usepackage{luatexja}"))
+     (should (search-forward "\\usepackage[bidi=basic]{babel}"))
      (should (search-forward "\\babelprovide[main,import]{chinese}")))))
 
 (ert-deftest test-ox-latex/lualatex-babel-fonts ()

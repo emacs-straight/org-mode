@@ -15722,6 +15722,7 @@ don't /always/ need to provide the =:script= property]].
 #+cindex: babel font configuration
 #+vindex: org-latex-babel-font-config
 #+vindex: org-latex-babel-provides-alist
+#+vindex: org-latex-babel-extra-settings
 
 Org mode will control the fonts used for multilingual documents when
 using the ~babel~ package with the ~org-latex-babel-font-config~
@@ -15830,6 +15831,36 @@ use ~DejaVu Sans~ for Portuguese with ~org-latex-babel-font-config~.
 
 *Note* that the property for the main language (Greek in the example),
 is /always/ ~import,main~.
+
+Depending on the version of the =babel= package provided by your TeX
+distribution and on the specifics of your document, you may need to
+add extra parameters when including it. These extra settings are
+included through custom variable ~org-latex-babel-extra-settings~.
+
+For example, if your TeX distribution provides an older version of
+babel, you may need to add ~import=*~ to the parameters passed to the
+=babel= package:
+
+#+begin_src emacs-lisp
+(setq org-latex-babel-extra-settings "import=*"
+      org-latex-compiler "pdflatex")
+#+end_src
+
+#+texinfo: @noindent
+will generate
+
+#+begin_src latex
+\usepackage[bidi=basic,import=*]{babel}
+#+end_src
+
+#+texinfo: @noindent
+in the LaTeX preamble of your document.
+
+- WARNING :: It is recommended to set this variable in your Emacs
+  configuration because it depends on the TeX distribution installed
+  in your system. Adding this as a local variable in the document may
+  interfere with other peoples' setups.
+
 
 **** Configuration of the ~xeCJK~ or ~luatexja~ packages for CJK languages
 :PROPERTIES:
