@@ -542,7 +542,7 @@ In this test we default to Fandol font for Chinese."
 
 正文。
 "
-     (message "ZH BABEL:\n%s" (buffer-string))
+     ;; (message "ZH BABEL:\n%s" (buffer-string))
      (goto-char (point-min))
      (save-excursion
        (should (search-forward "\\usepackage{indentfirst}")))
