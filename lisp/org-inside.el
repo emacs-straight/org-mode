@@ -92,7 +92,7 @@ FACE and UNHIDE are the text face and invisibility status; see
 `org-inside-appearance'."
   (let ((ov (window-parameter win 'org-inside-overlay)))
     (unless (and ov (overlayp ov) (buffer-live-p (overlay-buffer ov)))
-      (setq ov (make-overlay 0 0 (window-buffer win) t))
+      (setq ov (make-overlay 1 1 (window-buffer win) t))
       (overlay-put ov 'window win)
       (overlay-put ov 'cursor-sensor-functions '(org-inside--sensor))
       ;; For auto-unhiding, we set the invisible property to something
