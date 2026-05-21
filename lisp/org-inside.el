@@ -281,13 +281,16 @@ portion."
 Operates only when inside an entity wrapped by hidden text and
 `org-inside-mode' is enabled.  Text will be re-hidden when point leaves
 the entity.  See `org-inside-appearance' to enable automatic unhiding or
-configure other appearance settings."
+configure other appearance settings.  Returns non-nil if the visibility
+was toggled, making it suitable for inclusion on
+`org-ctrl-c-ctrl-c-hook'."
   (interactive)
-  (when-let* ((ov (window-parameter nil 'org-inside-overlay))
-              (_ (overlay-buffer ov)))
+  (and-let* ((ov (window-parameter nil 'org-inside-overlay))
+             (_ (overlay-buffer ov)))
     (let ((inv (overlay-get ov 'invisible)))
       (overlay-put ov 'invisible
-                   (if inv nil 'org-inside--not-hidden)))))
+                   (if inv nil 'org-inside--not-hidden)))
+    t))
 
 ;;;###autoload
 (define-minor-mode org-inside-mode
