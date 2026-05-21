@@ -49,7 +49,7 @@
 (require 'org)
 (require 'org-element)
 (require 'face-remap)
-(require 'cus-start)
+(require 'cus-start) ; ensure 'cursor-type has its 'custom-type set
 (eval-when-compile (require 'cl-lib))
 
 (defcustom org-inside-appearance '(:cursor bar)
@@ -205,7 +205,7 @@ If POS is nil, use point."
 ;; Not necessary for Emacs v31+
 (defun org-inside--frame-changed (frame)
   "Handle window buffer change for windows on FRAME."
-  (walk-windows 
+  (walk-windows
    (lambda (win)
      (unless (buffer-local-value 'org-inside-mode (window-buffer win))
        (org-inside--clear-overlay win)
