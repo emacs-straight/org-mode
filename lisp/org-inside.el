@@ -252,12 +252,12 @@ portion."
   (add-hook 'window-buffer-change-functions #'org-inside--buffer-change nil t)
   (add-hook 'org-hidden-text-functions #'org-inside--add-properties nil t)
   (font-lock-flush) ;; does not call sensor functions
-  (dolist (w (get-buffer-window-list))
+  (dolist (w (get-buffer-window-list nil nil t))
     (org-inside--buffer-change w)))
 
 (defun org-inside--teardown ()
   "Tear down `org-inside-mode' in buffer."
-  (dolist (w (get-buffer-window-list))
+  (dolist (w (get-buffer-window-list nil nil t))
     (org-inside--restore-cursor w)
     (org-inside--clear-overlay w))
   (cursor-sensor-mode -1)
@@ -272,8 +272,9 @@ portion."
    (lambda (win)
      (when (window-parameter win 'org-inside-overlay)
        (with-selected-window win
-         (org-inside--teardown)
-         (org-inside--setup))))
+         (org-inside--clear-overlay win)
+         (org-inside--restore-cursor win)
+         (org-inside--buffer-change win))))
    nil t))
 
 (defun org-inside-toggle-hidden ()
