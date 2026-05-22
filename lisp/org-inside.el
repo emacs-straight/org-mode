@@ -64,12 +64,13 @@ marker unhiding.  The value is a plist, with possible keys and values:
 
  `:unhide': a boolean indicating whether to automatically un-hide the
      hidden markers (unhiding can also be toggled by command; see
-     `org-inside-toggle-hidden')
+     command `org-inside-toggle-hidden')
 
 All appearance keys are optional, and can be freely combined.  If
 `org-inside-appearance' is nil, no appearance changes will be applied
-when point is inside hidden markers, but `org-inside-toggle-hidden' can
-still be used to unhide hidden markers for the entity you are inside."
+when point is inside hidden markers, but the command
+`org-inside-toggle-hidden' can still be used to unhide hidden markers
+for the entity you are inside."
   :group 'org-appearance
   :type `(choice
           (const :value nil :tag "No appearance changes: unhide on command only")
@@ -80,7 +81,7 @@ still be used to unhide hidden markers for the entity you are inside."
 		     :tag "Cursor Type")
 	    (:face (choice (face :tag "Face Name")
 			   (plist :tag "Attribute List"))
-		   :tag "Cursor Face")
+		   :tag "Text Face")
 	    (:unhide boolean :tag "Unhide hidden markers"))))
   :set (lambda (sym val)
          (set-default-toplevel-value sym val)
@@ -120,8 +121,10 @@ consult this window parameter to restore the cursor type."
            (showing-p (overlay-get ov 'invisible))) ; non-nil = unhidden!
       ;; We move the overlay when returning to the run-loop to avoid
       ;; the cursor-sensor race for point adjustment, since our
-      ;; overlay and the underlying text both target the same
-      ;; cursor-sensor-functions.
+      ;; overlay unhides text which point adjustment can skip.  As
+      ;; well, since both text and overlay implement
+      ;; cursor-sensor-functions, this avoids a similar race as to
+      ;; which applies.
       (run-at-time 0 nil (lambda (buf)
                            (with-current-buffer buf
                              (if inside-p (move-overlay ov beg end)
@@ -153,7 +156,7 @@ text, as well as the overlay returned by `org-inside--overlay' .  WIN
 POS, and TYPE are the window, former position, and cursor movement
 type."
   (cond
-   ((eq type 'entered)       ; called from the in-text cursor-sensor
+   ((eq type 'entered)         ; called from the in-text cursor-sensor
     (when-let* ((ctx (org-element-context))
                 (elem (org-element-lineage ctx '(link bold code italic verbatim
                                                       underline strike-through)
@@ -166,7 +169,7 @@ type."
    ((eq type 'left)          ; called from the overlay's cursor-sensor
     (org-inside--set-appearance win 0 0))))
 
-(defsubst org-inside--restore-cursor (&optional win)
+(defsubst org-inside--restore-cursor (win)
   "Restore old cursor in WIN (if any).
 If the current window cursor type is nil (i.e. the cursor is hidden), no
 change is made."
@@ -175,7 +178,7 @@ change is made."
     (set-window-cursor-type win old-type)
     (set-window-parameter win 'org-inside-old-cursor nil)))
 
-(defsubst org-inside--clear-overlay (&optional win)
+(defsubst org-inside--clear-overlay (win)
   "Clear the `org-inside' overlay from window WIN."
   (when-let* ((ov (window-parameter win 'org-inside-overlay))
               (_ (overlayp ov)))
@@ -190,7 +193,7 @@ If POS is nil, use point."
              (_ (memq 'org-inside--sensor csf)))))
 
 (defvar org-inside-mode)
-(defun org-inside--buffer-change (&optional win)
+(defun org-inside--buffer-change (win)
   "Handle `org-inside' buffers appearing and disappearing from window WIN."
   (with-current-buffer (window-buffer win)
     (if org-inside-mode
@@ -212,18 +215,11 @@ If POS is nil, use point."
        (org-inside--restore-cursor win)))
    nil frame))
 
-(defun org-inside--add-emphasis-props ()
-  "Add text properties to emphasized text for org-inside functionality."
-  (when org-hide-emphasis-markers
-    (put-text-property (match-beginning 4) (match-end 2)
-		       'cursor-sensor-functions '(org-inside--sensor))
-    (org-rear-nonsticky-at (match-end 3))))
-
 (defun org-inside--add-properties (type _beg _end visible-beg visible-end)
   "Add text properties to invisible text for org-inside functionality.
 TYPE is the type of text being hidden.  BEG, END, VISIBLE-BEG,
-VISIBLE-END are the buffer positions of the link text and its visible
-portion."
+VISIBLE-END are the buffer positions of the affected text and its
+visible portion."
   ;; Emacs 31+ fires cursor-sensor at positions where an inserted
   ;; character would inherit the `cursor-sensor-function' property
   ;; (including rear stickiness).  Prior versions do not respect
@@ -238,8 +234,8 @@ portion."
   ;; for proper point adjustment
   (when (eq type 'emphasis)
     (org-rear-nonsticky-at visible-beg)
-     (when (< emacs-major-version 31)
-       (org-rear-nonsticky-at visible-end)))
+    (when (< emacs-major-version 31)
+      (org-rear-nonsticky-at visible-end)))
   (put-text-property visible-beg visible-end
 		     'cursor-sensor-functions '(org-inside--sensor)))
 
@@ -305,9 +301,9 @@ well:
   [x]_underline_   ; outside
   _[x]underline_   ; inside
 
-Hidden text can be unhidden, either automatically, or by using
-`org-inside-toggle-hidden'.  See `org-inside-appearance' to configure
-what appearance changes occur."
+Hidden text can be unhidden, either automatically, or by using the
+command `org-inside-toggle-hidden'.  See `org-inside-appearance' to
+configure what appearance changes occur."
   :global nil
   (cond
    ((and org-inside-mode
