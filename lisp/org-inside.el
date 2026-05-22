@@ -87,6 +87,18 @@ for the entity you are inside."
          (set-default-toplevel-value sym val)
          (when (featurep 'org-inside) (org-inside--reset-all))))
 
+(defun org-inside--overlay-modification (ov after-p &rest _r)
+  "Detect modifications of the entity covered by overlay OV.
+AFTER-P is t if call is after te modification occurs.  If the entity no
+longer exists, we remove the overlay."
+  (when after-p
+   (save-excursion
+     (goto-char (overlay-start ov))
+     (unless (and-let* ((ctx (org-element-context))
+                        (_ (org-element-lineage ctx '( link bold code italic verbatim
+                                                       underline strike-through) t))))
+       (org-inside--set-appearance nil 0 0)))))
+
 (defun org-inside--overlay (win face unhide)
   "Return an appropriately styled overlay for window WIN.
 FACE and UNHIDE are the text face and invisibility status; see
@@ -96,6 +108,8 @@ FACE and UNHIDE are the text face and invisibility status; see
       (setq ov (make-overlay 1 1 (window-buffer win) t))
       (overlay-put ov 'window win)
       (overlay-put ov 'cursor-sensor-functions '(org-inside--sensor))
+      (overlay-put ov 'modification-hooks '(org-inside--overlay-modification))
+
       ;; For auto-unhiding, we set the invisible property to something
       ;; guaranteed not to be on the `buffer-invisibility-spec'.
       (when unhide (overlay-put ov 'invisible 'org-inside--not-hidden))
