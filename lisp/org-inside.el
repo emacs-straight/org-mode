@@ -87,17 +87,21 @@ for the entity you are inside."
          (set-default-toplevel-value sym val)
          (when (featurep 'org-inside) (org-inside--reset-all))))
 
+(defsubst org-inside--elem-at-point ()
+  "Return the relevant org-entity with possible hidden contents at point."
+  (when-let* ((ctx (org-element-context)))
+    (org-element-lineage ctx '(link bold code italic verbatim
+                                    underline strike-through) t)))
+
 (defun org-inside--overlay-modification (ov after-p &rest _r)
-  "Detect modifications of the entity covered by overlay OV.
-AFTER-P is t if call is after te modification occurs.  If the entity no
-longer exists, we remove the overlay."
+  "Detect modifications of the entity covered by `org-inside' overlay OV.
+AFTER-P is t if called after the modification occurs.  If the org entity
+covered by OV no longer exists, we set the appearance for outside."
   (when after-p
-   (save-excursion
-     (goto-char (overlay-start ov))
-     (unless (and-let* ((ctx (org-element-context))
-                        (_ (org-element-lineage ctx '( link bold code italic verbatim
-                                                       underline strike-through) t))))
-       (org-inside--set-appearance nil 0 0)))))
+    (save-excursion
+      (goto-char (overlay-start ov))
+      (unless (org-inside--elem-at-point)
+        (org-inside--set-appearance (selected-window))))))
 
 (defun org-inside--overlay (win face unhide)
   "Return an appropriately styled overlay for window WIN.
@@ -117,11 +121,11 @@ FACE and UNHIDE are the text face and invisibility status; see
       (set-window-parameter win 'org-inside-overlay ov))
     ov))
 
-(defun org-inside--set-appearance (win beg end)
+(defun org-inside--set-appearance (win &optional beg end)
   "Set appearance and hide state for hidden-marker text.
-The text is from BEG to END in the window WIN's buffer.  If both BEG and
-END are equal to 0, point is considered to be outside the text and the
-prior appearance is restored.
+The text is from BEG to END in the window WIN's buffer.  If BEG or END
+are nil, point is considered to be outside the text and the prior
+appearance is restored.
 
 Note that if the `cursor-type' is configured to change inside (see
 `org-inside-appearance') but the `window-cursor-type' is currently
@@ -129,7 +133,7 @@ nil (i.e. the cursor is hidden), the cursor is left hidden, and the
 window parameter `pending-cursor-type' is set instead.  Other tools can
 consult this window parameter to restore the cursor type."
   (cl-destructuring-bind ( &key cursor face unhide
-                           &aux (inside-p (or (> beg 0) (> end 0))))
+                           &aux (inside-p (and beg end)))
       org-inside-appearance
     (let* ((ov (org-inside--overlay win face unhide))
            (showing-p (overlay-get ov 'invisible))) ; non-nil = unhidden!
@@ -171,17 +175,14 @@ POS, and TYPE are the window, former position, and cursor movement
 type."
   (cond
    ((eq type 'entered)         ; called from the in-text cursor-sensor
-    (when-let* ((ctx (org-element-context))
-                (elem (org-element-lineage ctx '(link bold code italic verbatim
-                                                      underline strike-through)
-                                           t))
+    (when-let* ((elem (org-inside--elem-at-point))
                 (beg (org-element-begin elem))
                 (end (- (org-element-end elem) (org-element-post-blank elem))))
       (unless (and (eq (org-element-type elem) 'link)
                    (not org-link-descriptive))
         (org-inside--set-appearance win beg end))))
    ((eq type 'left)          ; called from the overlay's cursor-sensor
-    (org-inside--set-appearance win 0 0))))
+    (org-inside--set-appearance win))))
 
 (defsubst org-inside--restore-cursor (win)
   "Restore old cursor in WIN (if any).
