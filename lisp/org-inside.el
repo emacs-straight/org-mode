@@ -37,7 +37,8 @@
 ;; Appearance changes are highly configurable, and can include
 ;; changing cursor type, text face (e.g. adding a colorful underline),
 ;; and/or unhiding the hidden text.  A command to hide/unhide the
-;; hidden text on demand is also provided; see
+;; hidden text on demand is also provided and added to the
+;; context-dependent ctrl-c ctrl-c hook; see
 ;; `org-inside-toggle-hidden'.
 ;;
 ;; This mode is intended to be used with
@@ -64,7 +65,7 @@ marker unhiding.  The value is a plist, with possible keys and values:
 
  `:unhide': a boolean indicating whether to automatically un-hide the
      hidden markers (unhiding can also be toggled by command; see
-     command `org-inside-toggle-hidden')
+     `org-inside-toggle-hidden')
 
 All appearance keys are optional, and can be freely combined.  If
 `org-inside-appearance' is nil, no appearance changes will be applied
