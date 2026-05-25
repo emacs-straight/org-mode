@@ -318,14 +318,29 @@ displayed without leading stars."
 	 (list spec value (org-columns--displayed-value spec value agenda-mode))))
      compiled-format)))
 
+(defun org-columns--collect-rows ()
+  "Collect column view rows in the current scope."
+  (org-scan-tags
+   (lambda ()
+     (cons (point-marker) (org-columns--collect-values)))
+   t
+   org--matcher-tags-todo-only))
+
+(defun org-columns--compute-clock-summaries ()
+  "Compute clock summaries needed by the current column format."
+  (when (assoc "CLOCKSUM" org-columns-current-fmt-compiled)
+    (org-clock-sum))
+  (when (assoc "CLOCKSUM_T" org-columns-current-fmt-compiled)
+    (org-clock-sum-today)))
+
 ;;;; Column widths
 
-(defun org-columns--set-widths (cache)
-  "Compute the maximum column widths from the format and CACHE.
+(defun org-columns--set-widths (rows)
+  "Compute the maximum column widths from the format and ROWS.
 This function sets `org-columns-current-maxwidths' as a vector of
 integers greater than 0.
 
-CACHE is a list of entries.  Each entry is a cons cell:
+ROWS is a list of entries.  Each entry is a cons cell:
 
   (POSITION . ((SPEC VALUE DISPLAYED-VALUE) ...))
 
@@ -344,8 +359,8 @@ where:
 				  (`(,_ ,_ ,(and width (pred wholenump)) . ,_) width)
 				  (`(,_ ,title . ,_) (string-width title))))
 			      org-columns-current-fmt-compiled)))
-	  (dolist (entry cache)
-	    (let ((triplets (cdr entry))
+	  (dolist (row rows)
+	    (let ((triplets (cdr row))
 		  (specs org-columns-current-fmt-compiled)
 		  (w widths))
 	      (while (and triplets specs w)
@@ -969,31 +984,22 @@ When COLUMNS-FORMAT is non-nil, use it as the column format."
 	(move-marker org-columns-begin-marker (point))
       (setq org-columns-begin-marker (point-marker)))
     (org-columns-goto-top-level)
-    ;; Initialize `org-columns-current-fmt' and
-    ;; `org-columns-current-fmt-compiled'.
     (let ((org-columns--time (float-time)))
       (org-columns-get-format columns-format)
       (unless org-columns-inhibit-recalculation (org-columns-compute-all))
       (save-restriction
 	(when (and (not global) (org-at-heading-p))
 	  (narrow-to-region (point) (org-end-of-subtree t t)))
-	(when (assoc "CLOCKSUM" org-columns-current-fmt-compiled)
-	  (org-clock-sum))
-	(when (assoc "CLOCKSUM_T" org-columns-current-fmt-compiled)
-	  (org-clock-sum-today))
-	(let ((cache
-	       ;; Collect contents of columns ahead of time so as to
-	       ;; compute their maximum width.
-               (org-scan-tags
-		(lambda () (cons (point-marker) (org-columns--collect-values))) t org--matcher-tags-todo-only)))
-	  (when cache
-	    (org-columns--set-widths cache)
+	(org-columns--compute-clock-summaries)
+	(let ((rows (org-columns--collect-rows)))
+	  (when rows
+	    (org-columns--set-widths rows)
 	    (org-columns--display-header-line)
 	    (org-columns--suspend-conflicting-modes)
 	    (org-columns--suspend-line-wrapping)
-	    (dolist (entry cache)
-	      (goto-char (car entry))
-	      (org-columns--display-line (cdr entry)))))))))
+	    (dolist (row rows)
+	      (goto-char (car row))
+	      (org-columns--display-line (cdr row)))))))))
 
 ;;;; Column definition editing
 
@@ -1475,8 +1481,11 @@ column specification."
 	seen)
     (dolist (spec org-columns-current-fmt-compiled)
       (let ((property (org-columns--spec-property spec)))
-	;; Property value is updated only the first time a given
-	;; property is encountered.
+	;; Compute every spec for display, but let only the first
+	;; spec for a property update the property drawer.  For
+	;; example, with column format "%A{min} %A{max}", both summaries
+	;; are stored in the `org-summaries' text property, but only
+	;; the %A{min} spec can update the :A: property in the drawer.
 	(org-columns--compute-spec spec (not (member property seen)))
 	(push property seen)))))
 
