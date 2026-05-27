@@ -189,7 +189,8 @@ type."
   "Restore old cursor in WIN (if any).
 If the current window cursor type is nil (i.e. the cursor is hidden), no
 change is made."
-  (when-let* ((old-type (window-parameter win 'org-inside-old-cursor))
+  (when-let* ((old-type (or (window-parameter win 'org-inside-old-cursor)
+                            (window-parameter win 'pending-cursor-type)))
               (type (window-cursor-type win)))
     (set-window-cursor-type win old-type)
     (set-window-parameter win 'org-inside-old-cursor nil)))
