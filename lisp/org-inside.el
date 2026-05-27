@@ -91,8 +91,8 @@ for the entity you are inside."
 (defsubst org-inside--elem-at-point ()
   "Return the relevant org-entity with possible hidden contents at point."
   (when-let* ((ctx (org-element-context)))
-    (org-element-lineage ctx '(link bold code italic verbatim
-                                    underline strike-through) t)))
+    (org-element-lineage ctx '( link bold code italic verbatim
+                                underline strike-through) t)))
 
 (defun org-inside--overlay-modification (ov after-p &rest _r)
   "Detect modifications of the entity covered by `org-inside' overlay OV.
