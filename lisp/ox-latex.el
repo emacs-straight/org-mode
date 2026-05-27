@@ -3557,15 +3557,15 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
      ((string= key "SELECT_LANG")
       (let ((multi-lang (plist-get info :latex-multi-lang))
             (lang-info  (alist-get value org-latex-language-alist nil nil #'string=)))
-        (if (null lang-info)
-            (warn "Unknown language in SELECT_LANG `%s'" value)
-          (cond* ((string= multi-lang "babel")
-                  (format "\\selectlanguage{%s}"
-                          (org-latex--get-babel-lang value)))
-                 ((string= multi-lang "polyglossia")
-                  (format "\\selectlanguage{%s}"
-                          (plist-get lang-info :polyglossia)))
-                 (t (warn "Ignoring SELECT_LANG %s; set LATEX_MULTI_LANG to babel or polyglossia" value))))))
+        (cond ((null lang-info)
+               (warn "Unknown language in SELECT_LANG `%s'" value))
+              ((string= multi-lang "babel")
+               (format "\\selectlanguage{%s}"
+                       (org-latex--get-babel-lang value)))
+              ((string= multi-lang "polyglossia")
+               (format "\\selectlanguage{%s}"
+                       (plist-get lang-info :polyglossia)))
+              (t (warn "Ignoring SELECT_LANG %s; set LATEX_MULTI_LANG to babel or polyglossia" value)))))
      ((string= key "TOC")
       (let ((case-fold-search t))
 	(cond
