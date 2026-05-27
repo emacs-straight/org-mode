@@ -133,10 +133,9 @@ Note that if the `cursor-type' is configured to change inside (see
 nil (i.e. the cursor is hidden), the cursor is left hidden, and the
 window parameter `pending-cursor-type' is set instead.  Other tools can
 consult this window parameter to restore the cursor type."
-  (cl-destructuring-bind ( &key cursor face unhide
-                           &aux (inside-p (and beg end)))
-      org-inside-appearance
-    (let* ((ov (org-inside--overlay win face unhide))
+  (cl-destructuring-bind ( &key cursor face unhide) org-inside-appearance
+    (let* ((inside-p (and beg end))
+           (ov (org-inside--overlay win face unhide))
            (showing-p (overlay-get ov 'invisible))) ; non-nil = unhidden!
       ;; We move the overlay when returning to the run-loop to avoid
       ;; the cursor-sensor race for point adjustment, since our
@@ -154,19 +153,20 @@ consult this window parameter to restore the cursor type."
         (setq disable-point-adjustment t))
       ;; User may have toggled hiding; re-set
       (when (not inside-p)
-        (overlay-put ov 'invisible (and unhide 'org-inside--not-hidden))))
-    (when cursor
-      (let ((cursor (if inside-p
-                        cursor
-                      (or (window-parameter win 'org-inside-old-cursor) t)))
-            (win-cursor-type (window-cursor-type win)))
-        (if (eq win-cursor-type nil)
-	    ;; Do not override a hidden (nil) cursor; set it pending instead
-            (set-window-parameter win 'pending-cursor-type cursor)
-          (unless (eq cursor win-cursor-type) ; guard against double entry
-            (when inside-p              ; save the outside cursor type
-	      (set-window-parameter win 'org-inside-old-cursor win-cursor-type))
-            (set-window-cursor-type win cursor)))))))
+        (overlay-put ov 'invisible (and unhide 'org-inside--not-hidden)))
+      (when cursor
+        (let ((cursor (if inside-p
+                          cursor
+                        (or (window-parameter win 'org-inside-old-cursor) t)))
+              (win-cursor-type (window-cursor-type win)))
+          (if (eq win-cursor-type nil)
+	      ;; Do not override a hidden (nil) cursor; set it pending instead
+              (set-window-parameter win 'pending-cursor-type cursor)
+            (unless (eq cursor win-cursor-type) ; guard against double entry
+              (when inside-p            ; save the outside cursor type
+	        (set-window-parameter win 'org-inside-old-cursor
+                                      win-cursor-type))
+              (set-window-cursor-type win cursor))))))))
 
 (defun org-inside--sensor (win _pos type)
   "Handle cursor appearance and unhiding inside hidden text wrapped entities.
