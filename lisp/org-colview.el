@@ -660,15 +660,15 @@ This is needed to later remove this relative remapping.")
   (when org-columns-header-line-remap
     (face-remap-remove-relative org-columns-header-line-remap)
     (setq org-columns-header-line-remap nil))
+  (when (markerp org-columns-begin-marker)
+    (set-marker org-columns-begin-marker nil))
+  (when (markerp org-columns-top-level-marker)
+    (set-marker org-columns-top-level-marker nil))
   (when org-columns-overlays
     (when (local-variable-p 'org-previous-header-line-format)
       (setq header-line-format org-previous-header-line-format)
       (kill-local-variable 'org-previous-header-line-format)
       (remove-hook 'post-command-hook #'org-columns-hscroll-title 'local))
-    (when (markerp org-columns-begin-marker)
-      (set-marker org-columns-begin-marker nil))
-    (when (markerp org-columns-top-level-marker)
-      (set-marker org-columns-top-level-marker nil))
     (with-silent-modifications
       (mapc #'delete-overlay org-columns-overlays)
       (setq org-columns-overlays nil)
@@ -964,6 +964,37 @@ Also sets `org-columns-top-level-marker' to the new position."
 	  ((org-entry-get nil "COLUMNS" t) org-entry-property-inherited-from)
 	  (t (org-back-to-heading) (point))))))
 
+(defun org-columns--display-rows (rows)
+  "Display the header line and ROWS as column view overlays.
+ROWS must be a non-empty list of collected column rows."
+  (org-columns--set-widths rows)
+  (org-columns--display-header-line)
+  (org-columns--suspend-conflicting-modes)
+  (org-columns--suspend-line-wrapping)
+  (dolist (row rows)
+    (goto-char (car row))
+    (org-columns--display-line (cdr row))))
+
+(defun org-columns--prepare-rows (global columns-format)
+  "Set up column view and return rows for the current scope.
+When GLOBAL is non-nil, use the whole buffer as the scope.  Otherwise,
+use the subtree selected by `org-columns-goto-top-level'.  When
+COLUMNS-FORMAT is non-nil, use it instead of the format selected from
+the buffer."
+  (when global (goto-char (point-min)))
+  (if (markerp org-columns-begin-marker)
+      (move-marker org-columns-begin-marker (point))
+    (setq org-columns-begin-marker (point-marker)))
+  (org-columns-goto-top-level)
+  (let ((org-columns--time (float-time)))
+    (org-columns-get-format columns-format)
+    (unless org-columns-inhibit-recalculation (org-columns-compute-all))
+    (save-restriction
+      (when (and (not global) (org-at-heading-p))
+	(narrow-to-region (point) (org-end-of-subtree t t)))
+      (org-columns--compute-clock-summaries)
+      (org-columns--collect-rows))))
+
 ;;;###autoload
 (defun org-columns (&optional global columns-format)
   "Turn on column view on an Org mode file.
@@ -979,27 +1010,8 @@ When COLUMNS-FORMAT is non-nil, use it as the column format."
   (org-columns-remove-overlays)
   (setq-local org-columns-global global)
   (save-excursion
-    (when global (goto-char (point-min)))
-    (if (markerp org-columns-begin-marker)
-	(move-marker org-columns-begin-marker (point))
-      (setq org-columns-begin-marker (point-marker)))
-    (org-columns-goto-top-level)
-    (let ((org-columns--time (float-time)))
-      (org-columns-get-format columns-format)
-      (unless org-columns-inhibit-recalculation (org-columns-compute-all))
-      (save-restriction
-	(when (and (not global) (org-at-heading-p))
-	  (narrow-to-region (point) (org-end-of-subtree t t)))
-	(org-columns--compute-clock-summaries)
-	(let ((rows (org-columns--collect-rows)))
-	  (when rows
-	    (org-columns--set-widths rows)
-	    (org-columns--display-header-line)
-	    (org-columns--suspend-conflicting-modes)
-	    (org-columns--suspend-line-wrapping)
-	    (dolist (row rows)
-	      (goto-char (car row))
-	      (org-columns--display-line (cdr row)))))))))
+    (when-let* ((rows (org-columns--prepare-rows global columns-format)))
+      (org-columns--display-rows rows))))
 
 ;;;; Column definition editing
 
