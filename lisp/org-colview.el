@@ -335,6 +335,16 @@ displayed without leading stars."
 
 ;;;; Column widths
 
+(defun org-columns--update-column-width (spec cell widths)
+  "Update WIDTHS according to SPEC and CELL.
+WIDTHS is the current tail of the column widths list.  CELL is a
+list (SPEC VALUE DISPLAYED-VALUE), as returned by
+`org-columns--collect-values'."
+  (unless (wholenump (org-columns--spec-width spec))
+    (setcar widths
+	    (max (car widths)
+                 (string-width (nth 2 cell))))))
+
 (defun org-columns--set-widths (rows)
   "Compute the maximum column widths from the format and ROWS.
 This function sets `org-columns-current-maxwidths' as a vector of
@@ -360,15 +370,16 @@ where:
 				  (`(,_ ,title . ,_) (string-width title))))
 			      org-columns-current-fmt-compiled)))
 	  (dolist (row rows)
-	    (let ((triplets (cdr row))
-		  (specs org-columns-current-fmt-compiled)
-		  (w widths))
-	      (while (and triplets specs w)
-		(unless (wholenump (org-columns--spec-width (car specs)))
-		  (setcar w (max (car w) (string-width (nth 2 (car triplets))))))
-		(setq triplets (cdr triplets))
-		(setq specs (cdr specs))
-		(setq w (cdr w)))))
+	    (let ((remaining-triplets (cdr row))
+		  (remaining-specs org-columns-current-fmt-compiled)
+		  (remaining-widths widths))
+	      (while (and remaining-triplets remaining-specs remaining-widths)
+		(org-columns--update-column-width (car remaining-specs)
+                                       (car remaining-triplets)
+                                       remaining-widths)
+		(pop remaining-triplets)
+		(pop remaining-specs)
+		(pop remaining-widths))))
 	  (apply #'vector widths))))
 
 ;;;; Overlay rendering
@@ -1019,26 +1030,24 @@ When COLUMNS-FORMAT is non-nil, use it as the column format."
 ;;;; Column definition editing
 
 (defun org-columns--summary-types-completion-function (string pred flag)
-  (let ((completion-table
-         (org-completion-table-with-metadata
-          (lambda (str pred comp)
-            (complete-with-action comp
-                                  (delete-dups
-                                   (cons '("" "")
-                                         (mapcar #'car
-                                                 (append org-columns-summary-types
-                                                         org-columns-summary-types-default))))
-                                  str pred))
-          `(metadata
-            . ((annotation-function
-                . ,(lambda (string)
-                     (let* ((doc (ignore-errors
-                                   (documentation
-                                    (cdr (assoc string
-                                                (append org-columns-summary-types
-                                                        org-columns-summary-types-default))))))
-                            (doc (and doc (substring doc 0 (string-search "\n" doc)))))
-                       (if doc (format " -- %s" doc) "")))))))))
+  "Complete column summary type operators.
+STRING, PRED, and FLAG are the usual arguments for completion
+table functions."
+  (let* ((summary-types (append org-columns-summary-types
+				org-columns-summary-types-default))
+	 (candidates (delete-dups
+		      (cons '("" "") (mapcar #'car summary-types))))
+	 (annotation-function
+	  (lambda (string)
+	    (let* ((doc (ignore-errors
+			  (documentation (cdr (assoc string summary-types)))))
+		   (doc (and doc (substring doc 0 (string-search "\n" doc)))))
+	      (if doc (format " -- %s" doc) ""))))
+	 (completion-table
+	  (org-completion-table-with-metadata
+	   (lambda (str predicate action)
+	     (complete-with-action action candidates str predicate))
+	   `(metadata . ((annotation-function . ,annotation-function))))))
     (complete-with-action flag completion-table string pred)))
 
 (defun org-columns-new (&optional spec &rest attributes)
