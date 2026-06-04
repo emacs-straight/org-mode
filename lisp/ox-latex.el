@@ -177,6 +177,7 @@
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
     (:latex-fontspec-defaults nil nil org-latex-fontspec-default-features)
     (:latex-polyglossia-font-config nil nil org-latex-polyglossia-font-config)
+    (:latex-babel-font-config nil nil org-latex-babel-font-config)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -2395,7 +2396,7 @@ Use fontspec as a last resort and when defined."
   (let* ((compiler (plist-get info :latex-compiler))
          (latex-babel-langs (plist-get info :languages))
          (doc-fontspec (plist-get info :latex-fontspec-config))
-         (doc-babel-font-config org-latex-babel-font-config)
+         (doc-babel-font-config (plist-get info :latex-babel-font-config))
          (doc-babel-provides org-latex-babel-provides-alist)
          ;; Depending on the LaTeX compiler, the bidi= option varies.
          (babel-options
