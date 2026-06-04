@@ -176,6 +176,7 @@
     (:latex-use-sans nil "latex-use-sans" org-latex-use-sans)
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
     (:latex-fontspec-defaults nil nil org-latex-fontspec-default-features)
+    (:latex-polyglossia-font-config nil nil org-latex-polyglossia-font-config)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -2299,7 +2300,7 @@ Extract the information from INFO."
          ;; These change inside `with-temp-buffer'
          (fontspec-config (plist-get info :latex-fontspec-config))
          (current-default-features (plist-get info :latex-fontspec-defaults))
-         (polyglossia-font-config org-latex-polyglossia-font-config)
+         (polyglossia-font-config (plist-get info :latex-polyglossia-font-config))
          (doc-scripts (plist-get info :doc-scripts)))
     (when (equal compiler "pdflatex")
       (error "LaTeX package polyglossia isn't supported by pdflatex!"))
