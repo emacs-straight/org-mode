@@ -1063,6 +1063,50 @@ https://list.orgmode.org/bcced759-fae5-4509-a4af-8a6e41812b0e@gmail.com/T/#u."
       (list (get-char-property (point) 'org-columns-value-modified)
 	    (get-char-property (1+ (point)) 'org-columns-value-modified))))))
 
+(ert-deftest test-org-colview/columns-custom-summary-hierarchical ()
+  "Test custom summary types on hierarchical headings."
+  (should
+   (equal
+    '(("Root" . "1|2|3|4")
+      ("Group 1" . "1|2")
+      ("Leaf 1" . "1")
+      ("Leaf 2" . "2")
+      ("Group 2" . "3|4")
+      ("Leaf 3" . "3")
+      ("Leaf 4" . "4"))
+    (org-test-with-temp-text
+	"* Root
+** Group 1
+*** Leaf 1
+:PROPERTIES:
+:A: 1
+:END:
+*** Leaf 2
+:PROPERTIES:
+:A: 2
+:END:
+** Group 2
+*** Leaf 3
+:PROPERTIES:
+:A: 3
+:END:
+*** Leaf 4
+:PROPERTIES:
+:A: 4
+:END:"
+      (let ((org-columns-summary-types
+	     '(("join" . (lambda (values _)
+			     (mapconcat #'identity values "|")))))
+	    (org-columns-default-format "%A{join}"))
+	(org-columns))
+      (let (results)
+	(org-map-entries
+	 (lambda ()
+	   (push (cons (org-get-heading t t t t)
+		       (get-char-property (point) 'org-columns-value-modified))
+		 results)))
+	(nreverse results))))))
+
 (ert-deftest test-org-colview/columns-new ()
   "Test `org-columns-new' specifications."
   ;; Insert new column at the left of the current one.
@@ -1250,30 +1294,34 @@ https://list.orgmode.org/bcced759-fae5-4509-a4af-8a6e41812b0e@gmail.com/T/#u."
       (insert "very long ")
       (org-columns-update "A")
       (get-char-property (point-min) 'display))))
-  ;; Values obtained from inline tasks are at the same level as those
-  ;; obtained from children of the current node.
+  ;; Values obtained from inline tasks at the minimum inline task level
+  ;; or deeper are at the same level as those obtained from children of
+  ;; the current node.
   (when (featurep 'org-inlinetask)
-    (should
-     (equal
-      "2"
-      (org-test-with-temp-text
-	  "* H
-*************** Inline task
+    (dolist (stars '("***************" "****************"))
+      (should
+       (equal
+	"2"
+	(org-test-with-temp-text
+	    (format "* H
+%s Inline task
 :PROPERTIES:
 :A: 2
 :END:
-*************** END
+%s END
 ** Children
 :PROPERTIES:
 :A: 3
 :END:
 "
-	(let ((org-columns-default-format "%A{min}")
-	      (org-columns-ellipses "..")
-	      (org-inlinetask-min-level 15))
-          (org-element-update-syntax)
-	  (org-columns))
-	(get-char-property (point-min) 'org-columns-value)))))
+		    stars
+		    stars)
+	  (let ((org-columns-default-format "%A{min}")
+		(org-columns-ellipses "..")
+		(org-inlinetask-min-level 15))
+	    (org-element-update-syntax)
+	    (org-columns))
+	  (get-char-property (point-min) 'org-columns-value))))))
   ;; Handle `org-columns-modify-value-for-display-function', even with
   ;; multiple titles for the same property.
   (should
