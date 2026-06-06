@@ -508,6 +508,10 @@ exporting to lualatex, and will include the
 to \\providecommand, and then place \\usepackage commands based
 on the content of `org-latex-packages-alist'.
 
+Note that [NO-DEFAULT-PACKAGES] is equivalent to setting
+`org-latex-default-packages-alist' to nil and [NO-PACKAGES] to setting
+`org-latex-packages-alist' to nil.
+
 If your header, `org-latex-default-packages-alist' or
 `org-latex-packages-alist' inserts \"\\usepackage[AUTO]{inputenc}\",
 AUTO will automatically be replaced with a coding system derived
