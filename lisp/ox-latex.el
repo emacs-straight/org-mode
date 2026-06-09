@@ -2427,7 +2427,7 @@ Use fontspec as a last resort and when defined."
       ;; use fontspec to configure fonts and babel to localize
       ;; FIXME: check for other languages
       ;; FIXME: check if fallbacks are accepted
-      (unless doc-babel-font-config
+      ;; (unless doc-babel-font-config
         (save-match-data
           ;; FIXME: Korean?
           (let* ((main-lang (car-safe latex-babel-langs))
@@ -2473,7 +2473,7 @@ Use fontspec as a last resort and when defined."
               (insert (format "\\normalsize\\parindent=%d%s\n"
                               (if (string= main-lang "jp") 1 2)
                               (if (string= compiler "lualatex") "\\zw" "em"))) ;; FIXME: Korean?
-              (insert "\\linespread{1.333}")))))
+              (insert "\\linespread{1.333}")))) ;;)
       ;; FIXME: This works but needs to be fine-tuned:
       (insert (format "\n\\usepackage%s{babel}" (or (org-latex--mk-options babel-options) "")))
       ;; import the main language with a babelprovide
