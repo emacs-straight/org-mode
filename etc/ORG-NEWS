@@ -230,6 +230,16 @@ This variable allows you to fine-tune the produced LaTeX to your
 system's TeX distribution. The =babel= package is changing and some
 systems need more parameters that just bidi control.
 
+*** New custom variable ~org-export-file-links-verbatim~
+
+~org-export-file-links-verbatim~ controls whether Org
+mode exports file links that start with "/" verbatim.
+Set it to t to export said links without first appending
+~file:~ to them.
+
+This variable has no effect on links that are already prefixed with
+=file:= or links that start with a =~=.
+
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.

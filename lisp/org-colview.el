@@ -174,6 +174,12 @@ This is the compiled version of the format.")
   "Compiled column specification."
   property title width operator format-string)
 
+(defun org-columns--spec-at-point ()
+  "Return the column specification for the column at point.
+Point must be on a column view overlay, where the current text
+column indexes `org-columns-current-fmt-compiled'."
+  (nth (org-current-text-column) org-columns-current-fmt-compiled))
+
 ;;;; Keymap and menu
 
 (defun org-columns-content ()
@@ -748,7 +754,7 @@ See info documentation about realizing a suitable checkbox."
 
 (defun org-columns-check-computed ()
   "Throw an error if current column value is computed."
-  (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
+  (let ((spec (org-columns--spec-at-point)))
     (and
      (org-columns--spec-operator spec)
      (assoc spec (get-text-property (line-beginning-position) 'org-summaries))
@@ -874,8 +880,7 @@ When PREVIOUS is set, go to the previous value.  When NTH is
 an integer, select that value."
   (interactive nil org-mode org-agenda-mode)
   (org-columns-check-computed)
-  (let* ((column (org-current-text-column))
-         (visible-column (current-column))
+  (let* ((visible-column (current-column))
 	 (key (get-char-property (point) 'org-columns-key))
 	 (value (get-char-property (point) 'org-columns-value))
 	 (pom (or (get-text-property (line-beginning-position) 'org-hd-marker)
@@ -883,8 +888,10 @@ an integer, select that value."
 	 (allowed
 	  (let ((all
 		 (or (org-property-get-allowed-values pom key)
-		     (pcase (nth column org-columns-current-fmt-compiled)
-		       (`(,_ ,_ ,_ ,(or "X" "X/" "X%") ,_) org-columns-checkbox-allowed-values))
+		     (and (member (org-columns--spec-operator
+				   (org-columns--spec-at-point))
+				  '("X" "X/" "X%"))
+			  org-columns-checkbox-allowed-values)
 		     (org-colview-construct-allowed-dates value))))
 	    (if previous (reverse all) all))))
     (when (equal key "ITEM") (error "Cannot edit item headline from here"))
@@ -1088,8 +1095,12 @@ non-interactively.  See `org-columns-compile-format' for details."
 			  (read-string "Format: "
 				       (org-columns--spec-format-string spec))))))))
     (if spec
-	(progn (setcar spec (car new))
-	       (setcdr spec (cdr new)))
+	(pcase-let ((`(,property ,title ,width ,operator ,format-string) new))
+	  (setf (org-columns--spec-property spec) property
+		(org-columns--spec-title spec) title
+		(org-columns--spec-width spec) width
+		(org-columns--spec-operator spec) operator
+		(org-columns--spec-format-string spec) format-string))
       (push new (nthcdr (org-current-text-column) org-columns-current-fmt-compiled)))
     (org-columns-store-format)
     (org-columns-redo)))
@@ -1097,7 +1108,7 @@ non-interactively.  See `org-columns-compile-format' for details."
 (defun org-columns-delete ()
   "Delete the column at point from column view."
   (interactive nil org-mode org-agenda-mode)
-  (let ((spec (nth (org-current-text-column) org-columns-current-fmt-compiled)))
+  (let ((spec (org-columns--spec-at-point)))
     (when (y-or-n-p (format "Are you sure you want to remove column %S? "
 			    (org-columns--spec-title spec)))
       (setq org-columns-current-fmt-compiled
@@ -1113,16 +1124,16 @@ non-interactively.  See `org-columns-compile-format' for details."
 (defun org-columns-edit-attributes ()
   "Edit the attributes of the current column."
   (interactive nil org-mode org-agenda-mode)
-  (org-columns-new (nth (org-current-text-column) org-columns-current-fmt-compiled)))
+  (org-columns-new (org-columns--spec-at-point)))
 
 (defun org-columns-widen (arg)
   "Make the column wider by ARG characters."
   (interactive "p" org-mode org-agenda-mode)
   (let* ((n (org-current-text-column))
-	 (entry (nth n org-columns-current-fmt-compiled))
+	 (spec (org-columns--spec-at-point))
 	 (width (aref org-columns-current-maxwidths n)))
     (setq width (max 1 (+ width arg)))
-    (setcar (nthcdr 2 entry) width)
+    (setf (org-columns--spec-width spec) width)
     (org-columns-store-format)
     (let ((org-columns-inhibit-recalculation t)) (org-columns-redo))))
 
@@ -1223,7 +1234,7 @@ With non-nil optional argument UP, move it up."
 	 (when (and key (equal key upcase-property) (overlay-start ov))
 	   (goto-char (overlay-start ov))
 	   (let* ((column (org-current-text-column))
-		  (spec (nth column org-columns-current-fmt-compiled))
+		  (spec (org-columns--spec-at-point))
 		  (value
 		   (or (cdr (assoc spec
 				   (get-text-property (line-beginning-position)
