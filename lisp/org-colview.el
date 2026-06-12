@@ -579,7 +579,9 @@ substring whose `string-width' does not exceed WIDTH."
 ;;;; View environment
 
 (defvar org-columns-inhibit-recalculation nil
-  "Inhibit recomputing of columns on column view startup.")
+  "Inhibit recomputing of columns when building column view.
+When non-nil, neither column summaries nor clock summaries are
+recomputed.")
 (defvar org-columns-flyspell-was-active nil
   "Remember the state of `flyspell-mode' before column view.
 Flyspell mode can cause problems in column view, so it is turned off
@@ -976,17 +978,22 @@ back to the next source, ultimately to
     (org-columns-compile-format selected-columns-format)
     selected-columns-format))
 
+(defun org-columns--ensure-and-move-marker (marker &optional position)
+  "Return MARKER moved to POSITION in the current buffer.
+When MARKER is nil, create a new marker first.  POSITION defaults
+to point."
+  (move-marker (or marker (make-marker)) (or position (point))))
+
 (defun org-columns-goto-top-level ()
   "Move to the beginning of the column view area.
 Also sets `org-columns-top-level-marker' to the new position."
-  (unless (markerp org-columns-top-level-marker)
-    (setq org-columns-top-level-marker (make-marker)))
   (goto-char
-   (move-marker
-    org-columns-top-level-marker
-    (cond ((org-before-first-heading-p) (point-min))
-	  ((org-entry-get nil "COLUMNS" t) org-entry-property-inherited-from)
-	  (t (org-back-to-heading) (point))))))
+   (setq org-columns-top-level-marker
+	 (org-columns--ensure-and-move-marker
+	  org-columns-top-level-marker
+	  (cond ((org-before-first-heading-p) (point-min))
+		((org-entry-get nil "COLUMNS" t) org-entry-property-inherited-from)
+		(t (org-back-to-heading) (point)))))))
 
 (defun org-columns--display-rows (rows)
   "Display the header line and ROWS as column view overlays.
@@ -1005,16 +1012,16 @@ use the subtree selected by `org-columns-goto-top-level'.  When
 COLUMNS-FORMAT is non-nil, use it instead of the format selected from
 the buffer."
   (when global (goto-char (point-min)))
-  (if (markerp org-columns-begin-marker)
-      (move-marker org-columns-begin-marker (point))
-    (setq org-columns-begin-marker (point-marker)))
+  (setq org-columns-begin-marker
+	(org-columns--ensure-and-move-marker org-columns-begin-marker))
   (org-columns-goto-top-level)
   (org-columns-get-format columns-format)
   (unless org-columns-inhibit-recalculation (org-columns-compute-all))
   (save-restriction
     (when (and (not global) (org-at-heading-p))
       (narrow-to-region (point) (org-end-of-subtree t t)))
-    (org-columns--compute-clock-summaries)
+    (unless org-columns-inhibit-recalculation
+      (org-columns--compute-clock-summaries))
     (org-columns--collect-rows)))
 
 ;;;###autoload
@@ -1261,9 +1268,9 @@ With non-nil optional argument UP, move it up."
       (if (derived-mode-p 'org-mode)
 	  ;; Since we already know the column format, provide it
 	  ;; instead of computing again.
-	  (funcall-interactively #'org-columns org-columns-global org-columns-current-fmt)
+	  (org-columns org-columns-global org-columns-current-fmt)
 	(org-agenda-redo)
-	(call-interactively #'org-agenda-columns)))
+	(org-agenda-columns)))
     (message "Recomputing columns...done")))
 
 ;;;; Format storage
@@ -1952,9 +1959,8 @@ definition."
   "Turn on or update column view in the agenda."
   (interactive nil org-agenda-mode)
   (org-columns-remove-overlays)
-  (if (markerp org-columns-begin-marker)
-      (move-marker org-columns-begin-marker (point))
-    (setq org-columns-begin-marker (point-marker)))
+  (setq org-columns-begin-marker
+	(org-columns--ensure-and-move-marker org-columns-begin-marker))
   (let* ((org-columns--time (float-time))
 	 (org-done-keywords org-done-keywords-for-agenda)
 	 (columns-format
