@@ -743,6 +743,12 @@ Optional argument REGEXP selects variables to clone."
 
 ;;; Miscellaneous
 
+(defun org-move-marker (marker &optional position)
+  "Move MARKER to POSITION in the current buffer and return it.
+When MARKER is nil, create a new marker first.  POSITION defaults
+to point."
+  (move-marker (or marker (make-marker)) (or position (point))))
+
 (defsubst org-call-with-arg (command arg)
   "Call COMMAND interactively, but pretend prefix arg was ARG."
   (let ((current-prefix-arg arg)) (call-interactively command)))
@@ -1641,7 +1647,9 @@ This should be a lot faster than the `parse-time-string'."
                (t 0))
    :day (string-to-number (match-string 4 s))
    :month (string-to-number (match-string 3 s))
-   :year (string-to-number (match-string 2 s))))
+   :year (string-to-number (match-string 2 s))
+   ;; FIXME: -1 becomes the default from Emacs 29, but not in Emacs 28.
+   :dst -1))
 
 (defun org-matcher-time (s)
   "Interpret a time comparison value S as a floating point time.

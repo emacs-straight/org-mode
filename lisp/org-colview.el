@@ -978,18 +978,12 @@ back to the next source, ultimately to
     (org-columns-compile-format selected-columns-format)
     selected-columns-format))
 
-(defun org-columns--ensure-and-move-marker (marker &optional position)
-  "Return MARKER moved to POSITION in the current buffer.
-When MARKER is nil, create a new marker first.  POSITION defaults
-to point."
-  (move-marker (or marker (make-marker)) (or position (point))))
-
 (defun org-columns-goto-top-level ()
   "Move to the beginning of the column view area.
 Also sets `org-columns-top-level-marker' to the new position."
   (goto-char
    (setq org-columns-top-level-marker
-	 (org-columns--ensure-and-move-marker
+	 (org-move-marker
 	  org-columns-top-level-marker
 	  (cond ((org-before-first-heading-p) (point-min))
 		((org-entry-get nil "COLUMNS" t) org-entry-property-inherited-from)
@@ -1013,7 +1007,7 @@ COLUMNS-FORMAT is non-nil, use it instead of the format selected from
 the buffer."
   (when global (goto-char (point-min)))
   (setq org-columns-begin-marker
-	(org-columns--ensure-and-move-marker org-columns-begin-marker))
+	(org-move-marker org-columns-begin-marker))
   (org-columns-goto-top-level)
   (org-columns-get-format columns-format)
   (unless org-columns-inhibit-recalculation (org-columns-compute-all))
@@ -1475,51 +1469,51 @@ DEEPEST-LEVEL is the deepest index to clear."
 SPEC is a column format specification.  When optional argument
 UPDATE-PROPERTY-P is non-nil, summarized values can replace
 existing ones in properties drawers."
-  (let* ((deepest-level 29)	;Hard-code deepest level.
-	 (values-by-level (make-vector (1+ deepest-level) nil))
-	 (level 0)
-	 (previous-level deepest-level)
-	 (property (org-columns--spec-property spec))
-	 (format-string (org-columns--spec-format-string spec))
-	 (operator (org-columns--summarizable-operator spec))
-	 (collect-function (and operator (org-columns--collect-function operator)))
-	 (summarize-function (and operator (org-columns--summarize-function operator))))
-    (org-with-wide-buffer
-     ;; Find the region to compute.
-     (goto-char org-columns-top-level-marker)
-     (goto-char (condition-case nil (org-end-of-subtree t) (error (point-max))))
-     ;; Walk the tree from the back and do the computations.
-     (while (re-search-backward
-	     org-outline-regexp-bol org-columns-top-level-marker t)
-       (unless (or (= level 0) (eq level deepest-level))
-	 (setq previous-level level))
-       (setq level (org-reduced-level (org-outline-level)))
-       (let* ((pos (match-beginning 0))
-              (current-value (if collect-function
-				 (funcall collect-function property)
-			       (org-entry-get (point) property)))
-	      (value-nonempty-p (org-string-nw-p current-value)))
-	 (cond
-	  ((< level previous-level)
-	   ;; Collect values from lower levels and inline tasks here
-	   ;; and summarize them using SUMMARIZE-FUNCTION.  Store them in text
-	   ;; property `org-summaries', in alist whose key is SPEC.
-	   (let* ((values (and summarize-function
-			       (cl-loop for l from (1+ level) to deepest-level
-					append (aref values-by-level l))))
-		   (summary (and values
-				 (funcall summarize-function values format-string))))
-	     ;; Leaf values are not summaries: do not mark them.
-	     (when summary
-	       (org-columns--put-summary pos spec summary)
-	       (when update-property-p
-		 (org-columns--update-summary-property property current-value summary)))
-	     ;; Add current to current level accumulator.
-	     (when (or summary value-nonempty-p)
-	       (push (or summary current-value) (aref values-by-level level)))
-	     (org-columns--clear-values-below-level values-by-level level deepest-level)))
-	  (value-nonempty-p (push current-value (aref values-by-level level)))
-	  (t nil)))))))
+  (when-let* ((operator (org-columns--summarizable-operator spec)))
+    (let* ((deepest-level 29)	;Hard-code deepest level.
+	   (values-by-level (make-vector (1+ deepest-level) nil))
+	   (current-level deepest-level)
+	   previous-level
+	   (property (org-columns--spec-property spec))
+	   (format-string (org-columns--spec-format-string spec))
+	   (collect-function (org-columns--collect-function operator))
+	   (summarize-function (org-columns--summarize-function operator)))
+      (org-with-wide-buffer
+       ;; Find the region to compute.
+       (goto-char org-columns-top-level-marker)
+       (org-end-of-subtree t)
+       ;; Walk the tree from the back and do the computations.
+       (while (re-search-backward
+	       org-outline-regexp-bol org-columns-top-level-marker t)
+	 (setq previous-level current-level)
+	 (setq current-level (org-reduced-level (org-outline-level)))
+	 (let* ((pos (match-beginning 0))
+		(current-value (if collect-function
+				   (funcall collect-function property)
+				 (org-entry-get (point) property)))
+		(value-nonempty-p (org-string-nw-p current-value)))
+	   (cond
+	    ((< current-level previous-level)
+	     ;; Collect values from lower levels and inline tasks here
+	     ;; and summarize them using SUMMARIZE-FUNCTION.  Store them in text
+	     ;; property `org-summaries', in alist whose key is SPEC.
+	     (let* ((values (and summarize-function
+				 (cl-loop for l from (1+ current-level) to deepest-level
+					  append (aref values-by-level l))))
+		    (summary (and values
+				  (funcall summarize-function values format-string))))
+	       (cond
+		(summary
+		 (org-columns--put-summary pos spec summary)
+		 (when update-property-p
+		   (org-columns--update-summary-property property current-value summary))
+		 (push summary (aref values-by-level current-level)))
+		(value-nonempty-p
+		 (push current-value (aref values-by-level current-level))))
+	       (org-columns--clear-values-below-level
+		values-by-level current-level deepest-level)))
+	    (value-nonempty-p
+	     (push current-value (aref values-by-level current-level))))))))))
 
 ;;;###autoload
 (defun org-columns-compute (property)
@@ -1960,7 +1954,7 @@ definition."
   (interactive nil org-agenda-mode)
   (org-columns-remove-overlays)
   (setq org-columns-begin-marker
-	(org-columns--ensure-and-move-marker org-columns-begin-marker))
+	(org-move-marker org-columns-begin-marker))
   (let* ((org-columns--time (float-time))
 	 (org-done-keywords org-done-keywords-for-agenda)
 	 (columns-format
