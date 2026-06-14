@@ -150,7 +150,7 @@
     (:latex-image-default-height nil nil org-latex-image-default-height)
     (:latex-image-default-option nil nil org-latex-image-default-option)
     (:latex-image-default-width nil nil org-latex-image-default-width)
-    (:latex-graphics-path "LATEX_GRAPHICS_PATH" nil org-latex-graphics-path)
+    (:latex-graphics-path "LATEX_GRAPHICS_PATH" nil org-latex-graphics-path split)
     (:latex-images-centered nil nil org-latex-images-centered)
     (:latex-inactive-timestamp-format nil nil org-latex-inactive-timestamp-format)
     (:latex-inline-image-rules nil nil org-latex-inline-image-rules)
@@ -2814,7 +2814,7 @@ specified in `org-latex-default-packages-alist' or
 	      (user-error "Unknown LaTeX class `%s'" class)))
          (multi-lang (plist-get info :latex-multi-lang))
          (latex-graphics-path (mapconcat #'(lambda (s) (concat "{" s "}"))
-                                         (plist-get info :latex-graphics-path))))
+                                         (plist-get info :latex-graphics-path) "")))
     (let ((new-template
            (org-element-normalize-string
             (org-splice-latex-header

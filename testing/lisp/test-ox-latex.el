@@ -752,7 +752,8 @@ Fake test letter
 
 
 (ert-deftest test-ox-latex/latex-default-example-with-options ()
-  "Test #+ATTR_LATEX: :options with custom environment."
+  "Test #+ATTR_LATEX: :options with custom environment.
+Added default no graphics-path test for the next."
   (let ((org-latex-default-example-environment "Verbatim"))
     (org-test-with-exported-text
      'latex
@@ -766,8 +767,24 @@ How do you do?
 #+END_EXAMPLE
 "
       (goto-char (point-min))
+      (save-excursion
+        (should-not (search-forward "\\graphicspath{" nil t)))
       (should (search-forward "\\begin{document}\n" nil t))
       (should (search-forward "\\begin{Verbatim}[frame=double]\n" nil t)))))
+
+(ert-deftest test-ox-latex/use-graphics-path ()
+  "Test `org-latex-graphics-path' set through keyword."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test graphics-path
+#+LATEX_GRAPHICS_PATH: ./ ./logos
+* Test
+
+Fake test document
+"
+   (goto-char (point-min))
+   (should (search-forward "\\graphicspath{{./}{./logos}}" nil t))
+   (should (search-forward "\\begin{document}" nil t))))
 
  (ert-deftest test-ox-latex/math-in-alt-title ()
   "Test math wrapping in ALT_TITLE properties."
