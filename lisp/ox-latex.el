@@ -2813,7 +2813,8 @@ specified in `org-latex-default-packages-alist' or
                                 nil)))
 	      (user-error "Unknown LaTeX class `%s'" class)))
          (multi-lang (plist-get info :latex-multi-lang))
-         (latex-graphics-path (plist-get info :latex-graphics-path)))
+         (latex-graphics-path (mapconcat #'(lambda (s) (concat "{" s "}"))
+                                         (plist-get info :latex-graphics-path))))
     (let ((new-template
            (org-element-normalize-string
             (org-splice-latex-header
@@ -2823,7 +2824,7 @@ specified in `org-latex-default-packages-alist' or
              snippet?
              (mapconcat #'org-element-normalize-string
                         (list (and (not snippet?)
-                                   latex-graphics-path
+                                   (length> latex-graphics-path 0)
                                    (format "\\graphicspath{%s}" latex-graphics-path))
                               (plist-get info :latex-header)
                               (and (not snippet?)
