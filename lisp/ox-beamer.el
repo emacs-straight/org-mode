@@ -862,6 +862,29 @@ contextual information."
 ;;
 ;; Template used is similar to the one used in `latex' backend,
 ;; excepted for the table of contents and Beamer themes.
+;;
+(defun org-beamer--mk-theme (info)
+  "Generate the theme setup with the INFO channel information.
+  Will go directly after the document class unless
+  already specified in `'org-latex-classes'"
+  (let ((format-theme
+	 (lambda (prop command)
+	   (let ((theme (plist-get info prop)))
+	     (when theme
+	       (concat command
+		       (if (not (string-match "\\[.*\\]" theme))
+			   (format "{%s}\n" theme)
+			 (format "%s{%s}\n"
+				 (match-string 0 theme)
+				 (org-trim
+				  (replace-match "" nil nil theme))))))))))
+    (mapconcat (lambda (args) (apply format-theme args))
+	       '((:beamer-theme "\\\\usetheme")
+		 (:beamer-color-theme "\\\\usecolortheme")
+		 (:beamer-font-theme "\\\\usefonttheme")
+		 (:beamer-inner-theme "\\\\useinnertheme")
+		 (:beamer-outer-theme "\\\\useoutertheme"))
+	       "")))
 
 (defun org-beamer-template (contents info)
   "Return complete document string after Beamer conversion.
@@ -871,103 +894,92 @@ holding export options."
 	(subtitle (org-export-data (plist-get info :subtitle) info)))
     (setq info
           (plist-put info :doc-scripts (org-latex--get-string-scripts contents)))
-    (concat
-     ;; Timestamp.
-     (and (plist-get info :time-stamp-file)
-	  (format-time-string "%% Created %Y-%m-%d %a %H:%M\n"))
-     ;; LaTeX compiler
-     (org-latex--insert-compiler info)
-     ;; Document class and packages.
-     (org-latex-make-preamble info)
-     ;; Define the alternative frame environment, if needed.
-     (when (plist-get info :beamer-define-frame)
-       (format "\\newenvironment<>{%s}[1][]{\\begin{frame}#2[environment=%1$s,#1]}{\\end{frame}}\n"
-               org-beamer-frame-environment))
-     ;; Insert themes.
-     (let ((format-theme
-	    (lambda (prop command)
-	      (let ((theme (plist-get info prop)))
-		(when theme
-		  (concat command
-			  (if (not (string-match "\\[.*\\]" theme))
-			      (format "{%s}\n" theme)
-			    (format "%s{%s}\n"
-				    (match-string 0 theme)
-				    (org-trim
-				     (replace-match "" nil nil theme))))))))))
-       (mapconcat (lambda (args) (apply format-theme args))
-		  '((:beamer-theme "\\usetheme")
-		    (:beamer-color-theme "\\usecolortheme")
-		    (:beamer-font-theme "\\usefonttheme")
-		    (:beamer-inner-theme "\\useinnertheme")
-		    (:beamer-outer-theme "\\useoutertheme"))
-		  ""))
-     ;; Possibly limit depth for headline numbering.
-     (let ((sec-num (plist-get info :section-numbers)))
-       (when (integerp sec-num)
-	 (format "\\setcounter{secnumdepth}{%d}\n" sec-num)))
-     ;; Author.
-     (let ((author (and (plist-get info :with-author)
-			(let ((auth (plist-get info :author)))
-			  (and auth (org-export-data auth info)))))
-	   (email (and (plist-get info :with-email)
-		       (org-export-data (plist-get info :email) info))))
-       (cond ((and author email (not (string= "" email)))
-	      (format "\\author{%s\\thanks{%s}}\n" author email))
-	     ((or author email) (format "\\author{%s}\n" (or author email)))))
-     ;; Date.
-     (let ((date (and (plist-get info :with-date) (org-export-get-date info))))
-       (format "\\date{%s}\n" (org-export-data date info)))
-     ;; Title
-     (format "\\title{%s}\n" title)
-     (when (org-string-nw-p subtitle)
-       (concat (format (plist-get info :beamer-subtitle-format) subtitle) "\n"))
-     ;; Beamer-header
-     (let ((beamer-header (plist-get info :beamer-header)))
-       (when beamer-header
-	 (format "%s\n" (plist-get info :beamer-header))))
-     ;; 9. Hyperref options.
-     (let ((template (plist-get info :latex-hyperref-template)))
-       (and (stringp template)
-	    (format-spec template (org-latex--format-spec info))))
-     ;; engrave-faces-latex preamble
-     (when (and (eq (plist-get info :latex-src-block-backend) 'engraved)
-                (org-element-map (plist-get info :parse-tree)
-                    '(src-block inline-src-block) #'identity
-                    info t))
-       (org-latex-generate-engraved-preamble info))
-     ;; Document start.
-     "\\begin{document}\n\n"
-     ;; Title command.
-     (org-element-normalize-string
-      (cond ((not (plist-get info :with-title)) nil)
-	    ((string= "" title) nil)
-	    ((not (stringp org-latex-title-command)) nil)
-	    ((string-match "\\(?:[^%]\\|^\\)%s"
-			   org-latex-title-command)
-	     (format org-latex-title-command title))
-	    (t org-latex-title-command)))
-     ;; Table of contents.
-     (let ((depth (plist-get info :with-toc)))
-       (when depth
-	 (concat
-	  (format "\\begin{frame}%s{%s}\n"
-		  (org-beamer--normalize-argument
-		   (plist-get info :beamer-outline-frame-options) 'option)
-		  (plist-get info :beamer-outline-frame-title))
-	  (when (wholenump depth)
-	    (format "\\setcounter{tocdepth}{%d}\n" depth))
-	  "\\tableofcontents\n"
-	  "\\end{frame}\n\n")))
-     ;; Document's body.
-     contents
-     ;; Creator.
-     (if (plist-get info :with-creator)
-	 (concat (plist-get info :creator) "\n")
-       "")
-     ;; Document end.
-     "\\end{document}")))
-
+    (let ((pre-theme
+           (concat
+            ;; Timestamp.
+            (and (plist-get info :time-stamp-file)
+	         (format-time-string "%% Created %Y-%m-%d %a %H:%M\n"))
+            ;; LaTeX compiler
+            (org-latex--insert-compiler info)
+            ;; Document class and packages.
+            (org-latex-make-preamble info)
+            ;; Define the alternative frame environment, if needed.
+            (when (plist-get info :beamer-define-frame)
+              (format "\\newenvironment<>{%s}[1][]{\\begin{frame}#2[environment=%1$s,#1]}{\\end{frame}}\n"
+                      org-beamer-frame-environment))
+            ;; Possibly limit depth for headline numbering.
+            (let ((sec-num (plist-get info :section-numbers)))
+              (when (integerp sec-num)
+	        (format "\\setcounter{secnumdepth}{%d}\n" sec-num)))
+            ;; Author.
+            (let ((author (and (plist-get info :with-author)
+			       (let ((auth (plist-get info :author)))
+			         (and auth (org-export-data auth info)))))
+	          (email (and (plist-get info :with-email)
+		              (org-export-data (plist-get info :email) info))))
+              (cond ((and author email (not (string= "" email)))
+	             (format "\\author{%s\\thanks{%s}}\n" author email))
+	            ((or author email) (format "\\author{%s}\n" (or author email)))))
+            ;; Date.
+            (let ((date (and (plist-get info :with-date) (org-export-get-date info))))
+              (format "\\date{%s}\n" (org-export-data date info)))
+            ;; Title
+            (format "\\title{%s}\n" title)
+            (when (org-string-nw-p subtitle)
+              (concat (format (plist-get info :beamer-subtitle-format) subtitle) "\n"))
+            ;; Beamer-header
+            (let ((beamer-header (plist-get info :beamer-header)))
+              (when beamer-header
+	        (format "%s\n" (plist-get info :beamer-header))))
+            ;; 9. Hyperref options.
+            (let ((template (plist-get info :latex-hyperref-template)))
+              (and (stringp template)
+	           (format-spec template (org-latex--format-spec info))))
+            ;; engrave-faces-latex preamble
+            (when (and (eq (plist-get info :latex-src-block-backend) 'engraved)
+                       (org-element-map (plist-get info :parse-tree)
+                           '(src-block inline-src-block) #'identity
+                           info t))
+              (org-latex-generate-engraved-preamble info))
+            ;; Document start.
+            "\\begin{document}\n\n"
+            ;; Title command.
+            (org-element-normalize-string
+             (cond ((not (plist-get info :with-title)) nil)
+	           ((string= "" title) nil)
+	           ((not (stringp org-latex-title-command)) nil)
+	           ((string-match "\\(?:[^%]\\|^\\)%s"
+			          org-latex-title-command)
+	            (format org-latex-title-command title))
+	           (t org-latex-title-command)))
+            ;; Table of contents.
+            (let ((depth (plist-get info :with-toc)))
+              (when depth
+	        (concat
+	         (format "\\begin{frame}%s{%s}\n"
+		         (org-beamer--normalize-argument
+		          (plist-get info :beamer-outline-frame-options) 'option)
+		         (plist-get info :beamer-outline-frame-title))
+	         (when (wholenump depth)
+	           (format "\\setcounter{tocdepth}{%d}\n" depth))
+	         "\\tableofcontents\n"
+	         "\\end{frame}\n\n")))
+            ;; Document's body.
+            contents
+            ;; Creator.
+            (if (plist-get info :with-creator)
+	        (concat (plist-get info :creator) "\n")
+              "")
+            ;; Document end.
+            "\\end{document}")))
+      (if (string-match-p "\\use\\(color\\|font\\|inner\\|outer\\)?theme" pre-theme)
+          ;; `org-latex-classes' already specifies the Beamer theme
+          pre-theme
+        ;; insert the theme information
+        (replace-regexp-in-string "\\(documentclass.*{beamer}\\)"
+                                  #'(lambda (match)
+                                      (concat match "\n" (org-beamer--mk-theme info)))
+                                  pre-theme)))))
 
 
 ;;; Minor Mode
