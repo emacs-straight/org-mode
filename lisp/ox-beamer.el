@@ -270,6 +270,7 @@ Return overlay specification, as a string, or nil."
     (:beamer-font-theme "BEAMER_FONT_THEME" nil nil t)
     (:beamer-inner-theme "BEAMER_INNER_THEME" nil nil t)
     (:beamer-outer-theme "BEAMER_OUTER_THEME" nil nil t)
+    (:beamer-theme-pre "BEAMER_THEME_PRE" nil nil newline)
     (:beamer-header "BEAMER_HEADER" nil nil newline)
     (:beamer-environments-extra nil nil org-beamer-environments-extra)
     (:beamer-frame-default-options nil nil org-beamer-frame-default-options)
@@ -865,8 +866,9 @@ contextual information."
 ;;
 (defun org-beamer--mk-theme (info)
   "Generate the theme setup with the INFO channel information.
-  Will go directly after the document class unless
-  already specified in `'org-latex-classes'"
+Will go directly after the document class unless already specified
+in `'org-latex-classes'.
+"
   (let ((format-theme
 	 (lambda (prop command)
 	   (let ((theme (plist-get info prop)))
@@ -878,6 +880,7 @@ contextual information."
 				 (match-string 0 theme)
 				 (org-trim
 				  (replace-match "" nil nil theme))))))))))
+    ;; Escape backslahes for `replace-regexp-in-string' (!)
     (mapconcat (lambda (args) (apply format-theme args))
 	       '((:beamer-theme "\\\\usetheme")
 		 (:beamer-color-theme "\\\\usecolortheme")
@@ -885,6 +888,14 @@ contextual information."
 		 (:beamer-inner-theme "\\\\useinnertheme")
 		 (:beamer-outer-theme "\\\\useoutertheme"))
 	       "")))
+
+(defun org-latex--mk-beamer-pre (info)
+  "Generate the escaped BEAMER_THEME_PRE if defined."
+  (and (plist-get info :beamer-theme-pre)
+       (replace-regexp-in-string "^\\\\" "\\\\\\\\"
+                                 (concat "\n"
+                                         (plist-get info :beamer-theme-pre)))))
+
 
 (defun org-beamer-template (contents info)
   "Return complete document string after Beamer conversion.
@@ -978,7 +989,9 @@ holding export options."
         ;; insert the theme information
         (replace-regexp-in-string "\\(documentclass.*{beamer}\\)"
                                   #'(lambda (match)
-                                      (concat match "\n" (org-beamer--mk-theme info)))
+                                      (concat match
+                                              (org-latex--mk-beamer-pre info)
+                                              "\n" (org-beamer--mk-theme info)))
                                   pre-theme)))))
 
 

@@ -13154,6 +13154,10 @@ The Beamer export backend has several additional keywords for
 customizing Beamer output.  These keywords work similar to the general
 options settings (see [[*Export Settings]]).
 
+*Note* that, unless otherwise defined in ~org-latex-classes~, the
+theme settings are inserted at the beginning of the preamble, right
+after the document class declaration.
+
 - =BEAMER_THEME= ::
 
   #+cindex: @samp{BEAMER_THEME}, keyword
@@ -13162,6 +13166,7 @@ options settings (see [[*Export Settings]]).
   for options.  For example:
 
   : #+BEAMER_THEME: Rochester [height=20pt]
+
 
 - =BEAMER_FONT_THEME= ::
 
@@ -13177,6 +13182,12 @@ options settings (see [[*Export Settings]]).
 
   #+cindex: @samp{BEAMER_OUTER_THEME}, keyword
   The Beamer outer theme.
+
+- =BEAMER_THEME_PRE= ::
+
+  #+cindex: @samp{BEAMER_THEME_PRE}, keyword
+  Arbitrary lines inserted in the preamble, just before the Beamer
+  theme is defined.
 
 - =BEAMER_HEADER= ::
 
@@ -13377,8 +13388,8 @@ Here is an example of an Org document ready for Beamer export.
 ,#+TITLE: Example Presentation
 ,#+AUTHOR: Carsten Dominik
 ,#+OPTIONS: H:2 toc:t num:t
-,#+LATEX_CLASS: beamer
 ,#+STARTUP: beamer
+,#+LATEX_CLASS: beamer
 ,#+LATEX_CLASS_OPTIONS: [presentation]
 ,#+BEAMER_THEME: Madrid
 ,#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)

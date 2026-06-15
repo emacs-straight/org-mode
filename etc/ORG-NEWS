@@ -25,6 +25,14 @@ Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 # require user action for most Org mode users.
 # Sorted from most important to least important.
 
+*** The beamer theme is included directly after the document class by default
+
+Unless you define a custom definition for the ~beamer~ class in
+(org-latex-classes),  the section of the LaTeX preamble related to the
+Beamer class (defined through BEAMER_... keywords) has been moved to
+the beginning of the preamble, right after the document class
+declaration.
+
 *** ~org-mouse~ tag and priority menus are now separate
 
 The "Tags and Priorities" section of the global context menu is split
@@ -46,6 +54,22 @@ the correct ~(FILE . ...)~ cons.
 
 # We list the most important features, and the features that may
 # require user action to be used.
+
+*** New keyword ~#+BEAMER_THEME_PRE~
+
+The keyword ~#+BEAMER_THEME_PRE~ can be used to insert LaTeX code
+needed right before the Beamer theme is declared. For example:
+
+#+BEGIN_SRC org
+,#+LATEX_CLASS: beamer
+,#+LATEX_CLASS_OPTIONS: [presentation,t,11pt,aspectratio=169]
+,#+BEAMER_THEME_PRE: \usepackage{geometry}
+,#+BEAMER_THEME_PRE: \geometry{paperwidth=200mm, paperheight=112.5mm}
+,#+BEAMER_THEME: Boadilla
+#+END_SRC
+
+will include package ~geometry~ and set the page dimensions before
+the Beamer theme Boadilla is loaded.
 
 *** Link targets can be used as search option in =id:= links
 
