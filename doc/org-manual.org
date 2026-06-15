@@ -15657,17 +15657,24 @@ The properties you can define are:
 
 1. ~:font~ : a string with the system font name. This property is
    *mandatory*.
-2. ~:variant~ : a string for the font variant (e.g. ~"main"~ or ~"rm"~
-   for the Serif font family, ~"sans"~ or ~"sf"~ for Sans Serif, and
-   ~"mono"~ or ~"tt"~ for Monospace).  The four-letter version for the
-   variant corresponds to the family used above for ~fontspec~.  It
-   will be translated to
+2. ~:variant~ : a string for the font variant.  The four-letter
+   version for the variant corresponds to the family used above for
+   ~fontspec~.  It will be translated to
    [[https://en.wikibooks.org/wiki/LaTeX/Fonts][the two-letter codes
    used in LaTeX for the different font families]][fn::Reference
-   sources in the Internet always use the two-letter code].  When no
-   variant is indicated, it is assumed that the serif font family
-   (variant ~"main"~ or ~"rm"~) is implied.  It is recommended that
-   you always add the variant *explicitly*.
+   sources in the Internet always use the two-letter code], according
+   to the following table:
+
+   #+CAPTION[Font codes]: Font family codes
+   | font family     | 2-letter code | 4-letter code |
+   |-----------------+---------------+---------------|
+   | Roman (default) | =rm=          | =main=        |
+   | Sans serif      | =sf=          | =sans=        |
+   | Mono-spaced     | =tt=          | =mono=        |
+
+   When no variant is indicated, the Roman font family (variant
+   ~"main"~ or ~"rm"~) is assumed.  It is recommended that you always
+   add the variant *explicitly*.
 3. ~:props~ : a string for extra properties[fn::You can use
    ~:features~ as an alias for ~:props~.] as defined in the
    [[https://texdoc.org/serve/polyglossia.pdf/0][Polyglossia manual]].
@@ -15753,14 +15760,10 @@ properties.  Use ~nil~ as the language name for the fonts
 used by the default language.
 
 The properties are defined as follows:
-1. ~:variant~ (mandatory) is one of the script codes. As in
-   [[#lualatex-polyglossia]], they can be[fn::~babel~ uses two-letter
-   codes and Org will translate four-letter codes to these two-letter
-   codes as well.]:
-   - ~"main"~ or ~"rm"~ for the roman (serif) font (this is normally the default
-     font for text passages).
-   - ~"sans"~ or ~"sf"~ for the sans serif font, and
-   - ~"mono"~ or ~"tt"~ for the teletype (monospaced) font.
+1. ~:variant~ (mandatory) is one of the script codes.  The font family
+   translation table in [[#lualatex-polyglossia]] applies and you can
+   use 2-letter or 4-letter family codes[fn::Org will translate them
+   automatically for you.].
 2. ~:font~ (mandatory) is the system font name
 3. ~:props~ (optional) is a string with the options[fn::You can use
    ~:features~ as an alias to ~:props~.] to apply to this font.
@@ -15952,6 +15955,11 @@ Note that when ~lualatex~ and thus ~luatexja~ is used, setting
 ~CJKmono~ has no effect, while ~CJKsans~ will be used for verbatim
 environment.
 
+If are writing a multi-lingual document with Latin fonts using
+~babel~, for example a Chinese document with passages in American
+English, and need to configure the fonts in English passages, use
+~org-latex-babel-font-config~ with font definitions for the "en"
+language (see [[#babel-fontconfig]]).
 
 ** Markdown Export
 :PROPERTIES:
