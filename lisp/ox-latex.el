@@ -2286,13 +2286,13 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
          ;;  :props is an alias to align with babel/polyglossia
          (let ((features (or (plist-get font-config :features)
                              (plist-get font-config :props))))
-           (message "- fontspec %s %s -> %s" font-family font features)
+           ;; (message "- fontspec %s %s -> %s" font-family font features)
            (when (stringp features)
              (setq features (list features))) ;; needs to be a list to concat a possible fallback
            (when-let* ((fallback-name (alist-get font-family fallback-alist nil nil #'string=))
                        (fallback-spec (and directlua (format "RawFeature={fallback=%s}" fallback-name))))
              (setq features (cl-concatenate #'list features (list fallback-spec))))
-           (message "* fontspec %s %s -> %s" font-family font features)
+           ;; (message "* fontspec %s %s -> %s" font-family font features)
            (insert (or (org-latex--mk-options features) "")))
          (insert "\n")))))
 
@@ -2519,7 +2519,7 @@ Use fontspec as a last resort and when defined."
                                             font)))))
             (unless with-cjk
               (unless doc-babel-font-config
-                (insert "\n\\usepackage{fontspec}"))
+                (insert "\n\\RequirePackage{fontspec}"))
               (org-latex--babel-add-fontspec doc-fontspec))))
         (buffer-string))))
 
