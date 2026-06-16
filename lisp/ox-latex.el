@@ -2518,6 +2518,8 @@ Use fontspec as a last resort and when defined."
                                             (or (org-latex--mk-options props) "")
                                             font)))))
             (unless with-cjk
+              (unless doc-babel-font-config
+                (insert "\n\\usepackage{fontspec}"))
               (org-latex--babel-add-fontspec doc-fontspec))))
         (buffer-string))))
 
