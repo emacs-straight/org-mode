@@ -2231,7 +2231,7 @@ This part can be reused in pure fontspec and in fontspec+polyglossia."
      do
      (when-let* ((fallback (plist-get config-plist :fallback)))
        ;; (FONT-FAMILY . FALLBACK-NAME)
-       (push (cons font-family (concat "fallback_" font-family)) fallback-alist)))
+       (push (cons font-family (concat "fallback" font-family)) fallback-alist)))
       ;; As suggested by Jacob S. Gordon <jacob.as.gordon@gmail.com>
       ;; but with a twist
       ;; Remove the fallback list if we are not using lualatex
@@ -2428,6 +2428,7 @@ Use fontspec as a last resort and when defined."
          (unicode-math-options org-latex-unicode-math-options))
     ;; FIXME: add preliminary checks to flag potential configuration clashes
     (with-temp-buffer
+      ;; FIXME: this only when debugging is activated?
       ;; Tracing lost chars: https://tex.stackexchange.com/questions/548901
       (insert "\\tracinglostchars=2\n")
       ;; do *not* include languages here
@@ -2438,90 +2439,103 @@ Use fontspec as a last resort and when defined."
       ;; FIXME: check for other languages
       ;; FIXME: check if fallbacks are accepted
       ;; (unless doc-babel-font-config
-        (save-match-data
-          ;; FIXME: Korean?
-          (let* ((main-lang (car-safe latex-babel-langs))
-                 (with-cjk (member main-lang '("jp" "zh"))))
-            (when with-cjk
-              (cond ((string= compiler "xelatex")
-                     (insert "\\usepackage{xeCJK}\n"))
-                    ((string= compiler "lualatex")
-                     ;; Mimic xeCJK's font interface without relying on luatexja-fontspec.
-                     ;; Note that luatexja does not distinguish mono font and sans font.
-                     (insert "\\makeatletter
+      (save-match-data
+        ;; FIXME: Korean?
+        (let* ((main-lang (car-safe latex-babel-langs))
+               (with-cjk (member main-lang '("jp" "zh"))))
+          (when with-cjk
+            (cond ((string= compiler "xelatex")
+                   (insert "\\usepackage{xeCJK}\n"))
+                  ((string= compiler "lualatex")
+                   ;; Mimic xeCJK's font interface without relying on luatexja-fontspec.
+                   ;; Note that luatexja does not distinguish mono font and sans font.
+                   (insert "\\makeatletter
 \\def\\setCJKmainfont#1{\\def\\ltj@stdmcfont{#1}}
 \\def\\setCJKsansfont#1{\\def\\ltj@stdgtfont{#1}}
 \\def\\setCJKmonofont#1{}\n"))
-                    (t (error "Using xeCJK or luatexja for jp and zh requires compiler xelatex or lualatex")))
-              (insert "\\usepackage{indentfirst}\n")
-              ;; Now the fonts:
-              ;;
-              ;; Look for CJK fonts in the font configuration and
-              ;; provide the default fonts by convention for Chinese or
-              ;; Japanese documents if there none is found.
-              (when (or (and (string= compiler "xelatex")
-                             (string= main-lang "jp"))
-                        (and (string= compiler "lualatex")
-                             (string= main-lang "zh")))
-                (unless (cl-loop for (_ . fprops) in doc-fontspec
-                                 when (string-match-p "^CJK" (plist-get fprops :font))
-                                 collect fprops)
-                  (cl-loop for (fname . ffile) in
-                           (symbol-value (intern (concat main-lang "-default-fontspec")))
-                           do (insert "\\set" fname "font{" ffile "}\n"))))
-              ;;
-              (org-latex--babel-add-fontspec doc-fontspec)
-              (when (string= compiler "lualatex")
-                (when (string= main-lang "zh")
-                  (insert "\\def\\ltj@stdyokojfm{quanjiao}\n"))
-                (insert "\\makeatother\n\\usepackage{luatexja}\n"))
-              (insert "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax\n") ;; FIXME: agree on ZWS
-              (insert (format "\\normalsize\\parindent=%d%s\n"
-                              (if (string= main-lang "jp") 1 2)
-                              (if (string= compiler "lualatex") "\\zw" "em"))) ;; FIXME: Korean?
-              (insert "\\linespread{1.333}"))
-            ;; FIXME: This works but needs to be fine-tuned:
-            (insert (format "\n\\usepackage%s{babel}" (or (org-latex--mk-options babel-options) "")))
-            ;; import the main language with a babelprovide
-            ;; it is the fist language in the list.
-            ;; FIXME: plain "import" or "import=*" ?
-            (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
-            ;; For the other languages, generate babelprovide based on the :provide atribute, default to "import"
-            ;; for that we have to loop over the secondary languages (the rest)
-            (cl-loop for bab-lang in (cdr latex-babel-langs)
-                     do (let* ((props (alist-get bab-lang doc-babel-provides nil nil #'string=))
-                               (provide-string (or (plist-get props :provide) "import")))
-                          ;; \\babelprovide needs language and provide
-                          (insert (format "\n\\babelprovide%s{%s}"
-                                          (or (org-latex--mk-options provide-string) "")
-                                          (org-latex--get-babel-lang bab-lang)))))
-            ;; support \babelfont with_out_ language like in
-            ;; https://latex3.github.io/babel/guides/locale-tamil.html
-            (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
-                     do (let* (;; (font-list (plist-get babel-fontlist :fonts))
-                               (variant (plist-get babel-fontlist :variant))
-                               (font (plist-get babel-fontlist :font))
-                               (props (or (plist-get babel-fontlist :props)
-                                          (plist-get babel-fontlist :features))))
-                          (when (null font)
-                            (error "Babel: font name missing for variant %s for lang %s" variant (or lang "<default>")))
-                          ;; if it is the main language, ignore. This is only used
-                          ;; when lang is the secondary language
-                          (unless (string= lang (car latex-babel-langs))
-                            ;; Two examples (with and w/o lang)
-                            ;; Source: URL https://github.com/latex3/babel/blob/main/samples/harf-farsi-malayalam.tex
-                            ;; \\babelfont{rm}[Renderer=Harfbuzz]{Amiri}
-                            ;; \\babelfont[malayalam]{rm}[Renderer=Harfbuzz]{FreeSerif}
-                            (insert (format "\n\\babelfont%s{%s}%s{%s}"
-                                            (or (org-latex--mk-options (and lang (org-latex--get-babel-lang lang))) "")
-                                            (alist-get variant org-latex--long2short-family variant nil #'string=)
-                                            (or (org-latex--mk-options props) "")
-                                            font)))))
-            (unless with-cjk
-              (unless doc-babel-font-config
-                (insert "\n\\RequirePackage{fontspec}"))
-              (org-latex--babel-add-fontspec doc-fontspec))))
-        (buffer-string))))
+                  (t (error "Using xeCJK or luatexja for jp and zh requires compiler xelatex or lualatex")))
+            (insert "\\usepackage{indentfirst}\n")
+            ;; Now the fonts:
+            ;;
+            ;; Look for CJK fonts in the font configuration and
+            ;; provide the default fonts by convention for Chinese or
+            ;; Japanese documents if there none is found.
+            (when (or (and (string= compiler "xelatex")
+                           (string= main-lang "jp"))
+                      (and (string= compiler "lualatex")
+                           (string= main-lang "zh")))
+              (unless (cl-loop for (_ . fprops) in doc-fontspec
+                               when (string-match-p "^CJK" (plist-get fprops :font))
+                               collect fprops)
+                (cl-loop for (fname . ffile) in
+                         (symbol-value (intern (concat main-lang "-default-fontspec")))
+                         do (insert "\\set" fname "font{" ffile "}\n"))))
+            ;;
+            (org-latex--babel-add-fontspec doc-fontspec)
+            (when (string= compiler "lualatex")
+              (when (string= main-lang "zh")
+                (insert "\\def\\ltj@stdyokojfm{quanjiao}\n"))
+              (insert "\\makeatother\n\\usepackage{luatexja}\n"))
+            (insert "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax\n") ;; FIXME: agree on ZWS
+            (insert (format "\\normalsize\\parindent=%d%s\n"
+                            (if (string= main-lang "jp") 1 2)
+                            (if (string= compiler "lualatex") "\\zw" "em"))) ;; FIXME: Korean?
+            (insert "\\linespread{1.333}"))
+          ;; FIXME: This works but needs to be fine-tuned:
+          (insert (format "\n\\usepackage%s{babel}" (or (org-latex--mk-options babel-options) "")))
+          ;; import the main language with a babelprovide
+          ;; it is the fist language in the list.
+          ;; FIXME: plain "import" or "import=*" ?
+          (insert (format"\n\\babelprovide[main,import]{%s}" (org-latex--get-babel-lang (car latex-babel-langs))))
+          ;; For the other languages, generate babelprovide based on the :provide atribute, default to "import"
+          ;; for that we have to loop over the secondary languages (the rest)
+          (cl-loop for bab-lang in (cdr latex-babel-langs)
+                   do (let* ((props (alist-get bab-lang doc-babel-provides nil nil #'string=))
+                             (provide-string (or (plist-get props :provide) "import")))
+                        ;; \\babelprovide needs language and provide
+                        (insert (format "\n\\babelprovide%s{%s}"
+                                        (or (org-latex--mk-options provide-string) "")
+                                        (org-latex--get-babel-lang bab-lang)))))
+          ;; support \babelfont with_out_ language like in
+          ;; https://latex3.github.io/babel/guides/locale-tamil.html
+          (cl-loop for (lang . babel-fontlist) in doc-babel-font-config
+                   do (let* ((variant (plist-get babel-fontlist :variant))
+                             (font (plist-get babel-fontlist :font))
+                             (props (or (plist-get babel-fontlist :props)
+                                        (plist-get babel-fontlist :features))))
+                        (unless font
+                          (error "Babel: font name missing for variant %s for lang %s" variant (or lang "<default>")))
+                        ;; if it is the main language, ignore. This is only used
+                        ;; when lang is the secondary language
+                        (unless (string= lang (car latex-babel-langs))
+                          ;; Two examples (with and w/o lang)
+                          ;; Source: URL https://github.com/latex3/babel/blob/main/samples/harf-farsi-malayalam.tex
+                          ;; \\babelfont{rm}[Renderer=Harfbuzz]{Amiri}
+                          ;; \\babelfont[malayalam]{rm}[Renderer=Harfbuzz]{FreeSerif}
+                          (insert (format "\n\\babelfont%s{%s}%s{%s}"
+                                          (or (org-latex--mk-options (and lang (org-latex--get-babel-lang lang))) "")
+                                          (alist-get variant org-latex--long2short-family variant nil #'string=)
+                                          (or (org-latex--mk-options props) "")
+                                          font)))))
+          (unless with-cjk
+            (if doc-babel-font-config
+                (progn
+                  ;; if we already have emitted \babelfont, we can't use fallbacks
+                  ;; FIXME: check if that holds
+                  (when doc-fontspec
+                    (insert "\n\\RequirePackage{fontspec}")
+                    (org-latex--babel-add-fontspec doc-fontspec)))
+              (let ((compiler (plist-get info :latex-compiler))
+                    (fontspec-config (plist-get info :latex-fontspec-config))
+                    (default-features (plist-get info :latex-fontspec-defaults))
+                    (doc-scripts (plist-get info :doc-scripts)))
+                ;; babel only controls languages, so fallbacks would be allowed
+                (insert "\n\\RequirePackage{fontspec}\n")
+                (org-latex--insert-fontspec compiler
+                                            fontspec-config
+                                            default-features
+                                            doc-scripts))))))
+      (buffer-string))))
 
 
 (defun org-latex--utf8latex-fontspec-config (info)
@@ -2538,10 +2552,8 @@ INFO is the export communication channel."
       ;; (message "FONTSPEC: Intended compiler: %s" compiler)
       ;; (message "FONTSPEC: unicode-math-options: %s" unicode-math-options)
       (cl-loop
-       for font-spec in current-fontspec-config
-       ;; font-spec -> (font-family . fontspec)
-       do
-       (setq cjk-packages (or cjk-packages (string-match-p "^CJK" (car font-spec)))))
+       for font-spec in current-fontspec-config  ;; font-spec -> (font-family . fontspec)
+       do (setq cjk-packages (or cjk-packages (string-match-p "^CJK" (car font-spec)))))
 
       (insert "\\usepackage{fontspec}\n")
       (insert (format "\\usepackage%s{unicode-math}\n"
