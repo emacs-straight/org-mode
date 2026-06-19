@@ -347,14 +347,14 @@ A random text.
 
 (ert-deftest test-ox-latex/lualatex-fontspec-directlua ()
   "Test that directlua block is created"
-  (let ((org-latex-compiler "lualatex")
-        (org-latex-multi-lang "fontspec")
-        (org-latex-fontspec-config '(("main"
+  (let ((org-latex-fontspec-config '(("main"
                                       :font "FreeSerif"
                                       :fallback (("emoji" . "Noto Color Emoji:mode=harf"))))))
     (org-test-with-exported-text
      'latex
      "#+TITLE: fontspec
+#+LATEX_MULTI_LANG: fontspec
+#+LATEX_COMPILER: lualatex
 #+OPTIONS: toc:nil H:3 num:nil
 
 * Heading
@@ -364,8 +364,8 @@ A random text with emoji: 👍
      ;; (message "--> %s" (buffer-string))
      (goto-char (point-min))
      (should (search-forward "\\directlua" nil t))
-     (should (search-forward "Noto Color Emoji" nil t))
-     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]\n" nil t)))))
+     (should (search-forward "Noto Color Emoji:mode=harf" nil t))
+     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallbackmain}]\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-fallback-plist ()
   "Test that directlua block is created"
@@ -387,7 +387,7 @@ A random text with emoji: 👍
      (goto-char (point-min))
      (should (search-forward "\\directlua" nil t))
      (should (search-forward "Noto Color Emoji" nil t))
-     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallback_main}]\n" nil t)))))
+     (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=fallbackmain}]\n" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-noemoji ()
   "Test that directlua block is not created because it is not needed
