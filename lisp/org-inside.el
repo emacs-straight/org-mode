@@ -261,6 +261,7 @@ visible portion."
   (add-hook 'window-buffer-change-functions #'org-inside--buffer-changed nil t)
   (add-hook 'org-hidden-text-functions #'org-inside--add-properties nil t)
   (add-hook 'org-ctrl-c-ctrl-c-hook #'org-inside-toggle-hidden nil t)
+  (add-hook 'org-fold-reveal-start-hook #'org-inside-toggle-hidden nil t)
   (font-lock-flush) ;; does not call sensor functions
   (dolist (w (get-buffer-window-list nil nil t))
     (org-inside--buffer-changed w)))
@@ -273,9 +274,10 @@ visible portion."
   (cursor-sensor-mode -1)
   (setq-local org-extra-unfontify-properties
               (delq 'cursor-sensor-functions org-extra-unfontify-properties))
+  (remove-hook 'org-fold-reveal-start-hook #'org-inside-toggle-hidden t)
+  (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-inside-toggle-hidden t)
   (remove-hook 'org-hidden-text-functions #'org-inside--add-properties t)
-  (remove-hook 'window-buffer-change-functions #'org-inside--buffer-changed t)
-  (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-inside-toggle-hidden t))
+  (remove-hook 'window-buffer-change-functions #'org-inside--buffer-changed t))
 
 (defun org-inside--reset-all ()
   "Reset org-inside in all `org-inside' buffers."
