@@ -375,7 +375,10 @@ If EXCLUDE-TMP is non-nil, ignore temporary buffers."
 	 (filter
 	  (cond
 	   ((eq predicate 'files)
-	    (lambda (b) (with-current-buffer b (derived-mode-p 'org-mode))))
+	    (lambda (b)
+              (with-current-buffer b
+                (and buffer-file-name
+                     (derived-mode-p 'org-mode)))))
 	   ((eq predicate 'export)
 	    (lambda (b) (string-match "\\*Org .*Export" (buffer-name b))))
 	   ((eq predicate 'agenda)
@@ -390,10 +393,10 @@ If EXCLUDE-TMP is non-nil, ignore temporary buffers."
 					      (buffer-name b)))))))))
     (delq nil
 	  (mapcar
-	   (lambda(b)
+	   (lambda (b)
 	     (if (and (funcall filter b)
 		      (or (not exclude-tmp)
-			  (not (string-match "tmp" (buffer-name b)))))
+			  (/= ?\s (aref (buffer-name b) 0))))
 		 b
 	       nil))
 	   (buffer-list)))))

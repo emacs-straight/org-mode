@@ -1413,7 +1413,7 @@ like that: \"%%\"."
 	  emacs-version
 	  (if (fboundp 'org-version) (org-version) "unknown version"))
   "Information about the creator of the HTML document.
-This option can also be set on with the CREATOR keyword."
+This option can also be set with the CREATOR keyword."
   :group 'org-export-html
   :version "24.4"
   :package-version '(Org . "8.0")
@@ -1651,14 +1651,14 @@ https://developer.mozilla.org/en-US/docs/Mozilla/Mobile/Viewport_meta_tag"
   :type 'boolean)
 
 (defcustom org-html-klipse-css
-  "https://storage.googleapis.com/app.klipse.tech/css/codemirror.css"
+  "https://cdn.jsdelivr.net/npm/klipse@7.12.0/dist/codemirror.css"
   "Location of the codemirror CSS file for use with klipse."
   :group 'org-export-html
   :package-version '(Org . "9.1")
   :type 'string)
 
 (defcustom org-html-klipse-js
-  "https://storage.googleapis.com/app.klipse.tech/plugin_prod/js/klipse_plugin.min.js"
+  "https://cdn.jsdelivr.net/npm/klipse@7.12.0/dist/klipse_plugin.min.js"
   "Location of the klipse javascript file."
   :group 'org-export-html
   :type 'string)
@@ -1982,11 +1982,15 @@ Use document's plist INFO to derive relevant information for the tags."
      '("name" "generator" "Org Mode"))))
 
 (defun org-html--build-meta-entry
-    (label identity &optional content-format &rest content-formatters)
+    (info label identity &optional content-format &rest content-formatters)
   "Build a meta tag using the provided information.
 
-Construct <meta> tag of form <meta LABEL=\"IDENTITY\" />, or when CONTENT-FORMAT
-is present: <meta LABEL=\"IDENTITY\" content=\"{content}\" />
+INFO is a plist used as a communication channel.  Construct a
+<meta> tag of the form <meta LABEL=\"IDENTITY\">, or when CONTENT-FORMAT
+is present: <meta LABEL=\"IDENTITY\" content=\"{content}\">.
+
+The closing behavior of the tag dynamically adapts to the document type
+specified in INFO (using \" />\" for XHTML and \">\" for HTML).
 
 Here {content} is determined by applying any CONTENT-FORMATTERS to the
 CONTENT-FORMAT and encoding the result as plain text."
@@ -2000,7 +2004,8 @@ CONTENT-FORMAT and encoding the result as plain text."
 		      (if content-formatters
 			  (apply #'format content-format content-formatters)
 			content-format)))))
-	  "\" />\n"))
+          "\""
+          (if (org-html-xhtml-p info) " />\n" ">\n")))
 
 (defun org-html--build-meta-info (info)
   "Return meta tags for exported document.
@@ -2023,15 +2028,15 @@ INFO is a plist used as a communication channel."
 		" -->\n")))
 
      (if (org-html-html5-p info)
-	 (org-html--build-meta-entry "charset" charset)
-       (org-html--build-meta-entry "http-equiv" "Content-Type"
+	 (org-html--build-meta-entry info "charset" charset)
+       (org-html--build-meta-entry info "http-equiv" "Content-Type"
 				   (concat "text/html;charset=" charset)))
 
      (let ((viewport-options
 	    (cl-remove-if-not (lambda (cell) (org-string-nw-p (cadr cell)))
 			      (plist-get info :html-viewport))))
        (if viewport-options
-	   (org-html--build-meta-entry "name" "viewport"
+	   (org-html--build-meta-entry info "name" "viewport"
 				       (mapconcat
 					(lambda (elm)
                                           (format "%s=%s" (car elm) (cadr elm)))
@@ -2040,7 +2045,7 @@ INFO is a plist used as a communication channel."
      (format "<title>%s</title>\n" title)
 
      (mapconcat
-      (lambda (args) (apply #'org-html--build-meta-entry args))
+      (lambda (args) (apply #'org-html--build-meta-entry (cons info args)))
       (delq nil (if (functionp org-html-meta-tags)
 		    (funcall org-html-meta-tags info)
 		  org-html-meta-tags))
@@ -2333,7 +2338,8 @@ holding export options."
 	     "</script><script src=\""
 	     org-html-klipse-js
 	     "\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\""
-	     org-html-klipse-css "\"/>"))
+	     org-html-klipse-css "\""
+             (if (org-html-xhtml-p info) " />" ">")))
    ;; Closing document.
    "</body>\n</html>"))
 
@@ -3006,9 +3012,11 @@ contextual information."
   "Format CHECKBOX into HTML.
 INFO is a plist holding contextual information.  See
 `org-html-checkbox-type' for customization options."
-  (cdr (assq checkbox
-	     (cdr (assq (plist-get info :html-checkbox-type)
-			org-html-checkbox-types)))))
+  (let* ((type (plist-get info :html-checkbox-type))
+         (box (cdr (assq checkbox
+	                 (cdr (assq type org-html-checkbox-types))))))
+    (if (and box (eq type 'html) (not (org-html-xhtml-p info)))
+        (replace-regexp-in-string " />" ">" box) box)))
 
 (defun org-html-format-list-item (contents type checkbox info
 					   &optional term-counter-id

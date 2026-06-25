@@ -2643,8 +2643,8 @@ will be preserved on export."
 (defun org-time-stamp-format (&optional with-time inactive custom)
   "Get timestamp format for a time string.
 
-The format is based on `org-timestamp-formats' (if CUSTOM is nil) or or
-`org-timestamp-custom-formats' (if CUSTOM if non-nil).
+The format is based on `org-timestamp-formats' (if CUSTOM is nil) or
+`org-timestamp-custom-formats' (if CUSTOM is non-nil).
 
 When optional argument WITH-TIME is non-nil, the timestamp will contain
 time.
@@ -6172,14 +6172,14 @@ needs to be inserted at a specific position in the font-lock sequence.")
 	  ;; Emphasis
           ;; `org-do-emphasis-faces' prepends faces
 	  (when org-fontify-emphasized-text '(org-do-emphasis-faces))
+	  ;; Description list items
+          '("\\(?:^[ \t]*[-+]\\|^[ \t]+[*]\\)[ \t]+\\(.*?[ \t]+::\\)\\([ \t]+\\|$\\)"
+	    1 'org-list-dt prepend)
 	  ;; Checkboxes
 	  `(,org-list-full-item-re 3 'org-checkbox prepend lax)
 	  (when (cdr (assq 'checkbox org-list-automatic-rules))
 	    '("\\[\\([0-9]*%\\)\\]\\|\\[\\([0-9]*\\)/\\([0-9]*\\)\\]"
 	      (0 (org-get-checkbox-statistics-face) prepend)))
-	  ;; Description list items
-          '("\\(?:^[ \t]*[-+]\\|^[ \t]+[*]\\)[ \t]+\\(.*?[ \t]+::\\)\\([ \t]+\\|$\\)"
-	    1 'org-list-dt prepend)
           ;; Inline export snippets
           '("\\(@@\\)\\([a-z-]+:\\).*?\\(@@\\)"
             (1 'font-lock-comment-face prepend)
@@ -7941,7 +7941,8 @@ If JUST-RETURN-STRING is non-nil, return a string, don't display a message."
   (interactive "P" org-mode)
   (let* (case-fold-search
 	 (bfn (buffer-file-name (buffer-base-buffer)))
-         (title-prop (when (eq file-or-title 'title) (org-get-title)))
+         (prefix (when (eq file-or-title 'title)
+                   (or (org-get-title) (file-name-nondirectory bfn))))
 	 (path (and (derived-mode-p 'org-mode) (org-get-outline-path)))
 	 res)
     (when current (setq path (append path
@@ -7953,10 +7954,7 @@ If JUST-RETURN-STRING is non-nil, return a string, don't display a message."
 	  (org-format-outline-path
 	   path
 	   (1- (frame-width))
-	   (and file-or-title bfn (concat (if (and (eq file-or-title 'title) title-prop)
-					      title-prop
-					    (file-name-nondirectory bfn))
-				 separator))
+	   prefix
 	   separator))
     (add-face-text-property 0 (length res)
 			    `(:height ,(face-attribute 'default :height))
@@ -10530,7 +10528,7 @@ This function is run automatically after each state change to a DONE state."
       (save-excursion
 	(let ((scheduled (org-entry-get (point) "SCHEDULED")))
 	  (when (and scheduled (not (string-match-p org-repeat-re scheduled)))
-	    (org-remove-timestamp-with-keyword org-scheduled-string))))
+	    (org-remove-timestamp-with-keyword org-scheduled-string 'planning))))
       ;; Update every timestamp with a repeater in the entry.
       (let ((planning-re (regexp-opt
 			  (list org-scheduled-string org-deadline-string))))
@@ -10662,8 +10660,8 @@ TYPE is either `deadline' or `scheduled'.  See `org-deadline' or
 		        "Entry was not scheduled"))
 	   (when (and old-date log)
 	     (org-add-log-setup (if deadline? 'deldeadline 'delschedule)
-			     nil old-date log))
-	   (org-remove-timestamp-with-keyword keyword)
+			        nil old-date log))
+	   (org-remove-timestamp-with-keyword keyword 'planning)
 	   (message (if deadline? "Entry no longer has a deadline."
 		      "Entry is no longer scheduled."))))
         (`(16)
@@ -10770,14 +10768,21 @@ nil."
     (when time
       (org-time-string-to-time time))))
 
-(defun org-remove-timestamp-with-keyword (keyword)
-  "Remove all time stamps with KEYWORD in the current entry."
+(defun org-remove-timestamp-with-keyword (keyword &optional planning)
+  "Remove all time stamps with KEYWORD in the current entry.
+When PLANNING is non-nil, only remove on planning line."
   (let ((re (concat "\\<" (regexp-quote keyword) " +<[^>\n]+>[ \t]*"))
 	beg)
     (save-excursion
       (org-back-to-heading t)
-      (setq beg (point))
-      (outline-next-heading)
+      (if planning
+          (progn
+            (forward-line)
+            (when (looking-at-p org-planning-line-re)
+              (setq beg (point))
+              (forward-line)))
+        (setq beg (point))
+        (outline-next-heading))
       (while (re-search-backward re beg t)
 	(replace-match "")
         (if (and (string-match "\\S-" (buffer-substring (line-beginning-position) (point)))
@@ -16060,7 +16065,8 @@ prefix, restrict available buffers to agenda files."
   (interactive "P")
   (let ((blist (org-buffer-list
 		(cond ((equal arg '(4))  'files)
-		      ((equal arg '(16)) 'agenda)))))
+		      ((equal arg '(16)) 'agenda))
+                t)))
     (pop-to-buffer-same-window
      (completing-read "Org buffer: "
 		      (mapcar #'list (mapcar #'buffer-name blist))
@@ -20746,7 +20752,7 @@ FORMAT is a format specifier to be passed to
 When optional argument END is non-nil, use end of date-range or
 time-range, if possible.
 
-When optional argument UTC is non-nil, time is be expressed as
+When optional argument UTC is non-nil, time is expressed as
 Universal Time."
   (format-time-string format (org-timestamp-to-time timestamp end)
 		      (and utc t)))
@@ -22017,7 +22023,9 @@ See `org-forward-paragraph'."
   (interactive nil org-mode)
   (save-restriction
     (widen)
-    (skip-chars-forward " \t\n")
+    (when (org-match-line "^[ \t]*$")
+      ;; We should not skip when point is at the end of non-empty line.
+      (skip-chars-forward " \t\n"))
     (cond
      ((eobp) nil)
      ;; When inside a folded part, move out of it.

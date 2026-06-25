@@ -2843,6 +2843,47 @@ test <point>
 				     ">>>>>>>>>>")
 	    ">>>>>>>>..")))
 
+(ert-deftest test-org/org-display-outline-path ()
+  "Test `org-display-outline-path' specifications."
+  ;; basic
+  (org-test-with-temp-text-in-file "* Test\n* Path\n** <point>Sub"
+    (should (equal (org-display-outline-path nil nil "/" t) "Path")))
+
+  ;; current heading included
+  (org-test-with-temp-text-in-file "* Path\n* To\n** <point>Sub"
+    (should (equal (org-display-outline-path nil t "/" t) "To/Sub")))
+
+  ;; basic, ignoring title
+  (org-test-with-temp-text-in-file "#+TITLE: Test\n* Top\n** <point>Sub"
+    (should (equal (org-display-outline-path nil nil "/" t) "Top")))
+
+
+  (org-test-with-temp-text-in-file "#+TITLE: Top\n* To\n** <point>Bottom"
+    (should (equal (org-display-outline-path nil t "/" t) "To/Bottom")))
+
+  ;; with title property in file
+  (org-test-with-temp-text-in-file "#+TITLE: Test\n* Top\n** <point>Sub"
+    (should (equal (org-display-outline-path 'title nil "/" t) "Test/Top")))
+
+  ;; current heading and title
+  (org-test-with-temp-text-in-file "#+TITLE: All\n* The way\n** <point>Down"
+    (should (equal (org-display-outline-path 'title t "/" t) "All/The way/Down")))
+
+  (org-test-with-temp-text-in-file "#+TITLE: Test\n* Top\n** Sub\n* Another Top\n** <point>Another Sub"
+    (should (equal (org-display-outline-path 'title t "/" t) "Test/Another Top/Another Sub")))
+
+  ;; with filename
+  (org-test-with-temp-text-in-file "* Level 1\n** Level 2\n*** <point>Level 3"
+    (let* ((expected-file-name (file-name-base (buffer-file-name)))
+           (expected-path (format "%s/Level 1/Level 2/Level 3" expected-file-name)))
+      (should (equal (org-display-outline-path 'title t "/" t) expected-path))))
+
+  ;; custom separator
+  (org-test-with-temp-text-in-file "* Foo\n** Bar\n*** <point>Baz\n*** Foo"
+    (let* ((expected-file-name (file-name-base (buffer-file-name)))
+           (expected-path (format "%s > Foo > Bar > Baz" expected-file-name)))
+      (should (equal (org-display-outline-path 'title t " > " t) expected-path)))))
+
 (ert-deftest test-org/org-find-olp ()
   "Test `org-find-olp' specifications."
   (org-test-with-temp-text
@@ -5159,6 +5200,11 @@ asd
 	(org-current-line))))
   (should
    (= 2
+      (org-test-with-temp-text "P1<point>\n\nP2"
+	(org-forward-paragraph)
+	(org-current-line))))
+  (should
+   (= 2
       (org-test-with-temp-text "P1\n\nP2\n\nP3"
 	(org-forward-paragraph)
 	(org-current-line))))
@@ -6767,6 +6813,18 @@ Paragraph<point>"
 		  (org-last-inserted-timestamp nil))
 	      (org-deadline '(4)))
 	    (buffer-string))))
+  ;; Do not touch DEADLINE beyond planning line.
+  (let ((post "
+This one
+DEADLINE: <2012-03-29>
+should not be touched."))
+    (should
+     (equal (concat "* H\n" post)
+            (org-test-with-temp-text (concat "* H\nDEADLINE: <2012-03-29>\n" post)
+              (let ((org-adapt-indentation nil)
+                    (org-last-inserted-timestamp nil))
+                (org-deadline '(4)))
+              (buffer-string)))))
   (should
    (equal "* H"
 	  (org-test-with-temp-text "* H"
@@ -6877,6 +6935,18 @@ Paragraph<point>"
                   (org-last-inserted-timestamp nil))
               (org-schedule '(4)))
             (buffer-string))))
+  ;; Do not touch SCHEDULED beyond planning line.
+  (let ((post "
+This one
+SCHEDULED: <2012-03-29>
+should not be touched."))
+    (should
+     (equal (concat "* H\n" post)
+            (org-test-with-temp-text (concat "* H\nSCHEDULED: <2012-03-29>\n" post)
+              (let ((org-adapt-indentation nil)
+                    (org-last-inserted-timestamp nil))
+                (org-schedule '(4)))
+              (buffer-string)))))
   (should
    (equal "* H"
           (org-test-with-temp-text "* H"
@@ -9653,13 +9723,13 @@ Behavior can be modified by setting `org-log-into-drawer', by keywords in
      ;; boundary
      (should
       (string-equal
-       "<2025-11-02 Sun 02:00>"
+       (concat "<2025-11-02 " (org-test-get-day-name "Sun") " 02:00>")
        (org-test-with-temp-text "<2025-11-02 Sun 01:55>"
                                 (org-test-with-result 'buffer-no-properties
                                                       (org-timestamp-change 5 'minute)))))
      (should
       (string-equal
-       "<2025-11-02 Sun 02:05>"
+       (concat "<2025-11-02 " (org-test-get-day-name "Sun") " 02:05>")
        (org-test-with-temp-text "<2025-11-02 Sun 01:05>"
                                 (org-test-with-result 'buffer-no-properties
                                                       (org-timestamp-change 1 'hour)))))))

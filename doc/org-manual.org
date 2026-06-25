@@ -5369,7 +5369,7 @@ value after it.  Keys are case-insensitive.  Here is an example:
     :Title:     Goldberg Variations
     :Composer:  J.S. Bach
     :Artist:    Glenn Gould
-    :Publisher: Deutsche Grammophon
+    :Publisher: Columbia
     :NDisks:    1
     :END:
 #+end_example
@@ -12856,6 +12856,9 @@ macro
 #+texinfo: @noindent
 turns ={{{gnustamp(linux)}}}= into =GNU/Linux= during export.
 
+The macro arguments cannot contain =}}}= inside.  In other words,
+macros cannot be nested.
+
 Org recognizes macro references in following Org markup areas:
 paragraphs, headlines, verse blocks, tables cells and lists.  Org also
 recognizes macro references in keywords, such as =CAPTION=, =TITLE=,
@@ -14579,10 +14582,12 @@ include:
   #+vindex: org-latex-tables-centered
   All three commands are toggles.  =:booktabs= brings in modern
   typesetting enhancements to regular tables.  The =booktabs= package
-  has to be loaded through ~org-latex-packages-alist~.  =:center= is
-  for centering the table.  =:rmlines= removes all but the very first
-  horizontal line made of ASCII characters from "table.el" tables
-  only.
+  needs to be loaded through ~org-latex-packages-alist~, unless it is
+  already included by your document class[fn:: For example,
+  [[https://authors.acm.org/proceedings/production-information/preparing-your-article-with-latex][the
+  ACM article template]].].  =:center= is for centering the table.
+  =:rmlines= removes all but the very first horizontal line made of
+  ASCII characters from "table.el" tables only.
 
 - =:math-prefix=, =:math-suffix=, =:math-arguments= ::
 

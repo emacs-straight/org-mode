@@ -70,6 +70,11 @@ needed right before the Beamer theme is declared. For example:
 
 will include package ~geometry~ and set the page dimensions before
 the Beamer theme Boadilla is loaded.
+*** Column view now has quick help
+
+Column view has a quick-help popup, available with =?= when point is
+in the column view display.  It lists commonly used column view
+bindings.
 
 *** Link targets can be used as search option in =id:= links
 
@@ -235,7 +240,7 @@ addition to being added to a data attribute, ~data-linenr~, on that
 highlight and copy/paste multiple lines from a code block without
 having the line numbers included.
 
-*** New custom varible ~org-tangle-with-archived-trees~
+*** New custom variable ~org-tangle-with-archived-trees~
 
 By default, ~org-babel-tangle~ skips source blocks located in
 archived subtrees.  When this option is non-nil, source blocks in
