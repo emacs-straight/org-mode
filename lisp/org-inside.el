@@ -25,33 +25,43 @@
 ;;
 ;;; Commentary:
 
-;; In org, entities including emphasized text and links can have
-;; hidden flanking components.  When the cursor is adjacent to such
-;; entities, point can be ambiguous: at the same apparent cursor
-;; position, point can be either inside or outside the hidden regions.
-;; This can make it hard to edit precisely.
+;; In org, entities including emphasized text and links can contain
+;; hidden components (markers, brackets, link URL, etc.).  When the
+;; cursor is adjacent to such hidden text, the point can be ambiguous:
+;; at the same apparent cursor position, point can be either inside or
+;; outside the hidden region.  This can make it hard to edit
+;; precisely.
 ;;
-;; To help with this problem, `org-inside' changes the appearance
+;; To alleviate this problem, `org-inside' changes the appearance when
 ;; "inside" such an entity, to make it clear where you are.
 ;;
 ;; Appearance changes are highly configurable, and can include
-;; changing cursor type, text face (e.g. adding a colorful underline),
-;; and/or unhiding the hidden text.  A command to hide/unhide the
-;; hidden text on demand is also provided and added to the
-;; context-dependent ctrl-c ctrl-c hook; see
+;; changing the cursor type, text face (e.g. adding a colorful
+;; underline), and/or automatically unhiding the hidden text.  A
+;; command to hide/unhide the hidden text on demand is also provided
+;; and added to the context-dependent ctrl-c ctrl-c hook; see
 ;; `org-inside-toggle-hidden'.
 ;;
-;; This mode is intended to be used with
-;; e.g. `org-hide-emphasis-markers', and/or `org-highlight-links'
-;; (with `bracket') to make editing the ends of links and emphasized
-;; text more precise.
+;; This mode is intended to be used with e.g.
+;; `org-hide-emphasis-markers', and/or `org-highlight-links' (with
+;; `bracket' / `org-descriptive-links') to make editing links and
+;; emphasized text easier.  If your version of Emacs supports it,
+;; nested entities with hidden contents are supported, with face
+;; changes applied to the innermost entity.
+
+;;;; For Developers:
+;; 
+;; Note the shorthand substitution for window/overlay state structure
+;; slots; see file-local-variables:
+;;
+;;    ois/  => org-inside-state-
 
 ;;; Code:
 (require 'org)
 (require 'org-element)
 (require 'face-remap)
 (require 'cus-start) ; ensure 'cursor-type has its 'custom-type set
-(eval-when-compile (require 'cl-lib))
+(require 'cl-seq)
 
 (defcustom org-inside-appearance '(:cursor bar)
   "Special appearance when point is inside text with hidden contents.
@@ -122,175 +132,233 @@ outside."
       (unless (org-inside--elems-at-point)
         (org-inside--set-appearance (selected-window))))))
 
-(defun org-inside--overlays (win face unhide &optional face-overlay-p)
-  "Return appropriately styled overlays for window WIN.
-FACE and UNHIDE are the text face and invisibility status; see the
-custom variable `org-inside-appearance'.  Returns a cons cell of two
-overlays:
+(defvar-local org-inside--states nil)
+(cl-defstruct (org-inside-state
+               (:copier nil)
+               (:conc-name ois/)  ; Note: ois/ => org-inside-state-
+               (:constructor nil)
+               (:constructor ois/create))
+  "State mapping from windows to `org-inside' overlays."
+  ( window nil :type window
+    :documentation "The window that overlays apply to.")
+  ( ov nil :type overlay
+    :documentation "PRIMARY overlay.")
+  ( ov2 nil :type overlay
+    :documentation "SECONDARY overlay (face only, if needed).")
+  ( saved-cursor-type nil :type symbol
+    :documentation "The saved cursor type in WIN."))
 
-  (PRIMARY . SECONDARY)
+(defun org-inside--restore-cursor (win old-type)
+  "Restore old cursor in WIN to OLD-TYPE (if any).
+If OLD-TYPE is nil, use the `pending-cursor-type' parameter of WIN, if
+any.  If the current window cursor type is nil (i.e. the cursor is
+hidden), no change is made."
+  (let* ((pending-type (window-parameter win 'pending-cursor-type))
+         (old-type (or old-type pending-type)))
+    (when (and old-type (window-cursor-type win))
+      (set-window-cursor-type win old-type)
+      (when pending-type
+        (set-window-parameter win 'pending-cursor-type nil)))))
 
-If FACE-OVERLAY-P is non-nil, ensure the SECONDARY overlay is valid and
-contains the FACE property (and PRIMARY contains no `face' property).
-If FACE-OVERLAY-P is nil, SECONDARY may be nil."
-  (let* ((ovs (window-parameter win 'org-inside-overlays))
-         (ov (car ovs))
-         (do-secondary (and face face-overlay-p (>= emacs-major-version 31)))
-         ov2)
-    (if (and ovs (overlayp ov))
-        (when do-secondary
-          (setq ov2 (cdr ovs))
-          (unless (and ov2 (overlayp ov2))
-            (setq ov2 (make-overlay 1 1 (window-buffer win) t))
-            (overlay-put ov2 'window win)
-            (setcdr ovs ov2)))
-      ;; (Re)create both overlays
-      (setq ov (make-overlay 1 1 (window-buffer win) t))
-      (overlay-put ov 'window win)
+(defun org-inside--reset-state (state)
+  "Delete overlays and restore cursor in the window indicated by STATE."
+  (pcase-let (((cl-struct org-inside-state window ov ov2 saved-cursor-type)
+               state))
+    (when (window-live-p window)
+      (org-inside--restore-cursor window saved-cursor-type))
+    (when (overlayp ov) (delete-overlay ov))
+    (when (overlayp ov2) (delete-overlay ov2))))
+
+(defvar org-inside-mode)
+(defun org-inside--trim-states (&optional all)
+  "Remove and reset states that no long apply to the current buffer.
+If ALL is non-nil, remove all states recorded for this buffer.
+Otherwise, remove only stale states for non-live windows, or windows
+showing other buffers.  Should be called from an `org-inside' buffer."
+  (setq org-inside--states
+	(cl-loop with buf = (current-buffer)
+		 for s in org-inside--states
+		 for win = (ois/window s)
+		 if (and (not all) (window-live-p win)
+			 (eq (window-buffer win) buf) org-inside-mode)
+		 collect s else do (org-inside--reset-state s))))
+
+(defun org-inside--make-overlay (win &optional unhide secondary-p)
+  "Return a new front-advancing overlay specific to window WIN.
+If SECONDARY-P is non-nil, create a secondary overlay without
+properties.  Otherwise, assign `cursor-sensor-functions' or
+`modification-hooks', and, if UNHIDE is non-nil, the `invisible'
+property."
+  (let* ((buf (window-buffer win))
+         (ov (make-overlay 1 1 buf t)))
+    (overlay-put ov 'window win)
+    (unless secondary-p
       (overlay-put ov 'cursor-sensor-functions '(org-inside--sensor))
       (overlay-put ov 'modification-hooks '(org-inside--overlay-modification))
       ;; For auto-unhiding, we set the invisible property to something
       ;; guaranteed not to be on the `buffer-invisibility-spec'.
-      (when unhide (overlay-put ov 'invisible 'org-inside--not-hidden))
-      (when do-secondary
-        (setq ov2 (make-overlay 1 1 (window-buffer win) t))
-        (overlay-put ov2 'window win))
-      (setq ovs (cons ov ov2))
-      (set-window-parameter win 'org-inside-overlays ovs))
-    (when ov2 (overlay-put ov2 'face (and do-secondary face)))
-    (overlay-put ov 'face (unless do-secondary face))
-    ovs))
+      (when unhide (overlay-put ov 'invisible 'org-inside--not-hidden)))
+    ov))
+
+(defun org-inside--state-for-window (win &optional unhide secondary-p)
+  "Return the state for window WIN, creating and caching it if necessary.
+UNHIDE is the hide status; see the custom variable
+`org-inside-appearance'.  If UNHIDE is non-nil, invisibility will be
+configured on the primary overlay to unhide the underlying hidden text.
+If SECONDARY-P is non-nil, a valid secondary overlay will be included in
+the returned state.  Otherwise, the secondary may be nil or invalid.
+Note that this function does not set the `face' property."
+  (let ((state (cl-find win org-inside--states :key #'ois/window)))
+    (if state ; a saved state may lack a secondary overlay
+        (when (and secondary-p (not (overlayp (ois/ov2 state))))
+          (setf (ois/ov2 state) (org-inside--make-overlay nil win 'secondary)))
+      (setq state (ois/create
+                   :window win
+                   :ov (org-inside--make-overlay win unhide)
+                   :ov2 (and secondary-p
+                             (org-inside--make-overlay win nil 'secondary))))
+      (cl-callf2 push state org-inside--states))
+    state))
+
+(defun org-inside--state (win unhide face &optional with-secondary-p)
+  "Return an appropriate `org-inside' state for window WIN.
+UNHIDE and FACE are the invisibility status and text face; see the
+custom variable `org-inside-appearance'.  Returns a structure of type
+`org-inside-state'.
+
+If FACE and WITH-SECONDARY-P are non-nil, ensure the SECONDARY overlay
+is valid and contains the `face' property set to FACE (and the PRIMARY
+contains no `face' property).  If FACE-OVERLAY-P is nil, the SECONDARY
+overlay may be invalid."
+  (let* ((sec-p (and face with-secondary-p (>= emacs-major-version 31)))
+         (state (org-inside--state-for-window win unhide sec-p)))
+    (overlay-put (ois/ov state) 'face (unless sec-p face)) ; always update face
+    (when sec-p (overlay-put (ois/ov2 state) 'face face))
+    state))
 
 (defun org-inside--set-appearance (win &optional beg end beg2 end2)
-  "Set appearance and hide state for hidden-contents entities.
-The region is from BEG to END in the window WIN's buffer.  If BEG or END
-are nil, point is considered to be outside the text and the prior
-\"outside\" appearance is restored.  If BEG2 and END2 are non-nil, they
-are positions fully within BEG and END and containing point, over which
-to apply face modifications (if requested).  This allows any face
-modification to cover a smaller region within the main BEG..END range,
-for nested entities.
+  "Set appearance and hidden state for hidden-contents entities.
+The region is from BEG to END in window WIN's buffer.  If BEG or END are
+nil, point is considered to be outside the text and the prior
+\"outside\" appearance is restored.  If WIN is nil, the selected window
+is used.
 
-Note that if the `cursor-type' is configured to change inside (see
-`org-inside-appearance') but the `window-cursor-type' is currently
-nil (i.e. the cursor is hidden), the cursor is left hidden, and the
-window parameter `pending-cursor-type' is set instead.  Other tools can
-consult this window parameter to restore the cursor type."
-  (cl-destructuring-bind ( &key cursor face unhide) org-inside-appearance
+If BEG2 and END2 are non-nil, they represent a sub-range fully within
+BEG and END containing point, over which to apply face modifications
+using a secondary overlay.  This allows face modification to cover a
+smaller region within the main BEG..END range, for indicating nested
+entities.
+
+Note that if the `cursor-type' is configured to change inside but the
+`window-cursor-type' is currently nil (i.e. the cursor is hidden), the
+cursor is left hidden, and the window parameter `pending-cursor-type' is
+set instead.  Tools can consult this window parameter to restore the
+cursor type."
+  (cl-destructuring-bind (&key cursor face unhide) org-inside-appearance
     (let* ((inside-p (and beg end))
-           (ovs (org-inside--overlays win face unhide (and beg2 'face-overlay)))
-           (showing-p (overlay-get (car ovs) 'invisible))) ; non-nil = unhidden!
-      ;; We move the overlay when returning to the run-loop to avoid
-      ;; the cursor-sensor race for point adjustment, since our
-      ;; overlay unhides text which point adjustment can skip.  As
-      ;; well, since both text and overlay implement
-      ;; cursor-sensor-functions, this avoids a similar race as to
-      ;; which applies.
-      (run-at-time 0 nil (lambda (buf)
-                           (with-current-buffer buf
-                             (when (overlayp (car ovs))
-                               (if inside-p (move-overlay (car ovs) beg end)
-                                 (delete-overlay (car ovs))))
-                             (when (overlayp (cdr ovs))
-                               (if (and face beg2)
-                                   (move-overlay (cdr ovs) beg2 end2)
-                                 (delete-overlay (cdr ovs))))))
-                   (current-buffer))
-      ;; more natural movement moving out when hidden text is visible
+           (win (or win (selected-window)))
+           (state (org-inside--state win unhide face (not (null beg2))))
+           (ov (ois/ov state))
+           (showing-p (overlay-get ov 'invisible)) ; non-nil = unhidden!
+           (ov2 (ois/ov2 state)))
+      ;; more natural movement moving outside when hidden text is visible
       (unless (or (not showing-p) inside-p)
         (setq disable-point-adjustment t))
-      ;; User may have toggled hiding; re-set
+      ;; User may have toggled hiding in a saved state; reset it
       (when (not inside-p)
-        (overlay-put (car ovs) 'invisible (and unhide 'org-inside--not-hidden)))
+        (overlay-put ov 'invisible (and unhide 'org-inside--not-hidden)))
+      ;; Update the cursor type
       (when cursor
-        (let ((cursor (if inside-p
-                          cursor
-                        (or (window-parameter win 'org-inside-old-cursor) t)))
+        (let ((cursor (if inside-p cursor
+                        (or (ois/saved-cursor-type state) t)))
               (win-cursor-type (window-cursor-type win)))
           (if (eq win-cursor-type nil)
 	      ;; Do not override a hidden (nil) cursor; set it pending instead
               (set-window-parameter win 'pending-cursor-type cursor)
-            (unless (eq cursor win-cursor-type) ; guard against double entry
-              (when inside-p            ; save the outside cursor type
-	        (set-window-parameter win 'org-inside-old-cursor
-                                      win-cursor-type))
-              (set-window-cursor-type win cursor))))))))
+            (unless (eq cursor win-cursor-type) ; already set?
+              (when inside-p                    ; save old type
+	        (setf (ois/saved-cursor-type state) win-cursor-type))
+              (set-window-cursor-type win cursor)))))
+      ;; Move the overlays into place, or remove them.  We do this
+      ;; when returning to the run-loop to avoid the cursor-sensor
+      ;; race for point adjustment.  This can happen since our overlay
+      ;; can unhide the very text point adjustment is skipping.
+      (run-at-time 0 nil
+                   (lambda (buf)
+                     (with-current-buffer buf
+                       (if inside-p (move-overlay ov beg end)
+                         (delete-overlay ov))
+                       (if beg2
+                           (move-overlay ov2 beg2 end2)
+                         (when (overlayp ov2) (delete-overlay ov2)))))
+                   (current-buffer)))))
+
+(defun org-inside--visible-region (elem)
+  "Return the visible region of entity ELEM.
+Returned region is a cons (BEG . END), or nil if the region does not
+begin with a character marked invisible."
+  (let  ((beg (org-element-begin elem))
+         (end (- (org-element-end elem) (org-element-post-blank elem))))
+    (when (get-text-property beg 'invisible)
+      (setq beg (next-single-property-change beg 'invisible nil end)
+            end (next-single-property-change beg 'invisible nil end))
+      (cons beg end))))
 
 (defun org-inside--sensor (win _pos type)
-  "Handle cursor appearance and unhiding inside hidden text wrapped entities.
-To be set via the `cursor-sensor-functions' property on hidden-contents
-text, as well as the overlay returned by `org-inside--overlay' .  WIN
-POS, and TYPE are the window, former position, and cursor movement type."
+  "Handle cursor appearance and unhiding inside entities with hidden contents.
+To be set via the `cursor-sensor-functions' property, as well as the
+overlay in each `org-inside-state' .  WIN POS, and TYPE are the window,
+former position, and cursor movement type."
   (unless (minibuffer-window-active-p win)
-   (cond
-    ((or (eq type 'entered) ; called from the in-text cursor-sensor
-         (and (plist-get org-inside-appearance :face) (eq type 'moved)))
-     (when-let* ((elems (org-inside--elems-at-point))
-                 (top-elem (car (last elems))))
-       (let ((beg (org-element-begin top-elem))
-             (end (- (org-element-end top-elem)
-                     (org-element-post-blank top-elem)))
-             inner-elem beg2 end2)
-         (when (> (length elems) 1)     ; nested elements
-           (setq inner-elem (car elems)
-                 beg2 (org-element-begin inner-elem)
-                 end2 (- (org-element-end inner-elem)
-                         (org-element-post-blank inner-elem)))
-           ;; Locate always-visible portion of inner element
-           (setq beg2 (next-single-property-change beg2 'invisible nil end2)
-                 end2 (next-single-property-change beg2 'invisible nil end2))
-           (unless (<= beg2 (point) end2) (setq beg2 nil end2 nil)))
-         (org-inside--set-appearance win beg end beg2 end2))))
-    ((eq type 'left)         ; called from the overlay's cursor-sensor
-     (org-inside--set-appearance win)))))
+    (cond
+     ((or (eq type 'entered)   ; called from in-text cursor-sensor
+          (and (eq type 'moved) (plist-get org-inside-appearance :face)))
+      (when-let* ((elems (org-inside--elems-at-point)) ; ordered inner->outer
+                  (outer-elem (car (last elems))))
+        (let ((beg (org-element-begin outer-elem))
+              (end (- (org-element-end outer-elem)
+                      (org-element-post-blank outer-elem)))
+              beg2 end2)
+          (when (and (> (length elems) 1)        ; nested entities
+                     (>= emacs-major-version 31) ; needed for `moved'
+                     (plist-get org-inside-appearance :face))
+            (pcase-let ((`(,b . ,e) (org-inside--visible-region (car elems))))
+              (if (<= b (point) e) (setq beg2 b end2 e)
+                ;; We are within a relevant inner org-element, but
+                ;; outside its visible region.  Use the level above,
+                ;; if any.
+                (when (> (length elems) 2)
+                  (pcase-setq `(,beg2 . ,end2)
+                              (org-inside--visible-region (cadr elems)))))))
+          (org-inside--set-appearance win beg end beg2 end2))))
+     ((eq type 'left) ; called from the primary overlay's override cursor-sensor
+      (org-inside--set-appearance win)))))
 
-(defsubst org-inside--restore-cursor (win)
-  "Restore old cursor in WIN (if any).
-If the current window cursor type is nil (i.e. the cursor is hidden), no
-change is made."
-  (when-let* ((old-type (or (window-parameter win 'org-inside-old-cursor)
-                            (window-parameter win 'pending-cursor-type)))
-              (type (window-cursor-type win)))
-    (set-window-cursor-type win old-type)
-    (set-window-parameter win 'org-inside-old-cursor nil)))
-
-(defsubst org-inside--clear-overlays (win)
-  "Clear the `org-inside' overlay from window WIN."
-  (when-let* ((ovs (window-parameter win 'org-inside-overlays)))
-    (when (overlayp (car ovs)) (delete-overlay (car ovs)))
-    (when (overlayp (cdr ovs)) (delete-overlay (cdr ovs)))
-    (set-window-parameter win 'org-inside-overlays nil)))
-
-(defsubst org-inside--in-hidden-contents-text (&optional pos)
-  "Return non-nil if inside hidden contents text.
-If POS is nil, use point."
-  (and-let* ((csf (get-text-property (or pos (point))
-                                     'cursor-sensor-functions))
-             (_ (memq 'org-inside--sensor csf)))))
-
-(defvar org-inside-mode)
 (defun org-inside--buffer-changed (win)
-  "Handle `org-inside' buffers appearing in window WIN."
-  (with-current-buffer (window-buffer win)
-    (when org-inside-mode
-      (if (org-inside--in-hidden-contents-text)
-          (org-inside--sensor win nil 'entered)
-        (org-inside--sensor win nil 'left)))))
+  "Handle `org-inside' buffers appearing or disappearing from window WIN."
+  (when org-inside--states
+    (org-inside--trim-states)
+    (if org-inside-mode
+        (org-inside--sensor win nil
+                            (if (org-inside--elems-at-point) 'entered 'left))
+      (kill-local-variable 'org-inside--states))))
 
 (defun org-inside--frame-changed (frame)
-  "Handle window buffer change for all windows on FRAME."
+  "Handle `org-inside' buffers disappearing for all windows on FRAME.
+Not needed on v31+, as the buffer-local value of
+`window-buffer-change-functions' is called for buffers both appearing
+and disappearing there."
   (walk-windows
    (lambda (win)
-     (unless (buffer-local-value 'org-inside-mode (window-buffer win))
-       (org-inside--clear-overlays win)
-       (org-inside--restore-cursor win)))
-   nil frame))
+     (with-current-buffer (window-old-buffer win)
+       (org-inside--buffer-changed win))
+     nil frame)))
 
 (defun org-inside--add-properties (type _beg _end visible-beg visible-end)
   "Add text properties to invisible text for org-inside functionality.
 TYPE is the type of text being hidden.  BEG, END, VISIBLE-BEG,
 VISIBLE-END are the buffer positions of the affected text and its
-visible portion."
+visible portion.  To be set on `org-hidden-text-functions'."
   ;; Emacs 31+ fires cursor-sensor at positions where an inserted
   ;; character would inherit the `cursor-sensor-function' property
   ;; (including rear stickiness).  Prior versions do not respect
@@ -327,9 +395,7 @@ visible portion."
 
 (defun org-inside--teardown ()
   "Tear down `org-inside-mode' in buffer."
-  (dolist (w (get-buffer-window-list nil nil t))
-    (org-inside--restore-cursor w)
-    (org-inside--clear-overlays w))
+  (org-inside--trim-states 'all)
   (cursor-sensor-mode -1)
   (setq-local org-extra-unfontify-properties
               (delq 'cursor-sensor-functions org-extra-unfontify-properties))
@@ -339,41 +405,39 @@ visible portion."
   (remove-hook 'window-buffer-change-functions #'org-inside--buffer-changed t))
 
 (defun org-inside--reset-all ()
-  "Reset org-inside in all `org-inside' buffers."
+  "Reset `org-inside' in all windows showing org-inside buffers."
   (walk-windows
    (lambda (win)
-     (when (window-parameter win 'org-inside-overlays)
-       (with-selected-window win
-         (org-inside--clear-overlays win)
-         (org-inside--restore-cursor win)
+     (with-selected-window win
+       (when org-inside-mode
          (org-inside--buffer-changed win))))
    nil t))
 
 (defun org-inside-toggle-hidden ()
-  "Toggle visibility of hidden text for entity at point.
-Operates only when inside an entity wrapped by hidden text and
-`org-inside-mode' is enabled.  Text will be re-hidden when point leaves
-the entity.  See `org-inside-appearance' to enable automatic unhiding or
-configure other appearance settings.  Returns non-nil if the visibility
-was toggled, making it suitable for inclusion on
-`org-ctrl-c-ctrl-c-hook'."
+  "Toggle visibility of hidden text for outermost entity at point (if any).
+Operates only when inside an entity wrapped by hidden text.  Text will
+be re-hidden when point leaves the entity.  See `org-inside-appearance'
+to enable automatic unhiding or configure other appearance settings.
+Returns non-nil if the visibility was toggled, making it suitable for
+inclusion on `org-ctrl-c-ctrl-c-hook'."
   (interactive)
-  (and-let* ((ovs (window-parameter nil 'org-inside-overlays))
-             (ov (car ovs))
-             (_ (and (overlayp ov) (overlay-buffer ov))))
-    (let ((inv (overlay-get ov 'invisible)))
-      (overlay-put ov 'invisible
-                   (if inv nil 'org-inside--not-hidden)))
-    t))
+  (when (org-inside--elems-at-point)
+    (cl-destructuring-bind (&key unhide face &allow-other-keys)
+        org-inside-appearance
+      (let* ((state (org-inside--state (selected-window) unhide face))
+             (ov (ois/ov state))
+             (inv (overlay-get ov 'invisible)))
+        (overlay-put ov 'invisible (if inv nil 'org-inside--not-hidden))
+        t))))
 
 ;;;###autoload
 (define-minor-mode org-inside-mode
   "Change appearance when point is inside an entity wrapped by hidden text.
 The cursor type and/or text face can be altered when point is inside the
-hidden text.  \"Inside\" means characters entered at that point will
-appear with the visible text.  For example, entering a character when
-\"inside\" underlined text would make the new character underlined as
-well:
+hidden region.  \"Inside\" means any characters entered at that point
+will appear with the visible text.  For example, entering a character
+when \"inside\" underlined text would make the new character underlined
+as well.  I.e., for position `[x]':
 
   [x]_underline_   ; outside
   _[x]underline_   ; inside
@@ -391,7 +455,13 @@ configure what appearance changes occur."
    (org-inside-mode (org-inside--setup))
    (t (org-inside--teardown))))
 
-(add-hook 'window-buffer-change-functions #'org-inside--frame-changed)
+;; Starting in v31, buffer-local change functions are run in
+;; windows a buffer left as well those it entered.
+(unless (>= emacs-major-version 31)
+  (add-hook 'window-buffer-change-functions #'org-inside--frame-changed))
 
 (provide 'org-inside)
 ;;; org-inside.el ends here
+;; Local Variables:
+;; read-symbol-shorthands: (("ois/" . "org-inside-state-"))
+;; End:
