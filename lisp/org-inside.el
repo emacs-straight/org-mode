@@ -50,7 +50,7 @@
 ;; changes applied to the innermost entity.
 
 ;;;; For Developers:
-;; 
+;;
 ;; Note the shorthand substitution for window/overlay state structure
 ;; slots; see file-local-variables:
 ;;
@@ -295,14 +295,13 @@ cursor type."
 
 (defun org-inside--visible-region (elem)
   "Return the visible region of entity ELEM.
-Returned region is a cons (BEG . END), or nil if the region does not
-begin with a character marked invisible."
+Returned region is a cons (BEG . END), or nil if no such region exists.."
   (let  ((beg (org-element-begin elem))
          (end (- (org-element-end elem) (org-element-post-blank elem))))
     (when (get-text-property beg 'invisible)
       (setq beg (next-single-property-change beg 'invisible nil end)
-            end (next-single-property-change beg 'invisible nil end))
-      (cons beg end))))
+            end (previous-single-property-change end 'invisible nil beg))
+      (and (> end beg) (cons beg end)))))
 
 (defun org-inside--sensor (win _pos type)
   "Handle cursor appearance and unhiding inside entities with hidden contents.
