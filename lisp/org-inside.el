@@ -63,7 +63,7 @@
 (require 'cus-start) ; ensure 'cursor-type has its 'custom-type set
 (require 'cl-seq)
 
-(defcustom org-inside-appearance '(:cursor bar)
+(defcustom org-inside-appearance '(:cursor bar :face org-inside-face)
   "Special appearance when point is inside text with hidden contents.
 Appearance changes can include cursor type, text face, and unhiding.
 
@@ -103,6 +103,11 @@ innermost, when inside it (v31+ only)."
   :set (lambda (sym val)
          (set-default-toplevel-value sym val)
          (when (featurep 'org-inside) (org-inside--reset-all))))
+
+(defface org-inside-face
+  '((t :inherit secondary-selection))
+  "Face used when inside hidden-contents entities."
+  :group 'org-faces)
 
 (defvar-local org-inside--hidden-contents-types nil
   "Entity types with hidden contents.")
