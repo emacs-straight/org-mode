@@ -47,7 +47,7 @@
 ;; `bracket' / `org-descriptive-links') to make editing links and
 ;; emphasized text easier.  If your version of Emacs supports it,
 ;; nested entities with hidden contents are supported, with face
-;; changes applied to the innermost entity.
+;; changes applied to the innermost nested entity.
 
 ;;;; For Developers:
 ;;
@@ -133,20 +133,25 @@ outside."
         (org-inside--set-appearance (selected-window))))))
 
 (defvar-local org-inside--states nil)
+;; Note shorthand: ois/ => org-inside-state-
 (cl-defstruct (org-inside-state
                (:copier nil)
-               (:conc-name ois/)  ; Note: ois/ => org-inside-state-
+               (:conc-name ois/)
                (:constructor nil)
                (:constructor ois/create))
   "State mapping from windows to `org-inside' overlays."
-  ( window nil :type window
-    :documentation "The window that overlays apply to.")
   ( ov nil :type overlay
     :documentation "PRIMARY overlay.")
   ( ov2 nil :type overlay
     :documentation "SECONDARY overlay (face only, if needed).")
   ( saved-cursor-type nil :type symbol
     :documentation "The saved cursor type in WIN."))
+
+(defun ois/window (state)
+  "Return the window associated with STATE's primary overlay."
+  (when-let* ((ov (ois/ov state))
+              (_ (overlayp ov)))
+    (overlay-get ov 'window)))
 
 (defun org-inside--restore-cursor (win old-type)
   "Restore old cursor in WIN to OLD-TYPE (if any).
@@ -155,16 +160,16 @@ any.  If the current window cursor type is nil (i.e. the cursor is
 hidden), no change is made."
   (let* ((pending-type (window-parameter win 'pending-cursor-type))
          (old-type (or old-type pending-type)))
-    (when (and old-type (window-cursor-type win))
+    (when (and old-type win (window-live-p win) (window-cursor-type win))
       (set-window-cursor-type win old-type)
       (when pending-type
         (set-window-parameter win 'pending-cursor-type nil)))))
 
 (defun org-inside--reset-state (state)
   "Delete overlays and restore cursor in the window indicated by STATE."
-  (pcase-let (((cl-struct org-inside-state window ov ov2 saved-cursor-type)
-               state))
-    (when (window-live-p window)
+  (pcase-let (((cl-struct org-inside-state ov ov2 saved-cursor-type) state)
+              (window (ois/window state)))
+    (when (and window (window-live-p window))
       (org-inside--restore-cursor window saved-cursor-type))
     (when (overlayp ov) (delete-overlay ov))
     (when (overlayp ov2) (delete-overlay ov2))))
@@ -179,8 +184,9 @@ showing other buffers.  Should be called from an `org-inside' buffer."
 	(cl-loop with buf = (current-buffer)
 		 for s in org-inside--states
 		 for win = (ois/window s)
-		 if (and (not all) (window-live-p win)
-			 (eq (window-buffer win) buf) org-inside-mode)
+  		 if (and win (window-live-p win) (not all)
+                         (eq (window-buffer win) buf)
+                         org-inside-mode)
 		 collect s else do (org-inside--reset-state s))))
 
 (defun org-inside--make-overlay (win &optional unhide secondary-p)
@@ -209,11 +215,10 @@ If SECONDARY-P is non-nil, a valid secondary overlay will be included in
 the returned state.  Otherwise, the secondary may be nil or invalid.
 Note that this function does not set the `face' property."
   (let ((state (cl-find win org-inside--states :key #'ois/window)))
-    (if state ; a saved state may lack a secondary overlay
+    (if state             ; a saved state may lack a secondary overlay
         (when (and secondary-p (not (overlayp (ois/ov2 state))))
           (setf (ois/ov2 state) (org-inside--make-overlay nil win 'secondary)))
       (setq state (ois/create
-                   :window win
                    :ov (org-inside--make-overlay win unhide)
                    :ov2 (and secondary-p
                              (org-inside--make-overlay win nil 'secondary))))
@@ -228,7 +233,7 @@ custom variable `org-inside-appearance'.  Returns a structure of type
 
 If FACE and WITH-SECONDARY-P are non-nil, ensure the SECONDARY overlay
 is valid and contains the `face' property set to FACE (and the PRIMARY
-contains no `face' property).  If FACE-OVERLAY-P is nil, the SECONDARY
+contains no `face' property).  If WITH-SECONDARY-P is nil, the SECONDARY
 overlay may be invalid."
   (let* ((sec-p (and face with-secondary-p (>= emacs-major-version 31)))
          (state (org-inside--state-for-window win unhide sec-p)))
@@ -335,18 +340,18 @@ former position, and cursor movement type."
 
 (defun org-inside--buffer-changed (win)
   "Handle `org-inside' buffers appearing or disappearing from window WIN."
-  (when org-inside--states
+  (when org-inside-mode
     (org-inside--trim-states)
-    (if org-inside-mode
-        (org-inside--sensor win nil
-                            (if (org-inside--elems-at-point) 'entered 'left))
-      (kill-local-variable 'org-inside--states))))
+    (when (and (eq (current-buffer) (window-buffer win)) ; appearing
+               (memq 'org-inside--sensor
+                     (get-text-property (point) 'cursor-sensor-functions)))
+      (org-inside--sensor win nil 'entered))))
 
 (defun org-inside--frame-changed (frame)
   "Handle `org-inside' buffers disappearing for all windows on FRAME.
 Not needed on v31+, as the buffer-local value of
-`window-buffer-change-functions' is called for buffers both appearing
-and disappearing there."
+`window-buffer-change-functions' is called for window where the buffer
+either appeared or disappeared."
   (walk-windows
    (lambda (win)
      (with-current-buffer (window-old-buffer win)
