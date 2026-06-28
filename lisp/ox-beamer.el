@@ -72,7 +72,8 @@ appendix or a note.
 This integer is relative to the minimal level of a headline
 within the parse tree, defined as 1."
   :group 'org-export-beamer
-  :type 'integer)
+  :type 'integer
+  :safe #'integerp)
 
 (defcustom org-beamer-frame-default-options ""
   "Default options string to use for frames.
