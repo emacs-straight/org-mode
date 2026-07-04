@@ -179,6 +179,12 @@ hidden), no change is made."
     (when (overlayp ov) (delete-overlay ov))
     (when (overlayp ov2) (delete-overlay ov2))))
 
+(defun org-inside--remove-state (state)
+  "Reset and remove STATE from the list of states in the current buffer."
+  (when org-inside--states
+    (org-inside--reset-state state)
+    (setq org-inside--states (cl-delete state org-inside--states))))
+
 (defvar org-inside-mode)
 (defun org-inside--trim-states (&optional all)
   "Remove and reset states that no long apply to the current buffer.
@@ -417,6 +423,8 @@ visible portion.  To be set on `org-hidden-text-functions'."
    (lambda (win)
      (with-selected-window win
        (when org-inside-mode
+         (when-let* ((s (org-inside--state-for-window win)))
+           (org-inside--remove-state s))
          (org-inside--buffer-changed win))))
    nil t))
 
