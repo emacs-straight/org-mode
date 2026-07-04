@@ -337,14 +337,15 @@ former position, and cursor movement type."
           (when (and (> (length elems) 1)        ; nested entities
                      (>= emacs-major-version 31) ; needed for `moved'
                      (plist-get org-inside-appearance :face))
-            (pcase-let ((`(,b . ,e) (org-inside--visible-region (car elems))))
-              (if (<= b (point) e) (setq beg2 b end2 e)
-                ;; We are within a relevant inner org-element, but
-                ;; outside its visible region.  Use the level above,
-                ;; if any.
-                (when (> (length elems) 2)
-                  (pcase-setq `(,beg2 . ,end2)
-                              (org-inside--visible-region (cadr elems)))))))
+            (pcase (org-inside--visible-region (car elems))
+              ((and `(,b . ,e) (guard (and b e)))
+               (if (<= b (point) e) (setq beg2 b end2 e)
+                 ;; We are within a relevant inner org-element, but
+                 ;; outside its visible region.  Use the level above,
+                 ;; if any.
+                 (when (> (length elems) 2)
+                   (pcase-setq `(,beg2 . ,end2)
+                               (org-inside--visible-region (cadr elems))))))))
           (org-inside--set-appearance win beg end beg2 end2))))
      ((eq type 'left) ; called from the primary overlay's override cursor-sensor
       (org-inside--set-appearance win)))))
