@@ -126,6 +126,13 @@ The innermost elements are first on the list."
     (org-element-lineage-map ctx #'identity
       org-inside--hidden-contents-types t)))
 
+(defun org-inside--hidden-element ()
+  "Return non-nil if inside an element with hidden contents at point."
+  (cl-some
+   (lambda (el)
+     (get-text-property (org-element-begin el) 'invisible))
+   (org-inside--elems-at-point)))
+
 (defun org-inside--overlay-modification (ov after-p &rest _r)
   "Detect modifications of the entity covered by `org-inside' overlay OV.
 AFTER-P is t if called after the modification occurs.  If the org
@@ -437,7 +444,7 @@ to enable automatic unhiding or configure other appearance settings.
 Returns non-nil if the visibility was toggled, making it suitable for
 inclusion on `org-ctrl-c-ctrl-c-hook'."
   (interactive)
-  (when (org-inside--elems-at-point)
+  (when (org-inside--hidden-element)
     (cl-destructuring-bind (&key unhide face &allow-other-keys)
         org-inside-appearance
       (let* ((state (org-inside--state (selected-window) unhide face))
