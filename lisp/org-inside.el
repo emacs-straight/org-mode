@@ -62,6 +62,7 @@
 (require 'face-remap)
 (require 'cus-start) ; ensure 'cursor-type has its 'custom-type set
 (require 'cl-seq)
+(require 'cl-extra)
 
 (defcustom org-inside-appearance '(:cursor bar :face org-inside-face)
   "Special appearance when point is inside text with hidden contents.
