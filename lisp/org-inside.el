@@ -115,7 +115,8 @@ innermost, when inside it (v31+ only)."
 
 (defun org-inside--setup-hidden-contents-types ()
   "Setup entity types with hidden contents."
-  (let ((types '(bold code italic verbatim underline strike-through)))
+  (let ((types (and org-hide-emphasis-markers
+                    '(bold code italic verbatim underline strike-through))))
     (when org-link-descriptive
       (setq types (cons 'link types)))
     (setq org-inside--hidden-contents-types types)))
@@ -476,6 +477,8 @@ configure what appearance changes occur."
                        always (memq key '(:cursor :face :unhide)))))
     (setq org-inside-mode nil)
     (user-error "`org-inside-appearance' malformed"))
+   ((and (not org-hide-emphasis-markers) (not org-link-descriptive))
+    (user-error "`org-inside' requires hidden emphasis and/or descriptive links"))
    (org-inside-mode (org-inside--setup))
    (t (org-inside--teardown))))
 
