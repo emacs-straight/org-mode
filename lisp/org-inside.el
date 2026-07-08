@@ -472,15 +472,14 @@ command `org-inside-toggle-hidden'.  See `org-inside-appearance' to
 configure what appearance changes occur."
   :global nil
   (cond
-   ((and org-inside-mode
-         (not (cl-loop for key in org-inside-appearance by #'cddr
-                       always (memq key '(:cursor :face :unhide)))))
+   ((not org-inside-mode) (org-inside--teardown))
+   ((not (cl-loop for key in org-inside-appearance by #'cddr
+                  always (memq key '(:cursor :face :unhide))))
     (setq org-inside-mode nil)
     (user-error "`org-inside-appearance' malformed"))
    ((and (not org-hide-emphasis-markers) (not org-link-descriptive))
-    (user-error "`org-inside' requires hidden emphasis and/or descriptive links"))
-   (org-inside-mode (org-inside--setup))
-   (t (org-inside--teardown))))
+    (message "`org-inside' inactive without hidden emphasis and/or descriptive links"))
+   (org-inside-mode (org-inside--setup))))
 
 ;; Starting in v31, buffer-local change functions are run in
 ;; windows a buffer left as well those it entered.
