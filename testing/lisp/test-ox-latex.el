@@ -537,11 +537,87 @@ How do you do?
 
 Just to see that DocumentMetadata comes before PassOptions and documentclass
 "
-   (message "pdf-metadata: %s" (buffer-string))
+   ;; (message "pdf-metadata: %s" (buffer-string))
    (goto-char (point-min))
    (should (search-forward "\\DocumentMetadata{tagging = on}" nil t))
    (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
    (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-recognised ()
+  "Test that org-latex-fontspec-config is recognised for lualatex."
+  (let ((org-latex-fontspec-config
+         '(("main" :font "FreeSerif")
+           ("sans" :font "FreeSans"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: LuaLaTeX fonts
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_CLASS: report
+* Testing
+
+Just to see that I get the fonts Iwant...
+"
+   ;; (message "simple fontspec: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\usepackage{fontspec}" nil t))
+   (should (search-forward "\\setmainfont{FreeSerif}" nil t))
+   (should (search-forward "\\setsansfont{FreeSans}" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-fallback ()
+  "Test that org-latex-fontspec-config is recognised for lualatex.
+Emojis are added."
+  (let ((org-latex-fontspec-config
+         '(("main" :font "FreeSerif"
+            :fallback (("emoji" . "Noto Color Emoji:mode=harf")))
+           ("sans" :font "FreeSans"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: LuaLaTeX fonts with emojis
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_CLASS: report
+* Testing
+
+Just to see that I get the fonts I want...
+
+And my emojis too, 😀
+"
+   ;; (message "lualatex fallback: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\usepackage{fontspec}" nil t))
+   (should (search-forward "\\directlua{" nil t))
+   (should (search-forward "\\setmainfont{FreeSerif}[RawFeature={fallback=" nil t))
+   (should (search-forward "\\setsansfont{FreeSans}" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-latex-header-not-lost ()
+  "Test that org-latex-fontspec-config is recognised for lualatex.
+
+It will be placed *before* LATEX_HEADER, so that any font configuration
+there will prevail."
+  (let ((org-latex-fontspec-config
+         '(("main" :font "FreeSerif")
+           ("sans" :font "FreeSans"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: LuaLaTeX fonts
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_HEADER: \\setsansfont{TeX Gyre Heros}
+#+LATEX_CLASS: report
+* Testing
+
+Just to see that I get the fonts Iwant...
+"
+   ;; (message "fontspec: latex-header\n%s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\usepackage{fontspec}" nil t))
+   (should (search-forward "\\setmainfont{FreeSerif}" nil t))
+   (should (search-forward "\\setsansfont{FreeSans}" nil t))
+   (should (search-forward "\\setsansfont{TeX Gyre Heros}" nil t)))))
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

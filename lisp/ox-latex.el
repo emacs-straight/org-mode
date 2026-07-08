@@ -2175,9 +2175,12 @@ The default behaviour is to typeset with the Roman font family."
 (defun org-latex--mk-options (str)
   "Make STR be enclosed in [ ] or return an empty string if nil or empty.
 
+If STR is a list of strings, join them with \",\".
 If STR is nil or an empty string, return STR.
 If STR is a traditional LATEX_CLASS_OPTIONS enclosed in [ ], return it as is.
 If the square brackets are missing, return STR enclosed in square brackets."
+  (when (listp str)
+    (setq str (mapconcat #'identity str ",")))
   (if (or (not str) (length= str 0)) str
     (save-match-data  ; just in case it is used in a search/replace context
       (let ((str (concat "[" str "]"))) ; make sure it is enclosed in []
@@ -2209,7 +2212,8 @@ specified in `org-latex-default-packages-alist' or
                                       (format "\\DocumentMetadata{%s}" doc-metadata))
                                  (and (not snippet?)
                                       (plist-get info :latex-class-pre))
-		                 (if (not class-options) header
+		                 (if (or (not class-options)
+                                         (string-empty-p class-options)) header
 		                   (replace-regexp-in-string
 			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
 			            class-options header t nil 1)))
