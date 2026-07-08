@@ -21163,6 +21163,31 @@ package ox-bibtex by Taru Karttunen."
 	       org--rds (list (list 'bib bib))))))
     (call-interactively 'reftex-citation)))
 
+;;; Emacs scripts in Org documents
+
+(defun org-get-string-scripts (str)
+  "Return the list of Emacs scripts in STR.
+
+This function is called by ox-latex and ox-beamer (initially) and
+returns a list of strings with the names of scripts in STR.
+An empty list implies that all characters in STR are Latin-1.
+
+Derived from the initial version proposed by Juan Manuel Macías in
+https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/
+"
+  (save-match-data
+    (let ((scripts)
+          (match-offset t)
+          (offset 0))
+      (while match-offset
+        (setq match-offset (string-match "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" str offset))
+        (when match-offset
+          (when-let* ((matched (match-string 0 str))
+                      (script (aref char-script-table (string-to-char matched))))
+            (setq offset (match-end 1))
+            (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
+      scripts)))
+
 ;;;; Functions extending outline functionality
 
 (defun org-beginning-of-line (&optional n)

@@ -36,6 +36,10 @@
 (require 'cl-lib)
 (require 'ox-latex)
 
+;;; Function declarations
+
+(declare-function org-get-string-scripts "org" (str))
+
 ;; Install a default set-up for Beamer export.
 (unless (assoc "beamer" org-latex-classes)
   (add-to-list 'org-latex-classes
@@ -914,6 +918,13 @@ contextual information."
   "Return complete document string after Beamer conversion.
 CONTENTS is the transcoded contents string.  INFO is a plist
 holding export options."
+  ;; Before doing anything else, add the script information
+  ;; to the INFO channel. Used by org-latex-make-preamble
+  ;; to add fallback fonts for lualatex.
+  (setq info (plist-put info
+                        :doc-scripts
+                        (org-get-string-scripts contents)))
+
   (let ((title (org-export-data (plist-get info :title) info))
 	(subtitle (org-export-data (plist-get info :subtitle) info))
         (beamer-class (plist-get info :latex-class)))
