@@ -159,6 +159,18 @@ and some environments listed in the manual are not supported.
 # Changes dealing with changing default values of customizations,
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
+*** ox-latex.el: Keyword LANGUAGE accepts a list of Org languages
+
+The LANGUAGE keyword accepts a list of Org languages when exporting to
+LaTeX (or Beamer). The *first* language is designated as the main
+language of the document:
+
+#+BEGIN_SRC org
+,#+LANGUAGE: es en-gb
+#+END_SRC
+
+marks Spanish to be the main locale of a document that also uses the
+British English locale in some passages.
 
 *** ox-beamer.el: New keyword BEAMER_THEME_PRE
 

@@ -3102,6 +3102,7 @@ still inferior to file-local settings."
     ;; Run first hook with current backend's name as argument.
     (run-hook-with-args 'org-export-before-processing-functions
                         (org-export-backend-name backend))
+    ;; Before the first hook:
     (org-export-expand-include-keyword nil nil nil nil (plist-get info :expand-links))
     (org-export--delete-comment-trees)
     (when org-export-replace-macros
@@ -3138,6 +3139,16 @@ still inferior to file-local settings."
     (setq info
           (org-combine-plists
            info (org-export-get-environment backend subtreep ext-plist)))
+    ;; Language(s): Derived from `org-export-default-language' and the
+    ;; #+LANGUAGE: keyword. Re. the INFO channel:
+    ;; 1. All exporters want a string with a language in INFO :language
+    ;; 2. The LaTeX exporters additionally expect a list of languages in INFO :languages
+    (when-let* ((doc-languages (plist-get info :languages))) ; just in case
+      (if (listp doc-languages)
+          (setq info (plist-put info :language (car doc-languages)))
+        (progn
+          (setq info (plist-put info :languages (list doc-languages)))
+          (setq info (plist-put info :language doc-languages)))))
     ;; Pre-process citations environment, i.e. install
     ;; bibliography list, and citation processor in INFO.
     (when (plist-get info :with-cite-processors)

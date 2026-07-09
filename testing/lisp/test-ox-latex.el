@@ -596,10 +596,12 @@ And my emojis too, 😀
   "Test that org-latex-fontspec-config is recognised for lualatex.
 
 It will be placed *before* LATEX_HEADER, so that any font configuration
-there will prevail."
+there will prevail. Additionally test multiple languages in LANGUAGE.
+This anticipates the changes for multi-lang."
   (let ((org-latex-fontspec-config
          '(("main" :font "FreeSerif")
-           ("sans" :font "FreeSans"))))
+           ("sans" :font "FreeSans")))
+        (org-latex-packages-alist '(("AUTO" "babel"))))
    (org-test-with-exported-text
    'latex
    "#+TITLE: LuaLaTeX fonts
@@ -612,11 +614,14 @@ there will prevail."
 
 Just to see that I get the fonts Iwant...
 "
-   ;; (message "fontspec: latex-header\n%s" (buffer-string))
+   (message "fontspec: latex-header\n%s" (buffer-string))
    (goto-char (point-min))
    (should (search-forward "\\usepackage{fontspec}" nil t))
    (should (search-forward "\\setmainfont{FreeSerif}" nil t))
    (should (search-forward "\\setsansfont{FreeSans}" nil t))
+   ;; This comes from `org-latex-packages-alist'
+   (should (search-forward "\\usepackage[british]{babel}" nil t))
+   ;; And this from LATEX_HEADER
    (should (search-forward "\\setsansfont{TeX Gyre Heros}" nil t)))))
 
 (provide 'test-ox-latex)
