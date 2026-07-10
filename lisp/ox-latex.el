@@ -1831,10 +1831,46 @@ Return the new header."
 				      header t)
 	  header)))))
 
+(defun org-latex--babel-lang (org-lang)
+  "Return the babel language code for org-lang"
+  (let* ((plist (cdr
+	         (assoc org-lang org-latex-language-alist)))
+         (language (plist-get plist :babel))
+         (language-ini-only (plist-get plist :babel-ini-only))
+         (language-ini-alt (plist-get plist :babel-ini-alt)))
+    (or language language-ini-only language-ini-alt)))
+
+(defun org-latex--babel-provide (this-lang main-lang)
+  "Return the babel provide parameters for THIS-LANG.
+
+MAIN-LANG is the main language in the document."
+  (if (equal this-lang main-lang) "import,main" "import"))
+
 (defun org-latex-guess-babel-language (header info)
   "FIXME: check for multi-lang and lualatex to replace with new babel options.
 Include the jp/zh treatment here."
-  (org-latex--guess-babel-language-legacy header info))
+  (if (equal (plist-get info :latex-multi-lang) "babel")
+      (save-match-data
+        (when-let* ((matched (string-match "\\\\usepackage\\[.+?]{babel}\n" header))
+                    (original-str (match-string 0 header))
+                    (compiler (plist-get info :latex-compiler))
+                    (main-lang (plist-get info :language))
+                    (new-str (format "\\usepackage[bidi=%s]{babel}\n"
+                                     (if (equal compiler "lualatex") "basic" "default"))))
+
+          (cl-loop for lang in (plist-get info :languages)
+                   do (setq new-str
+                            (concat new-str
+                                    (format "\\babelprovide[%s]{%s}\n"
+                                            (org-latex--babel-provide lang main-lang)
+                                            (org-latex--babel-lang lang)))))
+          (when (plist-get info :latex-fontspec-config)
+            (setq new-str (concat new-str
+                                 "\\RequirePackage{fontspec}\n"
+                                 (org-latex--fontspec-prelude info))))
+          (setq header (string-replace original-str new-str header)))
+        header)
+    (org-latex--guess-babel-language-legacy header info)))
 
 (defun org-latex--guess-polyglossia-language-legacy (header info)
   "Set the Polyglossia language according to the LANGUAGE keyword.
