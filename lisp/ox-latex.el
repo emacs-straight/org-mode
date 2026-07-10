@@ -1930,10 +1930,42 @@ Return the new header."
 		  ""))
 	 t t header 0)))))
 
+(defun org-latex--set-polyglossia-lang (lang info)
+  (let* ((language (plist-get info :language))
+         (main-or-other (if (equal language lang)
+                           "main" "other"))
+         (plist (cdr
+		  (assoc lang org-latex-language-alist)))
+	  (polyglossia-variant (plist-get plist :polyglossia-variant))
+	  (polyglossia-lang (plist-get plist :polyglossia))
+          (variant (if polyglossia-variant
+		     (format "[variant=%s]" polyglossia-variant) ""))
+	  (lang (or polyglossia-lang lang)))
+    (format "\\set%slanguage%s{%s}\n" main-or-other
+	    variant
+            lang)))
+
 (defun org-latex-guess-polyglossia-language (header info)
   "Replace \"\\usepacakge[AUTO]{polyglossia}\".
-FIXME: add font configurations for polyglossia and fontspec."
-  (org-latex--guess-polyglossia-language-legacy header info))
+
+FIXME: add font configurations for polyglossia."
+  (save-match-data
+    (let ((multi-lang (plist-get info :latex-multi-lang))
+          (languages  (plist-get info :languages))) ;; don't go this path unless LATEX_MULTI_LANG
+      (if (and multi-lang
+               (string-match "\\\\usepackage\\(\\[.+?]\\)?{polyglossia}\n" header))
+          (let ((old-str (match-string 0 header))
+                (new-str "\\usepackage{polyglossia}\n"))
+            (setq new-str (concat new-str
+                                  (mapconcat #'(lambda (l)
+                                                 (org-latex--set-polyglossia-lang l info))
+		                             languages)
+                                  (and (plist-get info :latex-fontspec-config)
+                                       "\\RequirePackage{fontspec}\n")
+                                  (and (plist-get info :latex-fontspec-config)
+                                       (org-latex--fontspec-prelude info))))
+            (string-replace old-str new-str header))
+        (org-latex--guess-polyglossia-language-legacy header info)))))
 
 ;;;
 (defun org-latex--fontspec-prelude (info)

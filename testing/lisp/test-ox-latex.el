@@ -729,7 +729,7 @@ is appended to the babel configuration."
 
 OK, so we are in business
 "
-     (message "==> %s" (buffer-string))
+     ;; (message "==> %s" (buffer-string))
      (goto-char (point-min))
      (save-excursion
        (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
@@ -738,6 +738,32 @@ OK, so we are in business
      (should (search-forward "\\babelprovide[import]{spanish}\n" nil t))
      (should (search-forward "\\RequirePackage{fontspec}\n" nil t))
      (should (search-forward "\\setmainfont{FreeSerif}\n" nil t)))))
+
+(ert-deftest test-ox-latex/multi-lang3 ()
+  "Test that selecting polyglossia as multi-lang, the fontspec configuration
+is appended to the polyglossia configuration."
+  (let ((org-latex-fontspec-config '(("main" :font "FreeSerif"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: polyglossia
+
+* Testing
+
+OK, so we are in business
+"
+   ;; (message "--> %s" (buffer-string))
+   (goto-char (point-min))
+   (save-excursion
+     (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
+   (should (search-forward "\\usepackage{polyglossia}\n" nil t))
+   (should (search-forward "\\setmainlanguage[variant=uk]{english}\n" nil t))
+   (should (search-forward "\\setotherlanguage{spanish}\n" nil t))
+   (should (search-forward "\\RequirePackage{fontspec}\n" nil t))
+   (should (search-forward "\\setmainfont{FreeSerif}\n" nil t)))))
 
 
 (provide 'test-ox-latex)
