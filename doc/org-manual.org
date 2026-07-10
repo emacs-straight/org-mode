@@ -14321,31 +14321,12 @@ general options (see [[*Export Settings]]).
   Code or list of codes of Org languages that are used as locales in
   the whole document or parts of it. When =LANGUAGE= is a list of
   codes, the first language designates the main locale of the
-  document.  When =LANGUAGE= keyword is not specified use the value of
-  ~org-export-default-language~ (by default - =en=, American English)
+  document.  When the =LANGUAGE= keyword is not specified, use the
+  value of ~org-export-default-language~ (by default - =en=, American
+  English).
 
   The list of language codes supported by Org is stored in the
   variable ~org-latex-language-alist~.
-
-  In order to be effective, the =babel= or =polyglossia=
-  packages---according to the LaTeX compiler used---must be loaded
-  with the appropriate language as argument.  This can be accomplished
-  by modifying the ~org-latex-packages-alist~ variable, e.g., with
-  either of the following snippets (note that =polyglossia= does not
-  work with pdfLaTeX):
-
-  #+begin_src emacs-lisp
-  (add-to-list 'org-latex-packages-alist
-               '("AUTO" "babel" t))
-  #+end_src
-  or
-    #+begin_src emacs-lisp
-  (add-to-list 'org-latex-packages-alist
-               '("AUTO" "polyglossia" t ("xelatex" "lualatex")))
-  #+end_src
-
-  =AUTO= will be replaced with the main language code as expected by
-  the selected package.
 
 - =LATEX_CLASS= ::
 
@@ -14366,13 +14347,82 @@ general options (see [[*Export Settings]]).
   document class. Square brackets around the class options are
   optional.  If missing, they will be added by Org.
 
-
 - =LATEX_COMPILER= ::
 
   #+cindex: @samp{LATEX_COMPILER}, keyword
   #+vindex: org-latex-compiler
   The compiler, such as =pdflatex=, =xelatex=, =lualatex=, for
   producing the PDF.  See ~org-latex-compiler~.
+
+- =LATEX_MULTI_LANG= ::
+
+  #+cindex: @samp{LATEX_MULTI_LANG}, keyword
+  Define the LaTeX package to use to control locale-dependent features
+  like dates, headings in documents, etc. Possible values are:
+
+  - ~nil~: disable this feature
+  - ~"polyglossia"~: Use the Polyglossia package. *Note* that
+    ~polyglossia~ will not work with PDFLaTeX. An error will be shown
+    before the compilation is attempted.
+  - ~"babel"~: Use the Babel package. This package works with all
+    LaTeX compilers.
+
+  In order to control locales effectively, according to the LaTeX
+  compiler used, the =babel= or =polyglossia= packages must be loaded
+  with the appropriate language as argument.  This can be accomplished
+  by several means:
+  1. When non-~nil~ ~#+LATEX_MULTI_LANG~ will insert the code shown in
+     the next point in an appropriate point in the LaTeX preamble.
+  2. By adding the following code in a ~#+LATEX_HEADER:~ or
+     ~#+LATEX_HEADER_EXTRA:~ line:
+     #+begin_src org
+,#+LATEX_HEADER: \usepackage[AUTO]{babel}
+     #+end_src
+     or
+     #+begin_src org
+,#+LATEX_HEADER: \usepackage[AUTO]{polyglossia}
+     #+end_src
+  3. By modifying the ~org-latex-packages-alist~ variable, e.g., with
+     either of the following snippets (note that =polyglossia= does
+     not work with pdfLaTeX):
+     #+begin_src emacs-lisp
+(add-to-list 'org-latex-packages-alist
+             '("AUTO" "babel" t))
+    #+end_src
+    or
+    #+begin_src emacs-lisp
+(add-to-list 'org-latex-packages-alist
+             '("AUTO" "polyglossia" t ("xelatex" "lualatex")))
+  #+end_src
+
+  The =AUTO= option will be replaced with the list of languages
+  declared in the ~#+LANGUAGE:~ keyword for ~babel~ or used to
+  generate the language list for ~polyglossia~.  In either case,
+  ~org-export-default-language~ will be used if you don't use the
+  ~#+LANGUAGE:~ keyword.
+
+  If you use ~babel~ and specify more than one language in the
+  ~#+LANGUAGE~ keyword, the list will be inverted before replacing
+  ~AUTO~ to comply with the rule that babel takes the last language in
+  the list of languages as the main language.
+
+  Remember that adding languages to ~AUTO~ as in:
+  #+BEGIN_SRC  emacs-lisp
+(add-to-list 'org-latex-packages-alist
+             '("fr,AUTO" "babel"))
+  #+END_SRC
+  is no longer the preferred way of configuring languages and should
+  be considered *deprecated*.
+
+  Using ~LATEX_MULTI_LANG~ and a language or language list in
+  ~LANGUAGES~ will reflect transparently in the generated LaTeX
+  preamble.
+
+  # ~babel~ and ~polyglossia~ also allow you to control fonts on
+  # a language basis. Refer to [*** Font control with ~babel~] and
+  # [*** Font control with ~polyglossia~] for further information.
+
+  # Note on zh,jp + babel too.
 
 - =LATEX_HEADER=, =LATEX_HEADER_EXTRA= ::
 
@@ -14494,16 +14544,41 @@ A sample Org file with the above headers:
   some more text
 #+end_example
 
+In addition, the LaTeX exporter provides you with different
+keywords to control the LaTeX preamble.
+
+#+cindex: @samp{LATEX_DOC_METADATA}, keyword
+The LaTeX backend can add metadata to your PDF documents to produce
+accessible documents that can be processed with assistive technologies
+like screen readers. For example, just to enable tagging, add
+#+begin_example
+,#+LATEX_DOC_METADATA: tagging=on
+#+end_example
+to your document.
+
 #+cindex: @samp{LATEX_CLASS_PRE}, keyword
 The LaTeX export backend prepends values from =LATEX_CLASS_PRE=
-keywords before the LaTeX preamble. Use this option when you want to
-set the values passed to packages included in the document class. For
-example, to use extended names for the ~xcolor~ package, use
+keywords after the document metadata and before the LaTeX class
+declaration. Use this option when you want to set the values passed to
+packages included in the document class. For example, to use extended
+names for the ~xcolor~ package, use
 
 #+begin_example
 ,#+LATEX_CLASS_PRE: \PassOptionsToPackage{dvipsnames}{xcolor}
 #+end_example
 
+#+vindex: org-latex-use-sans
+The LaTeX backend normally exports using the Roman font family
+specified in the document class or by the user in the
+=LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
+force the LaTeX compiler to use the Sans font as default. You can also
+include it in the document options with:
+
+#+begin_example
+#+OPTIONS: latex-use-sans:t
+#+end_example
+
+# FIXME: change this to fit the LATEX_MULTI_LANG.
 #+cindex: @samp{LANGUAGE}, keyword
 #+vindex: org-export-default-language
 LaTeX packages =babel= or =polyglossia= can also be loaded in a
@@ -14552,16 +14627,6 @@ This would produce in LaTeX (with the actual =polyglossia= syntax):
 \setotherlanguage{french}
 #+end_example
 
-#+vindex: org-latex-use-sans
-The LaTeX backend normally exports using the Roman font family
-specified in the document class or by the user in the
-=LATEX_HEADER=. Setting the option ~org-latex-use-sans~ to =t= will
-force the LaTeX compiler to use the Sans font as default. You can also
-include it in the document options with:
-
-#+begin_example
-#+OPTIONS: latex-use-sans:t
-#+end_example
 
 
 *** Quoting LaTeX code

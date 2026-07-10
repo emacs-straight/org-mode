@@ -614,7 +614,7 @@ This anticipates the changes for multi-lang."
 
 Just to see that I get the fonts Iwant...
 "
-   (message "fontspec: latex-header\n%s" (buffer-string))
+   ;; (message "fontspec: latex-header\n%s" (buffer-string))
    (goto-char (point-min))
    (should (search-forward "\\usepackage{fontspec}" nil t))
    (should (search-forward "\\setmainfont{FreeSerif}" nil t))
@@ -623,6 +623,95 @@ Just to see that I get the fonts Iwant...
    (should (search-forward "\\usepackage[british]{babel}" nil t))
    ;; And this from LATEX_HEADER
    (should (search-forward "\\setsansfont{TeX Gyre Heros}" nil t)))))
+
+(ert-deftest test-ox-latex/sanity-check1 ()
+  "Test that you can't select pdflatex and polyglossia."
+  :expected-result :failed
+  (let ((org-latex-packages-alist '(("AUTO" "polyglossia"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: pdflatex
+
+* Testing
+
+What are you trying to do with pdflatex??
+"
+     (message "==> %s" (buffer-string)))))
+
+(ert-deftest test-ox-latex/sanity-check2 ()
+  "Test that you can't select babel and polyglossia at the same time."
+  :expected-result :failed
+  (let ((org-latex-default-packages-alist '(("AUTO" "babel")))
+        (org-latex-packages-alist '(("AUTO" "polyglossia"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+
+* Testing
+
+C'on, what d'you wanna do??
+"
+     (message "==> %s" (buffer-string)))))
+
+(ert-deftest test-ox-latex/sanity-check3 ()
+  "Test that you can't select babel and polyglossia at the same time."
+  :expected-result :failed
+  (let ((org-latex-packages-alist '(("AUTO" "polyglossia"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_HEADER: \\usepackage[spanish]{babel}
+* Testing
+
+C'on, what d'you wanna do??
+"
+     (message "==> %s" (buffer-string)))))
+
+(ert-deftest test-ox-latex/sanity-check4 ()
+  "Test that you can't select babel as multi-lang and polyglossia in the packages."
+  :expected-result :failed
+  (let ((org-latex-packages-alist '(("AUTO" "polyglossia"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+C'on, what d'you wanna do??
+"
+     (message "==> %s" (buffer-string)))))
+
+(ert-deftest test-ox-latex/multi-lang1 ()
+  "Test that selecting babel as multi-lang, will replace fontspec."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+OK, so we are in business
+"
+     (message "==> %s" (buffer-string))
+     (goto-char (point-min))
+     (save-excursion
+       (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
+     (should (re-search-forward "\\\\usepackage\\[.+?]{babel}\n" nil t))))
+
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

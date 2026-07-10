@@ -176,6 +176,9 @@
     (:latex-compiler "LATEX_COMPILER" nil org-latex-compiler)
     (:latex-descriptive-env "LATEX_DESCRIPTIVE_ENV" nil org-latex-descriptive-environment)
     (:latex-use-sans nil "latex-use-sans" org-latex-use-sans)
+    (:latex-default-packages nil nil org-latex-default-packages-alist)
+    (:latex-packages nil nil org-latex-packages-alist)
+    (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang)
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
@@ -1606,6 +1609,23 @@ property to `toc'"
   :safe #'booleanp)
 
 ;;;; Font management
+(defun org-latex--check-multi-lang(s)
+  "Return t if S is a valid value for org-latex-multi-lang."
+  (or (null s)
+      (member s '("fontspec" ;; compatibility with feature/all-tex-fonts
+                  "babel" "polyglossia"))))
+
+(defcustom org-latex-multi-lang nil
+  "Select the LaTeX package that handles multiple languages and locales.
+
+Note: POLYGLOSSIA is not supported by PDFLATEX."
+  :group 'org-export-latex
+  :package-version '(Org . "10.0")
+  :type '(choice
+          (const :tag "None" nil)
+          (const :tag "Babel" "babel")
+          (const :tag "Polyglossia" "polyglossia"))
+  :safe #'org-latex--check-multi-lang)
 
 (defcustom org-latex-fontspec-config nil
   "An alist with the configuration for the fontspec package.
@@ -1627,6 +1647,7 @@ Each element is defined as
   :type 'alist
   :safe  #'listp
 )
+
 
 
 ;;; Internal Functions
@@ -1751,7 +1772,7 @@ Return the new header, as a string."
       (replace-regexp-in-string "\\\\usepackage\\[\\(AUTO\\)\\]{inputenc}"
 				cs header t nil 1))))
 
-(defun org-latex-guess-babel-language (header info)
+(defun org-latex--guess-babel-language-legacy (header info)
   "Set Babel's language according to LANGUAGE keyword.
 
 HEADER is the LaTeX header string.  INFO is the plist used as
@@ -1810,7 +1831,12 @@ Return the new header."
 				      header t)
 	  header)))))
 
-(defun org-latex-guess-polyglossia-language (header info)
+(defun org-latex-guess-babel-language (header info)
+  "FIXME: check for multi-lang and lualatex to replace with new babel options.
+Include the jp/zh treatment here."
+  (org-latex--guess-babel-language-legacy header info))
+
+(defun org-latex--guess-polyglossia-language-legacy (header info)
   "Set the Polyglossia language according to the LANGUAGE keyword.
 
 HEADER is the LaTeX header string.  INFO is the plist used as
@@ -1867,6 +1893,12 @@ Return the new header."
 		  languages
 		  ""))
 	 t t header 0)))))
+
+(defun org-latex-guess-polyglossia-language (header info)
+  "Replace \"\\usepacakge[AUTO]{polyglossia}\".
+FIXME: add font configurations for polyglossia and fontspec."
+  (org-latex--guess-polyglossia-language-legacy header info))
+
 ;;;
 (defun org-latex--fontspec-prelude (info)
   "Return the fontspec configuration for the INFO channel as a string.
@@ -1984,6 +2016,58 @@ Return new list of packages."
 	   (`(,_ ,_ ,_ ,compilers) (member-ignore-case compiler compilers))
 	   (_ t)))
        pkg-alist))))
+
+(defun org-latex--check-locale-config (info)
+  "Check the state of the INFO channel and flag errors.
+
+Gets the package lists, compiler and multi-lang setup from the INFO channel
+and throws different errors if a misconfiguration is detected."
+
+  (let* ((locale-packages  ;; get all the packages
+          (cl-concatenate 'list
+                          (org-latex--remove-packages org-latex-default-packages-alist info)
+                          (org-latex--remove-packages org-latex-packages-alist info)))
+         (locale-packages ;; keep the locale relates packages only
+          (delete-dups (cl-remove-if-not #'(lambda (s) (member s'("babel" "polyglossia")))
+                                         (mapcar #'cadr locale-packages))))
+         (multi-lang (plist-get info :latex-multi-lang))
+         (headers (concat (plist-get info :latex-header)
+                          (plist-get info :latex-header-extra)))
+         (babel-in-headers (string-match-p "\\\\usepackage\\(\\[.+?]\\)?{babel}" headers))
+         (polyglossia-in-headers (string-match-p "\\\\usepackage\\(\\[.+?]\\)?{polyglossia}" headers)))
+    ;; error: selecting polyglossia with pdf-latex
+    (when (and (equal "pdflatex" (plist-get info :latex-compiler))
+               (or (equal "polyglossia" multi-lang)
+                   (member "polyglossia" locale-packages)
+                   polyglossia-in-headers))
+      (error "Can't select polyglossia for pdflatex!"))
+    ;; error: babel and polyglossia detected simultaneously
+    (when (or (and polyglossia-in-headers babel-in-headers)
+              (and polyglossia-in-headers (member "babel" locale-packages))
+              (and babel-in-headers (member "polyglossia" locale-packages))
+              (length> locale-packages 1)
+              (and multi-lang
+                   (or (and locale-packages (not (member multi-lang locale-packages)))
+                       (and babel-in-headers (not (equal multi-lang "babel")))
+                       (and polyglossia-in-headers (not (equal multi-lang "polyglossia"))))))
+      (error "Can't select babel and polyglossia simultaneously!"))
+    ;; LaTeX headers and the package lists contain (potentially) redundant settings
+    ;; worst case scenario would be
+    ;;  packages: (("french" "babel"))
+    ;;  headers: \\usepackage[AUTO]{babel}
+    (when (or (and polyglossia-in-headers (member "polyglossia" locale-packages))
+              (and babel-in-headers (member "babel" locale-packages)))
+      (error "Configure locale handling either in packages (preferred) or headers!"))))
+
+(defun org-latex--can-replace-fontspec (info)
+  "Return non-nil if we can replace fontspec in either package list."
+  (when-let* ((locale-packages  ;; get all the packages
+               (delete-dups
+                (mapcar #'cadr
+                        (cl-concatenate 'list
+                                        (org-latex--remove-packages org-latex-default-packages-alist info)
+                                        (org-latex--remove-packages org-latex-packages-alist info))))))
+    (member "fontspec" locale-packages)))
 
 (defun org-latex--find-verb-separator (s)
   "Return a character not used in string S.
@@ -2199,7 +2283,11 @@ as expected by `org-splice-latex-header'.  When SNIPPET? is
 non-nil, only includes packages relevant to image generation, as
 specified in `org-latex-default-packages-alist' or
 `org-latex-packages-alist'."
+
+  (org-latex--check-locale-config info) ;; before we start, make a sanity check.
   (let* ((class (plist-get info :latex-class))
+         (multi-lang (plist-get info :latex-multi-lang))
+         ;; (compiler (plist-get info :latex-compiler))
          (doc-metadata (plist-get info :latex-doc-metadata))
 	 (class-template
 	  (or template
@@ -2220,6 +2308,29 @@ specified in `org-latex-default-packages-alist' or
 			            class-options header t nil 1)))
                                 nil)))
 	      (user-error "Unknown LaTeX class `%s'" class))))
+    (when multi-lang
+      ;; If we can replace fontspec
+      (if (org-latex--can-replace-fontspec info)
+          (progn
+            (setq info (plist-put info :latex-default-packages
+                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                 '("" "fontspec")
+                                                 (plist-get info :latex-default-packages)
+                                                 :test #'(lambda (e1 e2)
+                                                           (equal (cadr e1)
+                                                                  (cadr e2))))))
+            ;; Just in case it is where by user choice
+            (setq info (plist-put info :latex-packages
+                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                 '("" "fontspec")
+                                                 (plist-get info :latex-packages)
+                                                 :test #'(lambda (e1 e2)
+                                                           (equal (cadr e1)
+                                                                  (cadr e2)))))))
+        (setq info (plist-put info :latex-default-packages
+                              (cl-concatenate #'list
+                                              `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                              (plist-get info :latex-defailt-packages))))))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-fontspec
@@ -2227,8 +2338,8 @@ specified in `org-latex-default-packages-alist' or
         (org-element-normalize-string
 	 (org-splice-latex-header
 	  class-template
-	  (org-latex--remove-packages org-latex-default-packages-alist info)
-	  (org-latex--remove-packages org-latex-packages-alist info)
+	  (org-latex--remove-packages (plist-get info :latex-default-packages) info)
+	  (org-latex--remove-packages (plist-get info :latex-packages) info)
 	  snippet?
 	  (mapconcat #'org-element-normalize-string
 		     (list (plist-get info :latex-header)
