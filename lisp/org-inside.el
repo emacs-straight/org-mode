@@ -106,7 +106,8 @@ innermost, when inside it (v31+ only)."
          (when (featurep 'org-inside) (org-inside--reset-all))))
 
 (defface org-inside-face
-  '((t :inherit secondary-selection))
+  '((((class color) (background light)) (:background "grey90"))
+    (((class color) (background dark)) (:background "grey20")))
   "Face used when inside hidden-contents entities."
   :group 'org-faces)
 
