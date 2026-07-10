@@ -2377,28 +2377,32 @@ specified in `org-latex-default-packages-alist' or
                                 nil)))
 	      (user-error "Unknown LaTeX class `%s'" class))))
     (when multi-lang
-      ;; If we can replace fontspec
-      (if (org-latex--can-replace-fontspec info)
-          (progn
-            (setq info (plist-put info :latex-default-packages
-                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                                 '("" "fontspec")
-                                                 (plist-get info :latex-default-packages)
-                                                 :test #'(lambda (e1 e2)
-                                                           (equal (cadr e1)
-                                                                  (cadr e2))))))
-            ;; Just in case it is where by user choice
-            (setq info (plist-put info :latex-packages
-                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                                 '("" "fontspec")
-                                                 (plist-get info :latex-packages)
+      ;; Just in case someone has legacy settings(!) from
+      ;; testing the feature/all-tex-fonts branch
+      (if (equal multi-lang "fontspec")
+          (warn "LATEX_MULTI_LANG %s: no action on packages." multi-lang)
+        ;; If we can replace fontspec
+        (if (org-latex--can-replace-fontspec info)
+            (progn
+              (setq info (plist-put info :latex-default-packages
+                                    (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                   '("" "fontspec")
+                                                   (plist-get info :latex-default-packages)
+                                                   :test #'(lambda (e1 e2)
+                                                             (equal (cadr e1)
+                                                                    (cadr e2))))))
+              ;; Just in case it is where by user choice
+              (setq info (plist-put info :latex-packages
+                                    (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                   '("" "fontspec")
+                                                   (plist-get info :latex-packages)
                                                  :test #'(lambda (e1 e2)
                                                            (equal (cadr e1)
                                                                   (cadr e2)))))))
-        (setq info (plist-put info :latex-default-packages
-                              (cl-concatenate #'list
-                                              `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                              (plist-get info :latex-defailt-packages))))))
+          (setq info (plist-put info :latex-default-packages
+                                (cl-concatenate #'list
+                                                `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                (plist-get info :latex-default-packages)))))))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-fontspec
@@ -3143,6 +3147,24 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
     (cond
      ((string= key "LATEX") value)
      ((string= key "INDEX") (format "\\index{%s}" value))
+     ((string= key "SELECT_LANG")
+      (let ((multi-lang (plist-get info :latex-multi-lang))
+            (lang-info (alist-get value org-latex-language-alist nil nil #'string=))
+            (languages (plist-get info :languages)))
+        (cond ((and (null lang-info) (member multi-lang '("babel" "polyglossia")))
+               ;; warn and don't add useless code
+               (warn "Unknown language in SELECT_LANG %s" value) "")
+              ((not (member value languages))
+               (warn "Ignoring SELECT_LANG %s: not in LANGUAGE" value) "")
+              ((string= multi-lang "babel")
+               (format "\\selectlanguage{%s}"
+                       (org-latex--babel-lang value)))
+              ((string= multi-lang "polyglossia")
+               (format "\\selectlanguage{%s}"
+                       (plist-get lang-info :polyglossia)))
+              (t (warn "Ignoring SELECT_LANG %s because LATEX_MULTI_LANG is not set."
+                       value)
+                 ""))))
      ((string= key "TOC")
       (let ((case-fold-search t))
 	(cond

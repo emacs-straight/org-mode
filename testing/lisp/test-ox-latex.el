@@ -765,6 +765,36 @@ OK, so we are in business
    (should (search-forward "\\RequirePackage{fontspec}\n" nil t))
    (should (search-forward "\\setmainfont{FreeSerif}\n" nil t)))))
 
+(ert-deftest test-ox-latex/multi-lang4 ()
+  "Test SELECT_LANG"
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: Playing with languages
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+
+* Testing
+
+OK, so we are in business.
+
+#+select_lang: es
+
+Y esto va en español.
+
+#+select_lang: en-gb
+
+Back to British English.
+"
+   ;; (message "--> %s" (buffer-string))
+   (goto-char (point-min))
+   (save-excursion
+     (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
+   (should (re-search-forward "\\\\usepackage\\[.+?]{babel}\n" nil t))
+   (should (search-forward "\\selectlanguage{spanish}\n" nil t))
+   (should (search-forward "\\selectlanguage{british}\n" nil t))))
+
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

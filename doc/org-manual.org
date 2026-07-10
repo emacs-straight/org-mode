@@ -14371,8 +14371,19 @@ general options (see [[*Export Settings]]).
   compiler used, the =babel= or =polyglossia= packages must be loaded
   with the appropriate language as argument.  This can be accomplished
   by several means:
-  1. When non-~nil~ ~#+LATEX_MULTI_LANG~ will insert the code shown in
-     the next point in an appropriate point in the LaTeX preamble.
+  1. The *preferred* way to indicate locales for =lualatex= and
+     =xelatex= is to set the package of choice in the
+     =#+LATEX_MULTI_LANG= keyword and one or more locales in
+     =#+LANGUAGE= using Org language codes. For example:
+     #+BEGIN_SRC org
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTI_LANG: babel
+,#+LANGUAGE: en-gb de
+     #+END_SRC
+     generates a LaTeX document targeting the ~lualatex~ compiler and
+     using the ~babel~ package to manage locales; the document
+     includes passages in German, and British English is the main
+     locale.
   2. By adding the following code in a ~#+LATEX_HEADER:~ or
      ~#+LATEX_HEADER_EXTRA:~ line:
      #+begin_src org
@@ -15389,6 +15400,56 @@ Note the following in the code above:
 3. The font names reported by Org are the font names used by
    =lualatex=.  The spaces may not be included in the system font
    names.
+
+*** Switching languages in LaTeX export with =babel= or =polyglossia=.
+#+cindex: languages, switching, in @LaTeX{} export
+
+When you use either =babel= or =polyglossia= through the
+=#+LATEX_MULTI_LANG:= keyword, you have an additional keyword at your
+disposal to switch between languages inside your document.
+
+#+begin_src org
+,#+SELECT_LANG: <lang>
+#+end_src
+
+#+texinfo: @noindent
+allows you to switch to language =<lang>= in the document, using *Org*
+language codes. For example:
+
+#+begin_src org
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTI_LANG: polyglossia
+,#+LANGUAGE: en-gb es
+,#+macro: today @@latex: \today~ @@
+
+,* Dummy
+
+A dummy test file w/o bibliography. Today is {{{today}}} in Great Britain.
+
+,#+SELECT_LANG: es
+
+,* Un párrafo en castellano
+
+Pues eso, que también lo pruebo. Hoy es {{{today}}} en España.
+
+,#+SELECT_LANG: en-gb
+
+,* Back to =EN_GB=
+
+After our short excursion, we are back to the main language.
+
+#+end_src
+
+You will be warned if the language you pass to ~#+SELECT_LANG:~ is not
+included in the languages defined in ~#+LANGUAGES:~.  A language code
+not defined in Org will generate an error.
+
+If you need, you may use =#+BEGIN_= - =#+END_= blocks to enclose
+passages in a specific language. They will generate a  LaTeX block
+enclosed in a ~\begin{<language>}~ / ~\end{<language>}~ pair.  In this
+case, however, you will not be able to use Org language names and will
+need to know the language name used in the multi-language support
+package of your choice.
 
 
 ** Markdown Export
