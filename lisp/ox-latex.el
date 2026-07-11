@@ -182,6 +182,7 @@
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
     (:latex-fontspec-defaults "LATEX_FONTSPEC_DEFAULTS" nil org-latex-fontspec-default-features)
     (:latex-babel-font-config nil nil org-latex-babel-font-config)
+    (:latex-polyglossia-font-config nil nil org-latex-polyglossia-font-config)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1696,6 +1697,57 @@ roman font's appearance."
 		 (alist :tag "babel font configuration"))
   :safe #'listp)
 
+;;;;
+
+(defcustom org-latex-polyglossia-font-config nil
+  "Font specifications for polyglossia.
+When nil, generate no configuration.
+When non-nil, the value should be an alist, where each element is
+defined as (LANGUAGE . LANG-PLIST).
+LANGUAGE is the Org language code used in #+LANGUAGES  (e.g. \"en\") and
+LANG-PLIST is the language plist, with the following keys:
+ `:font' (mandatory): a string with the system font name,
+ `:variant': a string for the font variant, (e.g. \"sf\", \"tt\", etc.)
+ `:props': a string for extra properties (e.g.\"Script=Hebrew\"). You may use
+           `:features' as an alias.
+ `:script': the name for the font family.  Use the :polyglossia from
+            `org-latex-language-alist' if not specified.
+
+Each line will be translated into a new font family definition.
+
+This mapping for English
+  (\"en\"
+    :script \"english\" :font \"Noto Serif\")
+
+will generate the followinf LaTeX code:
+  \\newfontfamily{\\englishfont}{Noto Serif}
+
+For Hebrew, you can use
+  (\"he\" :variant \"tt\"
+    :props \"Script=Hebrew\" :font \"Noto Mono Hebrew\")
+
+that will generate the following LaTeX code
+  \\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Noto Mono Hebrew}
+
+You will need to add a specific :script tag for languages that use a family name
+different from the :polyglossia property.
+
+For example, you will need the following mapping (or a similar one
+using another Devanagari font) for Hindi
+
+  (\"hi\" :script \"devanagari\"
+    :font \"Noto Serif Devanagari\"
+    :props \"Script=Devanagari\")
+
+which will result in the following LaTeX code:
+
+  \\newfontfamily{\\devanagarifont}[Script=Devanagari]{Noto Serif Devanagari}"
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No polyglossia font config" nil)
+		 (alist :tag "polyglossia font config"))
+  :safe #'listp)
+
 
 ;;; Internal Functions
 
@@ -2045,6 +2097,42 @@ Return the new header."
 	    variant
             lang)))
 
+(defun org-latex--polyglossia-fonts (info)
+  "Extract the polyglossia font definitions from INFO.
+
+Return a string for the LaTeX preamble."
+  ;; Fonts for specific languages
+  ;; c.f. `org-latex-polyglossia-font-config'
+  (let ((doc-languages (plist-get info :languages))
+        (main-language (plist-get info :language))
+        (latex-fontspec-config (plist-get info :latex-fontspec-config)))
+    (mapconcat
+     #'(lambda (script)
+         (let ((this-lang (car script)))
+           ;; Only check languages declared in doc
+           (when (and (member this-lang doc-languages)
+                      ;; when using fontspec, skip the main language
+                      (or (null latex-fontspec-config)
+                          (not (equal this-lang main-language))))
+           (let* ((script-plist (cdr script))
+                  (script-variant (plist-get script-plist :variant))
+                  ;; Suppress the rm or main variant.
+                  ;; That's the <lang>font(!)
+                  (script-variant (and (not (member script-variant '("rm" "main")))
+                                       script-variant))
+                  (polyglossia-plist
+                  (alist-get this-lang org-latex-language-alist nil nil #'string=)))
+             (format "\\newfontfamily\\%sfont%s%s{%s}\n"
+                     (or (plist-get script-plist :script)
+                         (plist-get polyglossia-plist :polyglossia))
+                     (org-latex--long-to-short-family
+                      (or script-variant
+                          ""))
+                     (org-latex--mk-options (or (plist-get script-plist :props)
+                                                (plist-get script-plist :features)))
+                     (plist-get script-plist :font))))))
+     (plist-get info :latex-polyglossia-font-config))))
+
 (defun org-latex-guess-polyglossia-language (header info)
   "Replace \"\\usepacakge[AUTO]{polyglossia}\".
 
@@ -2052,19 +2140,21 @@ FIXME: add font configurations for polyglossia."
   (save-match-data
     (let ((multi-lang (plist-get info :latex-multi-lang))
           (languages  (plist-get info :languages))) ;; don't go this path unless LATEX_MULTI_LANG
-      (if (and multi-lang
+      (if (and (equal multi-lang "polyglossia")
                (string-match "\\\\usepackage\\(\\[.+?]\\)?{polyglossia}\n" header))
-          (let ((old-str (match-string 0 header))
-                (new-str "\\usepackage{polyglossia}\n"))
-            (setq new-str (concat new-str
-                                  (mapconcat #'(lambda (l)
-                                                 (org-latex--set-polyglossia-lang l info))
-		                             languages)
-                                  (and (plist-get info :latex-fontspec-config)
-                                       "\\RequirePackage{fontspec}\n")
-                                  (and (plist-get info :latex-fontspec-config)
-                                       (org-latex--fontspec-prelude info))))
-            (string-replace old-str new-str header))
+          (let ((old-header (match-string 0 header))
+                (new-header "\\usepackage{polyglossia}\n"))
+            (setq new-header (concat new-header
+                                     (mapconcat #'(lambda (l)
+                                                    (org-latex--set-polyglossia-lang l info))
+		                                languages)
+                                     (and (plist-get info :latex-polyglossia-font-config)
+                                          (org-latex--polyglossia-fonts info))
+                                     (and (plist-get info :latex-fontspec-config)
+                                          "\\RequirePackage{fontspec}\n")
+                                     (and (plist-get info :latex-fontspec-config)
+                                          (org-latex--fontspec-prelude info))))
+            (string-replace old-header new-header header))
         (org-latex--guess-polyglossia-language-legacy header info)))))
 
 ;;;

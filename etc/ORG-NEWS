@@ -285,6 +285,18 @@ When using LuaLaTeX (or XeLaTeX in a reduced scope), you can use the
 new custom variable ~org-latex-fontspec-config~ to change the
 document's fonts and add fallback fonts for missing scripts.
 
+*** New custom variable ~org-latex-babel-font-config~
+
+When using LuaLaTeX or XeLaTeX, you can use the new custom variable
+~org-latex-babel-font-config~ to control the document's fonts when you
+use the LaTeX package babel to handle locales.
+
+*** New custom variable ~org-latex-polyglossia-font-config~
+
+When using LuaLaTeX or XeLaTeX, you can use the new custom variable
+~org-latex-polyglossia-font-config~ to control the document's fonts
+when you use the LaTeX package polyglossia to handle locales.
+
 ** Removed or renamed functions and variables
 
 *** ~org-babel-remote-temporary-directory~ is now obsolete

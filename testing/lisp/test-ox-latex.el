@@ -823,7 +823,49 @@ Back to British English.
    (should (search-forward "\\selectlanguage{spanish}\n" nil t))
    (should (search-forward "\\selectlanguage{british}\n" nil t))))
 
-(ert-deftest test-ox-latex/babel-standalone-fonts ()
+(ert-deftest test-ox-latex/polyglossia-standalone-fonts ()
+  (let ((org-latex-fontspec-config nil)
+        (org-latex-polyglossia-font-config
+         '(;; The next one should not appear
+           ("es" :font "FreeSerif" :variant "main")
+           ("es" :font "FreeSans" :variant "sans")
+           ("es" :font "FreeMono" :variant "mono" :props "Scale=MatchLowercase")
+           ("de" :font "FreeMono" :variant "mono" :props "Scale=MatchLowercase")
+           ("en-gb" :variant "rm" :font "DejaVu Serif")
+           ("en-gb" :variant "sf" :font "DejaVu Sans")
+           ("en-gb" :variant "tt" :font "DejaVu Sans Mono" :props "Scale=MatchLowercase"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: pure polyglossia
+#+LANGUAGE: es en-gb
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: polyglossia
+
+#+select-lang: en-gb
+* Testing
+
+Polyglossia managing fonts. Document ready for multi-lang
+"
+     ;; (message "babel: %s" (buffer-string))
+     (goto-char (point-min))
+     ;; Language part
+     (should (search-forward "\\usepackage{polyglossia}" nil t))
+     (should (search-forward "\\setmainlanguage{spanish}" nil t))
+     (should (search-forward "\\setotherlanguage[variant=uk]{english}" nil t))
+     ;; Font part, "rm" is suppressed, variant is translated, props are added
+     (should (search-forward "\\newfontfamily\\spanishfont{FreeSerif}" nil t))
+     (should (search-forward "\\newfontfamily\\spanishfontsf{FreeSans}" nil t))
+     (should (search-forward "\\newfontfamily\\spanishfonttt[Scale=MatchLowercase]{FreeMono}" nil t))
+     ;; Font part, "rm" is suppressed, short variant is kept, props are added
+     (should (search-forward "\\newfontfamily\\englishfont{DejaVu Serif}" nil t))
+     (should (search-forward "\\newfontfamily\\englishfontsf{DejaVu Sans}" nil t))
+     (should (search-forward "\\newfontfamily\\englishfonttt[Scale=MatchLowercase]{DejaVu Sans Mono}" nil t))
+     (goto-char (point-min))
+     ;; Not included in LANGUAGES
+     (should-not (search-forward "\\newfontfamily\\germanfon" nil t)))))
+
+  (ert-deftest test-ox-latex/babel-standalone-fonts ()
   "Test that babel can manage fonts standalone."
   (let ((org-latex-fontspec-config nil)
         (org-latex-babel-font-config '((nil :variant "main" :font "FreeSerif")
@@ -843,7 +885,7 @@ Back to British English.
 
 Babel managing fonts. Document ready for spanish text.
 "
-     (message "babel: %s" (buffer-string))
+     ;; (message "babel: %s" (buffer-string))
      (goto-char (point-min))
      (should (re-search-forward "\\usepackage\\[bidi=basic]{babel}" nil t))
      (should (search-forward "\\babelprovide[import,main]{spanish}\n" nil t))

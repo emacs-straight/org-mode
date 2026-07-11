@@ -15563,6 +15563,78 @@ information.
   resulting configuration for the ~fontspec~ package will be appended
   to the configuration for the ~babel~ package.
 
+*** Controlling font setup for LuaLaTeX and XeLaTeX with =polyglossia=
+#+vindex: org-latex-polyglossia-font-config
+#+cindex: multiple languages, fonts,polyglossia, in @LaTeX{} export
+
+The LaTeX package =polyglossia= implements two functions. On the one
+hand, it helps you control layout and generating dates, document
+headers and other elements conforming to typesetting conventions in
+different languages and countries. Additionally, it can also help you
+define which fonts you want to use depending on the language of a part
+of your document. *Note* that =polyglossia= will only work with
+=lualatex= or =xelatex=.
+
+To activate =polyglossia=, set the ~LATEX_MULTI_LANG~ option to
+=polyglossia= in the document header and specify the language or
+languages you are using in the document. Remember that the first
+language will be the main language of your document:
+
+#+begin_src org
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTI_LANG: polyglossia
+,#+LANGUAGE: es de
+#+end_src
+
+Fonts will normally be controlled by the =fontspec= package (see
+above) and if the fonts you specify ---including fallback fonts---
+cover the glyph set you use in your document, you will be done.
+
+However, you can also add fine-grained control to your fonts and
+specify specific fonts for specific languages using
+~org-latex-polyglossia-font-config~. You don't even need to use
+~org-latex-fontspec-config~ if your document doesn't use advanced
+features like fallback fonts.
+
+~org-latex-polyglossia-font-config~ is an association
+list between Org language names and property lists with the font
+specification. You map the Org language name and the font variant to a
+system font name with optional features.
+
+For example:
+
+#+begin_src emacs-lisp
+(setq org-latex-polyglossia-font-config
+      '(("es" :font "FreeSerif")
+	("es" :variant "sf" :font "FreeSans")
+	("es" :variant "tt" :font "DejaVu Sans Mono")
+        ("el" :font "DejaVu Serif" :props "Script=Greek")))
+#+end_src
+
+#+texinfo: @noindent
+will generate the font specification for the three main fonts in
+Spanish documents or parts of a document marked as being written in
+Spanish and for the Roman font for passages written in Greek.
+
+This will be enough for an Org document with the following header:
+
+#+begin_src org
+,#+LANGUAGE: es el
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTILANG: polyglossia
+#+end_src
+
+To read more about =polyglossia=, consult
+[[https://texdoc.org/serve/polyglossia/0][the =polyglossia= package
+manual]].
+
+- Note 1 :: You may use the long variant names from =fontspec=.  They
+  will be automatically translated to variant names understood by
+  =polyglossia=.
+
+- Note 2 :: You don't need to specify the =main= or =rm= variant,
+  and if you do, it will be silently suppressed in the font definition.
+
 ** Markdown Export
 :PROPERTIES:
 :DESCRIPTION: Exporting to Markdown.
