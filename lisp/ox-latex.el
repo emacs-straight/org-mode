@@ -181,6 +181,7 @@
     (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang)
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
     (:latex-fontspec-defaults "LATEX_FONTSPEC_DEFAULTS" nil org-latex-fontspec-default-features)
+    (:latex-babel-font-config nil nil org-latex-babel-font-config)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1664,6 +1665,37 @@ in the LaTeX preamble after the fontspec configuration.
 		 (string :tag "Default font features"))
   :safe #'string-or-null-p)
 
+(defcustom org-latex-babel-font-config nil
+  "Mapping of language names to fonts when using babel.
+
+Each entry maps an Org language name with a properties list.
+The language name can be `nil' to map to the (unnamed) default language.
+
+Property `:variant' (mandatory) is one of the script codes:
+   \"rm\" or \"main\" for the roman (serif) font
+   \"sf\" or \"sans\" for the sans serif font
+   \"tt\" or \"mono\" for the teletype (monospaced) font.
+   You may use `:family': as an alias for `:variant'
+Property `:font' (mandatory) property designates the font
+with a system font name and an optional property
+Property `:props' (optional) is a string that stores
+extra properties to control the font's appearance. (You
+can use `:features' as an alias here).
+
+For example:
+
+\((nil :variant \"rm\" :font \"CMU Serif\")
+ (nil :variant \"tt\" :font \"DejaVu Sans Mono\" :props \"Scale=MatchLowercase\"))
+
+indicates that the default roman font is CMU Serif and that the default
+monotype font, DejaVu Sans Mono, needs to be scaled to better match the
+roman font's appearance."
+  :group 'org-export-latex
+  :package-version '(Org . "9.8")
+  :type '(choice (const :tag "No babel font config" nil)
+		 (alist :tag "babel font configuration"))
+  :safe #'listp)
+
 
 ;;; Internal Functions
 
@@ -1846,14 +1878,33 @@ Return the new header."
 				      header t)
 	  header)))))
 
-(defun org-latex--babel-lang (org-lang)
-  "Return the babel language code for org-lang"
-  (let* ((plist (cdr
-	         (assoc org-lang org-latex-language-alist)))
-         (language (plist-get plist :babel))
-         (language-ini-only (plist-get plist :babel-ini-only))
-         (language-ini-alt (plist-get plist :babel-ini-alt)))
-    (or language language-ini-only language-ini-alt)))
+(defun org-latex--babel-lang (lang &optional ini-only)
+  "Return the language name used in Babel for org language LANG.
+If INI-ONLY is not nil, just check and return for :babel-ini-only"
+  (let* ((plist (alist-get lang org-latex-language-alist nil nil #'string=))
+	 (language-ini-only (plist-get plist :babel-ini-only)))
+    (if ini-only
+        language-ini-only
+      (let ((language (plist-get plist :babel))
+            (language-ini-alt (plist-get plist :babel-ini-alt)))
+        (or language-ini-alt
+            language
+            language-ini-only
+            lang))))) ;; return LANG if nothing found
+
+(defconst org-latex--family-dict
+  '(("main" . "rm")
+    ("sans" . "sf")
+    ("mono" . "tt"))
+  "Dictionary translating the long fontspec names for scripts
+to their babel/polyglossia equivalents.")
+
+(defun org-latex--long-to-short-family (family)
+  "Convert FAMILY values \"main\", \"mono\" and \"sans\" to their short versions,
+if possible, else keep FAMILY.
+Return potentially translated FAMILY or nil."
+  (let ((short-family (cdr (assoc-string family org-latex--family-dict family))))
+    (or short-family family)))
 
 (defun org-latex--babel-provide (this-lang main-lang)
   "Return the babel provide parameters for THIS-LANG.
@@ -1861,29 +1912,63 @@ Return the new header."
 MAIN-LANG is the main language in the document."
   (if (equal this-lang main-lang) "import,main" "import"))
 
+(defun org-latex--mk-babel-font (fntdef) ; make-default)
+  "Generate the \\babelfont statement fo FNTDEF."
+  ;; ", suppressing the language code if MAKE-DEFAULT is t."
+  (let* ((lang (car fntdef))
+         (props (cdr fntdef))
+         (variant (or (plist-get props :variant)
+                      (plist-get props :family)))
+         (font (plist-get props :font))
+         (options (or (plist-get props :props)
+                      (plist-get props :features))))
+    (unless font
+      (error "babel spec `%s' doesn't specify system font!" fntdef))
+    (when (and lang  ;; this is not the main language
+               (null variant)) ;; and it doesn't indicate the variant/family
+      (warn "Secondary language %s without :variant!" lang))
+    (format "\\babelfont%s%s%s{%s}\n"
+            (org-latex--mk-options (and lang
+                                        (org-latex--babel-lang lang)))
+            (or (and variant
+                     (concat "{" (org-latex--long-to-short-family variant) "}"))
+                "")
+            (org-latex--mk-options options)
+            font)))
+
 (defun org-latex-guess-babel-language (header info)
   "FIXME: check for multi-lang and lualatex to replace with new babel options.
 Include the jp/zh treatment here."
   (if (equal (plist-get info :latex-multi-lang) "babel")
       (save-match-data
         (when-let* ((matched (string-match "\\\\usepackage\\[.+?]{babel}\n" header))
-                    (original-str (match-string 0 header))
+                    (original-header (match-string 0 header))
                     (compiler (plist-get info :latex-compiler))
+                    (languages (plist-get info :languages))
                     (main-lang (plist-get info :language))
-                    (new-str (format "\\usepackage[bidi=%s]{babel}\n"
+                    (new-header (format "\\usepackage[bidi=%s]{babel}\n"
                                      (if (equal compiler "lualatex") "basic" "default"))))
 
-          (cl-loop for lang in (plist-get info :languages)
-                   do (setq new-str
-                            (concat new-str
-                                    (format "\\babelprovide[%s]{%s}\n"
-                                            (org-latex--babel-provide lang main-lang)
-                                            (org-latex--babel-lang lang)))))
+          (dolist (lang languages)
+            (setq new-header
+                  (concat new-header
+                          (format "\\babelprovide[%s]{%s}\n"
+                                  (org-latex--babel-provide lang main-lang)
+                                  (org-latex--babel-lang lang)))))
+          (when-let* ((babel-config (plist-get info :latex-babel-font-config)))
+            (dolist (fntdef babel-config)
+              (let* ((lang (car fntdef)))
+                (when (or (null lang)    ;; default language
+                          (and (member lang languages)
+                               (not (equal lang main-lang))))
+                    (setq new-header
+                          (concat new-header
+                                  (org-latex--mk-babel-font fntdef)))))))
           (when (plist-get info :latex-fontspec-config)
-            (setq new-str (concat new-str
-                                 "\\RequirePackage{fontspec}\n"
-                                 (org-latex--fontspec-prelude info))))
-          (setq header (string-replace original-str new-str header)))
+            (setq new-header (concat new-header
+                                     "\\RequirePackage{fontspec}\n"
+                                     (org-latex--fontspec-prelude info))))
+          (setq header (string-replace original-header new-header header)))
         header)
     (org-latex--guess-babel-language-legacy header info)))
 

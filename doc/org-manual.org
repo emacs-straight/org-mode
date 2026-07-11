@@ -15289,7 +15289,72 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 :END:
 #+end_example
 
-*** Controlling font setup for LuaLaTeX and XeLaTeX
+*** Controlling locales and languages in LaTeX export with =babel= or =polyglossia=.
+#+cindex: languages, switching, in @LaTeX{} export
+
+The *preferred* way to control locale-dependent typesetting features,
+including heading, section names and numbering, dates, etc. is using
+the =#+LATEX_MULTI_LANG:= [fn:: or the ~org-latex-multi-lang~ custom
+variable] and =#+LANGUAGE:= keywords.  For example,
+
+#+BEGIN_SRC org
+,#+LATEX_MULTI_LANG: babel
+,#+LANGUAGE: en-gb es
+#+END_SRC
+
+would create a document where the main locale is British English. This
+document will also have passages with need to be typeset according to
+the Spanish locale conventions.
+
+When you use either =babel= or =polyglossia= through the
+=#+LATEX_MULTI_LANG:= keyword, you have an additional keyword at your
+disposal to switch between languages inside your document.
+
+#+begin_src org
+,#+SELECT_LANG: <lang>
+#+end_src
+
+#+texinfo: @noindent
+allows you to switch to language =<lang>= in the document, using *Org*
+language codes. For example:
+
+#+begin_src org
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTI_LANG: polyglossia
+,#+LANGUAGE: en-gb es
+,#+macro: today @@latex: \today~ @@
+
+,* Dummy
+
+A dummy test file w/o bibliography. Today is {{{today}}} in Great Britain.
+
+,#+SELECT_LANG: es
+
+,* Un párrafo en castellano
+
+Pues eso, que también lo pruebo. Hoy es {{{today}}} en España.
+
+,#+SELECT_LANG: en-gb
+
+,* Back to =EN_GB=
+
+After our short excursion, we are back to the main language.
+
+#+end_src
+
+You will be warned if the language you pass to ~#+SELECT_LANG:~ is not
+included in the languages defined in ~#+LANGUAGES:~.  A language code
+not defined in Org will generate an error.
+
+If you need, you may use =#+BEGIN_= - =#+END_= blocks to enclose
+passages in a specific language. They will generate a  LaTeX block
+enclosed in a ~\begin{<language>}~ / ~\end{<language>}~ pair.  In this
+case, however, you will not be able to use Org language names and will
+need to know the language name used in the multi-language support
+package of your choice.
+
+
+*** Controlling font setup for LuaLaTeX and XeLaTeX with =fontspec=
 :PROPERTIES:
 :CUSTOM_ID: fontspec-configuration
 :END:
@@ -15419,56 +15484,84 @@ Note the following in the code above:
    =lualatex=.  The spaces may not be included in the system font
    names.
 
-*** Switching languages in LaTeX export with =babel= or =polyglossia=.
-#+cindex: languages, switching, in @LaTeX{} export
+*** Controlling font setup for LuaLaTeX and XeLaTeX with =babel=
+#+cindex: multiple languages, fonts, babel, in @LaTeX{} export
+#+vindex: org-latex-babel-font-config
 
-When you use either =babel= or =polyglossia= through the
-=#+LATEX_MULTI_LANG:= keyword, you have an additional keyword at your
-disposal to switch between languages inside your document.
+The =babel= package provides font control features that can be used as
+an alternative or in addition to the font control features provided by
+the =fontspec= package.
 
-#+begin_src org
-,#+SELECT_LANG: <lang>
-#+end_src
-
-#+texinfo: @noindent
-allows you to switch to language =<lang>= in the document, using *Org*
-language codes. For example:
+Use the methods described above or the following header in your
+document to activate =babel=; for example
 
 #+begin_src org
 ,#+LATEX_COMPILER: lualatex
-,#+LATEX_MULTI_LANG: polyglossia
-,#+LANGUAGE: en-gb es
-,#+macro: today @@latex: \today~ @@
-
-,* Dummy
-
-A dummy test file w/o bibliography. Today is {{{today}}} in Great Britain.
-
-,#+SELECT_LANG: es
-
-,* Un párrafo en castellano
-
-Pues eso, que también lo pruebo. Hoy es {{{today}}} en España.
-
-,#+SELECT_LANG: en-gb
-
-,* Back to =EN_GB=
-
-After our short excursion, we are back to the main language.
-
+,#+LATEX_MULTI_LANG: babel
+,#+LANGUAGE: es en-gb ...
 #+end_src
 
-You will be warned if the language you pass to ~#+SELECT_LANG:~ is not
-included in the languages defined in ~#+LANGUAGES:~.  A language code
-not defined in Org will generate an error.
+#+texinfo: @noindent
+using the Org language code(s) in the =#+LANGUAGE:= keyword.
 
-If you need, you may use =#+BEGIN_= - =#+END_= blocks to enclose
-passages in a specific language. They will generate a  LaTeX block
-enclosed in a ~\begin{<language>}~ / ~\end{<language>}~ pair.  In this
-case, however, you will not be able to use Org language names and will
-need to know the language name used in the multi-language support
-package of your choice.
+If you want to control the fonts used in your document with the
+=babel= LaTeX package, use variable ~org-latex-babel-font-config~.
+This variable is a list of property lists, which maps Org language
+codes to LaTeX font families, system fonts and optional extra
+properties.
 
+Each property list has the format:
+
+#+begin_src emacs-lisp
+(<lang> :variant <Latex font family> :font <system font name>
+        :props <properties to apply to the font>)
+#+end_src
+
+The =:variant= can use the /native/ Babel family names (i.e. ~"rm"~,
+~"sf"~ and ~"tt"~) or their equivalents for the =fontspec= package
+(i.e. ~"main"~, ~"sans"~ and ~"mono"~).
+
+The font mappings for the *main* language need the language code to be
+~nil~. The secondary languages use the Org language code.
+
+For example, if you use directory-local variables, you could specify
+the font mappings for the main language like this:
+
+#+begin_src emacs-lisp
+((org-mode
+  . ((org-latex-babel-font-config
+      . ((nil :variant "rm" :font "Tex Gyre Pagella")
+         (nil :variant "sf" :font "TeX Gyre Heros")
+         (nil :variant "tt" :font "TeX Gyre Cursor"))))))
+#+end_src
+
+The following Emacs Lisp code in your configuration:
+
+#+begin_src emacs-lisp
+(setq org-latex-babel-font-config
+   '(("es" :variant "main" :font "DejaVu Serif")
+     ("es" :variant "sans" :font "DejaVu Sans")))
+#+end_src
+
+#+texinfo: @noindent
+will define the fonts for Spanish when it is used as a secondary
+language, using the ~fontspec~ variant names.
+
+In addition to the _mandatory_ properties ~:variant~ and ~:font~, you
+may add optional properties with ~:props~.  For example:
+
+#+begin_src emacs-lisp
+(nil :variant "tt" :font "DejaVu Sans Mono" :props "Scale=MatchLowercase")
+#+end_src
+
+- Note :: You may use ~:features~ as an alias for ~:props~.
+
+Consult the [[https://latex3.github.io/babel][=babel= manual]] for further
+information.
+
+- Note 2 :: If you define a value for ~org-latex-fontspec-config~, the
+  resulting configuration for the ~fontspec~ package will be appended
+  to the configuration for the ~babel~ package.
 
 ** Markdown Export
 :PROPERTIES:

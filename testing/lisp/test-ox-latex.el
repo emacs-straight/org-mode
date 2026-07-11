@@ -823,6 +823,38 @@ Back to British English.
    (should (search-forward "\\selectlanguage{spanish}\n" nil t))
    (should (search-forward "\\selectlanguage{british}\n" nil t))))
 
+(ert-deftest test-ox-latex/babel-standalone-fonts ()
+  "Test that babel can manage fonts standalone."
+  (let ((org-latex-fontspec-config nil)
+        (org-latex-babel-font-config '((nil :variant "main" :font "FreeSerif")
+                                       (nil :variant "sans" :font "FreeSans")
+                                       ;; The next one should not appear
+                                       ("es" :variant "sans" :font "OpenSans")
+                                       ("en-gb" :variant "main" :font "DejaVu Serif")
+                                       ("en-gb" :variant "sans" :font "DejaVu Sans"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: pure Babel
+#+LANGUAGE: es en-gb
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+Babel managing fonts. Document ready for spanish text.
+"
+     (message "babel: %s" (buffer-string))
+     (goto-char (point-min))
+     (should (re-search-forward "\\usepackage\\[bidi=basic]{babel}" nil t))
+     (should (search-forward "\\babelprovide[import,main]{spanish}\n" nil t))
+     (should (search-forward "\\babelprovide[import]{british}\n" nil t))
+     (should (search-forward "\\babelfont{rm}{FreeSerif}" nil t))
+     (should (search-forward "\\babelfont{sf}{FreeSans}" nil t))
+     (should (search-forward "\\babelfont[british]{rm}{DejaVu Serif}" nil t))
+     (should (search-forward "\\babelfont[british]{sf}{DejaVu Sans}" nil t))
+     (goto-char (point-min))
+     ;; OpenSans would be for Spanish as secondary language
+     (should-not (search-forward "\\babelfont[spanish]{sf}{OpenSans}" nil t)))))
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here
