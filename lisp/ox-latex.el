@@ -180,6 +180,7 @@
     (:latex-packages nil nil org-latex-packages-alist)
     (:latex-multi-lang "LATEX_MULTI_LANG" nil org-latex-multi-lang)
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
+    (:latex-fontspec-defaults "LATEX_FONTSPEC_DEFAULTS" nil org-latex-fontspec-default-features)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
 
@@ -1648,6 +1649,20 @@ Each element is defined as
   :safe  #'listp
 )
 
+(defcustom org-latex-fontspec-default-features nil
+  "This variable stores the default features for the fontspec package.
+When `nil', no default features are assumed.
+Else is is a comma-separeted list of \"key=value\" pairs that generates
+
+\\defaultfontfeatures{key=value,...}
+
+in the LaTeX preamble after the fontspec configuration.
+"
+  :group 'org-export-latex
+  :package-version '(Org . "10.0")
+  :type '(choice (const :tag "No template" nil)
+		 (string :tag "Default font features"))
+  :safe #'string-or-null-p)
 
 
 ;;; Internal Functions
@@ -1975,7 +1990,7 @@ If COMPILER is \"xelatex\", omit fallback font detection."
   (let ((doc-scripts (plist-get info :doc-scripts))
         (compiler (plist-get info :latex-compiler))
         (fontspec-config (plist-get info :latex-fontspec-config))
-        ;; (fontspec-defaults (plist-get info :latex-fontspec-defaults))
+        (fontspec-defaults (plist-get info :latex-fontspec-defaults))
         (fallback-found)  ;; a list of fallbacks that are really needed
         (fallback-alist)) ;; an alist (font_name . fallback-name)
 
@@ -2048,6 +2063,9 @@ If COMPILER is \"xelatex\", omit fallback font detection."
             (when ffeatures
               (insert (org-latex--mk-options ffeatures))))
           (insert "\n")))
+      ;; fixme: ponder the possibility of also using \\defaultfontfeatures+{} in the future
+      (when fontspec-defaults
+        (insert (format "\\defaultfontfeatures{%s}\n" fontspec-defaults)))
       (buffer-string))))
 ;;;;
 (defun org-latex-guess-fontspec (header info)
@@ -2376,33 +2394,35 @@ specified in `org-latex-default-packages-alist' or
 			            class-options header t nil 1)))
                                 nil)))
 	      (user-error "Unknown LaTeX class `%s'" class))))
+    ;; Just in case someone has legacy settings(!) from
+    ;; testing the feature/all-tex-fonts branch
+    (when (equal multi-lang "fontspec")
+      (warn "Setting LATEX-MULTI_LANG to `t' instead of \"fontspec\".")
+      (setq multi-lang t))
     (when multi-lang
-      ;; Just in case someone has legacy settings(!) from
-      ;; testing the feature/all-tex-fonts branch
-      (if (equal multi-lang "fontspec")
-          (warn "LATEX_MULTI_LANG %s: no action on packages." multi-lang)
-        ;; If we can replace fontspec
-        (if (org-latex--can-replace-fontspec info)
-            (progn
-              (setq info (plist-put info :latex-default-packages
-                                    (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                                   '("" "fontspec")
-                                                   (plist-get info :latex-default-packages)
-                                                   :test #'(lambda (e1 e2)
-                                                             (equal (cadr e1)
-                                                                    (cadr e2))))))
-              ;; Just in case it is where by user choice
-              (setq info (plist-put info :latex-packages
-                                    (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                                   '("" "fontspec")
-                                                   (plist-get info :latex-packages)
+      ;; If we need to replace, replace
+      (if (org-latex--can-replace-fontspec info)
+          (progn
+            (setq info (plist-put info :latex-default-packages
+                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                 '("" "fontspec")
+                                                 (plist-get info :latex-default-packages)
+                                                 :test #'(lambda (e1 e2)
+                                                           (equal (cadr e1)
+                                                                  (cadr e2))))))
+            ;; Just in case it is where by user choice
+            (setq info (plist-put info :latex-packages
+                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                                 '("" "fontspec")
+                                                 (plist-get info :latex-packages)
                                                  :test #'(lambda (e1 e2)
                                                            (equal (cadr e1)
                                                                   (cadr e2)))))))
-          (setq info (plist-put info :latex-default-packages
-                                (cl-concatenate #'list
-                                                `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                                (plist-get info :latex-default-packages)))))))
+        ;; else add as the first default package
+        (setq info (plist-put info :latex-default-packages
+                              (cl-concatenate #'list
+                                              `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                              (plist-get info :latex-default-packages))))))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-fontspec

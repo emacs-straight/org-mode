@@ -544,7 +544,10 @@ Just to see that DocumentMetadata comes before PassOptions and documentclass
    (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-recognised ()
-  "Test that org-latex-fontspec-config is recognised for lualatex."
+  "Test that org-latex-fontspec-config is recognised for lualatex.
+Since org-latex-fontspec-default-features is nil,
+make sure that \\defaultfontfeatures{} is NOT included in the preamble.
+"
   (let ((org-latex-fontspec-config
          '(("main" :font "FreeSerif")
            ("sans" :font "FreeSans"))))
@@ -562,8 +565,33 @@ Just to see that I get the fonts Iwant...
    ;; (message "simple fontspec: %s" (buffer-string))
    (goto-char (point-min))
    (should (search-forward "\\usepackage{fontspec}" nil t))
+   (save-excursion
+     (should-not (search-forward "\\defaultfontfeatures{" nil t)))
    (should (search-forward "\\setmainfont{FreeSerif}" nil t))
-   (should (search-forward "\\setsansfont{FreeSans}" nil t)))))
+   (should (search-forward "\\setsansfont{FreeSans}" nil t))
+   (should (search-forward "\\begin{document}" nil t)))))
+
+(ert-deftest test-ox-latex/lualatex-fontspec-default-features ()
+  "Test that fontspec default features are generated
+when fontspec is used in LaTeX document."
+  (let ((org-latex-compiler "lualatex")
+        (org-latex-fontspec-config '(("main" :font "FreeSerif")))
+        (org-latex-fontspec-default-features "Scale=MatchLowercase"))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: fontspec
+#+OPTIONS: toc:nil H:3 num:nil
+
+* Heading
+
+A random text without emojis.
+"
+     ;; (message "--> %s" (buffer-string))
+     (goto-char (point-min))
+     (should (search-forward "\\usepackage{fontspec}\n" nil t))
+     (should (search-forward "\\setmainfont{FreeSerif}\n" nil t))
+     (should (search-forward "\\defaultfontfeatures{Scale=MatchLowercase}\n" nil t))
+     (should (search-forward "\\begin{document}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-fallback ()
   "Test that org-latex-fontspec-config is recognised for lualatex.

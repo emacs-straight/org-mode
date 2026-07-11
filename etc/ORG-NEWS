@@ -159,6 +159,13 @@ and some environments listed in the manual are not supported.
 # Changes dealing with changing default values of customizations,
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
+
+*** New custom variable ~org-latex-fontspec-default-features~ and keyword ~#+LATEX_FONTSPEC_FEATURES:~
+
+When the LaTeX exporter uses the LaTeX =fontspec= package, you can set
+the default font features with ~org-latex-fontspec-default-features~
+and the new keyword ~#+LATEX_FONTSPEC_FEATURES:~.
+
 *** ox-latex.el: Keyword LANGUAGE accepts a list of Org languages
 
 The LANGUAGE keyword accepts a list of Org languages when exporting to

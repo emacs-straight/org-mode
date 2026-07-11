@@ -13237,6 +13237,7 @@ and will be ignored.
 ,#+LATEX_CLASS: ltx-talk
   #+END_SRC
 
+
 *** Frames and Blocks in Beamer
 :PROPERTIES:
 :DESCRIPTION: For composing Beamer slides.
@@ -14457,6 +14458,23 @@ general options (see [[*Export Settings]]).
   ~org-latex-doc-metadata~ or you use ~#+LATEX_DOC_METADATA~, the
   value will be inserted as =\DocumentMetadata{<value>}=
   at the beginning of the LaTeX preamble.
+
+- =LATEX_FONTSPEC_FEATURES= ::
+
+  #+cindex: @samp{LATEX_FONTSPEC_FEATURES}, keyword
+  #+vindex: org-latex-fontspec-default-features
+  The default features the ~fontspec~ package will apply to the
+  document's fonts. This keyword or
+  ~org-latex-fontspec-default-features~ should hold a string with a
+  comma-separated list of default settings for ~fontspec~-related
+  features. Refer to the
+  [[https://texdoc.org/serve/fontspec/0][package's manual]] Part III,
+  Section 1 for more details.
+
+  For example:
+  #+BEGIN_SRC org
+,#+LATEX_FONTSPEC_FEATURES: Ligatures=TeX,Scale=MatchLowercase
+  #+END_SRC
 
 - =KEYWORDS= ::
 
