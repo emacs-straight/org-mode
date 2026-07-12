@@ -823,6 +823,28 @@ Back to British English.
    (should (search-forward "\\selectlanguage{spanish}\n" nil t))
    (should (search-forward "\\selectlanguage{british}\n" nil t))))
 
+(ert-deftest test-ox-latex/multi-lang5 ()
+  "Test the case where user goes for an empty default-packages-alist."
+  (let ((org-latex-default-packages-alist nil))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+OK, so we are in business
+"
+     ;; (message "==> %s" (buffer-string))
+     (goto-char (point-min))
+     (save-excursion
+       (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
+     (should (search-forward "\\usepackage[bidi=basic]{babel}\n" nil t))
+     (should (search-forward "\\babelprovide[import,main]{british}\n" nil t))
+     (should (search-forward "\\babelprovide[import]{spanish}\n" nil t)))))
+
 (ert-deftest test-ox-latex/polyglossia-standalone-fonts ()
   (let ((org-latex-fontspec-config nil)
         (org-latex-polyglossia-font-config

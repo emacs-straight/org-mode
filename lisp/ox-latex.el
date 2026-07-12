@@ -2624,7 +2624,7 @@ specified in `org-latex-default-packages-alist' or
       (if (org-latex--can-replace-fontspec info)
           (progn
             (setq info (plist-put info :latex-default-packages
-                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                  (cl-substitute `("AUTO" ,multi-lang)
                                                  '("" "fontspec")
                                                  (plist-get info :latex-default-packages)
                                                  :test #'(lambda (e1 e2)
@@ -2632,17 +2632,22 @@ specified in `org-latex-default-packages-alist' or
                                                                   (cadr e2))))))
             ;; Just in case it is where by user choice
             (setq info (plist-put info :latex-packages
-                                  (cl-substitute `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
+                                  (cl-substitute `("AUTO" ,multi-lang)
                                                  '("" "fontspec")
                                                  (plist-get info :latex-packages)
                                                  :test #'(lambda (e1 e2)
                                                            (equal (cadr e1)
                                                                   (cadr e2)))))))
-        ;; else add as the first default package
-        (setq info (plist-put info :latex-default-packages
-                              (cl-concatenate #'list
-                                              `("AUTO" ,multi-lang t ("lualatex" "xelatex"))
-                                              (plist-get info :latex-default-packages))))))
+        ;; else add as the first default package if there are default packages
+        (progn
+          (if (plist-get info :latex-default-packages)
+                (setq info (plist-put info :latex-default-packages
+                                      (cl-concatenate #'list
+                                                      `("AUTO" ,multi-lang t)
+                                                      (plist-get info :latex-default-packages))))
+            ;; else set default package list to it.
+            (setq info (plist-put info :latex-default-packages
+                                  `(("AUTO" ,multi-lang t))))))))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-fontspec
