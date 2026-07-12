@@ -78,7 +78,9 @@ The value is a plist, with possible keys and values:
 
  `:unhide': a boolean indicating whether to automatically un-hide the
      hidden contents within the outermost entity at point.  Unhiding can
-     also be toggled by command; see `org-inside-toggle-hidden'.
+     also be toggled by command; see `org-inside-toggle-hidden'.  The
+     delay prior to automatically unhiding can be configured with
+     `org-inside-unhide-delay'.
 
 All appearance keys are optional, and can be freely combined.
 
@@ -104,6 +106,13 @@ innermost, when inside it (v31+ only)."
   :set (lambda (sym val)
          (set-default-toplevel-value sym val)
          (when (featurep 'org-inside) (org-inside--reset-all))))
+
+(defcustom org-inside-unhide-delay 1.0
+  "Default delay in seconds before auto-unhiding entities.
+Requires the `:unhide' setting to be non-nil in `org-inside-appearance'.
+Set to zero or nil for instant auto-unhiding."
+  :group 'org-appearance
+  :type 'float)
 
 (defface org-inside-face
   '((((class color) (background light)) (:background "grey90"))
@@ -264,6 +273,8 @@ overlay may be invalid."
     (when sec-p (overlay-put (ois/ov2 state) 'face face))
     state))
 
+(defvar-local org-inside--unhide-timer nil)
+
 (defun org-inside--set-appearance (win &optional beg end beg2 end2)
   "Set appearance and hidden state for hidden-contents entities.
 The region is from BEG to END in window WIN's buffer.  If BEG or END are
@@ -292,9 +303,23 @@ cursor type."
       ;; more natural movement moving outside when hidden text is visible
       (unless (or (not showing-p) inside-p)
         (setq disable-point-adjustment t))
-      ;; User may have toggled hiding in a saved state; reset it
-      (when (not inside-p)
+
+      ;; handle (delayed) auto unhiding
+      (if inside-p
+          (when (and unhide
+                     (numberp org-inside-unhide-delay)
+                     (not (zerop org-inside-unhide-delay))
+                     (not org-inside--unhide-timer))
+            (overlay-put ov 'invisible nil)
+            (setq
+             org-inside--unhide-timer
+             (run-at-time
+              org-inside-unhide-delay nil
+              (lambda (o) (overlay-put o 'invisible 'org-inside--not-hidden))
+              ov)))
+        ;; User may have toggled hiding; reset it
         (overlay-put ov 'invisible (and unhide 'org-inside--not-hidden)))
+
       ;; Update the cursor type
       (when cursor
         (let ((cursor (if inside-p cursor
@@ -360,7 +385,15 @@ former position, and cursor movement type."
                                (org-inside--visible-region (cadr elems))))))))
           (org-inside--set-appearance win beg end beg2 end2))))
      ((eq type 'left) ; called from the primary overlay's override cursor-sensor
-      (org-inside--set-appearance win)))))
+      (org-inside--set-appearance win)))
+    (when org-inside--unhide-timer
+      (cond
+       ((eq type 'moved)                ; reschedule
+        (timer-set-time org-inside--unhide-timer
+                        (timer-relative-time nil org-inside-unhide-delay)))
+       ((eq type 'left)
+        (cancel-timer org-inside--unhide-timer)
+        (setq org-inside--unhide-timer nil))))))
 
 (defun org-inside--buffer-changed (win)
   "Handle `org-inside' buffers appearing or disappearing from window WIN."
