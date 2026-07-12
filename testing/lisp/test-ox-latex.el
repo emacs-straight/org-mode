@@ -898,5 +898,38 @@ Babel managing fonts. Document ready for spanish text.
      ;; OpenSans would be for Spanish as secondary language
      (should-not (search-forward "\\babelfont[spanish]{sf}{OpenSans}" nil t)))))
 
+(ert-deftest test-ox-latex/lualatex-babel-cjk ()
+  "Test that Chinese text are handled correctly.
+In this test we default to Fandol font for Chinese."
+  (let ((org-latex-compiler "lualatex"))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: CJK
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: zh
+#+LATEX_MULTI_LANG: babel
+
+* 标题
+
+正文。
+"
+     (message "== zh ==>\n%s" (buffer-string))
+     (goto-char (point-min))
+     (save-excursion
+       (should (search-forward "\\usepackage{indentfirst}")))
+     (save-excursion
+       (should (search-forward "\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax")))
+     (save-excursion
+       (should (search-forward "\\parindent=2\\zw")))
+     (save-excursion
+       (should (search-forward "\\linespread{1.333}")))
+     ;; Not wrapped in `save-excursion' since they must follow this specific sequence
+     (should (search-forward "\\setCJKmainfont{FandolSong}"))
+     (should (search-forward "\\setCJKsansfont{FandolHei}"))
+     (should (search-forward "\\def\\ltj@stdyokojfm{quanjiao}"))
+     (should (search-forward "\\usepackage{luatexja}"))
+     (should (search-forward "\\babelprovide[main,import]{chinese}")))))
+
+
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

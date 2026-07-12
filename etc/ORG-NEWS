@@ -154,6 +154,26 @@ Presentations written with Beamer and ltx-talk are mostly portable,
 except that Beamer theme information is ignored when using ltx-talk
 and some environments listed in the manual are not supported.
 
+*** ox-latex.el supports exporting Chinese and Japanese documents
+
+You can export documents with mutlilingual documents with main
+language Chinese or Japanese using babel. A header like this:
+
+#+BEGIN_SRC org
+,#+LATEX_MULTI_LANG: babel
+,#+LATEX_COMPILER: lualatex
+,#+LANGUAGE jp
+#+END_SRC
+
+or
+
+#+BEGIN_SRC org
+,#+LANGUAGE zh
+#+END_SRC
+
+is enough to get you going. Secondary languages are also supported and
+their font mappings can be handled with ~org-latex-babel-font-config~.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,

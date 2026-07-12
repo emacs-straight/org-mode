@@ -15635,6 +15635,46 @@ manual]].
 - Note 2 :: You don't need to specify the =main= or =rm= variant,
   and if you do, it will be silently suppressed in the font definition.
 
+*** Using LuaLaTeX and =babel= for CJK documents
+
+You can typeset CJK[fn::Currently Chinese and Japanese documents
+are supported.] using ~#+LATEX_MULTI_LANG: babel~ with LuaLaTeX. For
+example, the following header will typeset a document in Chinese[fn::
+use ~jp~ as the main language for Japanese documents.]:
+
+#+BEGIN_SRC org
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTI_LANG: babel
+,#+LANGUAGE: zh
+#+END_SRC
+
+You can add secondary languages, and in this case font mapping must be
+handled with ~org-latex-babel-font-config~. For example:
+
+#+BEGIN_SRC org
+,#+TITLE: CJK
+,#+LANGUAGE: zh en
+,#+LATEX_MULTI_LANG: babel
+,#+LATEX_COMPILER: lualatex
+#+END_SRC
+
+needs a font mapping for the text in English; for example, by adding:
+
+#+BEGIN_SRC org
+,# org-latex-babel-font-config: (
+,#   ("en" :variant "rm" :font "Free Serif" :props "Scale=MatchLowercase")
+,#   ("en" :variant "sf" :font "FreeSans"))
+#+END_SRC
+
+to the file-local variables. Depending on the nature of the document,
+you may need to redefine the mono-spaced font by adding, for example:
+
+#+BEGIN_SRC org
+;#+LATEX_HEADER_EXTRA: \renewfontfamily\ttfamily{DejaVu Sans Mono}[Scale=MatchLowercase]
+#+END_SRC
+
+to the document header.
+
 ** Markdown Export
 :PROPERTIES:
 :DESCRIPTION: Exporting to Markdown.

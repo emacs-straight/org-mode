@@ -1988,41 +1988,86 @@ MAIN-LANG is the main language in the document."
             (org-latex--mk-options options)
             font)))
 
+(defun org-latex--jp-zh-babel (header info)
+  "Return a new header with the prelude for jp or zh with babel and lualatex.
+HEADER is the LaTeX prelude and INFO is the information channel."
+  (message "jp-zh 4 babel:\n%s" header)
+  (let* ((replace "")
+         (babel-config (plist-get info :latex-babel-font-config))
+         (langs (plist-get info :languages))
+         (lang (plist-get info :language))) ;; start by generating the replacing LaTeX code
+    (setq replace
+          (concat
+           "\\usepackage{fontspec}
+\\makeatletter
+\\def\\setCJKmainfont#1{\\def\\ltj@stdmcfont{#1}}
+\\def\\setCJKsansfont#1{\\def\\ltj@stdgtfont{#1}}
+\\def\\setCJKmonofont#1{}
+\\usepackage{indentfirst}\n"
+           (and (equal lang "zh") "\\setCJKmainfont{FandolSong}
+\\setCJKsansfont{FandolHei}
+\\def\\ltj@stdyokojfm{quanjiao}\n")
+           "\\makeatother
+\\usepackage{luatexja}
+\\catcode`\\^^^^200b=\\active\\let^^^^200b\\relax\n"
+           (format "\\normalsize\\parindent=%d\\zw\n" (or (and (equal lang "zh") 2) 1))
+           "\\linespread{1.333}
+\\usepackage[bidi=basic]{babel}\n"
+           (format "\\babelprovide[main,import]{%s}\n" (org-latex--babel-lang lang))))
+    (dolist (olang (cdr-safe langs))
+      (setq replace (concat replace
+                            (format "\\babelprovide[import]{%s}\n"
+                                    (org-latex--babel-lang olang)))))
+    (dolist (fntdef babel-config)
+      (let ((this-lang (car fntdef)))
+        ;; (message "testing secondary language {%s}" this-lang)
+        (when (or (null this-lang)
+                  (member this-lang (cdr langs)))
+          (setq header
+                (concat header
+                        (org-latex--mk-babel-font fntdef))))))
+    (string-replace "\\usepackage[AUTO]{babel}\n" replace header)))
+
 (defun org-latex-guess-babel-language (header info)
   "FIXME: check for multi-lang and lualatex to replace with new babel options.
 Include the jp/zh treatment here."
-  (if (equal (plist-get info :latex-multi-lang) "babel")
-      (save-match-data
-        (when-let* ((matched (string-match "\\\\usepackage\\[.+?]{babel}\n" header))
-                    (original-header (match-string 0 header))
-                    (compiler (plist-get info :latex-compiler))
-                    (languages (plist-get info :languages))
-                    (main-lang (plist-get info :language))
-                    (new-header (format "\\usepackage[bidi=%s]{babel}\n"
-                                     (if (equal compiler "lualatex") "basic" "default"))))
-
-          (dolist (lang languages)
-            (setq new-header
-                  (concat new-header
-                          (format "\\babelprovide[%s]{%s}\n"
-                                  (org-latex--babel-provide lang main-lang)
-                                  (org-latex--babel-lang lang)))))
-          (when-let* ((babel-config (plist-get info :latex-babel-font-config)))
-            (dolist (fntdef babel-config)
-              (let* ((lang (car fntdef)))
-                (when (or (null lang)    ;; default language
-                          (and (member lang languages)
-                               (not (equal lang main-lang))))
-                    (setq new-header
-                          (concat new-header
-                                  (org-latex--mk-babel-font fntdef)))))))
-          (when (plist-get info :latex-fontspec-config)
-            (setq new-header (concat new-header
-                                     "\\RequirePackage{fontspec}\n"
-                                     (org-latex--fontspec-prelude info))))
-          (setq header (string-replace original-header new-header header)))
-        header)
-    (org-latex--guess-babel-language-legacy header info)))
+  (let ((compiler (plist-get info :latex-compiler))
+        (main-lang (plist-get info :language)))
+    (if (equal (plist-get info :latex-multi-lang) "babel")
+        (save-match-data
+          (if (and (member main-lang '("jp" "zh"))
+                   (equal compiler "lualatex"))
+                (org-latex--jp-zh-babel header info)
+            (if-let* ((matched (string-match "\\\\usepackage\\[.+?]{babel}\n" header))
+                        (original-header (match-string 0 header))
+                        (languages (plist-get info :languages))
+                        (new-header (format "\\usepackage[bidi=%s]{babel}\n"
+                                            (if (equal compiler "lualatex") "basic" "default"))))
+              (progn
+                (dolist (lang languages)
+                  (setq new-header
+                        (concat new-header
+                                (format "\\babelprovide[%s]{%s}\n"
+                                        (org-latex--babel-provide lang main-lang)
+                                        (org-latex--babel-lang lang)))))
+                (when-let* ((babel-config (plist-get info :latex-babel-font-config)))
+                  (dolist (fntdef babel-config)
+                    (let* ((lang (car fntdef)))
+                      (when (or (null lang)    ;; default language
+                                (and (member lang languages)
+                                     (not (equal lang main-lang))))
+                        (setq new-header
+                              (concat new-header
+                                      (org-latex--mk-babel-font fntdef)))))))
+                (when (plist-get info :latex-fontspec-config)
+                  (setq new-header (concat new-header
+                                           "\\RequirePackage{fontspec}\n"
+                                           (org-latex--fontspec-prelude info))))
+                ;; (setq header (string-replace original-header new-header header))))
+                ;; header)
+                (string-replace original-header new-header header))
+              header)))
+    (org-latex--guess-babel-language-legacy header info))))
 
 (defun org-latex--guess-polyglossia-language-legacy (header info)
   "Set the Polyglossia language according to the LANGUAGE keyword.
