@@ -1852,7 +1852,14 @@ For non-floats, see `org-latex--wrap-label'."
 	      (if short (format "[%s]" (org-export-data short info)) "")
 	      (org-trim label)
 	      (org-export-data main info))))))
+;;;;
+(defun org-latex--needs-math-font (info)
+  "Return t if INFO contains a :latex-fontspec-config with a math font."
 
+  (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
+    (assoc-string "math" fontspec-config)))
+
+;;;
 (defun org-latex-guess-inputenc (header)
   "Set the coding system in inputenc to what the buffer is.
 
@@ -2211,6 +2218,7 @@ If COMPILER is \"xelatex\", omit fallback font detection."
         (compiler (plist-get info :latex-compiler))
         (fontspec-config (plist-get info :latex-fontspec-config))
         (fontspec-defaults (plist-get info :latex-fontspec-defaults))
+        (need-math (org-latex--needs-math-font info))
         (fallback-found)  ;; a list of fallbacks that are really needed
         (fallback-alist)) ;; an alist (font_name . fallback-name)
 
@@ -2263,6 +2271,8 @@ If COMPILER is \"xelatex\", omit fallback font detection."
           (when directlua ;; if we have found any lua fallbacks, close the lua block
             (insert "}\n"))))
       ;; (message "fallbacks: %s" fallback-alist)
+      (when need-math
+        (insert "\\RequirePackage{unicode-math}\n"))
       (dolist (fpair fontspec-config)
         (when-let* ((ffamily (car fpair))
                     (fplist  (cdr fpair))

@@ -746,9 +746,9 @@ OK, so we are in business
   "Test that selecting babel as multi-lang, the fontspec configuration
 is appended to the babel configuration."
   (let ((org-latex-fontspec-config '(("main" :font "FreeSerif"))))
-   (org-test-with-exported-text
-   'latex
-   "#+TITLE: The first sanity check
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
 #+LANGUAGE: en-gb es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
@@ -765,6 +765,9 @@ OK, so we are in business
      (should (search-forward "\\babelprovide[import,main]{british}\n" nil t))
      (should (search-forward "\\babelprovide[import]{spanish}\n" nil t))
      (should (search-forward "\\RequirePackage{fontspec}\n" nil t))
+     (save-excursion
+       ;; math font not defined in org-latex-fontspec-config
+       (should-not (search-forward "\\RequirePackage{unicode-math}" nil t)))
      (should (search-forward "\\setmainfont{FreeSerif}\n" nil t)))))
 
 (ert-deftest test-ox-latex/multi-lang3 ()
@@ -844,6 +847,31 @@ OK, so we are in business
      (should (search-forward "\\usepackage[bidi=basic]{babel}\n" nil t))
      (should (search-forward "\\babelprovide[import,main]{british}\n" nil t))
      (should (search-forward "\\babelprovide[import]{spanish}\n" nil t)))))
+
+(ert-deftest test-ox-latex/multi-lang6 ()
+  "Test the case where user goes for an empty default-packages-alist."
+  (let ((org-latex-fontspec-config '(("main" :font "TeX Gyre Pagella")
+                                     ("math" :font "TeX Gyre Pagella Math"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: The first sanity check
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+OK, so we are in business
+"
+     ;; (message "==> %s" (buffer-string))
+     (goto-char (point-min))
+     (save-excursion
+       (should-not (search-forward "\\usepackage{fontspec}" nil t)))
+     (should (search-forward "\\usepackage[bidi=basic]{babel}\n" nil t))
+     (should (search-forward "\\babelprovide[import,main]{british}\n" nil t))
+     (should (search-forward "\\babelprovide[import]{spanish}\n" nil t))
+     (should (search-forward "\\RequirePackage{fontspec}\n" nil t))
+     (should (search-forward "\\RequirePackage{unicode-math}\n" nil t)))))
 
 (ert-deftest test-ox-latex/polyglossia-standalone-fonts ()
   (let ((org-latex-fontspec-config nil)
