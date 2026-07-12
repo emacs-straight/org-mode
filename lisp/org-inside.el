@@ -238,7 +238,7 @@ Note that this function does not set the `face' property."
   (let ((state (cl-find win org-inside--states :key #'ois/window)))
     (if state             ; a saved state may lack a secondary overlay
         (when (and secondary-p (not (overlayp (ois/ov2 state))))
-          (setf (ois/ov2 state) (org-inside--make-overlay nil win 'secondary)))
+          (setf (ois/ov2 state) (org-inside--make-overlay win nil 'secondary)))
       (setq state (ois/create
                    :ov (org-inside--make-overlay win unhide)
                    :ov2 (and secondary-p
