@@ -116,11 +116,13 @@ innermost, when inside it (v31+ only)."
 
 (defun org-inside--setup-hidden-contents-types ()
   "Setup entity types with hidden contents."
-  (let ((types (and org-hide-emphasis-markers
-                    '(bold code italic verbatim underline strike-through))))
-    (when org-link-descriptive
-      (setq types (cons 'link types)))
-    (setq org-inside--hidden-contents-types types)))
+  (setq org-inside--hidden-contents-types
+        `(,@(and org-hide-emphasis-markers
+                 '(bold code italic verbatim underline strike-through))
+          ,@(and org-link-descriptive '(link))
+          ,@(and org-pretty-entities
+                 org-pretty-entities-include-sub-superscripts
+                 '(subscript superscript)))))
 
 (defun org-inside--elems-at-point ()
   "Return all org-entity with possible hidden contents at point.
@@ -388,16 +390,16 @@ visible portion.  To be set on `org-hidden-text-functions'."
   ;; Emacs 31+ fires cursor-sensor at positions where an inserted
   ;; character would inherit the `cursor-sensor-function' property
   ;; (including rear stickiness).  Prior versions do not respect
-  ;; stickiness.  To get the same functionality, we include the next
-  ;; trailing (marker) char in the "inside" region in earlier
-  ;; versions, but do not inherit the sensor property for characters
-  ;; inserted after it.
-  (when (< emacs-major-version 31)      ;; TODO: use static-if when available
+  ;; stickiness.  To get the same functionality in earlier version, we
+  ;; include the next trailing (marker) char in the "inside" region,
+  ;; but do not inherit the sensor property for characters inserted
+  ;; after it.
+  (when (< emacs-major-version 31) ;; TODO: use static-if when available
     (setq visible-end (min (1+ visible-end) (point-max)))
     (add-text-properties (1- visible-end) visible-end
                          '(rear-nonsticky (cursor-sensor-functions))))
   ;; for proper point adjustment
-  (when (eq type 'emphasis)
+  (when (memq type '(emphasis raise))
     (org-rear-nonsticky-at visible-beg)
     (when (< emacs-major-version 31)
       (org-rear-nonsticky-at visible-end)))
@@ -478,8 +480,10 @@ configure what appearance changes occur."
                   always (memq key '(:cursor :face :unhide))))
     (setq org-inside-mode nil)
     (user-error "`org-inside-appearance' malformed"))
-   ((and (not org-hide-emphasis-markers) (not org-link-descriptive))
-    (message "`org-inside' inactive without hidden emphasis and/or descriptive links"))
+   ((and (not org-hide-emphasis-markers) (not org-link-descriptive)
+         (not (and org-pretty-entities
+                   org-pretty-entities-include-sub-superscripts)))
+    (message "`org-inside' inactive without hidden elements."))
    (org-inside-mode (org-inside--setup))))
 
 ;; Starting in v31, buffer-local change functions are run in

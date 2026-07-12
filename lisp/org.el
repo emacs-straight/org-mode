@@ -5184,6 +5184,7 @@ The following commands are available:
   (org-set-regexps-and-options)
   (add-to-invisibility-spec '(org-link))
   (add-to-invisibility-spec '(org-emphasis))
+  (add-to-invisibility-spec '(org-raise))
   (org-fold-initialize (or (and (stringp org-ellipsis) (not (equal "" org-ellipsis)) org-ellipsis)
                            "..."))
   (make-local-variable 'org-link-descriptive)
@@ -5466,7 +5467,9 @@ Currently supported types (symbols) are:
   `emphasis': emphasized text with hidden markers, with non-nil
               `org-hide-emphasis-markers'.
 
-  `link': bracket links, with non-nil `org-link-descriptive'.")
+  `link': bracket links, with non-nil `org-link-descriptive'.
+
+  `raise': sub/superscripts.")
 
 (defun org-do-emphasis-faces (limit)
   "Run through the buffer and emphasize strings."
@@ -6447,10 +6450,11 @@ and subscripts."
 		org-match-substring-with-braces-regexp)
 	      limit t))
     (let* ((pos (point)) table-p comment-p
-	   (mpos (match-beginning 3))
-	   (emph-p (get-text-property mpos 'org-emphasis))
-	   (link-p (get-text-property mpos 'mouse-face))
-	   (keyw-p (eq 'org-special-keyword (get-text-property mpos 'face))))
+	   (vbeg (match-beginning 3)) (vend (match-end 3))
+	   (emph-p (get-text-property vbeg 'org-emphasis))
+	   (link-p (get-text-property vbeg 'mouse-face))
+	   (keyw-p (eq 'org-special-keyword (get-text-property vbeg 'face)))
+           (props '(invisible org-raise rear-nonsticky (invisible))))
       (goto-char (line-beginning-position))
       (setq table-p (looking-at-p org-table-dataline-regexp)
 	    comment-p (looking-at-p "^[ \t]*#[ +]"))
@@ -6458,21 +6462,19 @@ and subscripts."
       ;; Handle a_b^c
       (when (member (char-after) '(?_ ?^)) (goto-char (1- pos)))
       (unless (or comment-p emph-p link-p keyw-p)
-	(put-text-property (match-beginning 3) (match-end 0)
-			   'display
+	(put-text-property (match-beginning 2) vend 'org-emphasis t)
+        (add-text-properties (match-beginning 2) (match-end 2) props)
+	(when (and (eq (char-after vbeg) ?{)
+		   (eq (char-before vend) ?}))
+	  (add-text-properties vbeg (1+ vbeg) props)
+	  (add-text-properties (1- vend) vend props)
+          (setq vbeg (1+ vbeg) vend (1- vend)))
+	(put-text-property vbeg vend 'display
 			   (if (equal (char-after (match-beginning 2)) ?^)
 			       (nth (if table-p 3 1) org-script-display)
 			     (nth (if table-p 2 0) org-script-display)))
-        (put-text-property (match-beginning 2) (match-end 3)
-                           'org-emphasis t)
-	(add-text-properties (match-beginning 2) (match-end 2)
-			     (list 'invisible t))
-	(when (and (eq (char-after (match-beginning 3)) ?{)
-		   (eq (char-before (match-end 3)) ?}))
-	  (add-text-properties (match-beginning 3) (1+ (match-beginning 3))
-			       (list 'invisible t))
-	  (add-text-properties (1- (match-end 3)) (match-end 3)
-			       (list 'invisible t))))
+        (run-hook-with-args 'org-hidden-text-functions 'raise
+                            (match-beginning 0) (match-end 0) vbeg vend))
       t)))
 
 (defun org-remove-empty-overlays-at (pos)
