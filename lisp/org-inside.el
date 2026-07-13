@@ -25,12 +25,12 @@
 ;;
 ;;; Commentary:
 
-;; In org, entities including emphasized text and links can contain
-;; hidden components (markers, brackets, link URL, etc.).  When the
-;; cursor is adjacent to such hidden text, the point can be ambiguous:
-;; at the same apparent cursor position, point can be either inside or
-;; outside the hidden region.  This can make it hard to edit
-;; precisely.
+;; In org, entities including emphasized text, links, and
+;; super/subscript can contain hidden components (markers, brackets,
+;; link URL, etc.).  When the cursor is adjacent to such hidden text,
+;; the point can be ambiguous: at the same apparent cursor position,
+;; point can be either inside or outside the hidden region.  This can
+;; make it hard to edit precisely.
 ;;
 ;; To alleviate this problem, `org-inside' changes the appearance when
 ;; "inside" such an entity, to make it clear where you are.
