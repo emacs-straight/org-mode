@@ -180,6 +180,11 @@ their font mappings can be handled with ~org-latex-babel-font-config~.
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
 
+*** New custom variable ~org-latex-babel-provide-extra~
+This new variable allows you to pass extra configuration parameters to
+the ~babel~ package when using LuaLaTeX or XeLaTeX. These are passed
+through the ~\babelprovide~ command.
+
 *** New custom variable ~org-latex-fontspec-default-features~ and keyword ~#+LATEX_FONTSPEC_FEATURES:~
 
 When the LaTeX exporter uses the LaTeX =fontspec= package, you can set

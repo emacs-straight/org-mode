@@ -182,6 +182,7 @@
     (:latex-fontspec-config nil nil org-latex-fontspec-config)
     (:latex-fontspec-defaults "LATEX_FONTSPEC_DEFAULTS" nil org-latex-fontspec-default-features)
     (:latex-babel-font-config nil nil org-latex-babel-font-config)
+    (:latex-babel-provide-extra nil nil org-latex-babel-provide-extra)
     (:latex-polyglossia-font-config nil nil org-latex-polyglossia-font-config)
     ;; Redefine regular options.
     (:date "DATE" nil "\\today" parse)))
@@ -1697,6 +1698,24 @@ roman font's appearance."
 		 (alist :tag "babel font configuration"))
   :safe #'listp)
 
+(defcustom org-latex-babel-provide-extra nil
+  "A string to append to the parameters of the \"\\babelprovide[]\" command.
+
+The normal language configuration is:
+
+\\babelprovide[main,import]{main-lang}
+\\babelprovide[import]{lang2}
+...
+
+This variable is appended with a comma to the parameters of \\babelprovide.
+
+A value for this variable, which is often used in babel examples is
+\"onchar={ids fonts}\"."
+  :group 'org-export-latex
+  :package-version '(Org . "10.0")
+  :type '(choice (const :tag "None" nil)
+		 (string :tag "Extra parameters"))
+  :safe #'string-or-null-p)
 ;;;;
 
 (defcustom org-latex-polyglossia-font-config nil
@@ -1965,11 +1984,18 @@ Return potentially translated FAMILY or nil."
   (let ((short-family (cdr (assoc-string family org-latex--family-dict family))))
     (or short-family family)))
 
-(defun org-latex--babel-provide (this-lang main-lang)
-  "Return the babel provide parameters for THIS-LANG.
+(defun org-latex--babel-provide (this-lang info)
+  "Return the babel provide parameters for THIS-LANG and INFO.
 
-MAIN-LANG is the main language in the document."
-  (if (equal this-lang main-lang) "import,main" "import"))
+Extract the main language in the document and additional parameters
+for babelprovide from INFO."
+  (let ((main-lang (plist-get info :language))
+        (provide-extra (plist-get info :latex-babel-provide-extra)))
+    (concat
+     (if (equal this-lang main-lang) "import,main" "import")
+     (and provide-extra ",")
+     provide-extra)))
+
 
 (defun org-latex--mk-babel-font (fntdef) ; make-default)
   "Generate the \\babelfont statement fo FNTDEF."
@@ -2055,7 +2081,7 @@ Include the jp/zh treatment here."
                   (setq new-header
                         (concat new-header
                                 (format "\\babelprovide[%s]{%s}\n"
-                                        (org-latex--babel-provide lang main-lang)
+                                        (org-latex--babel-provide lang info)
                                         (org-latex--babel-lang lang)))))
                 (when-let* ((babel-config (plist-get info :latex-babel-font-config)))
                   (dolist (fntdef babel-config)

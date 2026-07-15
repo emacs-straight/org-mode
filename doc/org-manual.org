@@ -15563,6 +15563,30 @@ information.
   resulting configuration for the ~fontspec~ package will be appended
   to the configuration for the ~babel~ package.
 
+#+vindex: org-latex-babel-provide-extra
+The =babel= package uses the features provided by LuaLaTeX as much as
+possible. Particularly handy is the possibility to automatically
+switch fonts based on the script. For this, you need to add
+~"onchar={ids fonts}"~ to the parameters passed to the ~\babelprovide~
+command.
+
+Org mode allows you to pass extra parameters to ~\babelprovide~ with
+the custom variable ~org-latex-babel-provide-extra~. For example, to
+implement script-based font switching, you need to add
+
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-babel-provide-extra "onchar={ids fonts}")
+#+END_SRC
+in your Emacs configuration, or
+#+BEGIN_SRC emacs-lisp
+(org-latex-babel-provide-extra "onchar={ids fonts}")
+#+END_SRC
+to your directory-local variables
+#+BEGIN_SRC org
+# org-latex-babel-provide-extra: "onchar={ids fonts}"
+#+END_SRC
+to your file-local variables.
+
 *** Controlling font setup for LuaLaTeX and XeLaTeX with =polyglossia=
 #+vindex: org-latex-polyglossia-font-config
 #+cindex: multiple languages, fonts,polyglossia, in @LaTeX{} export

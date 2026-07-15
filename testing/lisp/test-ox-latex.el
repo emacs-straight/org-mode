@@ -915,7 +915,7 @@ Polyglossia managing fonts. Document ready for multi-lang
      ;; Not included in LANGUAGES
      (should-not (search-forward "\\newfontfamily\\germanfon" nil t)))))
 
-  (ert-deftest test-ox-latex/babel-standalone-fonts ()
+(ert-deftest test-ox-latex/babel-standalone-fonts ()
   "Test that babel can manage fonts standalone."
   (let ((org-latex-fontspec-config nil)
         (org-latex-babel-font-config '((nil :variant "main" :font "FreeSerif")
@@ -948,6 +948,41 @@ Babel managing fonts. Document ready for spanish text.
      ;; OpenSans would be for Spanish as secondary language
      (should-not (search-forward "\\babelfont[spanish]{sf}{OpenSans}" nil t)))))
 
+(ert-deftest test-ox-latex/babel-provide-fonts ()
+  "Test that we can add extra parameters to babelprovide."
+  (let ((org-latex-fontspec-config nil)
+        ;; Makes little sense here but helps when different scripts are used.
+        (org-latex-babel-provide-extra "onchar={ids fonts}")
+        (org-latex-babel-font-config '((nil :variant "main" :font "FreeSerif")
+                                       (nil :variant "sans" :font "FreeSans")
+                                       ;; The next one should not appear
+                                       ("es" :variant "sans" :font "OpenSans")
+                                       ("en-gb" :variant "main" :font "DejaVu Serif")
+                                       ("en-gb" :variant "sans" :font "DejaVu Sans"))))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: pure Babel
+#+LANGUAGE: es en-gb
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+* Testing
+
+Babel managing fonts. Document ready for spanish text.
+"
+     ;; (message "babel: %s" (buffer-string))
+     (goto-char (point-min))
+     (should (re-search-forward "\\usepackage\\[bidi=basic]{babel}" nil t))
+     (should (search-forward "\\babelprovide[import,main,onchar={ids fonts}]{spanish}\n" nil t))
+     (should (search-forward "\\babelprovide[import,onchar={ids fonts}]{british}\n" nil t))
+     (should (search-forward "\\babelfont{rm}{FreeSerif}" nil t))
+     (should (search-forward "\\babelfont{sf}{FreeSans}" nil t))
+     (should (search-forward "\\babelfont[british]{rm}{DejaVu Serif}" nil t))
+     (should (search-forward "\\babelfont[british]{sf}{DejaVu Sans}" nil t))
+     (goto-char (point-min))
+     ;; OpenSans would be for Spanish as secondary language
+     (should-not (search-forward "\\babelfont[spanish]{sf}{OpenSans}" nil t)))))
+
 (ert-deftest test-ox-latex/lualatex-babel-cjk ()
   "Test that Chinese text are handled correctly.
 In this test we default to Fandol font for Chinese."
@@ -963,7 +998,7 @@ In this test we default to Fandol font for Chinese."
 
 正文。
 "
-     (message "== zh ==>\n%s" (buffer-string))
+     ;; (message "== zh ==>\n%s" (buffer-string))
      (goto-char (point-min))
      (save-excursion
        (should (search-forward "\\usepackage{indentfirst}")))
