@@ -2616,6 +2616,27 @@ If the square brackets are missing, return STR enclosed in square brackets."
          (replace-regexp-in-string ; remove excess ] at the end
           "]+\\'" "]" str))))))
 
+(defun org-latex--cleanup-info-headers (info prop)
+  "Remove usepackage[AUTO]{MULTI-LANG} in INFO, property PROP and return INFO.
+
+PROP is either :latex-header or :latex-header-extra
+The MULTI-LANG package is either babel or polyglossia."
+  (let ((latex-header  (plist-get info prop))
+        (remove-rx     (regexp-quote (format "\\usepackage[AUTO]{%s}"
+                                             (plist-get info :latex-multi-lang)))))
+    ;; A very last second sanity check for the migration to LATEX_MULTI_LANG
+    ;; when the user adds LATEX_HEADER
+    (save-match-data
+      ;; (message "Before remove:\n%s\n%s\n%s" latex-header
+      ;;          remove-rx
+      ;;          (if latex-header (string-match remove-rx latex-header) "X-("))
+      (if (and latex-header
+               (string-match remove-rx latex-header))
+          (let ((remove-str (match-string 0 latex-header)))
+            (message "INFO: Remove `%s' from your LATEX HEADERs!" remove-str)
+            (plist-put info prop (string-replace remove-str "" latex-header)))
+        info))))
+
 ;;;###autoload
 (defun org-latex-make-preamble (info &optional template snippet?)
   "Return a formatted LaTeX preamble.
@@ -2683,7 +2704,9 @@ specified in `org-latex-default-packages-alist' or
                                                       (plist-get info :latex-default-packages))))
             ;; else set default package list to it.
             (setq info (plist-put info :latex-default-packages
-                                  `(("AUTO" ,multi-lang t))))))))
+                                  `(("AUTO" ,multi-lang t)))))))
+      (setq info (org-latex--cleanup-info-headers info :latex-header))
+      (setq info (org-latex--cleanup-info-headers info :latex-header-extra)))
     (org-latex-guess-polyglossia-language
      (org-latex-guess-babel-language
       (org-latex-guess-fontspec

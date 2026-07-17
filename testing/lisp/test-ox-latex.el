@@ -1016,5 +1016,48 @@ In this test we default to Fandol font for Chinese."
      (should (search-forward "\\babelprovide[main,import]{chinese}")))))
 
 
+(ert-deftest test-ox-latex/remove-AUTO-multi-babel ()
+  "Test that \\usepackage[AUTO]{babel} is removed from LATEX_HEADER."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test stuff
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: es
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: babel
+#+LATEX_HEADER: \\usepackage[AUTO]{babel}
+
+* Incomplete migration to MULTI_LANG
+
+Let's see what happens with the LaTeX header.
+"
+   ;; (message "ZZ -> %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\usepackage[bidi=basic]{babel}" nil t))
+   (should (search-forward "\\babelprovide[import,main]" nil t))
+   ;; should not find it a second time(!)
+   (should-not (search-forward "\\usepackage[bidi=basic]{babel}" nil t))))
+
+(ert-deftest test-ox-latex/remove-AUTO-multi-polyglossia ()
+  "Test that \\usepackage[AUTO]{polyglossia} is removed from LATEX_HEADER_EXTRA."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test stuff
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: es
+#+LATEX_COMPILER: lualatex
+#+LATEX_MULTI_LANG: polyglossia
+#+LATEX_HEADER_EXTRA: \\usepackage[AUTO]{polyglossia}
+
+* Incomplete migration to MULTI_LANG
+
+Let's see what happens with the LaTeX header.
+"
+   ;; (message "ZZ -> %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\usepackage{polyglossia}\n" nil t))
+   ;; should not find it a second time(!)
+   (should-not (search-forward "\\usepackage{polyglossia}" nil t))))
+
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here
