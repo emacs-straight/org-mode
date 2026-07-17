@@ -147,16 +147,13 @@ The innermost elements are first on the list."
      (get-text-property (org-element-begin el) 'invisible))
    (org-inside--elems-at-point)))
 
-(defun org-inside--overlay-modification (ov after-p &rest _r)
+(defun org-inside--overlay-modification (_ov after-p &rest _r)
   "Detect modifications of the entity covered by `org-inside' overlay OV.
 AFTER-P is t if called after the modification occurs.  If the org
-entit(ies) covered by OV no longer exists, we set the appearance for
-outside."
-  (when after-p
-    (save-excursion
-      (goto-char (overlay-start ov))
-      (unless (org-inside--elems-at-point)
-        (org-inside--set-appearance (selected-window))))))
+entit(ies) covered by OV no longer exists at point, we set the
+appearance for outside."
+  (when (and after-p (not (org-inside--hidden-element)))
+    (org-inside--set-appearance)))
 
 (defvar-local org-inside--states nil)
 ;; Note shorthand: ois/ => org-inside-state-
@@ -275,7 +272,7 @@ overlay may be invalid."
 
 (defvar-local org-inside--unhide-timer nil)
 
-(defun org-inside--set-appearance (win &optional beg end beg2 end2)
+(defun org-inside--set-appearance (&optional win beg end beg2 end2)
   "Set appearance and hidden state for hidden-contents entities.
 The region is from BEG to END in window WIN's buffer.  If BEG or END are
 nil, point is considered to be outside the text and the prior
