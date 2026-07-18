@@ -30,10 +30,10 @@
 ;; link URL, etc.).  When the cursor is adjacent to such hidden text,
 ;; the point can be ambiguous: at the same apparent cursor position,
 ;; point can be either inside or outside the hidden region.  This can
-;; make it hard to edit precisely.
+;; make it difficult to edit precisely.
 ;;
 ;; To alleviate this problem, `org-inside' changes the appearance when
-;; "inside" such an entity, to make it clear where you are.
+;; point is "inside" such an entity, to make it clear where you are.
 ;;
 ;; Appearance changes are highly configurable, and can include
 ;; changing the cursor type, text face (e.g. adding a colorful
@@ -42,12 +42,13 @@
 ;; and added to the context-dependent ctrl-c ctrl-c hook; see
 ;; `org-inside-toggle-hidden'.
 ;;
-;; This mode is intended to be used with e.g.
-;; `org-hide-emphasis-markers', and/or `org-highlight-links' (with
-;; `bracket' / `org-descriptive-links') to make editing links and
-;; emphasized text easier.  If your version of Emacs supports it,
-;; nested entities with hidden contents are supported, with face
-;; changes applied to the innermost nested entity.
+;; This mode is intended to be used with setting that enable hidden
+;; components, e.g.  `org-hide-emphasis-markers', and/or
+;; `org-highlight-links' (with `bracket' / `org-descriptive-links') to
+;; make editing links and emphasized text easier.  If your version of
+;; Emacs supports it (v31+), nested entities with hidden contents are
+;; supported, with face changes applied to the innermost nested
+;; entity.
 
 ;;;; For Developers:
 ;;
@@ -419,15 +420,22 @@ VISIBLE-END are the buffer positions of the affected text and its
 visible portion.  To be set on `org-hidden-text-functions'."
   ;; Emacs 31+ fires cursor-sensor at positions where an inserted
   ;; character would inherit the `cursor-sensor-function' property
-  ;; (including rear stickiness).  Prior versions do not respect
-  ;; stickiness.  To get the same functionality in earlier version, we
-  ;; include the next trailing (marker) char in the "inside" region,
-  ;; but do not inherit the sensor property for characters inserted
-  ;; after it.
-  (when (< emacs-major-version 31) ;; TODO: use static-if when available
-    (setq visible-end (min (1+ visible-end) (point-max)))
-    (add-text-properties (1- visible-end) visible-end
-                         '(rear-nonsticky (cursor-sensor-functions))))
+  ;; (including the effects of rear stickiness).  Prior versions do
+  ;; not respect stickiness.  To get the same functionality in earlier
+  ;; versions, we include the next trailing (marker) char in the
+  ;; "inside" region, but do not inherit the sensor property for
+  ;; characters inserted after it.
+  (when (> visible-end (point-min))
+    (if (>= emacs-major-version 31) ;; TODO: use static-if when available
+        ;; rear-nonsticky=t in the char before visible end would prevent
+        ;; v31+ from recognizing the sensor, so we disable that.
+        (when (eq (get-text-property (1- visible-end) 'rear-nonsticky) t)
+          (remove-text-properties (1- visible-end) visible-end
+                                  '(rear-nonsticky t)))
+      (setq visible-end (min (1+ visible-end) (point-max)))
+      (add-text-properties (1- visible-end) visible-end
+                           '(rear-nonsticky (cursor-sensor-functions)))))
+
   ;; for proper point adjustment
   (when (memq type '(emphasis raise))
     (org-rear-nonsticky-at visible-beg)
