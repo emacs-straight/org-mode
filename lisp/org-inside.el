@@ -56,6 +56,15 @@
 ;; slots; see file-local-variables:
 ;;
 ;;    ois/  => org-inside-state-
+;;
+;; On overlay-based invisibility: to hide/unhide components, we make
+;; use of the ability of overlays to override underlying text
+;; properties.  Attaching an invisible=nil overlay property allows the
+;; text properties to shine through like normal, as org intends
+;; (i.e. the invisible components do not appear), while a non-nil
+;; overlay 'invisible property, as long as it is _not_ on the
+;; `buffer-invisibility-spec' list, serves to _reveal_ the hidden
+;; components.
 
 ;;; Code:
 (require 'org)
