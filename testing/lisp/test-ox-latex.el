@@ -1098,6 +1098,35 @@ Let's see what happens with the LaTeX header.
    ;; user-error expected at this point
    (goto-char (point-min)))))
 
+(ert-deftest test-ox-latex/back-in-time-cjk-xelatex ()
+  "Test that we use xeCKJ with xelatex throigh fontspec."
+  (let ((org-latex-fontspec-config '(("main" :font "Noto Sans")
+                                     ("CJKmain" :font "Noto Serif CJK SC")
+                                     ("CJKsans" :font "Noto Sans CJK SC")
+                                     ("CJKmono" :font "Noto Sans Mono CJK SC"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test stuff
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: zh
+#+LATEX_COMPILER: xelatex
+#+LATEX_HEADER: \\urlstyle{same}
+
+* 回到过去。
+
+这是第一个补丁版本里有的！
+
+我们说的是晚了一年多！
+"
+   ;; (message "--> \n%s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\usepackage{fontspec}" nil t))
+   (should (search-forward "\\usepackage{xeCJK}" nil t))
+   (should (search-forward "\\setmainfont{Noto Sans}" nil t))
+   (should (search-forward "\\setCJKmainfont{Noto Serif CJK SC}" nil t))
+   (should (search-forward "\\setCJKsansfont{Noto Sans CJK SC}" nil t))
+   (should (search-forward "\\setCJKmonofont{Noto Sans Mono CJK SC}" nil t)))))
+
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

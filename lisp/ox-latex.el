@@ -1878,6 +1878,15 @@ For non-floats, see `org-latex--wrap-label'."
   (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
     (assoc-string "math" fontspec-config)))
 
+(defun org-latex--needs-xecjk (info)
+  "Return t if INFO contains a :latex-fontspec-config with a CJK font."
+
+  (let ((result nil))
+    (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
+      (dolist (fontdef fontspec-config result)
+        (setq result (or result (string-prefix-p "CJK" (car fontdef))))))
+    result))
+
 ;;;
 (defun org-latex-guess-inputenc (header)
   "Set the coding system in inputenc to what the buffer is.
@@ -2024,7 +2033,7 @@ for babelprovide from INFO."
 (defun org-latex--jp-zh-babel (header info)
   "Return a new header with the prelude for jp or zh with babel and lualatex.
 HEADER is the LaTeX prelude and INFO is the information channel."
-  (message "jp-zh 4 babel:\n%s" header)
+  ;; (message "jp-zh 4 babel:\n%s" header)
   (let* ((replace "")
          (babel-config (plist-get info :latex-babel-font-config))
          (langs (plist-get info :languages))
@@ -2245,6 +2254,7 @@ If COMPILER is \"xelatex\", omit fallback font detection."
         (fontspec-config (plist-get info :latex-fontspec-config))
         (fontspec-defaults (plist-get info :latex-fontspec-defaults))
         (need-math (org-latex--needs-math-font info))
+        (need-cjk  (org-latex--needs-xecjk info))
         (fallback-found)  ;; a list of fallbacks that are really needed
         (fallback-alist)) ;; an alist (font_name . fallback-name)
 
@@ -2299,6 +2309,8 @@ If COMPILER is \"xelatex\", omit fallback font detection."
       ;; (message "fallbacks: %s" fallback-alist)
       (when need-math
         (insert "\\RequirePackage{unicode-math}\n"))
+      (when need-cjk
+        (insert "\\usepackage{xeCJK}\n"))
       (dolist (fpair fontspec-config)
         (when-let* ((ffamily (car fpair))
                     (fplist  (cdr fpair))

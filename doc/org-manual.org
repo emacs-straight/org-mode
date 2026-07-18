@@ -15655,12 +15655,15 @@ manual]].
 - Note 2 :: You don't need to specify the =main= or =rm= variant,
   and if you do, it will be silently suppressed in the font definition.
 
-*** Using LuaLaTeX and =babel= for CJK documents
+*** Using =babel= for CJK documents with LuaLaTeX or XeLaTeX
 
 You can typeset CJK[fn::Currently Chinese and Japanese documents
-are supported.] using ~#+LATEX_MULTI_LANG: babel~ with LuaLaTeX. For
-example, the following header will typeset a document in Chinese[fn::
-use ~jp~ as the main language for Japanese documents.]:
+are supported.] using ~#+LATEX_MULTI_LANG: babel~ with LuaLaTeX or
+XeLaTeX.
+
+**** Creating CJK documents with ~lualatex~
+For example, the following header will typeset a document in
+Chinese[fn:: Use ~jp~ as the main language for Japanese documents.]:
 
 #+BEGIN_SRC org
 ,#+LATEX_COMPILER: lualatex
@@ -15680,20 +15683,50 @@ handled with ~org-latex-babel-font-config~. For example:
 
 needs a font mapping for the text in English; for example, by adding:
 
-#+BEGIN_SRC org
-,# org-latex-babel-font-config: (
-,#   ("en" :variant "rm" :font "Free Serif" :props "Scale=MatchLowercase")
-,#   ("en" :variant "sf" :font "FreeSans"))
-#+END_SRC
+#+BEGIN_EXAMPLE
+# org-latex-babel-font-config: (
+#   ("en" :variant "rm" :font "Free Serif" :props "Scale=MatchLowercase")
+#   ("en" :variant "sf" :font "FreeSans"))
+#+END_EXAMPLE
 
 to the file-local variables. Depending on the nature of the document,
 you may need to redefine the mono-spaced font by adding, for example:
 
 #+BEGIN_SRC org
-;#+LATEX_HEADER_EXTRA: \renewfontfamily\ttfamily{DejaVu Sans Mono}[Scale=MatchLowercase]
+,#+LATEX_HEADER_EXTRA: \renewfontfamily\ttfamily{DejaVu Sans Mono}%
+,#+LATEX_HEADER_EXTRA: [Scale=MatchLowercase]
 #+END_SRC
 
 to the document header.
+
+**** Creating CJK documents with ~xelatex~
+
+Alternatively, you can also create CJK documents with ~xelatex~. In
+this case, you will be able to control the fonts you use with
+[[*Controlling font setup for LuaLaTeX and XeLaTeX with =fontspec=][a
+regular =fontspec= configuration]], adding =CJK...= fonts to the
+configuration.  For example, using the following settings in your Org
+document header:
+
+#+BEGIN_SRC org
+,#+LANGUAGE: zh
+,#+LATEX_COMPILER: xelatex
+,#+LATEX_MULTI_LANG: babel
+,#+LATEX_HEADER: \urlstyle{same}
+#+END_SRC
+
+and adding the following to your file-local variables in the Org file:
+
+#+BEGIN_EXAMPLE
+# org-latex-fontspec-config: (("main" :font "Noto Sans")
+#   ("CJKmain" :font "Noto Serif CJK SC")
+#   ("CJKsans" :font "Noto Sans CJK SC")
+#   ("CJKmono" :font "Noto Sans Mono CJK SC"))
+#+END_EXAMPLE
+
+you should be able to use =xelatex= to generate CJK[fn::Select fonts
+that match your language! For example, the fonts in the =Noto= family
+for Japanese are the =...CJK JP= specimens.] documents too.
 
 ** Markdown Export
 :PROPERTIES:
