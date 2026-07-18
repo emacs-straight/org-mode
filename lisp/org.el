@@ -5452,7 +5452,6 @@ stacked delimiters is N.  Escaping delimiters is not possible."
 (defsubst org-rear-nonsticky-at (pos)
   (add-text-properties (1- pos) pos (list 'rear-nonsticky org-nonsticky-props)))
 
-;;* 
 (defvar org-hidden-text-functions nil
   "Abnormal hook called when hiding certain text during fontification.
 
