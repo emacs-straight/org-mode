@@ -1053,11 +1053,51 @@ Let's see what happens with the LaTeX header.
 
 Let's see what happens with the LaTeX header.
 "
-   ;; (message "ZZ -> %s" (buffer-string))
+   ;; (message "polyglossia -> %s" (buffer-string))
    (goto-char (point-min))
    (should (search-forward "\\usepackage{polyglossia}\n" nil t))
    ;; should not find it a second time(!)
    (should-not (search-forward "\\usepackage{polyglossia}" nil t))))
+
+(ert-deftest test-ox-latex/no-multilang-pdflatex ()
+  "Test that an pdflatex triggers an error for LATEX_MULTI_LANG."
+  :expected-result :failed
+  (let ((org-latex-packages-alist '(("AUTO" "babel"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test stuff
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: es
+#+LATEX_COMPILER: pdflatex
+#+LATEX_MULTI_LANG: babel
+# +LATEX_HEADER: \\usepackage[AUTO]{babel}
+
+* Incomplete migration to MULTI_LANG
+
+Let's see what happens with the LaTeX header.
+"
+   ;; user-error expected at this point
+   (goto-char (point-min)))))
+
+(ert-deftest test-ox-latex/redundant-autobabel-pdflatex ()
+  "Test that the redundancy test also works for pdflatex."
+  :expected-result :failed
+  (let ((org-latex-packages-alist '(("AUTO" "babel"))))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: Test stuff
+#+OPTIONS: toc:nil H:3 num:nil
+#+LANGUAGE: es
+#+LATEX_COMPILER: pdflatex
+#+LATEX_HEADER: \\usepackage[AUTO]{babel}
+
+* Lazy user, help him!
+
+Let's see what happens with the LaTeX header.
+"
+   ;; user-error expected at this point
+   (goto-char (point-min)))))
+
 
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

@@ -14358,83 +14358,31 @@ general options (see [[*Export Settings]]).
 - =LATEX_MULTI_LANG= ::
 
   #+cindex: @samp{LATEX_MULTI_LANG}, keyword
+  #+vindex: org-latex-multi-lang
   Define the LaTeX package to use to control locale-dependent features
-  like dates, headings in documents, etc. Possible values are:
+  like dates, headings in documents, etc.
 
-  - ~nil~: disable this feature
-  - ~"polyglossia"~: Use the Polyglossia package. *Note* that
-    ~polyglossia~ will not work with PDFLaTeX. An error will be shown
-    before the compilation is attempted.
-  - ~"babel"~: Use the Babel package. This package works with all
-    LaTeX compilers.
+  Possible values for ~org-latex-multi-lang~ are:
 
-  In order to control locales effectively, according to the LaTeX
-  compiler used, the =babel= or =polyglossia= packages must be loaded
-  with the appropriate language as argument.  This can be accomplished
-  by several means:
-  1. The *preferred* way to indicate locales for =lualatex= and
-     =xelatex= is to set the package of choice in the
-     =#+LATEX_MULTI_LANG= keyword and one or more locales in
-     =#+LANGUAGE= using Org language codes. For example:
-     #+BEGIN_SRC org
+  - ~nil~: Disabled (default value).
+  - ~"polyglossia"~: Use the Polyglossia package.
+  - ~"babel"~: Use the Babel package.
+
+  Set the package of choice with the =#+LATEX_MULTI_LANG= keyword and
+  one or more locales in =#+LANGUAGE= using Org language codes.  For
+  example:
+  #+BEGIN_SRC org
 ,#+LATEX_COMPILER: lualatex
 ,#+LATEX_MULTI_LANG: babel
 ,#+LANGUAGE: en-gb de
-     #+END_SRC
-     generates a LaTeX document targeting the ~lualatex~ compiler and
-     using the ~babel~ package to manage locales; the document
-     includes passages in German, and British English is the main
-     locale.
-  2. By adding the following code in a ~#+LATEX_HEADER:~ or
-     ~#+LATEX_HEADER_EXTRA:~ line:
-     #+begin_src org
-,#+LATEX_HEADER: \usepackage[AUTO]{babel}
-     #+end_src
-     or
-     #+begin_src org
-,#+LATEX_HEADER: \usepackage[AUTO]{polyglossia}
-     #+end_src
-  3. By modifying the ~org-latex-packages-alist~ variable, e.g., with
-     either of the following snippets (note that =polyglossia= does
-     not work with pdfLaTeX):
-     #+begin_src emacs-lisp
-(add-to-list 'org-latex-packages-alist
-             '("AUTO" "babel" t))
-    #+end_src
-    or
-    #+begin_src emacs-lisp
-(add-to-list 'org-latex-packages-alist
-             '("AUTO" "polyglossia" t ("xelatex" "lualatex")))
-  #+end_src
-
-  The =AUTO= option will be replaced with the list of languages
-  declared in the ~#+LANGUAGE:~ keyword for ~babel~ or used to
-  generate the language list for ~polyglossia~.  In either case,
-  ~org-export-default-language~ will be used if you don't use the
-  ~#+LANGUAGE:~ keyword.
-
-  If you use ~babel~ and specify more than one language in the
-  ~#+LANGUAGE~ keyword, the list will be inverted before replacing
-  ~AUTO~ to comply with the rule that babel takes the last language in
-  the list of languages as the main language.
-
-  Remember that adding languages to ~AUTO~ as in:
-  #+BEGIN_SRC  emacs-lisp
-(add-to-list 'org-latex-packages-alist
-             '("fr,AUTO" "babel"))
   #+END_SRC
-  is no longer the preferred way of configuring languages and should
-  be considered *deprecated*.
+  generates a LaTeX document targeting the ~lualatex~ compiler and
+  using the ~babel~ package to manage locales; the document includes
+  passages in German, and British English is the main locale.
 
-  Using ~LATEX_MULTI_LANG~ and a language or language list in
-  ~LANGUAGES~ will reflect transparently in the generated LaTeX
-  preamble.
-
-  # ~babel~ and ~polyglossia~ also allow you to control fonts on
-  # a language basis. Refer to [*** Font control with ~babel~] and
-  # [*** Font control with ~polyglossia~] for further information.
-
-  # Note on zh,jp + babel too.
+  *Note* that setting ~org-latex-multi-lang~ or using the
+  ~#+LATEX_MULTI_LANG~ keyword will not work with PDFLaTeX.  An error
+  will be shown before the compilation is attempted.
 
 - =LATEX_HEADER=, =LATEX_HEADER_EXTRA= ::
 
@@ -14518,7 +14466,14 @@ levels into LaTeX headlines.  The remaining Org levels are exported as
 lists.  To change this globally for the cut-off point between levels
 and lists, (see [[*Export Settings]]).
 
-By default, the LaTeX export backend uses the /article/ class.
+#+vindex: org-latex-compiler
+#+cindex: @samp{LATEX_COMPILER}, keyword
+You define the LaTeX compiler you want to use with custom variable
+~org-latex-compiler~ or with keyword ~#+LATEX_COMPILER~.
+
+The appearance of a compiled LaTeX document controlled by templates
+known as LaTeX classes.  By default, the LaTeX export backend uses the
+/article/ class.
 
 #+vindex: org-latex-default-class
 #+vindex: org-latex-classes
@@ -14563,6 +14518,7 @@ when previewing LaTeX snippets (see [[*Previewing LaTeX fragments]]).
 A sample Org file with the above headers:
 
 #+begin_example
+,#+LATEX_COMPILER: pdflatex
 ,#+LATEX_CLASS: article
 ,#+LATEX_CLASS_OPTIONS: [a4paper]
 ,#+LATEX_HEADER: \usepackage{xyz}
@@ -14607,55 +14563,39 @@ include it in the document options with:
 #+OPTIONS: latex-use-sans:t
 #+end_example
 
-# FIXME: change this to fit the LATEX_MULTI_LANG.
 #+cindex: @samp{LANGUAGE}, keyword
 #+vindex: org-export-default-language
 LaTeX packages =babel= or =polyglossia= can also be loaded in a
-document.  The "AUTO" string will be replaced in both cases by the
-appropriate value for the =LANGUAGE= keyword, if present in the
-document, or by the value of ~org-export-default-language~.  Let's see
-some examples in one or another case.
+document to control locale-specific features line dates, hyphenation,
+specific section titles, etc.  See [[*Controlling locales and languages in LaTeX export with =babel= or =polyglossia=.]] for a
+detailed description.
 
-=Babel= accepts the classic syntax and (in addition) the new syntax
-with the =\babelprovide= command to load the languages using the new
-=INI= files procedure.  Keep in mind that there are a number of
-languages that are only served in babel using =INI= files, so they
-cannot be declared using the classic syntax, but only using the
-=\babelprovide= command (see
-https://mirrors.ctan.org/macros/latex/required/babel/base/babel.pdf).
-Valid usage examples could be:
+You can use custom variable ~org-export-default-language~ to set the
+default locale used when exporting to PDF using LaTeX.  Alternatively
+you can use keyword ~#+LANGUAGE:~, which accepts a language list
+(using Org language codes).  The first language in this list will
+define the main locale for the document.
 
-#+begin_example
-,#+LATEX_HEADER: \usepackage[french,italian,AUTO]{babel}
-#+end_example
-
-where "AUTO" is the main language.  But it can also be loaded using
-the =\babelprovide= command:
+When using LuaLaTeX or XeLaTeX as you LaTeX compiler, you can use the
+keyword ~#+LATEX_MULTI_LANG~ to control locale-related configuration
+more easily, as described in [[*Controlling locales and languages in
+LaTeX export with =babel= or =polyglossia=.]] in more detail.  The
+example shown above, using LuaLaTeX as the compiler, with British
+English as the locale and using the Babel package to implement it
+would look like:
 
 #+begin_example
-,#+LATEX_HEADER: \usepackage[french,italian]{babel}
-,#+LATEX_HEADER: \babelprovide[import, main]{AUTO}
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_MULTI_LANG: babel
+,#+LANGUAGE: en-gb
+,#+LATEX_CLASS: article
+,#+LATEX_CLASS_OPTIONS: [a4paper]
+
+,* Headline 1
+  some text
+,* Headline 2
+  some more text
 #+end_example
-
-=Polyglossia=, for this procedure to be effective, must be loaded
-using the same =babel= classic syntax (but note that /this is not/
-the actual polyglossia syntax).  For example, suppose a document
-declares Polytonic Greek as the primary language, and French as the
-secondary language.  In this case, it would be expressed as:
-
-#+begin_example
-,#+LANGUAGE: el-polyton
-,#+LATEX_HEADER: \usepackage[french,AUTO]{polyglossia}
-#+end_example
-
-This would produce in LaTeX (with the actual =polyglossia= syntax):
-
-#+begin_example
-\usepackage{polyglossia}
-\setmainlanguage[variant=polytonic]{greek}
-\setotherlanguage{french}
-#+end_example
-
 
 
 *** Quoting LaTeX code
@@ -15290,25 +15230,82 @@ contents, unless you set the =UNNUMBERED= property to =notoc=:
 #+end_example
 
 *** Controlling locales and languages in LaTeX export with =babel= or =polyglossia=.
+    :PROPERTIES:
+    :CUSTOM_ID: locale-configuration
+    :END:
+
 #+cindex: languages, switching, in @LaTeX{} export
+Org will handle locales through well-known LaTeX packages when
+exporting to PDF (or LaTeX).
+**** Locale handling with ~#+LATEX_MULTI_LANG~
 
 The *preferred* way to control locale-dependent typesetting features,
-including heading, section names and numbering, dates, etc. is using
-the =#+LATEX_MULTI_LANG:= [fn:: or the ~org-latex-multi-lang~ custom
-variable] and =#+LANGUAGE:= keywords.  For example,
+including heading, section names and numbering, dates, etc. when you
+use LuaLaTeX or XeLaTeX is to use the =#+LATEX_MULTI_LANG:= [fn:: or
+the ~org-latex-multi-lang~ custom variable] and =#+LANGUAGE:=
+keywords.  For example,
 
 #+BEGIN_SRC org
+,#+LATEX_COMPILER: lualatex
 ,#+LATEX_MULTI_LANG: babel
 ,#+LANGUAGE: en-gb es
 #+END_SRC
 
-would create a document where the main locale is British English. This
+will create a document where the main locale is British English. This
 document will also have passages with need to be typeset according to
 the Spanish locale conventions.
 
-When you use either =babel= or =polyglossia= through the
-=#+LATEX_MULTI_LANG:= keyword, you have an additional keyword at your
-disposal to switch between languages inside your document.
+**** Legacy locale handling
+
+If you don't use ~#+LATEX_MULTI_LANG~, you have following alternatives
+to handle language-related features:
+
+1. You can directly insert the LaTeX code in your LaTeX header
+   #+begin_src org
+,#+LATEX_HEADER: \usepackage[AUTO]{babel}
+   #+end_src
+   or
+   #+begin_src org
+,#+LATEX_HEADER: \usepackage[AUTO]{polyglossia}
+   #+end_src
+
+2. You can modify the ~org-latex-packages-alist~ variable, e.g., with
+   either of the following snippets:
+   #+begin_src emacs-lisp
+(add-to-list 'org-latex-packages-alist
+             '("AUTO" "babel" t))
+   #+end_src
+   or
+   #+begin_src emacs-lisp
+(add-to-list 'org-latex-packages-alist
+             '("AUTO" "polyglossia" t ("xelatex" "lualatex")))
+   #+end_src
+   *Note* that =polyglossia= does not work with pdfLaTeX, regardless
+   of the configuration method you use. Hence the compiler check.
+
+When enabling The =AUTO= option will be replaced with the list of
+languages declared in the ~#+LANGUAGE:~ keyword for ~babel~ or used to
+generate the language list for ~polyglossia~.  In either case,
+~org-export-default-language~ will be used if you don't use the
+~#+LANGUAGE:~ keyword.
+
+If you use ~babel~ and specify more than one language in the
+~#+LANGUAGE~ keyword, the list will be inverted before replacing
+~AUTO~ to comply with the rule that babel takes the last language in
+the list of languages as the main language.
+
+Remember that adding languages to ~AUTO~ as in:
+#+BEGIN_SRC  emacs-lisp
+(add-to-list 'org-latex-packages-alist
+             '("fr,AUTO" "babel"))
+  #+END_SRC
+is no longer the preferred way of configuring languages and should
+be considered *deprecated*.
+
+**** Switching languages
+
+To switch between languages inside your document, you can use the
+~#+SELECT_LANG:~ keyword.
 
 #+begin_src org
 ,#+SELECT_LANG: <lang>
@@ -15352,7 +15349,6 @@ enclosed in a ~\begin{<language>}~ / ~\end{<language>}~ pair.  In this
 case, however, you will not be able to use Org language names and will
 need to know the language name used in the multi-language support
 package of your choice.
-
 
 *** Controlling font setup for LuaLaTeX and XeLaTeX with =fontspec=
 :PROPERTIES:

@@ -2399,7 +2399,7 @@ and throws different errors if a misconfiguration is detected."
     ;;  headers: \\usepackage[AUTO]{babel}
     (when (or (and polyglossia-in-headers (member "polyglossia" locale-packages))
               (and babel-in-headers (member "babel" locale-packages)))
-      (error "Configure locale handling either in packages (preferred) or headers!"))))
+      (user-error "Configure locale handling either in packages (preferred) or headers!"))))
 
 (defun org-latex--can-replace-fontspec (info)
   "Return non-nil if we can replace fontspec in either package list."
@@ -2650,7 +2650,7 @@ specified in `org-latex-default-packages-alist' or
   (org-latex--check-locale-config info) ;; before we start, make a sanity check.
   (let* ((class (plist-get info :latex-class))
          (multi-lang (plist-get info :latex-multi-lang))
-         ;; (compiler (plist-get info :latex-compiler))
+         (compiler (plist-get info :latex-compiler))
          (doc-metadata (plist-get info :latex-doc-metadata))
 	 (class-template
 	  (or template
@@ -2677,6 +2677,8 @@ specified in `org-latex-default-packages-alist' or
       (warn "Setting LATEX-MULTI_LANG to `t' instead of \"fontspec\".")
       (setq multi-lang t))
     (when multi-lang
+      (when (equal compiler "pdflatex")
+        (user-error "#+LATEX_MULTI_LANG can't be activated for %s" compiler))
       ;; If we need to replace, replace
       (if (org-latex--can-replace-fontspec info)
           (progn
