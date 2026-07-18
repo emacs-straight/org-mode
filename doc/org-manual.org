@@ -21392,8 +21392,8 @@ can include face (e.g. a subtle background color), cursor type
 Hidden text can be unhidden on demand using {{{kbd(C-c C-c)}}} key
 (see [[*The Very Busy {{{kbd(C-c C-c)}}} Key]]) on an entity with
 hidden contents, and/or automatically upon entry, with an optional
-delay.  ~org-inside~ supports nested entities, applying face appearance
-changes to the innermost element.
+delay.  ~org-inside~ supports nested entities, applying face
+appearance changes to the innermost element.
 
 Note that certain features require Emacs v31 or later.
 ** Code Evaluation and Security Issues
