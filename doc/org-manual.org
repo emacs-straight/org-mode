@@ -13200,6 +13200,11 @@ and will be ignored.
   Arbitrary lines inserted in the preamble, just before the =hyperref=
   settings.
 
+  - Note :: Do not use locale-handling packages like =babel= or
+    =polyglossia= here. Org will warn you and comment them out. Use
+    the locale handling features provided by the [[*LaTeX
+    Export][LaTeX exporter]] directly.
+
 - =DESCRIPTION= ::
 
   #+cindex: @samp{DESCRIPTION}, keyword

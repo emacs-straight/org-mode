@@ -966,9 +966,15 @@ holding export options."
      (when (org-string-nw-p subtitle)
        (concat (format (plist-get info :beamer-subtitle-format) subtitle) "\n"))
      ;; Beamer-header
-     (let ((beamer-header (plist-get info :beamer-header)))
-       (when beamer-header
-	 (format "%s\n" (plist-get info :beamer-header))))
+     (when-let* ((beamer-header (plist-get info :beamer-header)))
+       (save-match-data
+         (when (string-match "\\\\usepackage\\(\\[.+]\\)?{\\(babel\\|polyglossia\\)}[\n]?" beamer-header)
+           (let ((call-str (match-string 0 beamer-header)))
+             (setq beamer-header (string-replace call-str
+                                                 (concat "%% " call-str)
+                                                 beamer-header))
+             (warn "Commenting out locale handling from #+BEAMER_HEADER !"))))
+       (concat beamer-header "\n"))
      ;; 9. Hyperref options.
      (let ((template (plist-get info :latex-hyperref-template)))
        (and (stringp template)

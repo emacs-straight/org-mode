@@ -309,5 +309,32 @@ print(\"Hello, beamer!\", file=sys.stderr)
      (should (search-forward "\\usetheme{Boadilla}" nil t))
      (should (search-forward "\\useinnertheme{circles}" nil t)))))
 
+(ert-deftest test-ox-beamer/beamer-header-warn ()
+  "Test that babel in BEAMER_HEADER generates a warning."
+  (org-test-with-exported-text
+   'beamer
+   "#+STARTUP: beamer
+#+OPTIONS: toc:nil H:2 title:t
+#+LATEX_CLASS_OPTIONS: presentation,11pt,t
+#+TITLE: Testing locales in =BEAMER_HEADER=
+#+BEAMER_THEME: Boadilla
+#+BEAMER_INNER_THEME: circles
+#+BEAMER_HEADER: \\usepackage[spanish]{babel}
+#+BEAMER_HEADER: \\usepackage{tabularx}
+* A section
+** A frame
+- First
+- Second
+- Third
+"
+   (message "--> \n%s" (buffer-string))
+   (goto-char (point-min))
+   (save-excursion
+     (should (search-forward "\\documentclass[presentation,11pt,t]{beamer}" nil t))
+     (should (search-forward "\\usetheme{Boadilla}" nil t))
+     (should (search-forward "\\useinnertheme{circles}" nil t))
+     (should (search-forward "%% \\usepackage[spanish]{babel}" nil t))
+     (should (search-forward "\\usepackage{tabularx}" nil t)))))
+
 (provide 'test-ox-beamer)
 ;;; test-ox-beamer.el ends here
