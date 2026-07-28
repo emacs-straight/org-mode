@@ -13106,11 +13106,20 @@ It's just a jump to the left...
 Org uses Beamer export to convert an Org file tree structure into
 high-quality interactive slides for presentations.  Beamer is a LaTeX
 document class for creating presentations in PDF, HTML, and other
-popular display formats.
+popular display formats. In addition to the =beamer= class, the
+exporter can also handle documents using the =ltx-talk= class to
+produce accessible presentations that can be handled, for example, by
+screen readers for people with visual impairments. [fn:: The
+=ltx-talk= needs a recent *LuaLaTeX* compiler.] Section [[*An example
+of a presentation using =ltx-talk=]] discusses the main differences
+between both classes.
 
 We strongly recommend familiarizing yourself with Beamer terminology
 before reading the rest of this chapter.  See
 <https://en.wikipedia.org/wiki/Beamer_(LaTeX)> and references therein.
+If you plan to use =ltx-talk=, consult the
+[[https://mirrors.ctan.org//macros/latex/contrib/ltx-talk.tds.zip/ltx-talk.pdf][=ltx-talk=
+documentation]].
 
 Read sections [[*Different languages and character sets in LaTeX
 export]] and [[*Font configuration for LuaLaTeX and XeLaTeX]] to
@@ -13161,6 +13170,15 @@ options settings (see [[*Export Settings]]).
 theme settings are inserted at the beginning of the preamble, right
 after the document class declaration.
 
+#+texinfo: @noindent
+*Note 1:* Theme-related =BEAMER_...= keywords do not apply to =ltx-talk=
+and will be ignored.
+
+#+texinfo: @noindent
+*Note 2:* Theme-related =BEAMER_...= keywords will be ignored if
+you set the Beamer theme in the definition of the =beamer= class
+in ~org-latex-classes~ or using ~#+LATEX_HEADER~.
+
 - =BEAMER_THEME= ::
 
   #+cindex: @samp{BEAMER_THEME}, keyword
@@ -13189,8 +13207,10 @@ after the document class declaration.
 - =BEAMER_THEME_PRE= ::
 
   #+cindex: @samp{BEAMER_THEME_PRE}, keyword
-  Arbitrary lines inserted in the preamble, just before the Beamer
-  theme is defined.
+  Arbitrary lines that must appear immediately before the Beamer theme
+  declaration:
+
+  : #+BEAMER_THEME_PRE: \usepackage[total={16cm,9cm}]{geometry}
 
 - =BEAMER_HEADER= ::
 
@@ -13224,6 +13244,16 @@ after the document class declaration.
   ~org-latex-hyperref-template~ to configure document metadata.  Use
   ~org-latex-title-command~ to configure typesetting of subtitle as
   part of front matter.
+
+- =LATEX_CLASS= ::
+
+  #+cindex: @samp{LATEX_CLASS}, keyword
+  The LaTeX class to use. Implicitly set to =beamer=. Set it
+  explicitly to =ltx-talk= to use this class instead:
+
+  #+BEGIN_SRC org
+,#+LATEX_CLASS: ltx-talk
+  #+END_SRC
 
 *** Frames and Blocks in Beamer
 :PROPERTIES:
@@ -13298,6 +13328,7 @@ should in principle be exportable as a Beamer presentation.
   export automatically handles LaTeX column separations for contiguous
   headlines.  To manually adjust them for any unique configurations
   needs, use the =BEAMER_ENV= property.
+
 
 *** Beamer specific syntax
 :PROPERTIES:
@@ -13422,6 +13453,68 @@ Here is an example of an Org document ready for Beamer export.
     Please test this stuff!
 #+end_example
 
+*** An example of a presentation using =ltx-talk=
+
+=ltx-talk= is an alternative to the =beamer= class. It depends on
+LuaLaTeX and produces tagged PDF files with enhanced accessibility
+features for screen readers and similar applications. The Beamer
+exporter can produce presentations for this class, too. The following
+is the version of the Beamer example above adapted to ~ltx-talk:~
+
+#+BEGIN_SRC org
+,#+STARTUP: beamer
+,#+OPTIONS: toc:nil H:2 title:t
+,#+LATEX_COMPILER: lualatex
+,#+LATEX_CLASS: ltx-talk
+,#+LATEX_DOC_METADATA: tagging=on
+
+,#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
+,* This is the first structural section
+
+,** Frame 1
+,*** Thanks to Eric Fraga                                           :B_block:
+    :PROPERTIES:
+    :BEAMER_COL: 0.48
+    :BEAMER_ENV: block
+    :END:
+    for the first viable Beamer setup in Org, which also works for =ltx-talk=
+,*** Thanks to everyone else                                        :B_block:
+    :PROPERTIES:
+    :BEAMER_COL: 0.48
+    :BEAMER_ACT: <2->
+    :BEAMER_ENV: block
+    :END:
+    for contributing to the discussion.
+
+,** Frame 2 (where we will not use columns)
+,*** Request
+
+1. Please read the notes, because not all Beamer environments are supported.
+2. Please test this stuff!
+
+#+END_SRC
+
+**** Differences between Beamer and =ltx-talk=
+     :PROPERTIES:
+     :UNNUMBERED: notoc
+     :END:
+
+1. You need to add document metadata to your document. ~tagging=on~ is
+   the minimum to produce a usable presentation.
+2. ~#+BEAMER_..._THEME~ keywords will be silently ignored.
+3. Beamer environments not supported in =ltx-talk= are:
+
+   | Beamer environment | Support | Comment         |
+   |--------------------+---------+-----------------|
+   | =alertblock=       | Partial | Only =alertenv= |
+   | =theorem=          | No      |                 |
+   | =definition=       | No      |                 |
+   | =proof=            | No      |                 |
+   | =beamercolorbox=   | No      |                 |
+   | =exampleblock=     | No      |                 |
+   | =note=             | No      |                 |
+   |--------------------+---------+-----------------|
+
 ** HTML Export
 :PROPERTIES:
 :DESCRIPTION: Exporting to HTML.
@@ -13494,6 +13587,13 @@ settings described in [[*Export Settings]].
   #+cindex: @samp{HTML_LINK_UP}, keyword
   #+vindex: org-html-link-up
   The URL for the up link of exported HTML pages (~org-html-link-up~).
+
+- =HTML_BASE_DIRECTORY= ::
+
+  #+cindex: @samp{HTML_BASE_DIRECTORY}, keyword
+  #+vindex: org-html-base-directory
+  The directory of the project that you intend to
+  export (~org-html-base-directory~).
 
 - =HTML_MATHJAX= ::
 
@@ -13751,8 +13851,29 @@ location, then the converted links should work without any further
 manual intervention.  However, to disable this automatic path
 translation, set ~org-html-link-org-files-as-html~ to ~nil~.  When
 disabled, the HTML export backend substitutes the ID-based links in
-the HTML output.  For more about linking files when publishing to
-a directory, see [[*Publishing links]].
+the HTML output.
+
+#+vindex: org-html-base-directory
+~org-html-base-directory~ can be used to set the directory of
+the project that you intend to export. When used in conjunction
+with ~org-html-link-home~ and ~org-html-link-use-abs-url~, file
+links to files in ~org-html-base-directory~ will have the value
+of ~org-html-link-home~ prepended to them.  For example, when
+~org-html-base-directory~ is set to =~/my/project=, ~org-html-link-home~
+is set to =https://orgmode.org= and ~org-html-link-use-abs-url~ is set to ~t~,
+~[[~/my/project/contribute][Contributing to Org]]~ will be exported as
+
+#+begin_example
+<a href="https://orgmode.org/contribute">Contributing to Org</a>
+#+end_example
+
+When ~:base-directory~ and ~org-html-base-directory~ are both set,
+~:base-directory~ takes precedence, i.e., the value of
+~org-html-base-directory~ will be ignored.
+
+~org-html-base-directory~ is the equivalent of the ~:base-directory~
+key of ~org-publish-project-alist~. For more about linking files when
+publishing to a directory, see [[*Publishing links]].
 
 Org files can also have special directives to the HTML export
 backend.  For example, by using =#+ATTR_HTML= lines to specify new
@@ -14311,6 +14432,15 @@ general options (see [[*Export Settings]]).
 
   #+cindex: @samp{LATEX_CLASS_PRE}, keyword
   Arbitrary lines to prepend before the LaTeX preamble.
+
+- =LATEX_DOC_METADATA= ::
+
+  #+cindex: @samp{LATEX_DOC_METADATA}, keyword
+  #+vindex: org-latex-doc-metadata
+  Arbitrary lines with document metadata. When you set
+  ~org-latex-doc-metadata~ or you use ~#+LATEX_DOC_METADATA~, the
+  value will be inserted as =\DocumentMetadata{<value>}=
+  at the beginning of the LaTeX preamble.
 
 - =KEYWORDS= ::
 
@@ -14885,12 +15015,14 @@ variables.
 #+cindex: verbatim blocks, in @LaTeX{} export
 #+cindex: @samp{ATTR_LATEX}, keyword
 #+vindex: org-latex-default-example-environment
+#+vindex: org-latex-default-example-options
 
 The LaTeX export backend wraps the contents of example blocks in a
 =verbatim= environment. To control the environment used globally, you
-can change the value of custom variable
-~org-latex-default-example-environment~, or specify an appropriate
-export filter (see [[*Advanced Export Configuration]]).
+can change the value of custom variables
+~org-latex-default-example-environment~ and
+~org-latex-default-example-options~, or specify an appropriate export
+filter (see [[*Advanced Export Configuration]]).
 
 To use a different environment for specific example blocks, use the
 =:environment= parameter:
@@ -14902,7 +15034,8 @@ To use a different environment for specific example blocks, use the
 ,#+END_EXAMPLE
 #+end_example
 
-To pass options to the environment, use the ~:options~ parameter:
+To pass options to the environment, use the ~:options~
+parameter[fn::Square brackets around the options are optional.]:
 
 #+begin_example
 ,#+ATTR_LATEX: :environment Verbatim :options [fontsize=\footnotesize]
@@ -14911,8 +15044,16 @@ To pass options to the environment, use the ~:options~ parameter:
 ,#+END_EXAMPLE
 #+end_example
 
+To use these settings as your default settings, you can add the
+following to your Emacs configuration:
+
+#+begin_src emacs-lisp
+(setq-default org-latex-default-example-environment "Verbatim"
+              org-latex-default-example-options "fontsize=\\footnotesize")
+#+end_src
+
 #+vindex: org-latex-packages-alist
-*Note:* when you use ~Verbatim~ in one or more example blocks, add ~fancyvrb~ to
+*Note:* if you use ~Verbatim~ in one or more example blocks, add ~fancyvrb~ to
 ~org-latex-packages-alist~, or include:
 
 #+BEGIN_SRC org

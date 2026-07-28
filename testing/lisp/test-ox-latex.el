@@ -898,5 +898,63 @@ Babel back to British English.
        (should (search-forward "\\usepackage[utf8]{inputenc} \\usepackage[french, english]{babel}")))
      (kill-buffer export-buffer))))
 
+(ert-deftest test-ox-latex/pdf-metadata ()
+  "Test that DocumentMetadata are inserted *before* LATEX_CLASS_PRE."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: PDF Metadata
+#+LANGUAGE: en-gb es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: pdflatex
+#+LATEX_DOC_METADATA: tagging = on
+#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
+#+LATEX_CLASS: report
+* Testing
+
+Just to see that DocumentMetadata comes before PassOptions and documentclass
+"
+   (message "pdf-metadata: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\DocumentMetadata{tagging = on}" nil t))
+   (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
+   (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
+
+(ert-deftest test-ox-latex/example-env-options ()
+  "We can set and override the options in an EXAMPLE block."
+  (let ((org-latex-default-example-environment "Verbatim")
+        (org-latex-default-example-options "fontsize=\\small"))
+    (org-test-with-exported-text
+     'latex
+     "#+TITLE: EXAMPLE options
+#+LANGUAGE: en-gb
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: pdflatex
+* Testing
+
+This is an example block with default aspect:
+
+#+BEGIN_EXAMPLE
+print(\"Hello\")
+#+END_EXAMPLE
+
+And now with a smaller font
+#+ATTR_LATEX: :options [fontsize=\\footnotesize]
+#+BEGIN_EXAMPLE
+print(\"Hello\")
+#+END_EXAMPLE
+
+#+ATTR_LATEX: :options fontsize=\\HUGE
+#+BEGIN_EXAMPLE
+print(\"Hello\")
+#+END_EXAMPLE
+"
+   ;; (message "example: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\begin{document}" nil t))
+   (should (search-forward "\\begin{Verbatim}[fontsize=\\small]" nil t))
+   (should (search-forward "\\begin{Verbatim}[fontsize=\\footnotesize]" nil t))
+   (should (search-forward "\\begin{Verbatim}[fontsize=\\HUGE]" nil t)))))
+
+
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

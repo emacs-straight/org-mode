@@ -25,13 +25,23 @@ Please send Org bug reports to mailto:emacs-orgmode@gnu.org.
 # require user action for most Org mode users.
 # Sorted from most important to least important.
 
-*** The beamer theme is included directly after the document class by default
+*** Beamer export puts theme information right after =\documentclass{beamer}=
 
-Unless you define a custom definition for the ~beamer~ class in
-(org-latex-classes),  the section of the LaTeX preamble related to the
-Beamer class (defined through BEAMER_... keywords) has been moved to
-the beginning of the preamble, right after the document class
-declaration.
+The Beamer exporter now places the theme configuration immediately
+after the document class declaration when using the =beamer= class,
+unless ~org-latex-classes~ or =#+LATEX_HEADER= defines a document
+header for =beamer= that includes theme configuration. For example:
+
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-classes
+      '(("beamer"
+         "\\documentclass[11pt]{beamer}
+\\usetheme{Madrid}"
+         ("\\section{%s}" . "\\section*{%s}")))
+#+END_SRC
+
+will make the Beamer exporter ignore the ~#+BEAMER_...~ keywords
+in the document that are related to theme configuration.
 
 *** ~org-mouse~ tag and priority menus are now separate
 
@@ -178,11 +188,44 @@ language management package =babel= or =polyglossia=
 This variable from feature/all-tex-fonts controls the fonts used when
 =babel= manages the languages in a LaTeX document.
 
+*** ox-beamer.el now supports the ltx-talk class
+
+ltx-talk is an alternative document class for presentations that can
+produce PDFs with extra information for on-screen reader
+applications. It will only work with LuaLaTeX.
+
+Presentations written with Beamer and ltx-talk are mostly portable,
+except that Beamer theme information is ignored when using ltx-talk
+and some environments listed in the manual are not supported.
+
 ** New and changed options
 
 # Changes dealing with changing default values of customizations,
 # adding new customizations, or changing the interpretation of the
 # existing customizations.
+
+*** ox-latex.el: New custom variable ~org-latex-default-example-options~
+
+This new variable allows you to control the default aspect of your
+~EXAMPLE~ blocks. For example, if your default example block is
+typeset with the ~Verbatim~ environment of the ~fancyvrb~ package, you
+can set the default font size as follows:
+
+: (setq-default org-latex-default-example-options "fontsize=\\footnotesize")
+
+*** ox-beamer.el: New keyword BEAMER_THEME_PRE
+
+The new keyword allows adding arbitrary lines just before the Beamer
+theme declaration.  For example, setting slide geometry needs to be
+done before loading theme:
+
+: #+BEAMER_THEME_PRE: \usepackage[total={16cm,9cm}]{geometry}
+
+*** New variable ~org-latex-doc-metadata~ and keyword ~#+LATEX_DOC_METADATA:~
+
+The LaTeX exporter can include PDF metadata with the new variable
+~org-latex-doc-metadata~ and the new keyword ~#+LATEX_DOC_METADATA:~.
+
 *** ~org-agenda-timerange-leaders~ now allows using functions as element values
 
 Other than strings, ~org-agenda-timerange-leaders~ now accepts
@@ -268,6 +311,40 @@ Set it to t to export said links without first appending
 
 This variable has no effect on links that are already prefixed with
 =file:= or links that start with a =~=.
+*** New custom variable ~org-link-default-file-link-description~
+
+This option, nil by default, allows you to choose the description
+that will be created for file links that are created in Dired,
+non-org-mode files, or any other place where org can not use the
+link context to create a description.  See its docstring for more
+information.
+
+*** New export option ~org-html-base-directory~
+
+This export option, nil by default, allows you to set the directory
+of the project that you intend to export.  This variable is the
+equivalent of the ~:base-directory~ key of ~org-publish-project-alist~.
+It is intended for people who use ox-html simply for exporting as
+opposed to publishing.  When used in conjunction with ~org-html-link-home~
+and ~org-html-link-use-abs-url~, file links to files in ~org-html-base-directory~
+will have the value of ~org-html-link-home~ prepended to them.  For example,
+when ~org-html-base-directory~ is set to =~/my/project=, ~org-html-link-home~
+is set to =https://orgmode.org= and ~org-html-link-use-abs-url~ is set to ~t~,
+~[[~/my/project/contribute][Contributing to Org]]~ will be exported as
+
+#+begin_example
+<a href="https://orgmode.org/contribute">Contributing to Org</a>
+#+end_example
+
+When ~:base-directory~ and ~org-html-base-directory~ are both set,
+~:base-directory~ takes precedence, i.e., the value of
+~org-html-base-directory~ will be ignored.
+
+The option can be customized either by
+
+1. setting the global variable ~org-html-base-directory~
+2. setting the file local keyword =HTML_BASE_DIRECTORY=
+
 
 ** New functions and changes in function arguments
 
@@ -288,6 +365,13 @@ To customize the directory try setting the =tmpdir= property in
 information]] for more information.
 
 ** Miscellaneous
+
+*** ~ox-odt~ exports tabs as spaces in verse blocks
+
+Previously, tabs inside verse blocks were exported as is, making their
+width follow the tab stops.  This caused inconsistencies between
+verse indentation inside Org buffers and the exported documents.
+The new approach makes sure that the indentation is exported exactly.
 
 *** ~ox-html~ properly formats image links in the table of contents
 
