@@ -2751,11 +2751,8 @@ INFO, CODE, and LANG are provided by `org-latex-inline-src-block'."
 (defun org-latex-inline-src-block--engraved (info code lang)
   "Transcode an inline src block's content from Org to LaTeX, using engrave-faces.
 INFO, CODE, and LANG are provided by `org-latex-inline-src-block'."
-  (let ((engraved-theme (plist-get info :latex-engraved-theme)))
-    (org-latex-src--engrave-code
-     code lang
-     (and engraved-theme (intern engraved-theme)) nil
-     (plist-get info :latex-engraved-options) t)))
+  (org-latex-src--engrave-code
+   code lang nil (plist-get info :latex-engraved-options) t))
 
 (defun org-latex-inline-src-block--listings (info code lang)
   "Transcode an inline src block's content from Org to LaTeX, using lstlistings.
@@ -3806,7 +3803,7 @@ and FLOAT are extracted from SRC-BLOCK and INFO in `org-latex-src-block'."
       (when (eq mathescape 'yes)
         (or engrave-faces-latex-mathescape t)))))
 
-(defun org-latex-src--engrave-code (content lang &optional theme explicit-theme-p options inline)
+(defun org-latex-src--engrave-code (content lang &optional theme options inline)
   "Engrave CONTENT to LaTeX in a LANG-mode buffer, and give the result.
 When the THEME symbol is non-nil, that theme will be used.
 
@@ -3847,8 +3844,8 @@ to the Verbatim environment or Verb command."
                 (concat "\\begin{Code}\n\\begin{Verbatim}" engraved-options "\n"
                         engraved-code "\n\\end{Verbatim}\n\\end{Code}"))))
         (kill-buffer engraved-buffer)
+        (if theme
             (concat "{\\engravedtheme"
-        (if (and theme explicit-theme-p)
                     (replace-regexp-in-string "[^A-Za-z]" ""
                                               (symbol-name theme))
                     engraved-wrapped
@@ -3886,9 +3883,7 @@ and FLOAT are extracted from SRC-BLOCK and INFO in `org-latex-src-block'."
                `(("linenos")
                  ("firstnumber" ,(number-to-string (1+ num-start)))))
              (and local-options `((,local-options))))))
-         (engraved-doc-theme (plist-get info :latex-engraved-theme))
-         (engraved-theme (or (plist-get attributes :engraved-theme)
-                             engraved-doc-theme))
+         (engraved-theme (plist-get attributes :engraved-theme))
          (content
           (let* ((code-info (org-export-unravel-code src-block))
                  (max-width
@@ -3914,8 +3909,7 @@ and FLOAT are extracted from SRC-BLOCK and INFO in `org-latex-src-block'."
                  (org-latex-src--engrave-mathescape-p info options)))
             (org-latex-src--engrave-code
              content lang
-             (and engraved-theme (intern engraved-theme))
-             (not (eq engraved-theme engraved-doc-theme))
+             (when engraved-theme (intern engraved-theme))
              options))))
     (concat (car float-env) body (cdr float-env))))
 
