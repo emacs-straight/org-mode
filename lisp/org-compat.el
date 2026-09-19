@@ -759,22 +759,6 @@ This constant, for example, makes the below code not err:
                "use `org-element' library"
                "9.0")
 
-;;; NOTE: Pre-patch variable name changes, do not merge
-(define-obsolete-variable-alias
-  'org-latex-preview-auto-mode 'org-latex-preview-mode "9.8")
-(define-obsolete-variable-alias
-  'org-latex-preview-auto-track-inserts 'org-latex-preview-mode-track-inserts "9.8")
-(define-obsolete-variable-alias
-  'org-latex-preview-auto-ignored-commands 'org-latex-preview-mode-ignored-commands "9.8")
-(define-obsolete-variable-alias
-  'org-latex-preview-auto-ignored-environments 'org-latex-preview-mode-ignored-environments "9.8")
-(define-obsolete-variable-alias
-  'org-latex-preview-live 'org-latex-preview-mode-display-live "9.8")
-(define-obsolete-variable-alias
-  'org-latex-preview-live-display-type 'org-latex-preview-mode-display-type "9.8")
-(define-obsolete-variable-alias
-  'org-latex-preview-live-debounce 'org-latex-preview-mode-update-delay "9.8")
-
 (define-obsolete-variable-alias
   'org-format-latex-options 'org-latex-preview-appearance-options
   "10.0"
