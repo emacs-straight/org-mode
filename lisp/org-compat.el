@@ -1212,6 +1212,7 @@ The overlay will be above BEG if OVERLAYS is non-nil."
 (declare-function org-latex-preview--get-display-dpi "org-latex-preview")
 (declare-function org-latex-preview--attr-color "org-latex-preview")
 (declare-function org-latex-preview--format-color "org-latex-preview")
+(declare-function org-mathml-convert-latex "ox-mathml")
 (declare-function org-latex-make-preamble "ox-latex")
 (declare-function org-export-get-environment "ox")
 (declare-function org-export-get-backend "ox")
