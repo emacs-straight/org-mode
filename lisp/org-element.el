@@ -3229,7 +3229,7 @@ Return a new syntax node of `table-row' type containing `:begin',
 	   (begin (point))
 	   ;; A table rule has no contents.  In that case, ensure
 	   ;; CONTENTS-BEGIN matches CONTENTS-END.
-	   (contents-begin (and (eq type 'standard) (search-forward "|" nil t)))
+	   (contents-begin (and (eq type 'standard) (search-forward "|")))
 	   (contents-end (and (eq type 'standard)
 			      (progn
 				(end-of-line)
