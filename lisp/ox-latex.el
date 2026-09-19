@@ -1217,10 +1217,9 @@ will produce
 
 % Define a Code environment to prettily wrap the fontified code.
 \\usepackage[breakable,xparse]{tcolorbox}
-\\providecommand{\\codefont}{\\footnotesize}
 \\DeclareTColorBox[]{Code}{o}%
 {colback=EfD!98!EFD, colframe=EfD!95!EFD,
-  fontupper=\\setlength{\\fboxsep}{0pt}\\codefont,
+  fontupper=\\footnotesize\\setlength{\\fboxsep}{0pt},
   colupper=EFD,
   IfNoValueTF={#1}%
   {boxsep=2pt, arc=2.5pt, outer arc=2.5pt,
@@ -1244,9 +1243,7 @@ as long as it:
 In the default value the colors \"EFD\" and \"EfD\" are provided
 as they are respectively the foreground and background colors,
 just in case they aren't provided by the generated preamble, so
-we can assume they are always set.  The command \"\\codefont\" is
-also provided (defaulting to \"\\footnotesize\"), to allow the
-font used in \"Code\" environments to be easily tweaked.
+we can assume they are always set.
 
 Within this preamble there are two recognized macro-like placeholders:
 
