@@ -3918,7 +3918,7 @@ INFO is the communication channel."
         ;; Prepare hash table with image file data
         (plist-put info :odt-latex-preview-hash-table
                    (apply #'org-latex-preview-cache-images tree info
-                          org-odt-latex-image-options))
+                          (plist-get info :odt-latex-image-options)))
         ;; Map over the parse tree again and replace LaTeX
         ;; fragments with links.  If an image doesn't exist for the
         ;; fragment, leave it in verbatim.
