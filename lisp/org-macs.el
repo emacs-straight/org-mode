@@ -404,6 +404,391 @@ If EXCLUDE-TMP is non-nil, ignore temporary buffers."
 	       nil))
 	   (buffer-list)))))
 
+
+;;; Async stack
+;;
+;; The org-async API is intended for managing queues of "tasks"
+;; (external processes) asynchronously, where a "task" can be
+;; described as a tree of processes that branches on the
+;; success/failure of each process.
+;;
+;; For managing processes, it has the following advantages over using
+;; Emacs' primitives for asynchronous processes (`make-process' and
+;; associated functions):
+;;
+;; - Declarative specification: tasks may be described declaratively
+;;   as a tree of processes, capturing all the logic (based on
+;;   success/failure) in one place.
+;;
+;; - Queue management: org-async can limit the number of active
+;;   processes it manages, and kill processes that take longer than a
+;;   specified timeout
+;;
+;; - Ergonomics:
+;;   - Processes can be described as strings (for shell
+;;     commands) or a list of arguments (to use with `start-process'.)
+;;   - You can avoid writing callbacks for simple behaviors
+;;     like messaging on process completion/failure
+;;   - Callbacks can themselves be org-async task specifications
+;;   - Multiple success/failure callbacks (of different types) can be
+;;     specified in a list.
+;;   - Processes belonging to an org-async task can share state that
+;;     can be used by their process filters and callbacks.
+;;
+;; `org-async-call' is the entry point to the API to start and manage
+;; tasks.  `org-async-process-limit' and `org-async-timeout' control
+;; the number of simultaneous processes and timeout respectively.
+;; `org-async-wait-for' can be used to wait synchronously on an
+;; org-async task.
+
+(defvar org-async--stack nil
+  "List of async currently running task forms.
+Each running task is represented by a list with the following structure:
+  (%PROCESS :success %FUN :failure %FUN
+            :filter %FUN :buffer %BUFFER
+            :timeout %FLOAT :start-time %FLOAT
+            :info %SEXP)")
+
+(defvar org-async--wait-queue nil
+   "List of async queued task forms.
+Each queued task is represented by a list with the following structure:
+  (%PROCESS :success %FUN :failure %FUN
+            :filter %FUN :buffer %BUFFER
+            :info %SEXP :dir %STRING
+            :timeout %FLOAT :coding %SYMBOL)")
+
+(defvar org-async-process-limit 4
+  "Maximum number of processes to run at once.")
+
+(defvar org-async-timeout 120
+  "Default timeout for a process started via `org-async-queue'.")
+
+(defvar org-async-check-timeout-interval 1
+  "Check for processes which have exceeded their timeout every this many seconds.")
+
+(cl-defun org-async-call (proc &key success failure filter buffer info timeout now
+                               process-variables (dir default-directory) (coding 'utf-8))
+  "Start PROC and register it with callbacks SUCCESS and FAILURE.
+
+PROC can be a process, string, or list.
+
+A string will be run as a shell command, with
+`start-process-shell-command'.  A list will be run using
+`start-process', with the car of the list being the program and the cdr
+the list of program arguments.  The process will be executed in DIR (if
+set) or `default-directory'.
+
+There are two \"special forms\" of PROC for common use cases:
+
+- A list where the first item is the symbol org-async-task, and the rest
+constitutes an argument list for `org-async-call'.  This form allows for
+easy specification of callbacks that are themselves async tasks, e.g.
+  (org-async-call \\='(\"sleep 1\")
+                   :success \\='(org-async-task (\"notify-send\" \"done\")))
+When using this form, all other arguments are ignored.
+
+- A list where the first item is the symbol org-async-chain, and the
+rest are processes to run in sequence until one of them fails.  Each
+process can be a string or list, with the meanings specified above.
+This form allows for easy specification of an async linear process
+chain.  In this case the SUCCESS and BUFFER arguments apply only to the
+final process in the chain, and the other arguments apply to all
+processes.
+
+`org-async-call' runs up to `org-async-process-limit' simultaneous
+processes, and queues up any additional ones.
+
+INFO is any state to be shared between all processes in the queue.  It
+is passed as-is to all process callbacks.
+
+When BUFFER is provided, the output of PROC will be directed to it.
+Shoud BUFFER be t, then a temp buffer will be created for the process
+and removed during `org-async--cleanup-process'.
+
+SUCCESS and FAILURE can be any form accepted by `org-async--execute-callback',
+namely:
+- A string, which is used a `message' string with the exit-code,
+  process buffer, and INFO as arguments.
+- A function, which is called with exit-code, process buffer,
+  and INFO as arguments.
+- An argument list for a new `org-async-call', whose first item is the
+  symbol org-async-task.
+- A list of callbacks, each of which is of any of the above.
+- nil, which does nothing.
+
+When PROC succeeds by exiting with an exit code of zero, the SUCCESS
+callback will be run.  Should PROC fail, or be killed, or the process
+runs for more than TIMEOUT seconds, the FAILURE callback will be run.
+
+Examples:
+- Simple call with a message on success:
+  (org-async-call \"ls\" :success \"ls command succeeded\")
+
+- A call with arguments, with a function as the success callback:
+  (org-async-call \\='(\"du\" \"-sh\")
+    :success (lambda (_exit-code proc-buf info)
+               (with-current-buffer proc-buf
+                 (message \"Size on disk: %s\" (buffer-string))))
+    :failure \"Error: could not find or run du\")
+
+- A nested call with multiple callbacks (run in sequence), some of which
+  are org-async calls:
+  (org-async-call
+    (list
+     \\='org-async-task                    ; LaTeX file to DVI compilation
+     \\='(\"latex\" \"-interaction\" \"nonstopmode\" \"texfile.tex\")
+     :info info                         ; Shared state for the process chain
+     :failure #\\='latex-failure-callback
+     :success
+     (list \\='org-async-task              ; dvi to svg conversion process
+           \\='(\"dvisvgm\" \"--page=1-\" \"-o out.svg\" \"texfile.dvi\")
+           :info extended-info
+           :filter #\\='dvisvgm-place-previews-filter
+           :failure (list #\\='dvisvgm-failure-callback ; multiple callbacks
+                          #\\='log-errors-callback      ; run in sequence
+                          #\\='cleanup-callback)
+           :success (list #\\='check-fragments
+                          #\\='cleanup-callback))))
+
+A function FILTER can be provided, in which case it will be
+called in the same manner as a normal process filter, however
+the function FILTER will be called with INFO as a third argument.
+i.e. the call signature is (content new-content-string INFO)
+When BUFFER is non-nil, there are two other major differences:
+- The new content is silently inserted before FILTER is called
+  - Note that `point' is left alone and is not moved by this.
+- The process buffer is the current buffer when FILTER is called.
+
+When CODING is non-nil, both the process encode and decode system
+will be set to CODING.  If unset, UTF-8 is used.
+
+TIMEOUT is the maximum time in seconds that a process can run for
+before it is killed.  This defaults to `org-async-timeout'.
+
+When NOW is non-nil, the PROC is started immediately, regardless
+of `org-async-process-limit'.
+
+For improved performance, PROCESS-VARIABLES is a list of
+let-style bindings that should be applied to the process.
+Variables are supported on an individual basis (i.e. only certain
+variables can be set), with the default value being equivalent to:
+
+  :process-variables
+  ((process-adaptive-read-buffering nil)
+   (process-connection-type nil)
+   (read-process-output-max read-process-output-max))
+
+Returns a list of the form (PROCESS . PLIST), where
+- PROCESS is the process if it was started, or PROC if the queue is
+  full.
+- PLIST is a plist with keys SUCCESS, FAILURE, FILTER, BUFFER, INFO,
+  CODING, TIMEOUT and START-TIME (number of seconds since the epoch,
+  included only if the process was started).
+
+To wait synchronously on asynchronous processes managed by org-async,
+call `org-async-wait-for' on the output result of `org-async-call':
+
+  (org-async-wait-for (org-async-call ...))"
+  (cond
+   ;; Called with a task (as can be used with callbacks), so re-call
+   ;; with expanded arguments.
+   ((and (consp proc)
+         (eq (car proc) 'org-async-task))
+    (apply #'org-async-call (cdr proc)))
+   ;; Called with a task chain, form the correct spec
+   ((and (consp proc)
+         (eq (car proc) 'org-async-chain))
+    (let ((call-spec))
+      (dolist (spec (reverse (cdr proc)))
+        (setq call-spec
+              (list 'org-async-task spec
+                    :buffer (if call-spec t buffer)
+                    :info info
+                    :success (or call-spec success)
+                    :failure failure
+                    :filter filter
+                    :process-variables process-variables
+                    :timeout timeout
+                    :dir dir :coding coding)))
+      (setq call-spec (cdr call-spec)) ;remove org-async-task from first call
+      (when now (plist-put (cdr call-spec) :now now))
+      (apply #'org-async-call call-spec)))
+   ;; Start the async process now.
+   ((or now (< (length org-async--stack) org-async-process-limit))
+    (let ((proc
+           (let ((default-directory (or dir default-directory))
+                 (process-adaptive-read-buffering ; No by default
+                  (cadr (or (assoc 'process-adaptive-read-buffering process-variables) nil)))
+                 (process-connection-type ; Use a pipe by default
+                  (cadr (or (assoc 'process-connection-type process-variables) nil)))
+                 (read-process-output-max ; Can be worth changing depending on the process
+                  (or (assq 'read-process-output-max process-variables) read-process-output-max))
+                 (proc-buf (if (eq buffer t) (generate-new-buffer " *temp*" t) buffer)))
+             (cond ((processp proc) proc)
+                   ((stringp proc)
+                    (start-process-shell-command "org-async" proc-buf proc))
+                   ((consp proc)
+                    (apply #'start-process (format "org-async-%s" (car proc))
+                           proc-buf proc))
+                   (t (error "Async process input %S not a recognised format"
+                             proc)))))
+          (timeout (or timeout org-async-timeout)))
+      (set-process-sentinel proc #'org-async--sentinel)
+      (when filter
+        (set-process-filter proc #'org-async--filter))
+      (when coding
+        (set-process-coding-system proc coding coding))
+      (push (list proc
+                  :success success
+                  :failure failure
+                  :filter filter
+                  :buffer buffer
+                  :info info
+                  :timeout timeout
+                  :coding coding
+                  :start-time (float-time))
+            org-async--stack)
+      (org-async--monitor t)
+      (car org-async--stack)))
+   ;; Queue the task to be run later.
+   (t
+    (setq org-async--wait-queue
+          (append org-async--wait-queue
+                  (list (list proc
+                              :success success
+                              :failure failure
+                              :filter filter
+                              :buffer buffer
+                              :info info
+                              :dir dir
+                              :timeout timeout
+                              :coding coding))))
+    (car (last org-async--wait-queue)))))
+
+(defvar org-async--blocking-tasks nil
+  "List of async tasks currently being waited on.")
+
+(defun org-async-wait-for (&rest tasks)
+  "Block until every task of TASKS has finished (including callback tasks)."
+  (setq org-async--blocking-tasks tasks)
+  (while org-async--blocking-tasks
+    (dolist (task org-async--blocking-tasks)
+      (accept-process-output (car task)))))
+
+(defun org-async--filter (process string)
+  "After PROCESS recieves STRING, call the async filter.
+This is implementated to satisfy the filter function documentation in
+`org-async-call'."
+  (when-let* ((proc-info (alist-get process org-async--stack)))
+    (let ((filter (plist-get proc-info :filter))
+          (proc-buf (process-buffer process)))
+      (if proc-buf
+          (with-current-buffer proc-buf
+            (save-excursion
+              (goto-char (point-max))
+              (insert string))
+            (funcall filter process string (plist-get proc-info :info)))
+        (funcall filter process string (plist-get proc-info :info))))))
+
+(defun org-async--sentinel (process _signal)
+  "Watch PROCESS for death, and cleanup accordingly.
+When a signal is recieved, the status of PROCESS is checked.
+Should the it have an exit status, with status code 0,
+`org-async--cleanup-process' is run with the \"failed\" argument
+unset.  Should the process have finished in any other manner,
+`org-async--cleanup-process' is run with the \"failed\" argument."
+  (pcase (process-status process)
+    ((and 'exit (guard (= 0 (process-exit-status process))))
+     (org-async--cleanup-process process))
+    ((or 'exit 'signal 'failed)
+     (org-async--cleanup-process process 'failed))))
+
+(defun org-async--cleanup-process (process &optional failed)
+  "Remove PROCESS from the async stack, and run its callback.
+If the exit code of PROCESS is zero and FAILED is non-nil, then
+the success callback is run (via `org-async--execute-callback').
+Otherwise, the failure callback is run."
+  (when (assq process org-async--stack)
+    (let* ((proc-info (cdr (assq process org-async--stack)))
+           (proc-buf (process-buffer process))
+           (blocking-p (cl-member process org-async--blocking-tasks :key #'car)))
+      ;; Ensure that any filter is called on the final output
+      ;; prior to the callbacks.
+      (while (accept-process-output process))
+      (setq org-async--stack
+            (delq (assq process org-async--stack) org-async--stack))
+      (org-async--execute-callback
+       (plist-get
+        proc-info
+        (if (and (not failed)
+                 (= 0 (process-exit-status process)))
+            :success :failure))
+       (process-exit-status process)
+       proc-buf
+       (plist-get proc-info :info)
+       blocking-p)
+      (when blocking-p
+        (setq org-async--blocking-tasks
+              (cl-delete process org-async--blocking-tasks :key #'car)))
+      (when (eq (plist-get proc-info :buffer) t) (kill-buffer proc-buf)))
+    (when (and org-async--wait-queue
+               (< (length org-async--stack) org-async-process-limit))
+      (apply #'org-async-call (pop org-async--wait-queue)))))
+
+(defun org-async--execute-callback (callback exit-code process-buffer info &optional blocking)
+  "Run CALLBACK with EXIT-CODE, PROCESS-BUFFER, and INFO.
+CALLBACK can take one of four forms:
+- A string, which is used a `message' string with EXIT-CODE,
+  PROCESS-BUFFER, and INFO as arguments.
+- A function, which is called with EXIT-CODE, PROCESS-BUFFER,
+  and INFO as arguments.
+- A list, which is either:
+  - An (org-async-task ...) structure, which passed to an
+    `org-async-call' invocation.
+  - A list of callbacks, which are individually evaluated.
+- nil, which does nothing.
+
+When BLOCKING is set, all callback tasks are made blocking."
+  (cond
+   ((stringp callback)
+    (message callback exit-code process-buffer info))
+   ((functionp callback)
+    (funcall callback exit-code process-buffer info))
+   ((consp callback)
+    (if (eq (car callback) 'org-async-task)
+        (if blocking
+            (push (org-async-call callback) org-async--blocking-tasks)
+          (org-async-call callback))
+      (dolist (clbk callback)
+        (org-async--execute-callback clbk exit-code process-buffer info blocking))))
+   ((null callback)) ; Do nothing.
+   (t (message "Ignoring invalid `org-async-call' callback: %S" callback))))
+
+(defvar org-async--monitor-scheduled nil
+  "Timer for checking the org-async process queue.")
+
+(defun org-async--monitor (&optional force)
+  "Check each process against their timeouts, and kill any overdue processes.
+
+This only runs when `org-async--monitor-scheduled' is nil, unless FORCE
+is set.  Should any processes still be alive after checking the stack,
+this will run itself using a timer in `org-async-check-timeout-interval'
+seconds."
+  (when (or force (null org-async--monitor-scheduled))
+    (dolist (stack-proc org-async--stack)
+      (if (process-live-p (car stack-proc))
+          (let ((timeout (plist-get (cdr stack-proc) :timeout)))
+            (when (and (numberp timeout)
+                       (< 0 timeout
+                          (- (float-time)
+                             (plist-get (cdr stack-proc) :start-time))))
+              (kill-process (car stack-proc))))
+        (org-async--cleanup-process (car stack-proc))))
+    (if org-async--stack
+        (setq org-async--monitor-scheduled
+              (run-at-time org-async-check-timeout-interval
+                           nil #'org-async--monitor t))
+      (setq org-async--monitor-scheduled nil))))
 
 
 ;;; File

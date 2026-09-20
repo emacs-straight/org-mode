@@ -11565,7 +11565,7 @@ pretty output for a number of export backends.
 :END:
 #+cindex: @LaTeX{} fragments
 
-#+vindex: org-format-latex-header
+#+vindex: org-latex-preview-header
 Org mode can contain LaTeX math fragments, and it supports ways to
 process these for several export backends.  When exporting to LaTeX,
 the code is left as it is.  When exporting to HTML, Org can use either
@@ -11623,19 +11623,15 @@ lines:
 #+cindex: @LaTeX{} fragments, preview
 
 #+vindex: org-preview-latex-default-process
+#+vindex: org-latex-preview-process-default
 If you have a working LaTeX installation and =dvipng=, =dvisvgm= or
 =convert= installed[fn:39], LaTeX fragments can be processed to
 produce images of the typeset expressions to be used for inclusion
 while exporting to HTML (see [[*LaTeX fragments]]), or for inline
 previewing within Org mode.
 
-#+vindex: org-format-latex-options
-#+vindex: org-format-latex-header
-You can customize the variables ~org-format-latex-options~ and
-~org-format-latex-header~ to influence some aspects of the preview.
-In particular, the ~:scale~ (and for HTML export, ~:html-scale~)
-property of the former can be used to adjust the size of the preview
-images.
+Previewing or exporting images of LaTeX fragments also requires the
+preview.sty package or style file[fn:40] to be available.
 
 - {{{kbd(C-c C-x C-l)}}} (~org-latex-preview~) ::
   #+kindex: C-c C-x C-l
@@ -11658,6 +11654,254 @@ You can turn on the previewing of all LaTeX fragments in a file with
 To disable it, simply use
 
 : #+STARTUP: nolatexpreview
+
+You can set this globally by customizing
+~org-startup-with-latex-preview~.
+
+Org mode caches LaTeX fragment preview images so that repeated calls
+to ~org-latex-preview~ for the same fragment can reuse them.  The
+cache can also be manually cleared if required (see [[*Customizing the
+LaTeX preview process]]).
+
+Errors encountered when compiling preview fragments are captured and
+indicated in the display of the preview image.  Depending on the type
+of processing, this indication can take the form of a red foreground
+or a fringe marker.  Mousing over the image will show the error(s) in
+a tooltip, and they can be displayed in the echo area by calling
+~display-local-help~ when the cursor is on the image or LaTeX fragment.
+
+Normally, LaTeX preview images cover the underlying LaTeX text.
+Editing and updating LaTeX fragments thus requires clearing the
+previews first.  To speed up the edit/preview cycle, Org also provides
+optional /automatic/ preview features with more immediate feedback:
+
+- Automatic previews: Hide and reveal preview images when the cursor
+  moves into or out of them, and automatically preview LaTeX fragments
+  after the cursor exits the fragment.
+
+- Live previews: Continuously preview LaTeX fragments as you type,
+  giving you near immediate feedback (especially when using
+  =pdflatex=).  The preview image will continue to be displayed
+  adjacent to the fragment even when editing it.
+
+#+cindex: @LaTeX{} fragments, live preview
+To enable automatic previews, turn on the minor mode
+~org-latex-preview-mode~.
+
+- (~org-latex-preview-mode~) ::
+  #+findex: org-latex-preview-mode
+
+  When this mode is turned on, moving the cursor into a previewed
+  LaTeX fragment will reveal the Org markup and hide the image.
+  Moving the cursor out of the fragment will cause the (possibly
+  updated) preview image to be displayed again.
+
+  If ~org-latex-preview-mode-track-inserts~ is non-nil, previews for
+  LaTeX fragments will be auto-generated as they are typed or
+  otherwise inserted into the buffer.
+
+  Note that insertion tracking does not work across indirect buffers.
+  LaTeX preview images are generated only for the current buffer, and
+  not any indirect clones, or for the base buffer if the current
+  buffer is a clone.  This is currently a limitation of the LaTeX
+  preview system.
+
+  #+vindex: org-latex-preview-mode-display-live
+  Additionally, if the option ~org-latex-preview-mode-display-live~ is
+  non-nil, previews for modified or new LaTeX fragments will be
+  displayed adjacent to the fragment, and updated in real-time as you
+  type.
+
+  ~org-latex-preview-mode-display-live~ can be configured to apply
+  separately to LaTeX fragments and LaTeX environments.  Additionally,
+  it can also be configured to preview LaTeX when using
+  ~org-edit-special~.
+
+**** Customizing live LaTeX previews
+
+#+vindex: org-latex-preview-mode-track-inserts
+~org-latex-preview-mode~ will always hide and show preview images
+already present in the buffer as the cursor moves into and out of
+LaTeX fragments.  However, you can customize whether it should also
+generate new previews as the buffer contents are changed.  This is
+controlled by the option ~org-latex-preview-mode-track-inserts~.
+
+#+vindex: org-latex-preview-mode-ignored-environments
+You can specify a list of LaTeX environments that should not be
+automatically previewed by ~org-latex-preview-mode~ when they are
+inserted into the buffer.  This is controlled by
+~org-latex-preview-mode-ignored-environments~.  By default, "figure"
+environments are ignored by ~org-latex-preview~.[fn::
+~org-latex-preview~ cannot consistently preview figure environments.]
+
+#+vindex: org-latex-preview-mode-ignored-commands
+You can also specify Emacs commands that should explicitly avoid
+toggling the preview image with
+~org-latex-preview-mode-ignored-commands~.  For instance, adding the
+~next-line~ and ~previous-line~ commands to this list will ensure that
+regular Emacs navigation does not cause the preview image for a
+fragment to be toggled, which can be distracting.
+
+#+vindex: org-latex-preview-update-delay
+By default, there is a delay (debounce) of 1 second between editing a
+fragment and generating a live preview.  This can be changed by
+setting ~org-latex-preview-mode-update-delay~.  Note that values of
+0.1 or lower can cause high CPU utilization.
+
+#+vindex: org-latex-preview-overlay-open-functions
+#+vindex: org-latex-preview-overlay-close-functions
+When ~org-latex-preview-mode~ is active, the hooks
+~org-latex-preview-overlay-open-functions~ and
+~org-latex-preview-overlay-close-functions~ run when the cursor moves
+into or out of a preview overlay, respectively.  Hook functions are
+called with one argument, the overlay being "opened" or "closed".
+These hooks can be used to modify the overlay or image properties.
+
+#+vindex: org-latex-preview-mode-display-type
+Finally, when editing a fragment live previews can be displayed in a
+few different locations.  The default setting displays them next to
+the LaTeX element when editing inline fragments, and under the LaTeX
+element when editing LaTeX environments.  Alternatively, the preview
+can be displayed via Eldoc in a location determined by
+~eldoc-display-functions~.  To set this customize
+~org-latex-preview-mode-display-type~ and turn on ~eldoc-mode~.
+
+**** Customizing the LaTeX preview process
+
+The LaTeX preview process pipeline works as follows:
+
+#+cindex: @LaTeX{} fragments, precompilation
+1. LaTeX fragments in the region being previewed are collected.
+2. The LaTeX preamble for the buffer is constructed.  If the LaTeX
+   compiler in use (see next) supports precompilation, an object dump
+   is created to drastically speed up subsequent previews in the
+   buffer.
+3. They are compiled to dvi format using ~org-latex-compiler~, which
+   can be =pdflatex=, =xelatex= or =lualatex= (see [[*LaTeX/PDF export
+   commands]]).
+4. The dvi file is converted to an image placed over the text of the
+   LaTeX fragments in Org buffers.  These images can be PNGs (when
+   using the =dvipng= or =convert= programs) or SVGs (when using
+   =dvisvgm=).  This image is then cached for the future.
+5. When previewing an unmodified LaTeX fragment for a second time, the
+   image is placed directly from the cache.
+
+Accordingly, each step of this pipeline can be independently customized.
+
+#+vindex: org-latex-preview-process-precompile
+Precompilation is enabled by default, and you can disable it by
+setting ~org-latex-preview-process-precompile~.  Currently only
+=pdflatex= supports precompilation consistently, and it is
+automatically disabled when using =xelatex= or =lualatex=.  It is also
+disabled buffer-locally if the precompilation attempt fails for some
+reason.  In this case you can re-enable it by reverting the buffer or
+running ~org-mode-restart~.
+
+You can customize the LaTeX engine used to process the fragments by
+setting ~org-latex-compiler~, (see [[*LaTeX/PDF export commands]]).
+=pdflatex= with precompilation can produce previews that update the
+fastest, close to real-time.  =lualatex= has the best font and unicode
+support but previewing will be much slower.
+
+#+vindex: org-latex-preview-process-default
+To choose the program used for generating preview images, you can set
+the option ~org-latex-preview-process-default~ to one of the symbols
+=dvipng=, =dvisvgm= or =imagemagick=.  =dvisvgm=, the default, offers
+the best quality images that display well on HiDPI screens, as well as
+features like Emacs theme awareness.  =dvipng= previews are more basic
+but are generated the fastest.  The =imagemagick= route is supported
+but slow, and should be avoided if possible.
+
+#+vindex: org-latex-preview-process-alist
+Details of the process chain, such as the command line arguments used
+to call =pdflatex= and =dvisvgm=, can be changed by modifying
+~org-latex-preview-process-alist~.  It is not recommended to do
+this unless you have very specific needs.
+
+#+vindex: org-latex-preview-cache
+#+vindex: org-latex-preview-persist-expiry
+You can control where LaTeX previews are cached by customizing
+~org-latex-preview-cache~.  By default, Org stores them in
+~org-persist-directory~ with an expiry determined by
+~org-latex-preview-persist-expiry~.  It can also be set to a string
+naming an absolute or relative path, or to the symbol =temp= to not
+cache images beyond the current Emacs session.
+
+#+findex: org-latex-preview-clear-cache
+The LaTeX preview cache can be manually cleared (globally or
+buffer-locally) by calling ~org-latex-preview-clear-cache~.
+
+#+vindex: org-latex-preview-process-active-indicator
+When a preview process is running, a visual processing indicator is
+placed on the corresponding LaTeX fragments.  This defaults to a
+triangle in the fringe to the left, but can be customized by setting
+~org-latex-preview-process-active-indicator~.
+
+#+vindex: org-latex-preview-process-finish-functions
+#+vindex: org-latex-preview-overlay-update-functions
+Two hooks may be used to perform additional processing when generating
+or updating previews for fragments.  The hook
+~org-latex-preview-process-finish-functions~ may be used to perform
+additional processing at the end of a preview creation process chain.
+Each hook function is called with three process-related arguments: the
+process exit code, the process buffer and a plist of process data.
+~org-latex-preview-overlay-update-functions~ runs when the preview
+image for an overlay changes.  It can be used to modify the overlay
+appropriately, for example to center the image in the buffer.  Hook
+functions are called with one argument, the overlay being updated.
+
+**** Customizing the LaTeX preview preamble
+
+#+cindex: @LaTeX{} preview preamble
+#+vindex: org-format-latex-header
+#+vindex: org-latex-preview-preamble
+You can customize ~org-latex-preview-preamble~ to specify the default
+LaTeX preamble used for processing LaTeX fragments.  This can include
+the placeholder strings =[DEFAULT-PACKAGES]= and =[PACKAGES]= to
+include packages specified in ~org-latex-default-packages-alist~ and
+~org-latex-packages-alist~ respectively.  See ~org-latex-classes~ for
+a detailed description of the placeholders.  When previewing, this
+preamble will be combined with keywords specified in the document via
+
+#+texinfo: @noindent
+: #+LATEX_HEADER:
+
+A small preamble is recommended if you are using real-time (live)
+LaTeX previews.  To help with this you can specify header content to
+be used for LaTeX exports but not previews via the
+=#+LATEX_HEADER_EXTRA= keyword, (see [[*LaTeX specific export
+settings]]).
+
+**** Customizing the LaTeX preview appearance
+
+By default, LaTeX previews are colored, sized and aligned to fit in
+correctly with the surrounding text.  If you are using SVG previews
+(the default), they will also change colors automatically when you
+change faces or Emacs themes.
+
+#+vindex: org-format-latex-options
+#+vindex: org-latex-preview-appearance-options
+If the results are not to your liking, you can customize the
+appearance of LaTeX previews by modifying
+~org-latex-preview-appearance-options~. This plist can be used to
+specify the following aspects of the appearance of LaTeX previews:
+
+- Foreground and background: by default the foreground matches the
+  color of the surrounding text and the background is transparent.
+  The ~:foreground~ and ~:background~ properties can be used to change
+  this.
+- Zoom and scale: The ~:zoom~ property controls the relative size of
+  the preview as displayed in the buffer, and ~:scale~ controls the
+  size of the generated image.  ~:scale~ has no meaning for SVG
+  images.
+- Page width: The ~:page-width~ property determines the width of the
+  preview image (including whitespace padding) of LaTeX environments.
+
+#+vindex: org-latex-preview-numbered
+When generating previews, Org mode can track equation numbers and keep
+them consistent by regenerating previews when necessary.  This
+behavior is controlled by the user option
+~org-latex-preview-numbered~.
 
 *** Using CDLaTeX to enter math
 :PROPERTIES:
@@ -11781,9 +12025,9 @@ Here is an example
 #+vindex: org-latex-src-block-backend
 If the example is source code from a programming language, or any
 other text that can be marked up by Font Lock in Emacs, you can ask
-for the example to look like the fontified Emacs buffer[fn:40].  This
+for the example to look like the fontified Emacs buffer[fn:41].  This
 is done with the code block, where you also need to specify the name
-of the major mode that should be used to fontify the example[fn:41],
+of the major mode that should be used to fontify the example[fn:42],
 see [[*Structure Templates]] for shortcuts to easily insert code blocks.
 
 #+cindex: @samp{BEGIN_SRC}
@@ -12108,7 +12352,7 @@ text.  Markers always start with =fn:=.  For example:
 #+begin_example
 The Org website[fn:1] now looks a lot better than it used to.
 ...
-[fn:50] The link is: https://orgmode.org
+[fn:51] The link is: https://orgmode.org
 #+end_example
 
 Org mode extends the number-based syntax to /named/ footnotes and
@@ -12397,7 +12641,7 @@ global variables, include:
   Language to use for translating certain strings
   (~org-export-default-language~).  With =#+LANGUAGE: fr=, for
   example, Org translates =Table of contents= to the French =Table des
-  matières=[fn:42].
+  matières=[fn:43].
 
 - =SELECT_TAGS= ::
 
@@ -12698,7 +12942,7 @@ keyword:
 #+cindex: excluding entries from table of contents
 #+cindex: table of contents, exclude entries
 Org includes both numbered and unnumbered headlines in the table of
-contents[fn:43].  If you need to exclude an unnumbered headline,
+contents[fn:44].  If you need to exclude an unnumbered headline,
 along with all its children, set the =UNNUMBERED= property to =notoc=
 value.
 
@@ -12816,7 +13060,7 @@ be omitted to use the obvious defaults.
 | =#+INCLUDE: "~/.emacs" :lines "10-"=  | Include lines from 10 to EOF       |
 
 Inclusions may specify a file-link to extract an object matched by
-~org-link-search~[fn:44] (see [[*Search Options in File Links]]).  The
+~org-link-search~[fn:45] (see [[*Search Options in File Links]]).  The
 ranges for =:lines= keyword are relative to the requested element.
 Therefore,
 
@@ -12858,7 +13102,7 @@ or document-wise with the following syntax:
 : #+MACRO: name   replacement text; $1, $2 are arguments
 
 #+texinfo: @noindent
-which can be referenced using ={{{name(arg1, arg2)}}}=[fn:45].  For
+which can be referenced using ={{{name(arg1, arg2)}}}=[fn:46].  For
 example
 
 #+begin_example
@@ -13294,7 +13538,7 @@ should in principle be exportable as a Beamer presentation.
 
 - Org exports a Beamer frame's objects as block environments.  Org can
   enforce wrapping in special block types when =BEAMER_ENV= property
-  is set[fn:46].  For valid values see
+  is set[fn:47].  For valid values see
   ~org-beamer-environments-default~.  To add more values, see
   ~org-beamer-environments-extra~.
   #+vindex: org-beamer-environments-default
@@ -14043,7 +14287,7 @@ different ways on HTML pages.  The default is to use the
 with Org[fn:: By default, Org loads MathJax from
 [[https://www.jsdelivr.com/][jsDelivr]], as recommended in
 [[https://docs.mathjax.org/en/latest/web/start.html][Getting Started
-with MathJax Components]].][fn:47].  Some MathJax options can be
+with MathJax Components]].][fn:48].  Some MathJax options can be
 configured via ~org-html-mathjax-options~, or in the buffer.  For
 example, with the following settings,
 
@@ -14068,12 +14312,11 @@ variables.  The MathJax template can be configured via
 ~#+HTML_MATHJAX_TEMPLATE~.  This keyword can be set multiple times in
 the buffer, to set a multi-line template.
 
-If you prefer, you can also request that LaTeX fragments are processed
-into small images that will be inserted into the browser page.  Before
-the availability of MathJax, this was the default method for Org
-files.  This method requires that the dvipng program, dvisvgm or
-ImageMagick suite is available on your system.  You can still get this
-processing with
+Alternatively, LaTeX fragments can be processed into images that will
+be inserted into the browser page.  This method requires that the
+dvipng program, dvisvgm or ImageMagick suite be available on your
+system.  Before the availability of MathJax, this was the default
+method for Org files. You can get this processing with
 
 : #+OPTIONS: tex:dvipng
 
@@ -14083,6 +14326,16 @@ processing with
 or
 
 : #+OPTIONS: tex:imagemagick
+
+The images are scaled and aligned to fit in with surrounding text,
+respecting baselines and ascent.  The LaTeX source for an image is
+available as its alt-text in the HTML document.
+
+#+vindex: org-html-latex-image-options
+The apperance and inclusion method of LaTeX preview images in HTML
+exports is governed by the option ~org-html-latex-image-options~.  In
+particular, the =:image-dir= key controls the absolute or relative
+path where LaTeX preview images are stored.
 
 *** Text areas in HTML export
 :PROPERTIES:
@@ -14371,7 +14624,7 @@ LaTeX export backend finds the compiler version to use from
 Org file.  See the docstring for the
 ~org-latex-default-packages-alist~ for loading packages with certain
 compilers.  Also see ~org-latex-bib-compiler~ to set the
-bibliography compiler[fn:48].
+bibliography compiler[fn:49].
 
 *** LaTeX specific export settings
 :PROPERTIES:
@@ -15911,9 +16164,11 @@ document in one of the following ways:
 
   #+vindex: org-latex-to-mathml-convert-command
   #+vindex: org-latex-to-mathml-jar-file
+  #+vindex: org-mathml-convert-command
+  #+vindex: org-mathml-converter-jar-file
   You can specify the LaTeX-to-MathML converter by customizing the
-  variables ~org-latex-to-mathml-convert-command~ and
-  ~org-latex-to-mathml-jar-file~.
+  variables ~org-mathml-convert-command~ and
+  ~org-mathml-converter-jar-file~.
 
   If you prefer to use MathToWeb[fn:: See
   [[https://mathtoweb.sourceforge.io/][MathToWeb]].]
@@ -15921,9 +16176,9 @@ document in one of the following ways:
   below.
 
   #+begin_src emacs-lisp
-  (setq org-latex-to-mathml-convert-command
+  (setq org-mathml-convert-command
         "java -jar %j -unicode -force -df %o %I"
-        org-latex-to-mathml-jar-file
+        org-mathml-converter-jar-file
         "/path/to/mathtoweb.jar")
   #+end_src
 
@@ -15932,7 +16187,7 @@ document in one of the following ways:
   instead,
 
   #+begin_src emacs-lisp
-  (setq org-latex-to-mathml-convert-command
+  (setq org-mathml-convert-command
         "latexmlmath %i --presentationmathml=%o")
   #+end_src
 
@@ -19538,7 +19793,7 @@ block, collects the results, and inserts them in the buffer.
 
 #+cindex: @samp{CALL}, keyword
 #+vindex: org-babel-inline-result-wrap
-By calling a named code block[fn:49] from an Org mode buffer or
+By calling a named code block[fn:50] from an Org mode buffer or
 a table.  Org can call the named code blocks from the current Org mode
 buffer or from the "Library of Babel" (see [[*Library of Babel]]).
 
@@ -19746,7 +20001,7 @@ they are mutually exclusive.
 
 - =value= ::
 
-  Default for most Babel libraries[fn:49].  Functional mode.  Org
+  Default for most Babel libraries[fn:50].  Functional mode.  Org
   gets the value by wrapping the code in a function definition in the
   language of the source block.  That is why when using =:results
   value=, code should execute like a function and return a value.  For
@@ -20675,7 +20930,7 @@ the second code block is expanded as
 #+end_example
 
 Note that noweb expansion does not automatically carry over =:var=
-header arguments[fn:50].
+header arguments[fn:51].
 
 You may also include the contents of multiple blocks sharing a common
 =noweb-ref= header argument, which can be set at the file, subtree,
@@ -21217,7 +21472,7 @@ in the desired amount with hard spaces and hiding leading stars.
 To display the buffer in the indented view, activate Org Indent minor
 mode, using {{{kbd(M-x org-indent-mode)}}}.  Text lines that are not
 headlines are prefixed with virtual spaces to vertically align with
-the headline text[fn:51].
+the headline text[fn:52].
 
 #+vindex: org-indent-indentation-per-level
 To make more horizontal space, the headlines are shifted by two
@@ -21245,7 +21500,7 @@ use =STARTUP= keyword as follows:
 
 It is possible to use hard spaces to achieve the indentation instead,
 if the bare ASCII file should have the indented look also outside
-Emacs[fn:52].  With Org's support, you have to indent all lines to
+Emacs[fn:53].  With Org's support, you have to indent all lines to
 line up with the outline headers.  You would use these settings[fn::
 ~org-adapt-indentation~ can also be set to ='headline-data=, in which
 case only data lines below the headline will be indented.]:
@@ -22453,7 +22708,7 @@ Tags]]) only for those set in these variables.
 
 #+vindex: org-mobile-directory
 The mobile application needs access to a file directory on
-a server[fn:53] to interact with Emacs.  Pass its location through
+a server[fn:54] to interact with Emacs.  Pass its location through
 the ~org-mobile-directory~ variable.  If you can mount that directory
 locally just set the variable to point to that directory:
 
@@ -22497,7 +22752,7 @@ Symbolic links in ~org-directory~ need to have the same name as their
 targets.].
 
 Push creates a special Org file =agendas.org= with custom agenda views
-defined by the user[fn:54].
+defined by the user[fn:55].
 
 Finally, Org writes the file =index.org=, containing links to other
 files.  The mobile application reads this file first from the server
@@ -22972,7 +23227,7 @@ of these strategies:
 To wrap a source table in LaTeX, use the =comment= environment
 provided by =comment.sty=[fn:: https://www.ctan.org/pkg/comment].  To
 activate it, put ~\usepackage{comment}~ in the document header.
-Orgtbl mode inserts a radio table skeleton[fn:55] with the command
+Orgtbl mode inserts a radio table skeleton[fn:56] with the command
 {{{kbd(M-x orgtbl-insert-radio-table)}}}, which prompts for a table
 name.  For example, if =salesfigures= is the name, the template
 inserts:
@@ -22992,7 +23247,7 @@ The line =#+ORGTBL: SEND= tells Orgtbl mode to use the function
 ~orgtbl-to-latex~ to convert the table to LaTeX format, then insert
 the table at the target (receive) location named =salesfigures=.  Now
 the table is ready for data entry.  It can even use spreadsheet
-features[fn:56]:
+features[fn:57]:
 
 #+begin_example
 % BEGIN RECEIVE ORGTBL salesfigures
@@ -24374,54 +24629,58 @@ used to create images, any LaTeX environment is handled.
 [fn:39] These are respectively available at
 [[https://sourceforge.net/projects/dvipng/]], [[http://dvisvgm.bplaced.net/]]
 and from the ImageMagick suite.  Choose the converter by setting the
-variable ~org-preview-latex-default-process~ accordingly.
+variable ~org-latex-preview-process-default~ accordingly.
 
-[fn:40] This works automatically for the HTML backend (it requires
+[fn:40] See https://ctan.org/tex-archive/macros/latex/contrib/preview
+for details on preview.sty.  This package is included by default when
+installing all commonly used TeX distributions.
+
+[fn:41] This works automatically for the HTML backend (it requires
 version 1.34 of the =htmlize.el= package, which you need to install).
 Fontified code chunks in LaTeX can be achieved using either the
 [[https://www.ctan.org/pkg/listings][listings]] LaTeX package, [[https://www.ctan.org/pkg/minted][minted]] LaTeX package, or by using
 [[https://elpa.gnu.org/packages/engrave-faces.html][engrave-faces]].  Refer to ~org-latex-src-block-backend~ for details.
 
-[fn:41] Source code in code blocks may also be evaluated either
+[fn:42] Source code in code blocks may also be evaluated either
 interactively or on export.  See [[*Working with Source Code]] for more
 information on evaluating code blocks.
 
-[fn:42] For export to LaTeX format---or LaTeX-related formats such as
+[fn:43] For export to LaTeX format---or LaTeX-related formats such as
 Beamer---, the =org-latex-package-alist= variable needs further
 configuration.  See [[LaTeX specific export settings]].
 
-[fn:43] At the moment, some export backends do not obey this
+[fn:44] At the moment, some export backends do not obey this
 specification.  For example, LaTeX export excludes by default
 every unnumbered headline from the table of contents, unless you set
 the custom variable =org-latex-toc-include-unnumbered= to =t= or add
 =:UNNUMBERED: toc= to the section's properties.
 
-[fn:44] Note that ~org-link-search-must-match-exact-headline~ is
+[fn:45] Note that ~org-link-search-must-match-exact-headline~ is
 locally bound to non-~nil~.  Therefore, ~org-link-search~ only matches
 headlines and named elements.
 
-[fn:45] Since commas separate the arguments, commas within arguments
+[fn:46] Since commas separate the arguments, commas within arguments
 have to be escaped with the backslash character.  So only those
 backslash characters before a comma need escaping with another
 backslash character.
 
-[fn:46] If =BEAMER_ENV= is set, Org export adds =B_environment= tag
+[fn:47] If =BEAMER_ENV= is set, Org export adds =B_environment= tag
 to make it visible.  The tag serves as a visual aid and has no
 semantic relevance.
 
-[fn:47] Please note that exported formulas are part of an HTML
+[fn:48] Please note that exported formulas are part of an HTML
 document, and that signs such as =<=, =>=, or =&= have special
 meanings.  See [[https://docs.mathjax.org/en/latest/input/tex/html.html#tex-and-latex-in-html-documents][MathJax TeX and LaTeX in HTML documents]].
 
-[fn:48] This does not allow setting different bibliography compilers
+[fn:49] This does not allow setting different bibliography compilers
 for different files.  However, "smart" LaTeX compilation systems, such
 as latexmk, can select the correct bibliography compiler.
 
-[fn:49] Actually, the constructs =call_<name>()= and =src_<lang>{}=
+[fn:50] Actually, the constructs =call_<name>()= and =src_<lang>{}=
 are not evaluated when they appear in a keyword (see [[*Summary of
 In-Buffer Settings]]).
 
-[fn:50] In the following example, attempting to evaluate
+[fn:51] In the following example, attempting to evaluate
 the second code block will give an error, because the variables
 defined in the first code block will not be defined in the second
 block.
@@ -24449,29 +24708,29 @@ values.
 ,#+END_SRC
 #+end_example
 
-[fn:51] Org Indent mode also sets ~wrap-prefix~ correctly for
+[fn:52] Org Indent mode also sets ~wrap-prefix~ correctly for
 indenting and wrapping long lines of headlines or text.  This minor
 mode also handles Visual Line mode and directly applied settings
 through ~word-wrap~.
 
-[fn:52] This works, but requires extra effort.  Org Indent mode is
+[fn:53] This works, but requires extra effort.  Org Indent mode is
 more convenient for most applications.
 
-[fn:53] For a server to host files, consider using a WebDAV server,
+[fn:54] For a server to host files, consider using a WebDAV server,
 such as [[https://nextcloud.com][Nextcloud]].  Additional help is at this [[https://orgmode.org/worg/org-faq.html#mobileorg_webdav][FAQ entry]].
 
-[fn:54] While creating the agendas, Org mode forces =ID= properties
+[fn:55] While creating the agendas, Org mode forces =ID= properties
 on all referenced entries, so that these entries can be uniquely
 identified if Org Mobile flags them for further action.  To avoid
 setting properties configure the variable
 ~org-mobile-force-id-on-agenda-items~ to ~nil~.  Org mode then relies
 on outline paths, assuming they are unique.
 
-[fn:55] By default this works only for LaTeX, HTML, and Texinfo.
+[fn:56] By default this works only for LaTeX, HTML, and Texinfo.
 Configure the variable ~orgtbl-radio-table-templates~ to install
 templates for other modes.
 
-[fn:56] If the =TBLFM= keyword contains an odd number of dollar
+[fn:57] If the =TBLFM= keyword contains an odd number of dollar
 characters, this may cause problems with Font Lock in LaTeX mode.  As
 shown in the example you can fix this by adding an extra line inside
 the =comment= environment that is used to balance the dollar

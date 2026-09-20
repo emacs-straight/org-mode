@@ -37,19 +37,22 @@
 (require 'ob)
 (require 'org-macs)
 
-(declare-function org-create-formula-image "org" (string tofile options buffer &optional type))
+(declare-function org-latex-preview-create-image "org-latex-preview" (string tofile options buffer &optional type))
 (declare-function org-latex-compile "ox-latex" (texfile &optional snippet))
 (declare-function org-latex-guess-inputenc "ox-latex" (header))
 (declare-function org-splice-latex-header "org" (tpl def-pkg pkg snippets-p &optional extra))
-
+(declare-function org-latex-preview-create-images "org-latex-preview")
 (defvar org-babel-tangle-lang-exts)
 (add-to-list 'org-babel-tangle-lang-exts '("latex" . "tex"))
 
-(defvar org-format-latex-header)	  ; From org.el
-(defvar org-format-latex-options)	  ; From org.el
-(defvar org-latex-default-packages-alist) ; From org.el
-(defvar org-latex-packages-alist)	  ; From org.el
-(defvar org-preview-latex-process-alist)  ; From org.el
+(defvar org-latex-preview-preamble)     ; From org-latex-preview.el
+(defvar org-latex-preview-process-alist)
+(defvar org-latex-preview-appearance-options)
+(defvar org-latex-default-packages-alist)
+(defvar org-latex-packages-alist)
+(defvar org-latex-preview--latex-log)
+(defvar org-latex-preview--image-log)
+(defvar org-html-latex-image-options)   ; From ox-html
 
 (defvar org-babel-default-header-args:latex
   '((:results . "latex") (:exports . "results"))
@@ -191,12 +194,21 @@ This function is called by `org-babel-execute-src-block'."
 	      (append (cdr (assq :packages params)) org-latex-packages-alist)))
         (cond
          ((and (string-suffix-p ".png" out-file) (not imagemagick))
-          (let ((org-format-latex-header
-		 (concat org-format-latex-header "\n"
-			 (mapconcat #'identity headers "\n")))
-                (org-preview-latex-process-alist org-babel-latex-process-alist))
-	    (org-create-formula-image
-             body out-file org-format-latex-options in-buffer 'png)))
+          (require 'org-latex-preview)
+          (when in-buffer (require 'ox-html))
+          (let* ((org-latex-preview-preamble
+		  (concat org-latex-preview-preamble "\n"
+			  (mapconcat #'identity headers "\n")))
+                 (org-latex-preview-process-alist org-babel-latex-process-alist)
+                 (cache-file (apply #'org-latex-preview-create-images body
+                                    :processing-type 'png
+                                    (if in-buffer
+                                        org-latex-preview-appearance-options
+                                      org-html-latex-image-options))))
+            (if (and cache-file (file-readable-p cache-file))
+                (copy-file cache-file out-file t)
+              (error "Org babel latex failed: See buffers %s and %s"
+                     org-latex-preview--latex-log org-latex-preview--image-log))))
 	 ((string= "svg" extension)
 	  (with-temp-file tex-file
 	    (insert (concat (funcall org-babel-latex-preamble params)
@@ -265,7 +277,7 @@ This function is called by `org-babel-execute-src-block'."
 	    (insert
 	     (org-latex-guess-inputenc
 	      (org-splice-latex-header
-	       org-format-latex-header
+	       org-latex-preview-preamble
 	       (delq
 		nil
 		(mapcar

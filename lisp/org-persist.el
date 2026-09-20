@@ -641,22 +641,27 @@ MISC, if non-nil will be appended to the collection.  It must be a plist."
 
 ;;;; Reading container data.
 
+(defvar org-persist--inhibit-container-normalization nil
+  "Prevent `org-persist--normalize-container' from doing anything.")
+
 (defun org-persist--normalize-container (container &optional inner)
   "Normalize CONTAINER representation into (type . settings).
 
 When INNER is non-nil, do not try to match as list of containers."
-  (pcase container
-    ((or `elisp `elisp-data `version `file `index `url)
-     `(,container nil))
-    ((or (pred keywordp) (pred stringp) `(quote . ,_))
-     `(elisp-data ,container))
-    ((pred symbolp)
-     `(elisp ,container))
-    (`(,(or `elisp `elisp-data `version `file `index `url) . ,_)
-     container)
-    ((and (pred listp) (guard (not inner)))
-     (mapcar (lambda (c) (org-persist--normalize-container c 'inner)) container))
-    (_ (error "org-persist: Unknown container type: %S" container))))
+  (if org-persist--inhibit-container-normalization
+      container
+    (pcase container
+      ((or `elisp `elisp-data `version `file `index `url)
+       `(,container nil))
+      ((or (pred keywordp) (pred stringp) `(quote . ,_))
+       `(elisp-data ,container))
+      ((pred symbolp)
+       `(elisp ,container))
+      (`(,(or `elisp `elisp-data `version `file `index `url) . ,_)
+       container)
+      ((and (pred listp) (guard (not inner)))
+       (mapcar (lambda (c) (org-persist--normalize-container c 'inner)) container))
+      (_ (error "org-persist: Unknown container type: %S" container)))))
 
 (defvar org-persist--associated-buffer-cache (make-hash-table :weakness 'key)
   "Buffer hash cache.")
@@ -877,20 +882,23 @@ COLLECTION is the plist holding data collection."
 (defun org-persist-write:file (c collection)
   "Write file container C according to COLLECTION."
   (org-persist-collection-let collection
-    (when (or (and path (file-exists-p path))
-              (and (stringp (cadr c)) (file-exists-p (cadr c))))
-      (when (and (stringp (cadr c)) (file-exists-p (cadr c)))
-        (setq path (cadr c)))
-      (let* ((persist-file (plist-get collection :persist-file))
-             (ext (file-name-extension path))
-             (file-copy (org-file-name-concat
-                         org-persist-directory
-                         (format "%s-%s.%s" persist-file (md5 path) ext))))
-        (unless (file-exists-p file-copy)
-          (unless (file-exists-p (file-name-directory file-copy))
-            (make-directory (file-name-directory file-copy) t))
-          (copy-file path file-copy 'overwrite))
-        (format "%s-%s.%s" persist-file (md5 path) ext)))))
+    (if (or (and path (file-exists-p path))
+            (and (stringp (cadr c)) (file-exists-p (cadr c))))
+        (progn
+          (when (and (stringp (cadr c)) (file-exists-p (cadr c)))
+            (setq path (cadr c)))
+          (let* ((persist-file (plist-get collection :persist-file))
+                 (ext (file-name-extension path))
+                 (file-copy (org-file-name-concat
+                             org-persist-directory
+                             (format "%s-%s.%s" persist-file (md5 path) ext))))
+            (unless (file-exists-p file-copy)
+              (unless (file-exists-p (file-name-directory file-copy))
+                (make-directory (file-name-directory file-copy) t))
+              (copy-file path file-copy 'overwrite))
+            (format "%s-%s.%s" persist-file (md5 path) ext)))
+      (when-let* ((file-copy (org-persist-read c associated)))
+        (file-relative-name file-copy org-persist-directory)))))
 
 (defun org-persist-write:url (c collection)
   "Write url container C according to COLLECTION."
@@ -1013,26 +1021,27 @@ with `org-persist-write'."
   ;; Emacsen.
   (org-persist--merge-index-with-disk)
   (setq container (org-persist--normalize-container container))
-  (setq associated (org-persist--normalize-associated associated))
-  (when inherit
-    (setq inherit (org-persist--normalize-container inherit))
-    (let ((inherited-collection (org-persist--get-collection inherit associated))
-          new-collection)
-      (unless (member container (plist-get inherited-collection :container))
-        (setq new-collection
-              (plist-put (copy-sequence inherited-collection) :container
-                         (cons container (plist-get inherited-collection :container))))
-        (org-persist--remove-from-index inherited-collection)
-        (org-persist--add-to-index new-collection))))
-  (let ((collection (org-persist--get-collection container associated misc)))
-    (when (and expiry (not inherit))
-      (when expiry (plist-put collection :expiry expiry))))
-  (when (or (bufferp associated) (bufferp (plist-get associated :buffer)))
-    (with-current-buffer (if (bufferp associated)
-                             associated
-                           (plist-get associated :buffer))
-      (add-hook 'kill-buffer-hook #'org-persist-write-all-buffer nil 'local)))
-  (when write-immediately (org-persist-write container associated)))
+  (let ((org-persist--inhibit-container-normalization t))
+    (setq associated (org-persist--normalize-associated associated))
+    (when inherit
+      (setq inherit (org-persist--normalize-container inherit))
+      (let ((inherited-collection (org-persist--get-collection inherit associated))
+            new-collection)
+        (unless (member container (plist-get inherited-collection :container))
+          (setq new-collection
+                (plist-put (copy-sequence inherited-collection) :container
+                           (cons container (plist-get inherited-collection :container))))
+          (org-persist--remove-from-index inherited-collection)
+          (org-persist--add-to-index new-collection))))
+    (let ((collection (org-persist--get-collection container associated misc)))
+      (when (and expiry (not inherit))
+        (when expiry (plist-put collection :expiry expiry))))
+    (when (or (bufferp associated) (bufferp (plist-get associated :buffer)))
+      (with-current-buffer (if (bufferp associated)
+                               associated
+                             (plist-get associated :buffer))
+        (add-hook 'kill-buffer-hook #'org-persist-write-all-buffer nil 'local)))
+    (when write-immediately (org-persist-write container associated))))
 
 (cl-defun org-persist-unregister (container &optional associated &key remove-related)
   "Unregister CONTAINER in ASSOCIATED to be persistent.
@@ -1148,6 +1157,9 @@ have the same meaning as in `org-persist-read'."
   "Call `org-persist-load-all' in current buffer."
   (org-persist-load-all (current-buffer)))
 
+(defvar org-persist--inhibit-write nil
+  "Whether `org-persist-write' should be inhibited.")
+
 (defun org-persist-write (container &optional associated ignore-return)
   "Save CONTAINER according to ASSOCIATED.
 ASSOCIATED can be a plist, a buffer, or a string.
@@ -1157,30 +1169,32 @@ The return value is nil when writing fails and the written value (as
 returned by `org-persist-read') on success.
 When IGNORE-RETURN is non-nil, just return t on success without calling
 `org-persist-read'."
-  (setq org-persist--wrote-to-disk t)
-  (setq associated (org-persist--normalize-associated associated))
-  ;; Update hash
-  (when (and (plist-get associated :file)
-             (plist-get associated :hash)
-             (get-file-buffer (plist-get associated :file)))
-    (setq associated (org-persist--normalize-associated (get-file-buffer (plist-get associated :file)))))
-  (let ((collection (org-persist--get-collection container associated)))
-    (setf collection (plist-put collection :associated associated))
-    (unless (or
-             ;; Prevent data leakage from encrypted files.
-             ;; We do it in somewhat paranoid manner and do not
-             ;; allow anything related to encrypted files to be
-             ;; written.
-             (and (plist-get associated :file)
-                  (string-match-p epa-file-name-regexp (plist-get associated :file)))
-             (seq-find (lambda (v)
-                         (run-hook-with-args-until-success 'org-persist-before-write-hook v associated))
-                       (plist-get collection :container)))
-      (let ((file (org-file-name-concat org-persist-directory (plist-get collection :persist-file)))
-            (data (mapcar (lambda (c) (cons c (org-persist-write:generic c collection)))
-                          (plist-get collection :container))))
-        (org-persist--write-elisp-file file data)
-        (or ignore-return (org-persist-read container associated))))))
+  (unless org-persist--inhibit-write
+    (setq org-persist--wrote-to-disk t)
+    (setq associated (org-persist--normalize-associated associated))
+    ;; Update hash
+    (when (and (plist-get associated :file)
+               (plist-get associated :hash)
+               (get-file-buffer (plist-get associated :file)))
+      (setq associated (org-persist--normalize-associated (get-file-buffer (plist-get associated :file)))))
+    (let ((collection (org-persist--get-collection container associated))
+          (org-persist--inhibit-write t))
+      (setf collection (plist-put collection :associated associated))
+      (unless (or
+               ;; Prevent data leakage from encrypted files.
+               ;; We do it in somewhat paranoid manner and do not
+               ;; allow anything related to encrypted files to be
+               ;; written.
+               (and (plist-get associated :file)
+                    (string-match-p epa-file-name-regexp (plist-get associated :file)))
+               (cl-some (lambda (v)
+                          (run-hook-with-args-until-success 'org-persist-before-write-hook v associated))
+                        (plist-get collection :container)))
+        (let ((file (org-file-name-concat org-persist-directory (plist-get collection :persist-file)))
+              (data (mapcar (lambda (c) (cons c (org-persist-write:generic c collection)))
+                            (plist-get collection :container))))
+          (org-persist--write-elisp-file file data)
+          (or ignore-return (org-persist-read container associated)))))))
 
 (defun org-persist-write-all (&optional associated)
   "Save all the persistent data.

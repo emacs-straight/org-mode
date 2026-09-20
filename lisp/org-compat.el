@@ -314,6 +314,18 @@ removed."
       (setq object (cdr object)))
     (null object)))
 
+(if (fboundp 'ensure-list)
+    (defalias 'org-ensure-list #'ensure-list)
+  (defun org-ensure-list (object)
+    "Return OBJECT as a list.
+If OBJECT is already a list, return OBJECT itself.  If it's
+not a list, return a one-element list containing OBJECT.
+
+Compatibility substitute for `ensure-list' in Emacs 28."
+    (if (listp object)
+        object
+      (list object))))
+
 
 ;;; Emacs < 27.1 compatibility
 
@@ -568,10 +580,6 @@ Counting starts at 1."
   'org-export-before-parsing-functions "Org 9.6")
 (define-obsolete-function-alias 'org-element-remove-indentation
   'org-remove-indentation "9.0")
-(define-obsolete-variable-alias 'org-latex-create-formula-image-program
-  'org-preview-latex-default-process "9.0")
-(define-obsolete-variable-alias 'org-latex-preview-ltxpng-directory
-  'org-preview-latex-image-directory "9.0")
 (define-obsolete-variable-alias 'org-latex-listings
   'org-latex-src-block-backend "9.6")
 (define-obsolete-function-alias 'org-table-p 'org-at-table-p "9.0")
@@ -627,9 +635,6 @@ Counting starts at 1."
 
 (define-obsolete-function-alias 'org-toggle-latex-fragment 'org-latex-preview
   "9.3")
-
-(define-obsolete-function-alias 'org-remove-latex-fragment-image-overlays
-  'org-clear-latex-preview "9.3")
 
 (define-obsolete-function-alias 'org-hide-archived-subtrees
   'org-fold-hide-archived-subtrees "9.6")
@@ -771,6 +776,621 @@ This constant, for example, makes the below code not err:
 (make-obsolete 'org-in-fixed-width-region-p
                "use `org-element' library"
                "9.0")
+
+(define-obsolete-variable-alias
+  'org-format-latex-options 'org-latex-preview-appearance-options
+  "10.0"
+  "Options for creating images from LaTeX fragments.
+This is a property list with the following properties:
+:foreground  the foreground color for images embedded in Emacs, e.g. \"Black\".
+             `default' means use the foreground of the default face.
+             `auto' means use the foreground from the text face.
+:background  the background color, or \"Transparent\".
+             `default' means use the background of the default face.
+             `auto' means use the background from the text face.
+:scale       a scaling factor for the size of the images, to get more pixels
+
+Support for the following keys is obsolete, use
+`org-html-latex-image-options' instead:
+
+:html-foreground, :html-background, :html-scale
+the same numbers for HTML export.
+
+Support for the following key is obsolete, use
+`org-highlight-latex-matchers' instead:
+:matchers    a list indicating which matchers should be used to
+             find LaTeX fragments.  Valid members of this list are:
+             \"begin\" find environments
+             \"$1\"    find single characters surrounded by $.$
+             \"$\"     find math expressions surrounded by $...$
+             \"$$\"    find math expressions surrounded by $$....$$
+             \"\\(\"    find math expressions surrounded by \\(...\\)
+             \"\\=\\[\"    find math expressions surrounded by \\=\\[...\\]")
+
+(make-obsolete-variable
+ 'org-format-latex-signal-error "no longer used" "10.0")
+
+(defcustom org-format-latex-header "\\documentclass{article}
+\\usepackage[usenames]{color}
+\[DEFAULT-PACKAGES]
+\[PACKAGES]
+\\pagestyle{empty}             % do not remove
+% The settings below are copied from fullpage.sty
+\\setlength{\\textwidth}{\\paperwidth}
+\\addtolength{\\textwidth}{-3cm}
+\\setlength{\\oddsidemargin}{1.5cm}
+\\addtolength{\\oddsidemargin}{-2.54cm}
+\\setlength{\\evensidemargin}{\\oddsidemargin}
+\\setlength{\\textheight}{\\paperheight}
+\\addtolength{\\textheight}{-\\headheight}
+\\addtolength{\\textheight}{-\\headsep}
+\\addtolength{\\textheight}{-\\footskip}
+\\addtolength{\\textheight}{-3cm}
+\\setlength{\\topmargin}{1.5cm}
+\\addtolength{\\topmargin}{-2.54cm}"
+  "The document header used for processing LaTeX fragments.
+It is imperative that this header make sure that no page number
+appears on the page.  The package defined in the variables
+`org-latex-default-packages-alist' and `org-latex-packages-alist'
+will either replace the placeholder \"[PACKAGES]\" in this
+header, or they will be appended."
+  :group 'org-latex
+  :type 'string)
+
+(make-obsolete-variable
+ 'org-format-latex-header
+ "To set the preamble for generating LaTeX preview images, use
+`org-latex-preview-preamble' instead.
+
+To generate images from LaTeX fragments programmatically use
+`org-latex-preview-create-images' instead of `org-format-latex' or
+`org-create-formula-image'."
+ "10.0")
+
+(define-obsolete-variable-alias
+  'org-format-latex-header 'org-latex-preview-preamble "10.0")
+(define-obsolete-variable-alias
+  'org-preview-latex-default-process 'org-latex-preview-process-default "10.0")
+
+(defcustom org-preview-latex-process-alist
+  '((dvipng
+     :programs ("latex" "dvipng")
+     :description "dvi > png"
+     :message "you need to install the programs: latex and dvipng."
+     :image-input-type "dvi"
+     :image-output-type "png"
+     :image-size-adjust (1.0 . 1.0)
+     :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+     :image-converter ("dvipng -D %D -T tight -o %O %f")
+     :transparent-image-converter
+     ("dvipng -D %D -T tight -bg Transparent -o %O %f"))
+    (dvisvgm
+     :programs ("latex" "dvisvgm")
+     :description "dvi > svg"
+     :message "you need to install the programs: latex and dvisvgm."
+     :image-input-type "dvi"
+     :image-output-type "svg"
+     :image-size-adjust (1.7 . 1.5)
+     :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+     :image-converter ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
+    (xelatex
+     :programs ("xelatex" "dvisvgm")
+     :description "xdv > svg"
+     :message "you need to install the programs: xelatex and dvisvgm."
+     :image-input-type "xdv"
+     :image-output-type "svg"
+     :image-size-adjust (1.7 . 1.5)
+     :latex-compiler ("xelatex -no-pdf -interaction nonstopmode -output-directory %o %f")
+     :image-converter ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
+    (imagemagick
+     :programs ("latex" "convert")
+     :description "pdf > png"
+     :message "you need to install the programs: latex and imagemagick."
+     :image-input-type "pdf"
+     :image-output-type "png"
+     :image-size-adjust (1.0 . 1.0)
+     :latex-compiler ("pdflatex -interaction nonstopmode -output-directory %o %f")
+     :image-converter
+     ("convert -density %D -trim -antialias %f -quality 100 %O")))
+  "Definitions of external processes for LaTeX previewing.
+Org mode can use some external commands to generate TeX snippet's images for
+previewing or inserting into HTML files, e.g., \"dvipng\".  This variable tells
+`org-create-formula-image' how to call them.
+
+The value is an alist with the pattern (NAME . PROPERTIES).  NAME is a symbol.
+PROPERTIES accepts the following attributes:
+
+  :programs           list of strings, required programs.
+  :description        string, describe the process.
+  :message            string, message it when required programs cannot be found.
+  :image-input-type   string, input file type of image converter (e.g., \"dvi\").
+  :image-output-type  string, output file type of image converter (e.g., \"png\").
+  :image-size-adjust  cons of numbers, the car element is used to adjust LaTeX
+                      image size showed in buffer and the cdr element is for
+                      HTML file.  This option is only useful for process
+                      developers, users should use variable
+                      `org-format-latex-options' instead.
+  :post-clean         list of strings, files matched are to be cleaned up once
+                      the image is generated.  When nil, the files with \".dvi\",
+                      \".xdv\", \".pdf\", \".tex\", \".aux\", \".log\", \".svg\",
+                      \".png\", \".jpg\", \".jpeg\" or \".out\" extension will
+                      be cleaned up.
+  :latex-header       list of strings, the LaTeX header of the snippet file.
+                      When nil, the fallback value is used instead, which is
+                      controlled by `org-format-latex-header',
+                      `org-latex-default-packages-alist' and
+                      `org-latex-packages-alist', which see.
+  :latex-compiler list of LaTeX commands, as strings or a function.
+                      Each of them is given to the shell.
+                      Place-holders \"%t\", \"%b\" and \"%o\" are
+                      replaced with values defined below.
+                      When a function, that function should accept the
+                      file name as its single argument.
+  :image-converter list of image converter commands strings or a
+                      function.  Each of them is given to the shell
+                      and supports any of the following place-holders
+                      defined below.
+                      When a function, that function should accept the
+                      file name as its single argument.
+
+If set, :transparent-image-converter is used instead of :image-converter to
+convert an image when the background color is nil or \"Transparent\".
+
+Place-holders used by `:image-converter' and `:latex-compiler':
+
+  %f    input file name
+  %b    base name of input file
+  %o    base directory of input file
+  %O    absolute output file name
+
+Place-holders only used by `:image-converter':
+
+  %D    dpi, which is used to adjust image size by some processing commands.
+  %S    the image size scale ratio, which is used to adjust image size by some
+        processing commands."
+  :group 'org-latex
+  :package-version '(Org . "9.8")
+  :type '(alist :tag "LaTeX to image backends"
+		:value-type (plist)))
+
+(make-obsolete-variable
+ 'org-preview-latex-process-alist 'org-latex-preview-process-alist
+ "10.0")
+
+(define-obsolete-function-alias
+  'org-clear-latex-preview 'org-latex-preview-clear-overlays "10.0")
+(make-obsolete
+ 'org-place-formula-image "no longer used" "10.0")
+;;;###autoload (autoload 'org-latex-preview--format-color "org-latex-preview")
+(define-obsolete-function-alias
+  'org-latex-color-format 'org-latex-preview--format-color "10.0")
+;;;###autoload (autoload 'org-latex-preview--attr-color "org-latex-preview")
+(define-obsolete-function-alias
+  'org-latex-color 'org-latex-preview--attr-color "10.0")
+;; MathML related functions from org-latex-preview.el
+(define-obsolete-variable-alias
+  'org-latex-to-mathml-jar-file 'org-mathml-converter-jar-file "10.0")
+(define-obsolete-variable-alias
+  'org-latex-to-mathml-convert-command 'org-mathml-convert-command "10.0")
+(define-obsolete-function-alias
+  'org-format-latex-mathml-available-p 'org-mathml-converter-available-p "10.0")
+(define-obsolete-function-alias
+  'org-create-math-formula 'org-mathml-convert-latex "10.0")
+(define-obsolete-function-alias
+  'org-latex-mathml-directory 'org-mathml-export-directory "10.0")
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-format-latex-as-mathml (latex-frag latex-frag-type
+                                              prefix &optional dir)
+  (let* ((absprefix (expand-file-name prefix dir))
+         (print-length nil) (print-level nil)
+         (formula-id (concat
+                      "formula-"
+                      (sha1
+                       (prin1-to-string
+                        (list latex-frag
+                              org-latex-to-mathml-convert-command)))))
+         (formula-cache (format "%s-%s.mathml" absprefix formula-id))
+         (formula-cache-dir (file-name-directory formula-cache)))
+    (unless (file-directory-p formula-cache-dir)
+      (make-directory formula-cache-dir t))
+    (unless (file-exists-p formula-cache)
+      (org-mathml-convert-latex latex-frag formula-cache))
+    (if (file-exists-p formula-cache)
+        ;; Successful conversion.  Return the link to MathML file.
+        (org-add-props
+            (format  "[[file:%s]]" (file-relative-name formula-cache dir))
+            (list 'org-latex-src (replace-regexp-in-string "\"" "" latex-frag)
+                  'org-latex-src-embed-type (if latex-frag-type
+                                                'paragraph 'character)))
+      ;; Failed conversion.  Return the LaTeX fragment verbatim
+      latex-frag)))
+(make-obsolete #'org-format-latex-as-mathml "to be removed" "10.0")
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-dvipng-color (attr)
+  "Return a RGB color specification for dvipng."
+  (org-dvipng-color-format (face-attribute 'default attr nil)))
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-dvipng-color-format (color-name)
+  "Convert COLOR-NAME to a RGB color value for dvipng."
+  (apply #'format "rgb %s %s %s"
+         (mapcar 'org-normalize-color
+                 (color-values color-name))))
+(make-obsolete
+ 'org-dvipng-color "to be removed" "10.0")
+(make-obsolete
+ 'org-dvipng-color-format "to be removed" "10.0")
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-normalize-color (value)
+  "Return string to be used as color value for an RGB component."
+  (format "%g" (/ value 65535.0)))
+(make-obsolete 'org-normalize-color "to be removed" "9.7")
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defcustom org-preview-latex-image-directory "ltximg/"
+  "Path to store latex preview images.
+A relative path here creates many directories relative to the
+processed Org files paths.  An absolute path puts all preview
+images at the same place."
+  :group 'org-latex
+  :version "26.1"
+  :package-version '(Org . "9.0")
+  :type 'string)
+
+(make-obsolete-variable
+ 'org-preview-latex-image-directory
+ "Use `org-latex-preview-cache' instead."
+ "10.0")
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defvar org-latex-default-packages-alist)
+(defvar org-latex-packages-alist)
+(defvar org-html-latex-image-options)
+(declare-function org-format-latex-as-html "ox-html")
+(declare-function org-mathml-converter-available-p "ox-mathml")
+
+(defun org-format-latex
+    (prefix &optional beg end dir overlays msg forbuffer processing-type)
+  "Replace LaTeX fragments with links to an image.
+
+The function takes care of creating the replacement image.
+
+Only consider fragments between BEG and END when those are
+provided.
+
+When optional argument OVERLAYS is non-nil, display the image on
+top of the fragment instead of replacing it.
+
+PROCESSING-TYPE is the conversion method to use, as a symbol.
+
+Some of the options can be changed using the variable
+`org-format-latex-options', which see."
+  (when (and overlays (fboundp 'clear-image-cache)) (clear-image-cache))
+  (unless (eq processing-type 'verbatim)
+    (let* ((math-regexp "\\$\\|\\\\[([]\\|^[ \t]*\\\\begin{[A-Za-z0-9*]+}")
+	   (cnt 0)
+	   checkdir-flag)
+      (goto-char (or beg (point-min)))
+      ;; Optimize overlay creation: (info "(elisp) Managing Overlays").
+      (when (and overlays (memq processing-type '(dvipng imagemagick)))
+	(overlay-recenter (or end (point-max))))
+      (while (re-search-forward math-regexp end t)
+	(unless (and overlays
+		     (eq (get-char-property (point) 'org-overlay-type)
+			 'org-latex-overlay))
+	  (let* ((context (org-element-context))
+		 (type (org-element-type context)))
+	    (when (memq type '(latex-environment latex-fragment))
+	      (let ((block-type (eq type 'latex-environment))
+		    (value (org-element-property :value context))
+		    (beg (org-element-property :begin context))
+		    (end (save-excursion
+			   (goto-char (org-element-property :end context))
+			   (skip-chars-backward " \r\t\n")
+			   (point))))
+		(cond
+		 ((eq processing-type 'mathjax)
+		  ;; Prepare for MathJax processing.
+		  (if (not (string-match "\\`\\$\\$?" value))
+		      (goto-char end)
+		    (delete-region beg end)
+		    (if (string= (match-string 0 value) "$$")
+			(insert "\\[" (substring value 2 -2) "\\]")
+		      (insert "\\(" (substring value 1 -1) "\\)"))))
+		 ((eq processing-type 'html)
+		  (goto-char beg)
+		  (delete-region beg end)
+		  (insert (org-format-latex-as-html value)))
+		 ((assq processing-type org-preview-latex-process-alist)
+		  ;; Process to an image.
+		  (cl-incf cnt)
+		  (goto-char beg)
+		  (let* ((processing-info
+			  (cdr (assq processing-type org-preview-latex-process-alist)))
+			 (face (face-at-point))
+			 ;; Get the colors from the face at point.
+			 (fg
+			  (let ((color (plist-get org-format-latex-options
+						  :foreground)))
+                            (if forbuffer
+                                (cond
+                                 ((eq color 'auto)
+                                  (face-attribute face :foreground nil 'default))
+                                 ((eq color 'default)
+                                  (face-attribute 'default :foreground nil))
+                                 (t color))
+                              color)))
+			 (bg
+			  (let ((color (plist-get org-format-latex-options
+						  :background)))
+                            (if forbuffer
+                                (cond
+                                 ((eq color 'auto)
+                                  (face-attribute face :background nil 'default))
+                                 ((eq color 'default)
+                                  (face-attribute 'default :background nil))
+                                 (t color))
+                              color)))
+			 (hash (sha1 (prin1-to-string
+				      (list org-format-latex-header
+					    org-latex-default-packages-alist
+					    org-latex-packages-alist
+					    org-format-latex-options
+					    forbuffer value fg bg))))
+			 (imagetype (or (plist-get processing-info :image-output-type) "png"))
+			 (absprefix (expand-file-name prefix dir))
+			 (linkfile (format "%s_%s.%s" prefix hash imagetype))
+			 (movefile (format "%s_%s.%s" absprefix hash imagetype))
+			 (sep (and block-type "\n\n"))
+			 (link (concat sep "[[file:" linkfile "]]" sep))
+			 (html-options
+                          (and (not forbuffer)
+                               (require 'ox-html)
+                               `(,@(and-let* ((foreground
+                                               (plist-get org-html-latex-image-options
+                                                          :foreground)))
+                                     (list :html-foreground foreground))
+                                 ,@(and-let* ((background
+                                               (plist-get org-html-latex-image-options
+                                                          :background)))
+                                     (list :html-background background))
+                                 ,@(and-let* ((scale (plist-get org-html-latex-image-options
+                                                                :scale)))
+                                     (list :html-scale scale)))))
+                         (options
+			  (org-combine-plists
+			   html-options
+                           org-format-latex-options
+			   `(:foreground ,fg :background ,bg))))
+		    (when msg (message msg cnt))
+		    (unless checkdir-flag ; Ensure the directory exists.
+		      (setq checkdir-flag t)
+		      (let ((todir (file-name-directory absprefix)))
+			(unless (file-directory-p todir)
+			  (make-directory todir t))))
+		    (unless (file-exists-p movefile)
+		      (org-create-formula-image
+		       value movefile options forbuffer processing-type))
+                    (with-no-warnings
+                      (org-place-formula-image link block-type beg end value overlays movefile imagetype))))
+		 ((eq processing-type 'mathml)
+		  (require 'ox-mathml)
+                  ;; Process to MathML.
+		  (unless (org-mathml-converter-available-p)
+		    (user-error "LaTeX to MathML converter not configured"))
+		  (cl-incf cnt)
+		  (when msg (message msg cnt))
+		  (goto-char beg)
+		  (delete-region beg end)
+		  (insert (with-no-warnings
+                            (org-format-latex-as-mathml
+			     value block-type prefix dir))))
+		 (t
+		  (error "Unknown conversion process %s for LaTeX fragments"
+			 processing-type)))))))))))
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-place-formula-image (link block-type beg end value overlays movefile imagetype)
+  "Place an overlay from BEG to END showing MOVEFILE.
+The overlay will be above BEG if OVERLAYS is non-nil."
+  (if overlays
+      (progn
+        (dolist (o (overlays-in beg end))
+          (when (eq (overlay-get o 'org-overlay-type)
+                    'org-latex-overlay)
+            (delete-overlay o)))
+        (let ((ov (make-overlay beg end))
+              (imagetype (or (intern imagetype) 'png)))
+          (overlay-put ov 'org-overlay-type 'org-latex-overlay)
+          (overlay-put ov 'evaporate t)
+          (overlay-put ov
+                       'modification-hooks
+                       (list (lambda (o _flag _beg _end &optional _l)
+                               (delete-overlay o))))
+          (overlay-put ov
+                       'display
+                       (list 'image :type imagetype :file movefile :ascent 'center)))
+        (goto-char end))
+    (delete-region beg end)
+    (insert
+     (org-add-props link
+         (list 'org-latex-src
+               (replace-regexp-in-string "\"" "" value)
+               'org-latex-src-embed-type
+               (if block-type 'paragraph 'character))))))
+
+
+
+;;;###autoload (autoload 'org-latex-preview-compiler-command-map "org-latex-preview")
+
+(defvar org-latex-preview-compiler-command-map)
+(defvar org-latex-precompile)
+(defvar org-latex-compiler)
+(declare-function org-latex-preview--get-display-dpi "org-latex-preview")
+(declare-function org-latex-preview--attr-color "org-latex-preview")
+(declare-function org-latex-preview--format-color "org-latex-preview")
+(declare-function org-mathml-convert-latex "ox-mathml")
+(declare-function org-latex-make-preamble "ox-latex")
+(declare-function org-export-get-environment "ox")
+(declare-function org-export-get-backend "ox")
+(declare-function org-export-with-buffer-copy "ox")
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-create-formula-image
+    (string tofile options buffer &optional processing-type)
+  "Create an image from LaTeX source using external processes.
+
+The LaTeX STRING is saved to a temporary LaTeX file, then
+converted to an image file by process PROCESSING-TYPE defined in
+`org-preview-latex-process-alist'.  A nil value defaults to
+`org-preview-latex-default-process'.
+
+The generated image file is eventually moved to TOFILE.
+
+The OPTIONS argument controls the size, foreground color and
+background color of the generated image.
+
+When BUFFER non-nil, this function is used for LaTeX previewing.
+Otherwise, it is used to deal with LaTeX snippets showed in
+a HTML file."
+  (require 'org-latex-preview)
+  (require 'ox-latex)
+  (let* ((processing-type (or processing-type
+			      org-preview-latex-default-process))
+	 (processing-info
+	  (cdr (assq processing-type org-preview-latex-process-alist)))
+	 (programs (plist-get processing-info :programs))
+	 (error-message (or (plist-get processing-info :message) ""))
+	 (image-input-type (plist-get processing-info :image-input-type))
+	 (image-output-type (plist-get processing-info :image-output-type))
+	 (post-clean (or (plist-get processing-info :post-clean)
+			 '(".dvi" ".xdv" ".pdf" ".tex" ".aux" ".log"
+			   ".svg" ".png" ".jpg" ".jpeg" ".out")))
+	 (latex-header
+	  (let ((org-latex-precompile nil))
+            (or (plist-get processing-info :latex-header)
+	        (org-latex-make-preamble
+	         (org-export-get-environment (org-export-get-backend 'latex))
+	         org-format-latex-header
+	         'snippet))))
+	 (latex-compiler (plist-get processing-info :latex-compiler))
+         (org-tex-compiler (cdr (assoc org-latex-compiler
+                                       org-latex-preview-compiler-command-map)))
+	 (tmpdir temporary-file-directory)
+	 (texfilebase (make-temp-name
+		       (expand-file-name "orgtex" tmpdir)))
+	 (texfile (concat texfilebase ".tex"))
+	 (image-size-adjust (or (plist-get processing-info :image-size-adjust)
+				'(1.0 . 1.0)))
+	 (scale (* (if buffer (car image-size-adjust) (cdr image-size-adjust))
+		   (or (plist-get options (if buffer :scale :html-scale)) 1.0)))
+	 (dpi (* scale (if (and buffer (display-graphic-p))
+                           (org-latex-preview--get-display-dpi)
+                         140.0)))
+	 (fg (or (plist-get options (if buffer :foreground :html-foreground))
+		 "Black"))
+	 (bg (or (plist-get options (if buffer :background :html-background))
+		 "Transparent"))
+	 (image-converter
+          (mapcar (lambda (s) (replace-regexp-in-string "%B.*?\\." "%B." s))
+                  (ensure-list
+                   (or (and (string= bg "Transparent")
+                            (plist-get processing-info :transparent-image-converter))
+                       (plist-get processing-info :image-converter)))))
+         (log-buf (get-buffer-create "*Org Preview LaTeX Output*"))
+	 (resize-mini-windows nil)) ;Fix Emacs flicker when creating image.
+    (dolist (program programs)
+      (org-check-external-command program error-message))
+    (if (memq fg '(default auto))
+	(setq fg (org-latex-preview--attr-color :foreground))
+      (setq fg (org-latex-preview--format-color fg)))
+    (setq bg (cond
+	      ((memq bg '(default auto)) (org-latex-preview--attr-color :background))
+	      ((string= bg "Transparent") nil)
+	      (t (org-latex-preview--format-color bg))))
+    ;; Remove TeX \par at end of snippet to avoid trailing space.
+    (if (string-suffix-p string "\n")
+        (aset string (1- (length string)) ?%)
+      (setq string (concat string "%")))
+    (with-temp-file texfile
+      (insert latex-header)
+      (insert "\n\\begin{document}\n"
+	      "\\definecolor{fg}{rgb}{" fg "}%\n"
+	      (if bg
+		  (concat "\\definecolor{bg}{rgb}{" bg "}%\n"
+			  "\n\\pagecolor{bg}%\n")
+		"")
+	      "\n{\\color{fg}\n"
+	      string
+	      "\n}\n"
+	      "\n\\end{document}\n"))
+    (let* ((err-msg (format "Please adjust `%s' part of \
+`org-preview-latex-process-alist'."
+			    processing-type))
+           (spec `((?D . ,(shell-quote-argument (format "%s" dpi)))
+	           (?S . ,(shell-quote-argument (format "%s" (/ dpi 140.0))))
+                   (?B . ,(shell-quote-argument texfilebase))
+                   (?l . ,org-tex-compiler)
+                   (?L . ,(car (split-string org-tex-compiler)))))
+	   (image-input-file
+	    (org-compile-file
+	     texfile latex-compiler image-input-type err-msg log-buf spec))
+	   (image-output-file
+	    (org-compile-file
+	     image-input-file image-converter image-output-type err-msg log-buf spec)))
+      (copy-file image-output-file tofile 'replace)
+      (dolist (e post-clean)
+	(when (file-exists-p (concat texfilebase e))
+	  (delete-file (concat texfilebase e))))
+      image-output-file)))
+
+;; FIXME: Unused; obsoleted; to be removed.
+(defun org-html-format-latex (latex-frag processing-type info)
+  "Format a LaTeX fragment LATEX-FRAG into HTML.
+PROCESSING-TYPE designates the tool used for conversion.  It can
+be `mathjax', `verbatim', `html', nil, t or symbols in
+`org-preview-latex-process-alist', e.g., `dvipng', `dvisvgm' or
+`imagemagick'.  See `org-html-with-latex' for more information.
+INFO is a plist containing export properties."
+  (let ((cache-relpath "") (cache-dir ""))
+    (unless (or (eq processing-type 'mathjax)
+                (eq processing-type 'html))
+      (let ((bfn (or (buffer-file-name)
+		     (make-temp-name
+		      (expand-file-name "latex" temporary-file-directory))))
+	    (latex-header
+	     (let ((header (plist-get info :latex-header)))
+	       (and header
+		    (concat (mapconcat
+			     (lambda (line) (concat "#+LATEX_HEADER: " line))
+			     (org-split-string header "\n")
+			     "\n")
+			    "\n")))))
+	(setq cache-relpath
+	      (concat (file-name-as-directory org-preview-latex-image-directory)
+		      (file-name-sans-extension
+		       (file-name-nondirectory bfn)))
+	      cache-dir (file-name-directory
+                         (or (plist-get info :output-file) bfn)))
+	;; Re-create LaTeX environment from original buffer in
+	;; temporary buffer so that dvipng/imagemagick can properly
+	;; turn the fragment into an image.
+	(setq latex-frag (concat latex-header latex-frag))))
+    (org-export-with-buffer-copy
+     :to-buffer (get-buffer-create " *Org HTML Export LaTeX*")
+     :drop-visibility t :drop-narrowing t :drop-contents t
+     (erase-buffer)
+     (insert latex-frag)
+     (org-format-latex cache-relpath nil nil cache-dir nil
+		       "Creating LaTeX Image..." nil processing-type)
+     (buffer-string))))
+
+(make-obsolete #'org-format-latex "to be removed" "10.0")
+(make-obsolete #'org-create-formula-image "to be removed" "10.0")
+(make-obsolete #'org-html-format-latex "to be removed" "10.0")
 
 (define-obsolete-function-alias 'org--math-always-on
   'org--math-p "9.7")

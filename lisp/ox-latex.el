@@ -2237,6 +2237,16 @@ If the square brackets are missing, return STR enclosed in square brackets."
          (replace-regexp-in-string ; remove excess ] at the end
           "]+\\'" "]" str))))))
 
+(defcustom org-latex-precompile nil
+  "Whether to precompile the preamble during export.
+
+LaTeX export can be considerably faster with a precompiled preamble.
+This requires the LaTeX package \"mylatexformat\" to be installed."
+  :group 'org-export-latex
+  :package-version '(Org . "10.0")
+  :type 'boolean
+  :safe #'booleanp)
+
 ;;;###autoload
 (defun org-latex-make-preamble (info &optional template snippet?)
   "Return a formatted LaTeX preamble.
@@ -2266,29 +2276,60 @@ specified in `org-latex-default-packages-alist' or
 			            "^[ \t]*\\\\documentclass\\(\\(\\[[^]]*\\]\\)?\\)"
 			            class-options header t nil 1)))
                                 nil)))
-	      (user-error "Unknown LaTeX class `%s'" class))))
-    (org-latex-guess-polyglossia-language
-     (org-latex-guess-babel-language
-      (org-latex-guess-fontspec
-       (org-latex-guess-inputenc
-        (org-element-normalize-string
-	 (org-splice-latex-header
-	  class-template
-	  (org-latex--remove-packages org-latex-default-packages-alist info)
-	  (org-latex--remove-packages org-latex-packages-alist info)
-	  snippet?
-	  (mapconcat #'org-element-normalize-string
-		     (list (plist-get info :latex-header)
-			   (and (not snippet?)
-			        (plist-get info :latex-header-extra))
-                           (and (not snippet?)
-                                (plist-get info :latex-use-sans)
-                                "\\renewcommand*\\familydefault{\\sfdefault}"))
+	      (user-error "Unknown LaTeX class `%s'" class)))
+         ;; Expanded preamble text for the Org buffer
+         (header
+          (org-latex-guess-polyglossia-language
+           (org-latex-guess-babel-language
+            (org-latex-guess-fontspec
+             (org-latex-guess-inputenc
+              (org-element-normalize-string
+	       (org-splice-latex-header
+	        class-template
+	        (org-latex--remove-packages org-latex-default-packages-alist info)
+	        (org-latex--remove-packages org-latex-packages-alist info)
+	        snippet?
+	        (mapconcat #'org-element-normalize-string
+		           (list (plist-get info :latex-header)
+			         (and (not snippet?)
+			              (plist-get info :latex-header-extra))
+                                 (and (not snippet?)
+                                      (plist-get info :latex-use-sans)
+                                      "\\renewcommand*\\familydefault{\\sfdefault}"))
 
-		     ""))))
-       info)
-      info)
-     info)))
+		           ""))))
+             info)
+            info)
+           info)))
+    (let* ((preamble (concat (org-latex--insert-compiler info) header "\n"))
+           (format-file
+            (and org-latex-precompile
+                 ;; Precompilation is disabled for xelatex/lualatex for now.
+                 (if (member (plist-get info :latex-compiler)
+                             '("xelatex" "lualatex"))
+                     (progn
+                       (display-warning
+                        '(org latex-export disable-local-precompile)
+                        (format "%s does not support precompilation, disabling LaTeX precompile in this buffer.
+To re-enable, run `(setq-local org-latex-precompile t)' or reopen this buffer."
+                                (plist-get info :latex-compiler)))
+                       (when-let* ((input-buffer (plist-get info :input-buffer))
+                                   ((buffer-live-p input-buffer)))
+                         (setf (buffer-local-value
+                                'org-latex-precompile (get-buffer input-buffer))
+                               nil)))
+                   (org-latex--precompile
+                    info preamble
+                    (string-match-p "\\(?:\\\\input{\\|\\\\include{\\)[^/]" preamble))))))
+      ;; Return (path to format-file OR full preamble text) + compiler statement + timestamp
+      ;; If using format-file, it should be the first line of the tex file.
+      (concat (and format-file (concat "%& " (file-name-sans-extension format-file) "\n"))
+              (and (plist-get info :time-stamp-file)
+                   (format-time-string "%% Created %Y-%m-%d %a %H:%M\n"))
+              (if format-file
+                  "\n% end precompiled preamble\n\\ifcsname endofdump\\endcsname\\endofdump\\fi\n"
+                preamble)
+              "\n"))))
 
 (defun org-latex-template (contents info)
   "Return complete document string after LaTeX conversion.
@@ -2297,12 +2338,7 @@ holding export options."
   (let ((title (org-export-data (plist-get info :title) info))
 	(spec (org-latex--format-spec info)))
     (concat
-     ;; Timestamp.
-     (and (plist-get info :time-stamp-file)
-	  (format-time-string "%% Created %Y-%m-%d %a %H:%M\n"))
-     ;; LaTeX compiler.
-     (org-latex--insert-compiler info)
-     ;; Document class and packages.
+     ;; Timestamp, compiler statement, document class and packages.
      (org-latex-make-preamble info)
      ;; Possibly limit depth for headline numbering.
      (let ((sec-num (plist-get info :section-numbers)))
@@ -2372,6 +2408,127 @@ holding export options."
      ;; Document end.
      "\\end{document}")))
 
+(defconst org-latex--precompile-log "*Org LaTeX Precompilation*"
+  "Buffer name for LaTeX precompile output.")
+
+(defvar org-latex-precompile-command
+  "%l -output-directory %o -ini -jobname=%b \"&%L\" mylatexformat.ltx %f"
+  "Command used for precompilation.
+
+This command is run by `org-latex--precompile-preamble' to precompile
+the preamble of a LaTeX file, potentially speeding up compilation
+afterwards.  The values of the placeholders depend on the name of the
+file being compiled and the latex compiler in use:
+
+  %l   LaTeX compiler command string
+  %L   LaTeX compiler command name
+  %f   input file name
+  %b   base name of input file
+  %o   base directory of input file")
+
+(defun org-latex--precompile (info preamble &optional tempfile-p spec)
+  "Precompile/dump LaTeX PREAMBLE text using `org-latex-precompile-command'.
+
+The path to the format file (.fmt) is returned.  If the format
+file could not be found in the persist cache, it is generated
+according to PROCESSING-INFO and stored.  INFO is a plist used as
+a communication channel.
+
+If TEMPFILE-P is non-nil, then it is assumed the preamble does
+not contain any relative references to other files.
+
+SPEC, if provided, should be a format spec alist suitable for
+`org-latex-precompile-command', and will default to the LaTeX compiler
+used for the preview or export process.  See `org-compile-file-commands'
+for more about SPEC.
+
+This is intended to speed up Org's LaTeX preview and export process."
+  (let ((preamble-hash
+         (sha1 (concat preamble
+                       (plist-get info :latex-compiler) ;
+                       (alist-get ?l spec)
+                       (if tempfile-p "-temp" default-directory))))
+        (default-directory
+         ;; We want the precompilation process to run in the main
+         ;; file's directory if there are includes, and in
+         ;; temporary-file-directory otherwise.  Note that in either
+         ;; case, the format file itself is created/placed in
+         ;; temporary-file-directory.
+         (if tempfile-p (temporary-file-directory) default-directory)))
+    (or (cadr
+         (org-persist-read "LaTeX format file cache"
+                           (list :key preamble-hash)
+                           nil nil :read-related t))
+        (when-let* ((dump-file
+                     (org-latex--precompile-preamble
+                      info preamble
+                      (expand-file-name preamble-hash (temporary-file-directory))
+                      spec)))
+          (cadr
+           (org-persist-register `(,"LaTeX format file cache"
+                                   (file ,dump-file))
+                                 (list :key preamble-hash)
+                                 :write-immediately t))))))
+
+(defun org-latex--remove-cached-preamble
+    (latex-compiler preamble &optional tempfile-p latex-precompiler)
+  "Remove the cached preamble file for PREAMBLE compiled with LATEX-COMPILER.
+TEMPFILE-P should be set to mirror the caching `org-latex--precompile' call
+which is intended to be evicted from the cache."
+  (let ((preamble-hash
+         (sha1 (concat preamble
+                       latex-compiler
+                       latex-precompiler
+                       (if tempfile-p "-temp" default-directory)))))
+    (org-persist-unregister "LaTeX format file cache"
+                            (list :key preamble-hash)
+                            :remove-related t)))
+
+(defun org-latex--precompile-preamble (info preamble basepath &optional spec)
+  "Precompile PREAMBLE with \"mylatexformat\".
+
+The PREAMBLE string is placed in BASEPATH.tex and compiled according to
+INFO. If compilation and dumping succeeded, BASEPATH.fmt will be
+returned.
+
+SPEC, if provided, should be a format spec alist suitable for
+`org-latex-precompile-command', and will default to the LaTeX compiler
+used for the preview or export process.
+
+Should any errors occur during compilation, nil will be returned, and
+appropriate warnings may be emitted."
+  (let ((dump-file (concat basepath ".fmt"))
+        (preamble-file (concat basepath ".tex"))
+        (precompile-buffer
+         (with-current-buffer
+             (get-buffer-create org-latex--precompile-log)
+           (erase-buffer)
+           (current-buffer))))
+    (with-temp-file preamble-file
+      (insert preamble "\n\\endofdump\n"))
+    (message "Precompiling Org LaTeX preamble...")
+    (condition-case nil
+        (org-compile-file
+         preamble-file (list org-latex-precompile-command)
+         "fmt" nil precompile-buffer
+         (or spec `((?l . ,(plist-get info :latex-compiler))
+                    (?L . ,(plist-get info :latex-compiler)))))
+      (:success
+       (kill-buffer precompile-buffer)
+       (delete-file preamble-file)
+       dump-file)
+      (error
+       (unless (= 0 (call-process "kpsewhich" nil nil nil "mylatexformat.ltx"))
+         (display-warning
+          '(org latex-preview preamble-precompilation)
+          "The LaTeX package \"mylatexformat\" is required for precompilation, but could not be found")
+         :warning)
+       (display-warning
+        '(org latex-preview preamble-precompilation)
+        (format "Failed to precompile preamble (%s), see the \"%s\" buffer."
+                preamble-file precompile-buffer)
+        :warning)
+       nil))))
 
 
 ;;; Transcode Functions

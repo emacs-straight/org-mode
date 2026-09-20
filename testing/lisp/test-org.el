@@ -10538,16 +10538,16 @@ two
             (org-format-latex-as-html "quote\" ; |")))))
 
 (defun test-org/extract-mathml-math (xml)
-  "Extract body from result of `org-create-math-formula'."
+  "Extract body from result of `org-mathml-convert-latex'."
   (and (string-match "<math[^>]*>\\(\\(?:.\\|\n\\)*\\)</math>" xml)
        (match-string 1 xml)))
 
 (ert-deftest test-org/create-math-formula ()
-  "Test shell special characters escaping in `org-create-math-formula'."
+  "Test shell special characters escaping in `org-mathml-convert-latex'."
   ;; printf is only available in POSIX-compatible shells.
   (skip-unless (not (memq system-type '(ms-dos windows-nt))))
   ;; The function requires <math>...</math> elements.
-  (let ((org-latex-to-mathml-convert-command
+  (let ((org-mathml-convert-command
          "printf \"<math xmlns=\\\"http://www.w3.org/1998/Math/MathML\\\"><I%%sI></math>\" %i >%o"))
     ;; See comments in `test-org/format-latex-as-html'.
     ;;
@@ -10555,22 +10555,22 @@ two
     ;; are leaked to command arguments.
     (should (equal "<I(|)`[[\\]]{}#$'!I>"
             (test-org/extract-mathml-math
-             (org-create-math-formula "(|)`[[\\]]{}#$'!"))))
+             (org-mathml-convert-latex "(|)`[[\\]]{}#$'!"))))
     ;; Multiple words.
     (should
      (equal "<Iwords ; |I>"
             (test-org/extract-mathml-math
-             (org-create-math-formula "words ; |"))))
+             (org-mathml-convert-latex "words ; |"))))
     ;; Bypass single quote.
     (should
      (equal "<Iapostrophe' ; |I>"
             (test-org/extract-mathml-math
-             (org-create-math-formula "apostrophe' ; |"))))
+             (org-mathml-convert-latex "apostrophe' ; |"))))
     ;; Bypass double quote.
     (should
      (equal "<Iquote\" ; |I>"
             (test-org/extract-mathml-math
-             (org-create-math-formula "quote\" ; |"))))))
+             (org-mathml-convert-latex "quote\" ; |"))))))
 
 ;; Copied from Emacs source code and prepended name with "org-test-"
 ;; test/lisp/minibuffer-tests.el
