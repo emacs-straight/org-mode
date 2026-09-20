@@ -195,7 +195,7 @@ This function is called by `org-babel-execute-src-block'."
         (cond
          ((and (string-suffix-p ".png" out-file) (not imagemagick))
           (require 'org-latex-preview)
-          (when in-buffer (require 'ox-html))
+          (unless in-buffer (require 'ox-html))
           (let* ((org-latex-preview-preamble
 		  (concat org-latex-preview-preamble "\n"
 			  (mapconcat #'identity headers "\n")))
