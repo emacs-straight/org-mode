@@ -2684,6 +2684,9 @@ The path of the created LaTeX file is returned."
             (?b . ,(shell-quote-argument (file-name-base texfile)))
             (?B . ,(shell-quote-argument outputfile-base))
             (?D . ,(shell-quote-argument (format "%s" dpi)))
+            ;; Unused, but we supported %S in the past, so keep
+            ;; in the code.
+            (?S . ,(shell-quote-argument (format "%s" (/ dpi 140.0))))
             (?f . ,(shell-quote-argument
                     (expand-file-name
                      (concat texfile-base
