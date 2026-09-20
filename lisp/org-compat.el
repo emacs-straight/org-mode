@@ -1156,7 +1156,8 @@ Some of the options can be changed using the variable
 		    (unless (file-exists-p movefile)
 		      (org-create-formula-image
 		       value movefile options forbuffer processing-type))
-                    (org-place-formula-image link block-type beg end value overlays movefile imagetype)))
+                    (with-no-warnings
+                      (org-place-formula-image link block-type beg end value overlays movefile imagetype))))
 		 ((eq processing-type 'mathml)
 		  (require 'ox-mathml)
                   ;; Process to MathML.
@@ -1166,8 +1167,9 @@ Some of the options can be changed using the variable
 		  (when msg (message msg cnt))
 		  (goto-char beg)
 		  (delete-region beg end)
-		  (insert (org-format-latex-as-mathml
-			   value block-type prefix dir)))
+		  (insert (with-no-warnings
+                            (org-format-latex-as-mathml
+			     value block-type prefix dir))))
 		 (t
 		  (error "Unknown conversion process %s for LaTeX fragments"
 			 processing-type)))))))))))
