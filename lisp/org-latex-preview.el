@@ -64,6 +64,7 @@
 (declare-function org-persist-unregister "org-persist")
 (declare-function eldoc--invoke-strategy "eldoc")
 
+;;;###autoload
 (defvar org-latex-preview--dvisvgm3-minor-version
   (or (and (executable-find "dvisvgm")
            (with-temp-buffer
