@@ -61,7 +61,8 @@ When using MathToWeb as the converter, set this option to
 \"java -jar %j -unicode -force -df %o %I\".
 
 When using LaTeXML set this option to
-\"latexmlmath %i --preload=amsmath.sty --preload=amssymb.sty --presentationmathml=%o\"."
+\"latexmlmath %i --preload=amsmath.sty --preload=amssymb.sty\\
+  --presentationmathml=%o\"."
   :group 'org-mathml
   :version "24.1"
   :type '(choice
