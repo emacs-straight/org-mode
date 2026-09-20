@@ -139,8 +139,7 @@ inspection."
                      nil t)
                 (let ((from (match-beginning 0)))
                   (when (re-search-forward "</math>" nil t)
-                    (prog1 (buffer-substring from (match-end 0))
-                      (kill-buffer))))))))
+                    (buffer-substring from (match-end 0))))))))
     (cond
      (mathml
       (setq mathml
