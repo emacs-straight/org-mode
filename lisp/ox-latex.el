@@ -1904,15 +1904,6 @@ For non-floats, see `org-latex--wrap-label'."
   (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
     (assoc-string "math" fontspec-config)))
 
-(defun org-latex--needs-xecjk (info)
-  "Return t if INFO contains a :latex-fontspec-config with a CJK font."
-
-  (let ((result nil))
-    (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
-      (dolist (fontdef fontspec-config result)
-        (setq result (or result (string-prefix-p "CJK" (car fontdef))))))
-    result))
-
 ;;;
 (defun org-latex-guess-inputenc (header)
   "Set the coding system in inputenc to what the buffer is.
@@ -2130,7 +2121,7 @@ Include the jp/zh treatment here."
                 (when (plist-get info :latex-fontspec-config)
                   (setq new-header (concat new-header
                                            "\\RequirePackage{fontspec}\n"
-                                           (org-latex--fontspec-prelude info))))
+                                           (org-latex--fontspec-preamble info))))
                 ;; (setq header (string-replace original-header new-header header))))
                 ;; header)
                 (string-replace original-header new-header header))
@@ -2195,11 +2186,6 @@ Return the new header."
 		  ""))
 	 t t header 0)))))
 ;;;
-(defun org-latex--needs-math-font (info)
-  "Return t if INFO contains a :latex-fontspec-config with a math font."
-  (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
-    (assoc-string "math" fontspec-config)))
-
 (defun org-latex--set-polyglossia-lang (lang info)
   (let* ((language (plist-get info :language))
          (main-or-other (if (equal language lang)
@@ -2271,7 +2257,7 @@ FIXME: add font configurations for polyglossia."
                                      (and (plist-get info :latex-fontspec-config)
                                           "\\RequirePackage{fontspec}\n")
                                      (and (plist-get info :latex-fontspec-config)
-                                          (org-latex--fontspec-prelude info))))
+                                          (org-latex--fontspec-preamble info))))
             (string-replace old-header new-header header))
         (org-latex--guess-polyglossia-language-legacy header info)))))
 
