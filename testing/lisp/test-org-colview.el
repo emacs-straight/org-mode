@@ -389,7 +389,32 @@ https://list.orgmode.org/bcced759-fae5-4509-a4af-8a6e41812b0e@gmail.com/T/#u."
 	"Top\n* H1\n** <point>H2\n:PROPERTIES:\n:A: 1\n:END:"
       (let ((org-columns-default-format "%A{+}")) (org-columns t))
       (org-map-entries
-       (lambda () (get-char-property (point) 'org-columns-value)))))))
+       (lambda () (get-char-property (point) 'org-columns-value))))))
+  ;; Compute summaries separately for each top-level tree when viewing
+  ;; the whole document.
+  (should
+   (equal
+    '(("H1" . "1")
+      ("S1" . "1")
+      ("H2" . "2")
+      ("S2" . "2"))
+    (org-test-with-temp-text
+	"* H1
+** S1
+:PROPERTIES:
+:A: 1
+:END:
+* H2
+** S2
+:PROPERTIES:
+:A: 2
+:END:"
+      (let ((org-columns-default-format "%A{+}"))
+	(org-columns t))
+      (org-map-entries
+       (lambda ()
+	 (cons (org-get-heading t t t t)
+	       (get-char-property (point) 'org-columns-value))))))))
 
 (ert-deftest test-org-colview/columns-width ()
   "Test `org-columns' column widths."
@@ -710,6 +735,22 @@ https://list.orgmode.org/bcced759-fae5-4509-a4af-8a6e41812b0e@gmail.com/T/#u."
 :A: [ ]
 :END:"
       (let ((org-columns-default-format "%A{X%}")) (org-columns))
+      (get-char-property (point) 'org-columns-value-modified))))
+  ;; {X/} handles multi-digit cookies.
+  (should
+   (equal
+    "[1/2]"
+    (org-test-with-temp-text
+	"* H
+** S1
+:PROPERTIES:
+:A: [10/10]
+:END:
+** S2
+:PROPERTIES:
+:A: [ ]
+:END:"
+      (let ((org-columns-default-format "%A{X/}")) (org-columns))
       (get-char-property (point) 'org-columns-value-modified))))
   ;; {min} is the smallest number in column, {max} the largest one.
   ;; {mean} is the arithmetic mean of numbers in column.
@@ -1729,7 +1770,25 @@ https://list.orgmode.org/bcced759-fae5-4509-a4af-8a6e41812b0e@gmail.com/T/#u."
 	    (cl-letf (((symbol-function 'read-string)
 		       (lambda (&rest _) "y")))
 	      (org-columns-edit-value))
-	    (org-entry-get (point) "A")))))
+	    (org-entry-get (point) "A"))))
+  ;; Preserve narrowing while reading an ITEM value when the edited
+  ;; heading is visible.
+  (should
+   (equal "* New\n** Child\n* Other"
+	  (org-test-with-temp-text "* Old\n** Child\n* Other"
+	    (narrow-to-region (point-min)
+			      (save-excursion (org-end-of-subtree t t)))
+	    (let ((beg (point-min))
+		  (end (point-max)))
+	      (let ((org-columns-default-format "%ITEM")) (org-columns))
+	      (cl-letf (((symbol-function 'read-string)
+			 (lambda (_prompt initial &rest _)
+			   (should (equal initial "Old"))
+			   (should (= beg (point-min)))
+			   (should (= end (point-max)))
+			   "New")))
+		(org-columns-edit-value "ITEM")))
+	    (save-restriction (widen) (buffer-string))))))
 
 (ert-deftest test-org-colview/column-property/clocksum ()
   "Test `org-columns' display of the CLOCKSUM property."

@@ -36,6 +36,9 @@
 (require 'format-spec)
 (eval-when-compile (require 'subr-x))  ; For `when-let*', Emacs < 29
 
+(declare-function uuid-v4 "uuid" (&rest args))
+(declare-function uuid-to-string "uuid" (uuid))
+
 ;;; Org version verification.
 
 (defvar org--inhibit-version-check nil
@@ -876,27 +879,29 @@ When NEXT is non-nil, check the next line instead."
 
 (defun org-id-uuid ()
   "Return string with random (version 4) UUID."
-  (let ((rnd (md5 (format "%s%s%s%s%s%s%s"
-			  (random)
-			  (org-time-convert-to-list nil)
-			  (user-uid)
-			  (emacs-pid)
-			  (user-full-name)
-			  user-mail-address
-			  (recent-keys)))))
-    (format "%s-%s-4%s-%s%s-%s"
-	    (substring rnd 0 8)
-	    (substring rnd 8 12)
-	    (substring rnd 13 16)
-	    (format "%x"
-		    (logior
-		     #b10000000
-		     (logand
-		      #b10111111
-		      (string-to-number
-		       (substring rnd 16 18) 16))))
-	    (substring rnd 18 20)
-	    (substring rnd 20 32))))
+  (if (or (fboundp 'uuid-v4) (and (require 'uuid nil t) (fboundp 'uuid-v4)))
+      (uuid-to-string (uuid-v4))
+    (let ((rnd (md5 (format "%s%s%s%s%s%s%s"
+			    (random)
+			    (org-time-convert-to-list nil)
+			    (user-uid)
+			    (emacs-pid)
+			    (user-full-name)
+			    user-mail-address
+			    (recent-keys)))))
+      (format "%s-%s-4%s-%s%s-%s"
+	      (substring rnd 0 8)
+	      (substring rnd 8 12)
+	      (substring rnd 13 16)
+	      (format "%x"
+		      (logior
+		       #b10000000
+		       (logand
+		        #b10111111
+		        (string-to-number
+		         (substring rnd 16 18) 16))))
+	      (substring rnd 18 20)
+	      (substring rnd 20 32)))))
 
 
 ;;; Motion
@@ -1105,6 +1110,28 @@ Otherwise, return nil."
   (and (stringp s)
        (string-match-p "[^ \r\t\n]" s)
        s))
+
+(defun org-get-string-scripts (str)
+  "Return the list of Emacs scripts in STR.
+
+An empty list implies that all characters in STR are Latin-1.
+
+This function is used by ox-latex.
+
+Derived from the initial version proposed by Juan Manuel Macías in
+https://list.orgmode.org/orgmode/878r9t7x7y.fsf@posteo.net/."
+  (save-match-data
+    (let ((scripts)
+          (match-offset t)
+          (offset 0))
+      (while match-offset
+        (setq match-offset (string-match "\\([^\u0000-\u007F\u0080-\u00FF\u0100-\u017F]\\)" str offset))
+        (when match-offset
+          (when-let* ((matched (match-string 0 str))
+                      (script (aref char-script-table (string-to-char matched))))
+            (setq offset (match-end 1))
+            (cl-pushnew (prin1-to-string script) scripts :test #'string=))))
+      scripts)))
 
 (defun org-reverse-string (string)
   "Return the reverse of STRING."

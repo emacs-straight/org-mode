@@ -889,6 +889,12 @@ Paragraph"
 	      "* H1\n  :PROPERTIES:\n  :A: 1\n  :B: 2\n:END:"
 	    (org-export-as (org-test-default-backend)
 			   nil nil nil '(:with-properties ("B"))))))
+  (should
+   (equal "* H1\n"
+	  (org-test-with-temp-text
+	      "* H1\n  :PROPERTIES:\n  :A: 1\n  :B: 2\n:END:"
+	    (org-export-as (org-test-default-backend)
+			   nil nil nil '(:with-properties ("C"))))))
   ;; Statistics cookies.
   (should
    (equal "* Stats"
@@ -1878,6 +1884,24 @@ Footnotes[fn:2], foot[fn:test] and [fn:inline:inline footnote]
 			(org-element-property :begin object)
 			(org-element-property :end object)))))))))
 	(org-export-as (org-test-default-backend)))))))
+
+(ert-deftest test-org-export/after-includes-hook ()
+  "Test `org-export-after-includes-functions'."
+  (should
+   (equal "success\n"
+          (org-test-with-temp-text
+           (format "#+INCLUDE: \"%s/examples/macro-templates.org\"\n" org-test-dir)
+           (let* ((org-export-after-includes-functions
+                  '((lambda (backend)
+                      (goto-char (point-min))
+                      ;; will fail if hook done before the include
+                      (if (search-forward "Macro templates")
+                          (progn
+                            (goto-char (point-max))
+                            ;; will not expand if hook executes after macros
+                            (insert "{{{included-macro}}}"))))))
+                 (output (org-export-as (org-test-default-backend))))
+             (substring output (string-match ".*\n\\'" output)))))))
 
 (ert-deftest test-org-export/before-parsing-functions ()
   "Test `org-export-before-parsing-functions'."

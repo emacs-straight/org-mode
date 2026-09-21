@@ -26,7 +26,11 @@
 
 (require 'org-test "../testing/org-test")
 
-(org-test-for-executable "git-annex")
+;; `org-test-for-executable' won't work since git-annex errors when
+;; called like "git-annex --version"
+(unless (executable-find "git-annex")
+  (signal 'missing-test-dependency (list "git-annex")))
+
 (require 'org-attach-git)
 (require 'cl-lib)
 
@@ -45,6 +49,9 @@
 	     (shell-command "git init")
 	     (shell-command "git annex init")
 	     ,@body))
+       ;; Newer git annex marks some files read-only.
+       ;; Mark them writeable before deleting
+       (shell-command (format "chmod -R u+w %s" (shell-quote-argument tmpdir)))
        (delete-directory tmpdir 'recursive))))
 
 (ert-deftest test-org-attach-git/use-annex ()

@@ -1112,6 +1112,34 @@ before\nglobal-before\nafter\nglobal-after"
               (org-capture nil "t")
               (buffer-string))))))
 
+(ert-deftest test-org-capture/org-capture-expand-headline ()
+  "Test `org-capture-expand-headline'."
+  ;; `org-capture-expand-headline' should return nil when headline is
+  ;; nil
+  (should
+   (equal
+    nil
+    (org-capture-expand-headline nil)))
+  ;; `org-capture-expand-headline' should return headline if it is a
+  ;; string
+  (should
+   (equal
+    "A"
+    (org-capture-expand-headline "A")))
+  ;; `org-capture-expand-headline' should evaluate headline if it is a
+  ;; function and return its value
+  (should
+   (equal
+    "A"
+    (org-capture-expand-headline (lambda () "A"))))
+  ;; `org-capture-expand-headline' should return the value of headline
+  ;; if it is a symbol
+  (should
+   (equal
+    "A"
+    (org-dlet ((temp "A"))
+      (org-capture-expand-headline 'temp)))))
+
 (ert-deftest test-org-capture/org-capture-expand-olp ()
   "Test `org-capture-expand-olp'."
   ;; `org-capture-expand-olp' accepts inlined outline path.
@@ -1120,6 +1148,20 @@ before\nglobal-before\nafter\nglobal-after"
     '("A" "B" "C")
     (org-test-with-temp-text-in-file ""
       (org-capture-expand-olp buffer-file-name "A" "B" "C"))))
+  ;; `org-capture-expand-olp' should return nil if the outline path is
+  ;; nil
+  (should
+   (equal
+    nil
+    (org-test-with-temp-text-in-file ""
+      (org-capture-expand-olp buffer-file-name nil))))
+  ;; `org-capture-expand-olp' should return nil if the outline path is
+  ;; omitted
+  (should
+   (equal
+    nil
+    (org-test-with-temp-text-in-file ""
+      (org-capture-expand-olp buffer-file-name))))
   ;; The current buffer during the funcall of the lambda is the temporary
   ;; test file.
   (should

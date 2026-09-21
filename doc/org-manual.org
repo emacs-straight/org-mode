@@ -261,6 +261,16 @@ Communications Guidelines]] when sending messages on this mailing
 list.  Please allow up to one month for a response and follow up if
 no response is received to the bug report.
 
+#+findex: org-submit-feature-request
+For feature requests and suggestions, you can either directly send
+a message to the mailing list, or use
+: M-x org-submit-feature-request <RET>
+
+#+findex: org-submit-patch
+The patch submissions can also be prepared from inside Emacs, using
+: M-x org-submit-patch
+You can find more contribution instructions on [[https://orgmode.org/worg/org-contribute.html][our wiki]].
+
 #+findex: org-version
 #+findex: org-submit-bug-report
 For bug reports, please first try to reproduce the bug with the latest
@@ -4508,11 +4518,12 @@ A habit has the following properties:
    and Columns]]).
 
 3. The TODO has a scheduled date, usually with a =.+= style repeat
-   interval.  A =++= style may be appropriate for habits with time
+   interval[fn::all the repeater intervals except hours (=h=) are
+   supported.].  A =++= style may be appropriate for habits with time
    constraints, e.g., must be done on specific days of week (=++1w=),
    or a =+= style for an unusual habit that can have a backlog, e.g.,
-   weekly reports.  See [[*Repeated tasks]] for more details about repeat
-   intervals.
+   weekly reports.  See [[*Repeated tasks]] for more details about
+   repeat intervals.
 
 4. The TODO may also have minimum and maximum ranges specified by
    using the syntax =.+2d/3d=, which says that you want to do the task
@@ -4712,11 +4723,12 @@ meaning of the statistics cookie becomes ambiguous.  Set the property
 =COOKIE_DATA= to either =checkbox= or =todo= to resolve this issue.
 
 #+vindex: org-hierarchical-todo-statistics
+#+vindex: org-todo-children-only-statistics
 If you would like to have the statistics cookie count any TODO entries
-in the subtree (not just direct children), configure the variable
-~org-hierarchical-todo-statistics~.  To do this for a single subtree,
-include the word =recursive= into the value of the =COOKIE_DATA=
-property.
+in the subtree (not just direct children), set
+~org-todo-children-only-statistics~ to nil.  To do this for a single
+subtree, include the word =recursive= into the value of the
+=COOKIE_DATA= property.
 
 #+begin_example
 ,* Parent capturing statistics [2/20]
@@ -4771,6 +4783,7 @@ Here is an example of a checkbox list.
 #+cindex: checkbox statistics
 #+cindex: @samp{COOKIE_DATA}, property
 #+vindex: org-checkbox-hierarchical-statistics
+#+vindex: org-checkbox-children-only-statistics
 The =[2/4]= and =[1/3]= in the first and second line are cookies
 indicating how many of the checkboxes present in this entry have been checked
 off, and the total number of checkboxes present.  This can give you an
@@ -4778,10 +4791,10 @@ idea of how many checkboxes remain, even without opening a folded
 entry.  The cookies can be placed into a headline or into (the first
 line of) a plain list item.  Each cookie covers checkboxes of direct
 children structurally below the headline/item on which the cookie
-appears[fn:: Set the variable ~org-checkbox-hierarchical-statistics~
-if you want such cookies to count all checkboxes below the cookie, not
-just those belonging to direct children.].  You have to insert the
-cookie yourself by typing either =[/]= or =[%]=.  With =[/]= you get
+appears[fn:: Set the variable ~org-checkbox-children-only-statistics~
+to nil if you want such cookies to count all checkboxes below the
+cookie, not just those belonging to direct children.].  You have to
+insert the cookie yourself by typing either =[/]= or =[%]=.  With =[/]= you get
 an =n out of m= result, as in the examples above.  With =[%]= you get
 information about the percentage of checkboxes checked (in the above
 example, this would be =[50%]= and =[33%]=, respectively).  In a
@@ -8119,6 +8132,8 @@ Now lets look at the elements of a template definition.  Each entry in
 
     Filing as child of this entry, or in the body of the entry.
 
+  - =(file+headline <file-spec>)= ::
+
   - =(file+headline <file-spec> "node headline")= ::
 
   - =(file+headline <file-spec> function-returning-string)= ::
@@ -8126,6 +8141,8 @@ Now lets look at the elements of a template definition.  Each entry in
   - =(file+headline <file-spec> symbol-containing-string)= ::
 
     Fast configuration if the target heading is unique in the file.
+
+  - =(file+olp <file-spec>)= ::
 
   - =(file+olp <file-spec> "Level 1 heading" "Level 2" ...)= ::
 
@@ -8138,6 +8155,8 @@ Now lets look at the elements of a template definition.  Each entry in
   - =(file+regexp <file-spec> "regexp to find location")= ::
 
     Use a regular expression to position point.
+
+  - =(file+olp+datetree <file-spec>)= ::
 
   - =(file+olp+datetree <file-spec> [ "Level 1 heading" ...])= ::
 
@@ -11415,6 +11434,8 @@ stops emphasis there./
 You can use zero width space to help Org sorting out the ambiguity.
 See [[*Escape Character]] for more details.
 
+For help editing text with hidden emphasis marks, see [[*Dealing with Hidden Text]].
+
 ** Subscripts and Superscripts
 :PROPERTIES:
 :DESCRIPTION: Simple syntax for raising/lowering text.
@@ -11463,6 +11484,9 @@ Set both ~org-pretty-entities~ and
 ~org-pretty-entities-include-sub-superscripts~ to ~t~ to start with
 super- and subscripts /visually/ interpreted as specified by the
 option ~org-use-sub-superscripts~.
+
+For help editing text with hidden sub- and superscript markers, see
+[[*Dealing with Hidden Text]].
 
 ** Special Symbols
 :PROPERTIES:
@@ -11897,12 +11921,15 @@ current section, active region or at point with the following commands:
   links in the buffer.  With triple prefix argument, hide previews for
   all links in the buffer.
 
+  #+vindex: org-link-preview-include-descriptive
   By default, only links without descriptions are previewed.  You
   can force displaying previews for all supported links (including
   links with descriptions) using a numeric argument of ~1~.  This
   will toggle all previews in the active region, the link at point
   or the current section.  A numeric prefix argument of ~11~ will
-  toggle previews in the whole buffer instead.
+  toggle previews in the whole buffer instead.  You can also enable
+  previewing links with description globally by customizing
+  ~org-link-preview-include-descriptive~.
 
   #+vindex: org-startup-with-link-previews
   Org mode can display link previews automatically when opening
@@ -13742,11 +13769,18 @@ to return a string upon execution.  The HTML exporter inserts this
 string in the preamble.  The HTML exporter does not insert a preamble
 if ~org-html-preamble~ is set ~nil~.
 
+In an Org mode buffer, you can set the preamble value with the option
+~html-preamble~.  Use it preferably to set values like ~t~, ~nil~, or
+a function.  To set your preamble as a string, use the keyword
+~#+HTML_PREAMBLE~.  You can use it multiple times to set a multi-line
+string.
+
 The above also applies to ~org-html-postamble~ and
-~org-html-postamble-format~.  In addition, ~org-html-postamble~ can be
-set to ~auto~ (its default value), which makes the HTML exporter build
-a postamble from looking up author's name, email address, creator's
-name, and date.
+~org-html-postamble-format~.  In addition, ~org-html-postamble~ can be set
+to ~auto~ (its default value), which makes the HTML exporter build a
+postamble from looking up author's name, email address, creator's
+name, and date.  And, as for preamble, postamble value can be set in
+buffer with ~html-postamble~ option or with ~#+HTML_POSTAMBLE~ keyword.
 
 
 *** Exporting to minimal HTML
@@ -13868,6 +13902,10 @@ When ~:base-directory~ and ~org-html-base-directory~ are both set,
 key of ~org-publish-project-alist~. For more about linking files when
 publishing to a directory, see [[*Publishing links]].
 
+Alternatively, you can disable the automatic path translation in
+buffer level by using the option ~html-link-org-files-as-html~:
+: #+OPTIONS: html-link-org-files-as-html:nil
+
 Org files can also have special directives to the HTML export
 backend.  For example, by using =#+ATTR_HTML= lines to specify new
 format attributes to ~<a>~ or ~<img>~ tags.  This example shows
@@ -13912,12 +13950,15 @@ Additional options for customizing tables for HTML export.
 
   #+vindex: org-html-table-align-individual-fields
   Non-~nil~ attaches style attributes for alignment to each table
-  field.
+  field.  Can also be set as:
+  : #+OPTIONS: html-table-align-individual-fields:t
 
 - ~org-html-table-caption-above~ ::
 
   #+vindex: org-html-table-caption-above
-  Non-~nil~ places caption string at the beginning of the table.
+  Non-~nil~ places caption string at the beginning of the table.  Can
+  also be set with buffer option ~html-table-caption-above~.
+  : #+OPTIONS: html-table-caption-above:t
 
 - ~org-html-table-data-tags~ ::
 
@@ -13942,7 +13983,10 @@ Additional options for customizing tables for HTML export.
 - ~org-html-table-use-header-tags-for-first-column~ ::
 
   #+vindex: org-html-table-use-header-tags-for-first-column
-  Non-~nil~ formats column one in tables with header tags.
+  Non-~nil~ formats column one in tables with header tags.  Can also be
+  set with buffer option
+  ~html-table-use-header-tags-for-first-column~.
+  : #+OPTIONS: html-table-use-header-tags-for-first-column:t
 
 *** Images in HTML export
 :PROPERTIES:
@@ -13957,9 +14001,11 @@ HTML inline images and HTML clickable image links.
 #+vindex: org-html-inline-images
 When the link in the Org file has no description, the HTML export
 backend by default in-lines that image.  For example:
-=[[file:myimg.jpg]]= is in-lined, while =[[file:myimg.jpg][the image]]= links to the text,
-=the image=.  For more details, see the variable
-~org-html-inline-images~.
+=[[file:myimg.jpg]]= is in-lined, while =[[file:myimg.jpg][the image]]=
+links to the text, =the image=.  You can set the variable
+~org-html-inline-images~ to ~nil~ to have no in-lined images and only
+links.  You can also use the buffer option ~html-inline-images~.
+: #+OPTIONS: html-inline-images:nil
 
 #+vindex: org-html-inline-image-rules
 On the other hand, if the description part of the Org link is itself
@@ -14024,7 +14070,9 @@ To use a local copy of MathJax, use =path= option:
 #+vindex: org-html-mathjax-template
 See the docstring of ~org-html-mathjax-options~ for all supported
 variables.  The MathJax template can be configured via
-~org-html-mathjax-template~.
+~org-html-mathjax-template~ or via the buffer keyword
+~#+HTML_MATHJAX_TEMPLATE~.  This keyword can be set multiple times in
+the buffer, to set a multi-line template.
 
 If you prefer, you can also request that LaTeX fragments are processed
 into small images that will be inserted into the browser page.  Before
@@ -14083,11 +14131,12 @@ line.
 #+vindex: org-export-html-tag-class-prefix
 You can modify the CSS style definitions for the exported file.  The
 HTML exporter assigns the following special CSS classes[fn:: If the
-classes on TODO keywords and tags lead to conflicts, use the variables
-~org-html-todo-kwd-class-prefix~ and ~org-html-tag-class-prefix~ to
-make them unique.] to appropriate parts of the document---your style
-specifications may change these, in addition to any of the standard
-classes like for headlines, tables, etc.
+classes on TODO keywords and tags lead to conflicts:  Use the variables
+~org-html-todo-kwd-class-prefix~ and ~org-html-tag-class-prefix~, or the
+buffer options ~html-todo-kwd-class-prefix~ and ~html-tag-class-prefix~,
+to make them unique.] to appropriate parts of the document---your
+style specifications may change these, in addition to any of the
+standard classes like for headlines, tables, etc.
 
 | ~p.author~           | author information, including email                    |
 | ~p.date~             | publishing date                                        |
@@ -15440,11 +15489,11 @@ it is also included in most LaTeX distributions.]:
 #+END_SRC
 
 As you see, each element in the list maps one of the LaTeX font
-families to a property =:font=, that indicates the font to use for the
+families to a property ~:font~, that indicates the font to use for the
 specific family.  This font must be installed in your system,
 
-Additionally, you can also define "=:features="[fn::You may also use
-=:props= as a synonym for =:features=.] for each of the fonts.
+Additionally, you can also define "~:features~"[fn::You may also use
+~:props~ as a synonym for ~:features~.] for each of the fonts.
 Features are additional
 [[https://latex3.github.io/fontspec/user.html][font options]] that
 modify their appearance.  A common example is scaling the mono-typed
@@ -17565,12 +17614,15 @@ for usage and configuration details.
 
 #+vindex: org-export-before-processing-hook
 #+vindex: org-export-before-processing-functions
+#+vindex: org-export-after-includes-functions
 #+vindex: org-export-before-parsing-hook
 #+vindex: org-export-before-parsing-functions
-The export process executes two hooks before the actual exporting
+The export process executes three hooks before the actual exporting
 begins.  The first hook, ~org-export-before-processing-functions~,
 runs before any expansions of macros, Babel code, and include keywords
 in the buffer.  The second hook,
+~org-export-after-includes-functions~, runs after the include keywords
+but before the macros and Babel code.  The last hook,
 ~org-export-before-parsing-functions~, runs before the buffer is
 parsed.
 
@@ -17710,10 +17762,12 @@ export keywords, does not contribute to the export output.]:
 3. Remove commented subtrees in the whole buffer (see [[*Comment
    Lines]]);
 
-4. Replace macros in the whole buffer (see [[*Macro Replacement]]),
+4. Execute ~org-export-after-includes-functions~ (see [[*Export hooks]]);
+
+5. Replace macros in the whole buffer (see [[*Macro Replacement]]),
    unless ~org-export-replace-macros~ is nil;
 
-5. When ~org-export-use-babel~ is non-nil (default), process code
+6. When ~org-export-use-babel~ is non-nil (default), process code
    blocks:
 
    - Leave code blocks inside archived subtrees (see [[*Internal
@@ -21729,6 +21783,9 @@ manual, but here is a consolidated list for easy reference.
 
 - If point is at a timestamp, fix the day name in the timestamp.
 
+- If ~org-inside~ is enabled (see [[*Dealing with Hidden Text]]) and
+  point is inside text with hidden contents, toggle hiding.
+
 ** Summary of In-Buffer Settings
 :PROPERTIES:
 :DESCRIPTION: Overview of keywords.
@@ -21889,11 +21946,12 @@ changes.
 
   #+vindex: org-link-descriptive
   Bracket links in Org buffers are displayed hiding the link path and
-  brackets.  For example, =[[https://orgmode.org][Org Website]]= is,
-  by default, displayed as "Org Website", hiding the link itself and
-  just displaying its description.  Alternatively, the links can be
+  brackets.  For example, =[[https://orgmode.org][Org Website]]= is, by
+  default, displayed as "Org Website", hiding the link itself and just
+  displaying its description.  Alternatively, the links can be
   displayed in full.  The corresponding variable is
-  ~org-link-descriptive~.
+  ~org-link-descriptive~.  For help editing text with hidden links and
+  brackets, see [[*Dealing with Hidden Text]].
 
   | =descriptivelinks= | Hide path and brackets in links. |
   | =literallinks=     | Do not hide anything.            |
@@ -22109,6 +22167,43 @@ may write instead
 
 where =X= denotes the zero width space character.
 
+** Dealing with Hidden Text
+:PROPERTIES:
+:DESCRIPTION: Using ~org-inside~ to help with editing text with hidden contents.
+:END:
+#+kindex: C-c C-c
+#+cindex: org-inside, revealing hidden components, hidden text components
+
+In Org, entity types including [[*Emphasis and Monospace][emphasized
+text]], [[*Link Format][links]], and [[*Subscripts and
+Superscripts][super & subscript]] can contain hidden components
+(markers, brackets, link URL, etc.).  When the cursor is adjacent to
+such hidden text, the position can be ambiguous: at the same apparent
+cursor position, point can be either /inside/ or /outside/ the hidden
+region.  This can make it difficult to know where edits will go.
+
+To alleviate this problem, activate the mode ~org-inside~.  When this
+minor mode is active in an Org buffer, the appearance is changed when
+point is "inside" such an entity, to make it clear where you are.
+Appearance changes can include entity face (e.g. a subtle background
+color), cursor type (e.g. bar instead of box), and even (automatic)
+un-hiding of the hidden contents.
+
+#+vindex: org-inside-appearance
+The appearance changes to apply when inside entities with hidden
+contents can be configured using the custom variable
+~org-inside-appearance~.
+
+#+vindex: org-inside-unhide-delay
+The visibility of hidden text can be toggled using the {{{kbd(C-c
+C-c)}}} key (see [[*The Very Busy {{{kbd(C-c C-c)}}} Key]]) when
+inside an entity with hidden contents.  Hidden text can also be made
+visible automatically upon entry, with an optional delay (see
+~org-inside-unhide-delay~).  Text is always re-hidden on exit.
+~org-inside~ supports nested entities, applying the /face/ appearance
+changes (if configured) only to the /innermost/ element.
+
+Note that certain ~org-inside~ features require Emacs v31 or later.
 ** Code Evaluation and Security Issues
 :PROPERTIES:
 :DESCRIPTION: Org files evaluate in-line code.

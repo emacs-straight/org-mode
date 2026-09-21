@@ -110,11 +110,9 @@
        ((?L "As LaTeX buffer" org-latex-export-as-latex)
 	(?l "As LaTeX file" org-latex-export-to-latex)
 	(?p "As PDF file" org-latex-export-to-pdf)
-	(?o "As PDF file and open"
-	    #'(lambda (a s v b)
-	        (if a (org-latex-export-to-pdf t s v b)
-		  (org-open-file (org-latex-export-to-pdf nil s v b)))))))
+	(?o "As PDF file and open" org-latex-export-to-pdf-and-open)))
   :filters-alist '((:filter-options . org-latex-math-block-options-filter)
+                   (:filter-body . org-latex-get-font-list)
 		   (:filter-paragraph . org-latex-clean-invalid-line-breaks)
 		   (:filter-parse-tree org-latex-math-block-tree-filter
 				       org-latex-matrices-tree-filter
@@ -1646,18 +1644,28 @@ Note: POLYGLOSSIA is not supported by PDFLATEX."
 This configuration will be generated when using lualatex or xelatex.
 
 Each element is defined as
-(`font-name' . `font-plist')
+\\(`font-name' . `font-plist')
  where `font-name' one of \"main\", \"sans\", \"mono\" or \"math\"
  and `font-plist' is a plist. The keys for this plist are
   `:font':     font name for font installed in your system
   `:features': string or list of strings with font features (optional).
   `:fallback': an alist of (`script' . `mapping') to map _Emacs_ script names
                to their fallback font (optional). The exporter will warn you
-               about scripts in your document that need a fallback font."
+               about scripts in your document that need a fallback font.
 
+Refer to \"Controlling font setup for LuaLaTeX and XeLaTeX\" in the
+\"LaTeX Export\" chapter in the Org manual."
   :group 'org-export-latex
   :package-version '(Org . "10.0")
-  :type 'alist
+  :type '(alist
+          :key-type string :tag "LaTeX font family"
+          :value-type (plist :options
+                             ((:font (string :tag "System font"))
+                              (:features (choice string (repeat string)))
+                              (:fallback
+                               (alist
+                                :key-type (string :tag "Emacs script")
+                                :value-type (string "System font"))))))
   :safe  #'listp
 )
 
@@ -1778,6 +1786,15 @@ which will result in the following LaTeX code:
 
 
 ;;; Internal Functions
+
+(defun org-latex-get-font-list (contents _backend info)
+  "Add the Emacs script list from CONTENTS into the INFO channel.
+Used by `org-latex-make-preamble' to add fallback fonts for lualatex."
+  (prog1
+      contents
+    (let ((script-list (org-get-string-scripts contents)))
+      ;; (message "org-latex-get-font-list: %s" script-list)
+      (setq info (plist-put info :doc-scripts script-list)))))
 
 (defun org-latex--caption-above-p (element info)
   "Non-nil when caption is expected to be located above ELEMENT.
@@ -2177,6 +2194,11 @@ Return the new header."
 		  languages
 		  ""))
 	 t t header 0)))))
+;;;
+(defun org-latex--needs-math-font (info)
+  "Return t if INFO contains a :latex-fontspec-config with a math font."
+  (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
+    (assoc-string "math" fontspec-config)))
 
 (defun org-latex--set-polyglossia-lang (lang info)
   (let* ((language (plist-get info :language))
@@ -2253,8 +2275,20 @@ FIXME: add font configurations for polyglossia."
             (string-replace old-header new-header header))
         (org-latex--guess-polyglossia-language-legacy header info)))))
 
-;;;
-(defun org-latex--fontspec-prelude (info)
+(defun org-latex--needs-xecjk (info)
+  "Return t if INFO contains a :latex-fontspec-config with a CJK font."
+
+  (let ((result nil)
+        (compiler (plist-get info :latex-compiler)))
+    (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
+      (dolist (fontdef fontspec-config result)
+        (setq result (or result (string-prefix-p "CJK" (car fontdef))))))
+    (when result
+      (unless (equal "xelatex" compiler)
+        (warn "`org-latex-fontspec-config' defines CJK fonts: compile with xelatex instead of %s." compiler)))
+    result))
+;;;;
+(defun org-latex--fontspec-preamble (info)
   "Return the fontspec configuration for the INFO channel as a string.
 
 If COMPILER is \"xelatex\", omit fallback font detection."
@@ -2317,7 +2351,7 @@ If COMPILER is \"xelatex\", omit fallback font detection."
             (insert "}\n"))))
       ;; (message "fallbacks: %s" fallback-alist)
       (when need-math
-        (insert "\\RequirePackage{unicode-math}\n"))
+        (insert "\\usepackage{unicode-math}\n"))
       (when need-cjk
         (insert "\\usepackage{xeCJK}\n"))
       (dolist (fpair fontspec-config)
@@ -2348,16 +2382,16 @@ If COMPILER is \"xelatex\", omit fallback font detection."
 (defun org-latex-guess-fontspec (header info)
   "Add the fontspec package configuration passed in INFO to HEADER.
 
-The HEADER contains \"\\usepackage{fontspec}\",
-and INFO contains fontspec font conguration and
-add the fontspec configuration after the package."
-    (when-let* ((fonst (plist-get info :latex-fontspec-config))
-                (matched (string-match "\\\\usepackage{fontspec}\n" header))
-                (matcher (match-string 0 header))
-                (replacer (concat matcher
-                                  (org-latex--fontspec-prelude info))))
-      (setq header (string-replace matcher replacer header)))
-    header)
+When HEADER contains \\usepackage[...]{fontspec} and INFO has a non-nil
+`:latex-fontspec-config', insert the fontspec configuration after that
+package declaration."
+  (if (and (plist-get info :latex-fontspec-config)
+           (string-match "\\\\usepackage\\(?:\\[[^]]*\\]\\)?{fontspec}" header))
+      (let* ((matcher (match-string 0 header))
+             (replacer (concat matcher "\n"
+                               (org-latex--fontspec-preamble info))))
+        (string-replace matcher replacer header))
+    header))
 ;;;
 (defun org-latex--remove-packages (pkg-alist info)
   "Remove packages based on the current LaTeX compiler.
@@ -4790,11 +4824,12 @@ This function assumes TABLE has `org' as its `:type' property and
 		(format "\\begin{%s}%s{%s}\n" table-env width alignment)
 		(and above?
 		     (org-string-nw-p caption)
-		     (concat caption "\\\\\n"))
+		     (concat caption
+                             (and (string-prefix-p "\\caption{" caption) "\\\\\n")))
 		contents
 		(and (not above?)
 		     (org-string-nw-p caption)
-		     (concat caption "\\\\\n"))
+		     caption)
 		(format "\\end{%s}" table-env)
 		(and fontsize "}"))))
      (t
@@ -5323,6 +5358,7 @@ log files (as specified by `org-latex-logfiles-extensions') are deleted."
                 (warnings (concat " with warnings: " warnings))
                 (t ".")))))))
 
+
 (defun org-latex--collect-warnings (buffer)
   "Collect some warnings from \"pdflatex\" command output.
 BUFFER is the buffer containing output.  Return collected
@@ -5377,6 +5413,14 @@ Return output file name."
        'latex filename ".tex" plist (file-name-directory filename))))
    pub-dir))
 
+;;;###autoload
+(defun org-latex-export-to-pdf-and-open
+    (&optional async subtreep visible-only body-only exp-plist)
+  "Export current buffer to LaTeX, process, and open the resulting PDF.
+
+Cf. `org-latex-export-to-pdf' for arguments"
+  (if async (org-latex-export-to-pdf t subtreep visible-only body-only exp-plist)
+    (org-open-file (org-latex-export-to-pdf nil subtreep visible-only body-only exp-plist))))
 
 (provide 'ox-latex)
 

@@ -36,9 +36,7 @@
 
 (eval-when-compile (require 'subr-x))  ; Emacs < 28
 
-;; We rely on org-compat when generating Org version.  Checking Org
-;; version here will interfere with Org build process.
-;; (org-assert-version)
+(org-assert-version)
 
 (declare-function org-agenda-diary-entry "org-agenda")
 (declare-function org-agenda-maybe-redo "org-agenda" ())
@@ -552,6 +550,10 @@ Counting starts at 1."
 (define-obsolete-function-alias 'org-string-match-p 'string-match-p "9.0")
 
 ;;;; Functions and variables from previous releases now obsolete.
+(define-obsolete-variable-alias 'org-checkbox-hierarchical-statistics
+  'org-checkbox-children-only-statistics "Org 10.0")
+(define-obsolete-variable-alias 'org-hierarchical-todo-statistics
+  'org-todo-children-only-statistics "Org 10.0")
 (define-obsolete-variable-alias 'org-edit-src-content-indentation
   'org-src-content-indentation "Org 9.8")
 (define-obsolete-variable-alias 'org-export-ignored-local-variables

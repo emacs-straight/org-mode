@@ -906,8 +906,8 @@ nil      When nil, the command tries to be smart and figure out the
       (goto-char beg)
       (setq separator
 	    (cond
-	     ((not (save-excursion (re-search-forward "^[^\n\t]+$" end t))) '(16))
-	     ((not (save-excursion (re-search-forward "^[^\n,]+$" end t))) '(4))
+	     ((not (save-excursion (re-search-forward "^[^\n\r\t]+$" end t))) '(16))
+	     ((not (save-excursion (re-search-forward "^[^\n\r,]+$" end t))) '(4))
              ((and (eq separator 'babel-auto)
                    (= 1 (count-lines beg end)))
               (rx unmatchable))
@@ -918,11 +918,11 @@ nil      When nil, the command tries to be smart and figure out the
 	  ;; parse the csv stuff
 	  (cond
 	   ((looking-at "^") (insert "| "))
-	   ((looking-at "[ \t]*$") (replace-match " |") (forward-line 1))
+	   ((looking-at "[ \t]*\r?$") (replace-match " |") (forward-line 1))
 	   ((looking-at "[ \t]*\"\\([^\"]*\\)\"")
-	    (replace-match (replace-regexp-in-string "\n" " " (match-string 1)) t t)
+	    (replace-match (replace-regexp-in-string "[\n\r]" " " (match-string 1)) t t)
 	    (if (looking-at "\"") (insert "\"")))
-	   ((looking-at "[^,\n]+") (goto-char (match-end 0)))
+	   ((looking-at "[^,\n\r]+") (goto-char (match-end 0)))
 	   ((looking-at "[ \t]*,") (replace-match " | "))
 	   (t (forward-line 1))))
       (setq re (cond
@@ -5853,6 +5853,7 @@ This may be either a string or a function of two arguments:
 		 (princ "\n")))))
       (let ((org-inhibit-startup t)) (org-mode))
       (defvar org-export-before-processing-functions) ; ox.el
+      (defvar org-export-after-includes-functions) ; ox.el
       (defvar org-export-process-citations) ; ox.el
       (defvar org-export-expand-links) ; ox.el
       (defvar org-export-filter-parse-tree-functions) ; ox.el
@@ -5867,6 +5868,7 @@ This may be either a string or a function of two arguments:
       ;; We _do not_ disable `org-export-filter-parse-tree-functions'
       ;; (historically).
       (let ((org-export-before-processing-functions nil)
+            (org-export-after-includes-functions nil)
             (org-export-replace-macros nil)
             (org-export-use-babel nil)
             (org-export-before-parsing-functions nil)

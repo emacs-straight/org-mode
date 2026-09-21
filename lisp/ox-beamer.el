@@ -36,10 +36,6 @@
 (require 'cl-lib)
 (require 'ox-latex)
 
-;;; Function declarations
-
-(declare-function org-get-string-scripts "org" (str))
-
 ;; Install a default set-up for Beamer export.
 (unless (assoc "beamer" org-latex-classes)
   (add-to-list 'org-latex-classes
@@ -265,10 +261,7 @@ Return overlay specification, as a string, or nil."
        ((?B "As LaTeX buffer (Beamer)" org-beamer-export-as-latex)
 	(?b "As LaTeX file (Beamer)" org-beamer-export-to-latex)
 	(?P "As PDF file (Beamer)" org-beamer-export-to-pdf)
-	(?O "As PDF file and open (Beamer)"
-	    #'(lambda (a s v b)
-	        (if a (org-beamer-export-to-pdf t s v b)
-		  (org-open-file (org-beamer-export-to-pdf nil s v b)))))))
+	(?O "As PDF file and open (Beamer)" org-beamer-export-to-pdf-and-open)))
   :options-alist
   '((:headline-levels nil "H" org-beamer-frame-level)
     (:latex-class "LATEX_CLASS" nil "beamer" t)
@@ -934,16 +927,12 @@ return HEADER unaltered."
   "Return complete document string after Beamer conversion.
 CONTENTS is the transcoded contents string.  INFO is a plist
 holding export options."
-  ;; Before doing anything else, add the script information
-  ;; to the INFO channel. Used by org-latex-make-preamble
-  ;; to add fallback fonts for lualatex.
-  (setq info (plist-put info
-                        :doc-scripts
-                        (org-get-string-scripts contents)))
 
   (let ((title (org-export-data (plist-get info :title) info))
 	(subtitle (org-export-data (plist-get info :subtitle) info))
         (beamer-class (plist-get info :latex-class)))
+    (unless (member beamer-class '("beamer" "ltx-talk"))
+      (error "Beamer exporter: unsupported class `%s'" beamer-class))
     (when (equal beamer-class "ltx-talk")
       (unless (equal "lualatex" (plist-get info :latex-compiler))
         (error "ox-beamer: `ltx-talk' needs LuaLaTeX!")))
@@ -1207,6 +1196,14 @@ Return PDF file's name."
       async subtreep visible-only body-only ext-plist
       #'org-latex-compile)))
 
+;;;###autoload
+(defun org-beamer-export-to-pdf-and-open
+    (&optional async subtreep visible-only body-only ext-plist)
+  "Export current buffer as a Beamer presentation (PDF) and open it.
+
+Cf. `org-beamer-export-to-pdf' for argument list."
+  (if async (org-beamer-export-to-pdf t subtreep visible-only body-only ext-plist)
+    (org-open-file (org-beamer-export-to-pdf nil subtreep visible-only body-only ext-plist))))
 ;;;###autoload
 (defun org-beamer-select-environment ()
   "Select the environment to be used by beamer for this entry.

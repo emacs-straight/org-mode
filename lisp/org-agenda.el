@@ -2396,6 +2396,7 @@ The following commands are available:
           org-agenda-archives-mode org-agenda-start-with-archives-mode))
   (add-to-invisibility-spec '(org-filtered))
   (add-to-invisibility-spec '(org-link))
+  (add-to-invisibility-spec '(org-emphasis))
   (easy-menu-change
    '("Agenda") "Agenda Files"
    (append
@@ -3610,9 +3611,9 @@ format.  If the extension is .org, collect all subtrees
 corresponding to the agenda entries and add them in an .org file.
 
 With prefix argument OPEN, open the new file immediately.  If
-NOSETTINGS is given, do not scope the settings of
-`org-agenda-exporter-settings' into the export commands.  This is
-used when the settings have already been scoped and we do not
+NOSETTINGS is given, do not apply the settings from
+`org-agenda-exporter-settings' (which see) into the export commands.
+This is used when the settings have already been bound and we do not
 wish to overrule other, higher priority settings."
   (interactive "FWrite agenda to file: \nP" org-agenda-mode)
   (if (or (not (file-writable-p file))
@@ -5275,7 +5276,8 @@ a list of TODO keywords, or a state symbol `todo' or `done' or
 		     (error "Invalid TODO class or type: %S" args))
 		    (`(,_ ,(pred (member "*"))) org-todo-keywords-1)
 		    (`(,_ ,todo-list) todo-list))
-		  'words))))
+		  t)
+                 "\\(?: \\|$\\)")))
     (pcase args
       (`(todo . ,_)
        (let (case-fold-search) (re-search-forward todo-re end t)))
@@ -7790,10 +7792,10 @@ subtree."
 If ERROR is non-nil, throw an error, otherwise just return nil.
 Allowed types are `agenda' `todo' `tags' `search'."
   (cond ((not org-agenda-type)
-	 (error "No Org agenda currently displayed"))
+	 (and error (error "No Org agenda currently displayed")))
 	((memq org-agenda-type types) t)
 	(error
-	 (error "Not allowed in '%s'-type agenda buffer or component" org-agenda-type))
+	 (error "Not allowed in `%s'-type agenda buffer or component" org-agenda-type))
 	(t nil)))
 
 (defun org-agenda-Quit ()
@@ -9775,6 +9777,7 @@ the same tree node, and the headline of the tree node in the Org file."
 	  (pos (marker-position marker))
 	  (hdmarker (org-get-at-bol 'org-hd-marker))
 	  (todayp (org-agenda-today-p (org-get-at-bol 'day)))
+	  (agendap (eq (org-get-at-bol 'org-agenda-type) 'agenda))
 	  (inhibit-read-only t)
 	  org-loop-over-headlines-in-active-region
 	  org-agenda-headline-snapshot-before-repeat newhead just-one)
@@ -9794,7 +9797,8 @@ the same tree node, and the headline of the tree node in the Org file."
 	 (when (and org-agenda-headline-snapshot-before-repeat
 		    (not (equal org-agenda-headline-snapshot-before-repeat
 			      newhead))
-		    todayp)
+		    (or (not agendap)
+                        todayp))
 	   (setq newhead org-agenda-headline-snapshot-before-repeat
 		 just-one t))
 	 (save-excursion
