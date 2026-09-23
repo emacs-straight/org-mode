@@ -185,7 +185,7 @@ and some environments listed in the manual are not supported.
 
 *** ox-latex.el supports exporting Chinese and Japanese documents
 
-You can export documents with mutlilingual documents with main
+You can export documents with multilingual documents with main
 language Chinese or Japanese using babel. A header like this:
 
 #+BEGIN_SRC org
@@ -202,6 +202,12 @@ or
 
 is enough to get you going. Secondary languages are also supported and
 their font mappings can be handled with ~org-latex-babel-font-config~.
+
+*** ox-latex.el: new LaTeX attribute to add descriptive text to images
+
+The LaTeX exporter supports the ~:alt~ attribute to add descriptive
+text to images. This text will be used, for example, by screen reader
+applications to describe images.
 
 ** New and changed options
 
