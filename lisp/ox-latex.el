@@ -674,6 +674,29 @@ at the beginning of the generated LaTeX preamble."
 		 (string :tag "Metadata for the PDF output"))
   :safe #'string-or-null-p)
 
+
+(defun org-latex--build-metadata-string (info)
+  "Extract the document metadata from INFO and handle language info.
+
+When metadata are defined and contain the keyword DOC_LANGS, replace it with
+\"language=<main>[, other-languages={<other>}]\", where <main> is defined in
+#+LANGUAGE and <other> is defined in #+OTHER_LANGUAGES. Omit the other-languages
+if not defined.
+
+Cf. URL `https://latex3.github.io/babel/news/whats-new-in-babel-26.9.html'."
+  (let ((doc-metadata (plist-get info :latex-doc-metadata)))
+    (when (and doc-metadata
+               (string-match-p "DOC_LANGS" doc-metadata))
+      (let* ((replace-other (plist-get info :other-languages))
+             (replace-other (and replace-other
+                                 ;; We might need a function here to translate from
+                                 ;; Org to BCP-47 language codes
+                                 (mapconcat #'identity replace-other ", ")))
+             (replace-langs (concat "language=" (plist-get info :language)
+                                    (and replace-other (concat ", other-languages={ " replace-other " }")))))
+        (setq doc-metadata (string-replace "DOC_LANGS" replace-langs doc-metadata))))
+    doc-metadata))
+
 ;;;; Headline
 
 (defcustom org-latex-format-headline-function
@@ -2692,7 +2715,7 @@ specified in `org-latex-default-packages-alist' or
   (let* ((class (plist-get info :latex-class))
          (multi-lang (plist-get info :latex-multi-lang))
          (compiler (plist-get info :latex-compiler))
-         (doc-metadata (plist-get info :latex-doc-metadata))
+         (doc-metadata (org-latex--build-metadata-string info))
 	 (class-template
 	  (or template
 	      (let* ((class-options (org-latex--mk-options (plist-get info :latex-class-options)))
