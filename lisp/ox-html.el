@@ -1214,22 +1214,33 @@ components."
   :safe #'consp)
 
 (defcustom org-html-latex-image-options
-  '(:foreground "Black" :background "Transparent"
-    :page-width 1.0 :scale 1.0 :image-dir "ltximg" :inline nil)
+  '( :foreground "Black" :background "Transparent"
+     :page-width 1.0 :scale 1.0 :image-dir "ltximg"
+     ;; :inline nil
+     )
   "LaTeX preview options that apply to generated images.
 This is a HTML-specific counterpart to
 `org-latex-preview-appearance-options', which see.
 
-This supports two extra properties,
-:image-dir  an html-export counterpart of `org-latex-preview-cache', and
-:inline     a list of image format symbols that should not be saved according
-            to :image-dir, but instead inlined in the generated HTML.
-            Valid format symbols are:
-            - png, to inline png images using <img> with a data URI
-            - svg, to inline svg images using <img> with a data URI
-            - svg-embed, to inline svg images using an <svg> element.
-              This is only applied when used along with svg, as in
-              (svg svg-embed)."
+This supports one extra property,
+:image-dir  an html-export counterpart of `org-latex-preview-cache'"
+
+  ;; FIXME: The code also supports inlining images.
+  ;; However, this is currently done only for LaTeX-created images
+  ;; while we should better support inlining everything, which
+  ;; would require a different variable not tied to LaTeX previews.
+  ;; So, we do not document this feature, so that we do not need
+  ;; to preserve it later for backwards compatibility.
+  
+  ;; :inline     a list of image format symbols that should not be saved according
+  ;; to :image-dir, but instead inlined in the generated HTML.
+  ;; Valid format symbols are:
+  ;; - png, to inline png images using <img> with a data URI
+  ;; - svg, to inline svg images using <img> with a data URI
+  ;; - svg-embed, to inline svg images using an <svg> element.
+  ;; This is only applied when used along with svg, as in
+  ;; (svg svg-embed).
+
   :group 'org-export-html
   :package-version '(Org . "10.0")
   :type 'plist)
