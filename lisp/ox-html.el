@@ -3414,7 +3414,7 @@ that an image for ELEMENT already exists within it."
           :depth (* rescale-factor (plist-get (cdr image-path-info) :depth)))))
 
 (defun org-html-latex-image--data (image-path-info info &optional block-p)
-  "Obtaine the image source for IMAGE-PATH-INFO as a string.
+  "Obtain the image source for IMAGE-PATH-INFO as a string.
 This can take the form of a path, data URI, or <svg> element
 depending on HASH and INFO.  BLOCK-P signals that the image
 should be a block element."
