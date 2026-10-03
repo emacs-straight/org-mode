@@ -104,7 +104,7 @@
     (verbatim . org-html-verbatim)
     (verse-block . org-html-verse-block))
   :filters-alist '((:filter-options org-html-infojs-install-script
-                                    org-html-latex-override-image-options)
+                                    org-html--latex-override-image-options)
 		   (:filter-parse-tree org-html-image-link-filter
                                        org-html-prepare-latex-images)
 		   (:filter-final-output . org-html-final-function))
@@ -3203,7 +3203,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
 
 ;; FIXME Remove after deleting the obsolete variable
 ;; `org-format-latex-options' and `org-preview-latex-image-directory'.
-(defun org-html-latex-override-image-options (info _backend)
+(defun org-html--latex-override-image-options (info _backend)
   "Install backward-compatible LaTeX preview image settings.
 
 This filter inserts settings from `org-format-latex-options' and
