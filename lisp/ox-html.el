@@ -3401,6 +3401,7 @@ that an image for ELEMENT already exists within it."
                         (if block-p "display: block" "display: inline-block"))
                     "color: red")
                   :class (format "org-latex org-latex-%s" (if block-p "block" "inline")))
+            (org-export-read-attribute :attr_html element)
             (unless path-info (list :title "LaTeX preview image not generated."))))
           info)))))
 
