@@ -665,6 +665,29 @@ at the beginning of the generated LaTeX preamble."
 		 (string :tag "Metadata for the PDF output"))
   :safe #'string-or-null-p)
 
+
+(defun org-latex--build-metadata-string (info)
+  "Extract the document metadata from INFO and handle language info.
+
+When metadata are defined and contain the keyword DOC_LANGS, replace it with
+\"language=<main>[, other-languages={<other>}]\", where <main> is defined in
+#+LANGUAGE and <other> is defined in #+OTHER_LANGUAGES. Omit the other-languages
+if not defined.
+
+Cf. URL `https://latex3.github.io/babel/news/whats-new-in-babel-26.9.html'."
+  (let ((doc-metadata (plist-get info :latex-doc-metadata)))
+    (when (and doc-metadata
+               (string-match-p "DOC_LANGS" doc-metadata))
+      (let* ((replace-other (plist-get info :other-languages))
+             (replace-other (and replace-other
+                                 ;; We might need a function here to translate from
+                                 ;; Org to BCP-47 language codes
+                                 (mapconcat #'identity replace-other ", ")))
+             (replace-langs (concat "language=" (plist-get info :language)
+                                    (and replace-other (concat ", other-languages={ " replace-other " }")))))
+        (setq doc-metadata (string-replace "DOC_LANGS" replace-langs doc-metadata))))
+    doc-metadata))
+
 ;;;; Headline
 
 (defcustom org-latex-format-headline-function
@@ -1651,7 +1674,8 @@ Used by `org-latex-make-preamble' to add fallback fonts for lualatex."
   (prog1
       contents
     (let ((script-list (org-get-string-scripts contents)))
-      ;; (message "org-latex-get-font-list: %s" script-list)
+      (when script-list
+        (message "INFO: Emacs scripts found: %s" script-list))
       (setq info (plist-put info :doc-scripts script-list)))))
 
 (defun org-latex--caption-above-p (element info)
@@ -2257,7 +2281,7 @@ non-nil, only includes packages relevant to image generation, as
 specified in `org-latex-default-packages-alist' or
 `org-latex-packages-alist'."
   (let* ((class (plist-get info :latex-class))
-         (doc-metadata (plist-get info :latex-doc-metadata))
+         (doc-metadata (org-latex--build-metadata-string info))
 	 (class-template
 	  (or template
 	      (let* ((class-options (org-latex--mk-options (plist-get info :latex-class-options)))
@@ -3352,8 +3376,11 @@ used as a communication channel."
 		       (t (plist-get info :latex-image-default-height))))
 	 (options (let ((opt (or (plist-get attr :options)
 				 (plist-get info :latex-image-default-option))))
-		    (if (not (string-match "\\`\\[\\(.*\\)\\]\\'" opt)) opt
-		      (match-string 1 opt))))
+                    (concat
+		     (if (not (string-match "\\`\\[\\(.*\\)\\]\\'" opt)) opt
+		       (match-string 1 opt))
+                     (and (plist-get attr :alt)
+                          (format ",alt={%s}" (plist-get attr :alt))))))
 	 image-code)
     (if (member filetype '("tikz" "pgf"))
 	;; For tikz images:
