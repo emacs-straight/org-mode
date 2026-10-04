@@ -667,7 +667,13 @@ precedence over this variable."
 These metadata add accesibility information to the PDF
 to make it usable by screen readers and similar applications.
 They will be inserted as \"\\DocumentMetadata{<metadata>}\"
-at the beginning of the generated LaTeX preamble."
+at the beginning of the generated LaTeX preamble.
+
+When included, replace the shorthand DOC_LANGS with the document's
+language information: `org-export-language' is inserted as
+\"language = {<lang>},\", and `org-export-other-languages'
+as \"other-languages = {<list of langs>},\"."
+
 
   :package-version '(Org . "10")
   :type '(choice (const :tag "No metadata" nil)
