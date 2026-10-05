@@ -1929,10 +1929,16 @@ For non-floats, see `org-latex--wrap-label'."
 	      (org-export-data main info))))))
 ;;;;
 (defun org-latex--needs-math-font (info)
-  "Return t if INFO contains a :latex-fontspec-config with a math font."
+  "Return t if INFO contains a :latex-fontspec-config with a math font.
+
+Used to include the unicode-math package automatically. EXCEPTION:
+the ltx-talk class uses a different approach and will ask you to remove
+unicode-math."
 
   (when-let* ((fontspec-config (plist-get info :latex-fontspec-config)))
-    (assoc-string "math" fontspec-config)))
+    (and (not (equal (plist-get info :latex-class) "ltx-talk"))
+         (assoc-string "math" fontspec-config))))
+
 
 ;;;
 (defun org-latex-guess-inputenc (header)
