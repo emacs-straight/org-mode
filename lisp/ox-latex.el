@@ -1140,11 +1140,19 @@ Set this option to t to omit the \"language=\" in the parameters to
 \"lstlisting\" environments when exporting an src block.
 
 This is necessary, for example, when the \"fancyvrb\" package is used
-instead of \"listings\":
+instead of \"listings\", either with `org-latex-listings-env':
 
-#+LATEX_HEADER: \\RequirePackage{fancyvrb}
-#+LATEX_HEADER: \\DefineVerbatimEnvironment{verbatim}{Verbatim}{...}
-#+LATEX_HEADER: \\DefineVerbatimEnvironment{lstlisting}{Verbatim}{...}"
+  (add-to-list \\='org-latex-packages-alist \\='(\"\" \"fancyvrb\" t))
+  (setq org-latex-listings-env \"Verbatim\")
+  (setq org-latex-listings-options
+    \\='((\"fontsize\" \"\\\\small\")
+      (\"frame\" \"single\")))
+
+or with extra LaTeX code in the LateX header:
+
+  #+LATEX_HEADER: \\RequirePackage{fancyvrb}
+  #+LATEX_HEADER: \\DefineVerbatimEnvironment{verbatim}{Verbatim}{...}
+  #+LATEX_HEADER: \\DefineVerbatimEnvironment{lstlisting}{Verbatim}{...}"
   :group 'org-export-latex
   :package-version '(Org . "9.7")
   :type 'boolean
