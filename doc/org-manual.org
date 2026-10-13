@@ -14552,6 +14552,51 @@ general options (see [[*Export Settings]]).
   value will be inserted as =\DocumentMetadata{<value>}=
   at the beginning of the LaTeX preamble.
 
+  When the document metadata include the shorthand ~DOC_LANGS~, it
+  will be replaced by the main language declared with the ~LANGUAGE~
+  and ~OTHER_LANGUAGES~ keywords, formatted by
+  ~org-latex-build-doclangs-function~.  This custom variable points
+  to either of the functions ~org-latex-doclang-full~ or
+  ~org-latex-doclang-short~, or a user-defined function:
+
+  1. ~org-latex-doclang-full~ uses the ~LANGUAGE~ keyword and
+     ~OTHER_LANGUAGES~ if defined:
+
+     For example:
+     #+BEGIN_SRC org
+,#+LANGUAGE: en
+,#+OTHER_LANGUAGES: es fr
+,#+LATEX_DOC_METADATA: tagging = on, DOC_LANGS
+     #+END_SRC
+
+     will result in
+     #+BEGIN_SRC latex
+\DocumentMetadata{tagging=on,
+  language=en, other-languages={es, fr}}
+     #+END_SRC
+     at the beginning of the LaTeX preamble *before* the document
+     class declaration.
+
+  2. ~org-latex-doclang-short~ only uses the ~LANGUAGE~ keyword.  It
+     should be used for older LaTeX distributions:
+
+     #+BEGIN_SRC org
+,#+LANGUAGE: en
+,#+OTHER_LANGUAGES: es fr
+,#+LATEX_DOC_METADATA: tagging = on, DOC_LANGS
+     #+END_SRC
+
+     will produce:
+
+     #+BEGIN_SRC latex
+\DocumentMetadata{tagging=on, lang=en}
+     #+END_SRC
+     Note that the information about the secondary languages will be lost.
+
+  3. The user function must take the information channel INFO as its
+     only argument and return a string if successful.  Returning ~nil~
+     signals an error and will stop the export process.
+
 - =LATEX_FONTSPEC_FEATURES= ::
 
   #+cindex: @samp{LATEX_FONTSPEC_FEATURES}, keyword

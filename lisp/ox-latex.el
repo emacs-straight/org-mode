@@ -681,26 +681,60 @@ as \"other-languages = {<list of langs>},\"."
 		 (string :tag "Metadata for the PDF output"))
   :safe #'string-or-null-p)
 
+(defcustom org-latex-build-doclangs-function
+  #'org-latex-doclang-full
+  "Function to build the string to replace DOC_LANGS.
+The function is called when DOC_LANGS is included in the document's metadata.
+It is called with one argument, which is the INFO channel."
+  :package-version '(Org . "10")
+  :type '(choice
+          (const :tag "Long strings (recent babel)" org-latex-doclang-full)
+          (const :tag "Short strings (older babel)" org-latex-doclang-short)
+          (function :tag "User function")))
+
+(defun org-latex-doclang-full (info)
+  "Return DOC_LANGS with long key names (languages, other-languages).
+
+The return value is \"language=<main>[, other-languages={<other>}]\",
+where <main> is defined in #+LANGUAGE and <other> is defined in
+#+OTHER_LANGUAGES. Omit the other-languages if not defined.
+
+Cf. URL `https://latex3.github.io/babel/news/whats-new-in-babel-26.9.html',
+URL `https://texdoc.org/serve/documentmetadata-support-code.pdf/0'."
+  ;; FIXME: We might need a function here to translate from Org to BCP-47 language codes
+  (let* ((main-lang (plist-get info :language))
+         (replace-other (plist-get info :other-languages))
+         (replace-other (and replace-other
+                             (mapconcat #'identity replace-other ","))))
+    ;; Return nil if main language is nil.
+    (and main-lang (concat "language=" main-lang
+                           (and replace-other (concat ", other-languages={ " replace-other " }"))))))
+
+(defun org-latex-doclang-short (info)
+  "Return DOC_LANGS with short key names (languages, other-languages).
+CAVEAT: the only key supported is lan.
+URL `https://texdoc.org/serve/documentmetadata-support-code.pdf/0'."
+  ;; FIXME: We might need a function here to translate from Org to BCP-47 language codes
+  (let ((main-lang (plist-get info :language)))
+    ;; Return nil if main language is nil.
+        (and main-lang (concat "lang=" main-lang))))
+
 
 (defun org-latex--build-metadata-string (info)
   "Extract the document metadata from INFO and handle language info.
 
-When metadata are defined and contain the keyword DOC_LANGS, replace it with
-\"language=<main>[, other-languages={<other>}]\", where <main> is defined in
-#+LANGUAGE and <other> is defined in #+OTHER_LANGUAGES. Omit the other-languages
-if not defined.
+When metadata are defined and contain the keyword DOC_LANGS,
+replace it with the value returned by `org-latex-build-doclangs-function'."
 
-Cf. URL `https://latex3.github.io/babel/news/whats-new-in-babel-26.9.html'."
-  (let ((doc-metadata (plist-get info :latex-doc-metadata)))
+  (let ((doc-metadata (plist-get info :latex-doc-metadata))
+        (main-lang (plist-get info :language)))
     (when (and doc-metadata
                (string-match-p "DOC_LANGS" doc-metadata))
-      (let* ((replace-other (plist-get info :other-languages))
-             (replace-other (and replace-other
-                                 ;; We might need a function here to translate from
-                                 ;; Org to BCP-47 language codes
-                                 (mapconcat #'identity replace-other ", ")))
-             (replace-langs (concat "language=" (plist-get info :language)
-                                    (and replace-other (concat ", other-languages={ " replace-other " }")))))
+      (unless main-lang
+        (user-error "ox-latex: document metadata contains DOC_LANGS, but #+LANGUAGE: is nil"))
+      (let ((replace-langs (funcall org-latex-build-doclangs-function info)))
+        (unless replace-langs
+          (user-error "ox-latex: the `org-latex-build-doclangs-function' returns nil!"))
         (setq doc-metadata (string-replace "DOC_LANGS" replace-langs doc-metadata))))
     doc-metadata))
 

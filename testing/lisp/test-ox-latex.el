@@ -576,6 +576,51 @@ Just to see that DocumentMetadata comes before PassOptions and documentclass
    (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
    (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
 
+(ert-deftest test-ox-latex/pdf-metadata-langs ()
+  "Test that DocumentMetadata are inserted *before* LATEX_CLASS_PRE."
+  (org-test-with-exported-text
+   'latex
+   "#+TITLE: PDF Metadata DOC_LANGS
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: pdflatex
+#+LATEX_DOC_METADATA: tagging = on, DOC_LANGS
+#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
+#+LATEX_CLASS: report
+* Testing
+
+Just to see that DocumentMetadata comes before PassOptions and documentclass
+"
+   ;; (message "pdf-metadata-langs: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\DocumentMetadata{tagging = on, language=en-gb, other-languages={ es }}" nil t))
+   (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
+   (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
+
+(ert-deftest test-ox-latex/pdf-metadata-short-langs ()
+  "Test that DocumentMetadata are inserted *before* LATEX_CLASS_PRE."
+  (let ((org-latex-build-doclangs-function #'org-latex-doclang-short))
+   (org-test-with-exported-text
+   'latex
+   "#+TITLE: PDF Metadata DOC_LANGS
+#+LANGUAGE: en
+#+OTHER_LANGUAGES: es
+#+OPTIONS: toc:nil H:3 num:nil
+#+LATEX_COMPILER: pdflatex
+#+LATEX_DOC_METADATA: tagging=on, DOC_LANGS
+#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
+#+LATEX_CLASS: report
+* Testing
+
+Just to see that DocumentMetadata comes before PassOptions and documentclass
+"
+   ;; (message "pdf-metadata-short-langs: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\DocumentMetadata{tagging=on, lang=en}" nil t))
+   (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
+   (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t)))))
+
 (ert-deftest test-ox-latex/lualatex-fontspec-recognised ()
   "Test that org-latex-fontspec-config is recognised for lualatex.
 Since org-latex-fontspec-default-features is nil,
@@ -1174,10 +1219,10 @@ Let's see what happens with the LaTeX header.
 
 Just to see that DocumentMetadata has the right languages
 "
-   ;; (message "pdf-metadata: %s" (buffer-string))
+   ;; (message "metadata-langs: %s" (buffer-string))
    (goto-char (point-min))
    (should (search-forward "\\DocumentMetadata{tagging = on," nil t))
-   (should (search-forward "language=en, other-languages={ es, fr }}" nil t))
+   (should (search-forward "language=en, other-languages={ es,fr }}" nil t))
    (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
 
 (ert-deftest test-ox-latex/example-env-options ()

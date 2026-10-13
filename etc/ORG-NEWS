@@ -530,7 +530,6 @@ This new keyword allows you to set the variable
 ~org-latex-table-scientific-notation~ in the document header and
 control how numbers in scientific notation are shown in the document.
 
-
 ** New functions and changes in function arguments
 
 # This also includes changes in function behavior from Elisp perspective.
@@ -586,6 +585,18 @@ that by default, but if you have customized
 ~browse-url-new-window-flag~ to non-nil, a prefix argument means /not/
 to open the URL in a new window.  This follows how Emacs browse-url
 commands behave.
+
+*** New custom variable ~org-latex-build-doclangs-function~
+
+This custom variable points at the function to translate the LANGUAGE
+and OTEHR_LANGUAGES keyword to the string to replace DOC_LANGS in the
+document metadata.  Two new functions have been included:
+~org-latex-doclang-long~ and ~org-latex-doclang-short~.  They produce
+"language=<lang>,other-languages={<lang-list>}" and "lang=<lang>"
+respectively.  This variable can also point at a user-provided
+function to generate this language information.  This function takes
+the information channel INFO as its only argument and should return a
+string, or nil to signal an error.
 
 ** Removed or renamed functions and variables
 
