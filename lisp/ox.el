@@ -7542,6 +7542,7 @@ options as CDR."
                              `(double-wheel-down . ,_)
                              `(triple-wheel-down . ,_))
                          ?\C-n)
+                        ('backspace ?\d)
                         (event event)))
 		(not expertp)
 		;; FIXME: Don't use C-v (22) here, as it is used as a
