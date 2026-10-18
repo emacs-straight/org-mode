@@ -3645,13 +3645,13 @@ header, or they will be appended."
   :group 'org-latex
   :type 'string)
 
-(defun org-set-packages-alist (var val)
-  "Set the packages alist and make sure it has 3 elements per entry."
-  (set-default-toplevel-value var (mapcar (lambda (x)
-		     (if (and (consp x) (= (length x) 2))
-			 (list (car x) (nth 1 x) t)
-		       x))
-		   val)))
+;; (defun org-set-packages-alist (var val)
+;;   "Set the packages alist and make sure it has 3 elements per entry."
+;;   (set-default-toplevel-value var (mapcar (lambda (x)
+;; 		     (if (and (consp x) (= (length x) 2))
+;; 			 (list (car x) (nth 1 x) t)
+;; 		       x))
+;; 		   val)))
 
 (defun org-get-packages-alist (var)
   "Get the packages alist and make sure it has 3 elements per entry."
@@ -3724,7 +3724,7 @@ in the final document.
 A string will be inserted as-is in the header of the document."
   :group 'org-latex
   :group 'org-export-latex
-  :set 'org-set-packages-alist
+  ;; :set 'org-set-packages-alist
   :get 'org-get-packages-alist
   :safe #'listp
   :package-version '(Org . "9.7")
@@ -3769,7 +3769,7 @@ Make sure that you only list packages here which:
   :group 'org-latex
   :group 'org-export-latex
   :safe #'listp
-  :set 'org-set-packages-alist
+  ;; :set 'org-set-packages-alist
   :get 'org-get-packages-alist
   :type
   '(repeat
