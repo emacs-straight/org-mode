@@ -1346,5 +1346,32 @@ Looks nice, doesn't it?
    (should (search-forward "\\begin{tabular}"))
    (should (search-forward "2.00 & \\num{3.81e+12}"))))
 
+(ert-deftest test-ox-latex/latex-align-env ()
+  "Check that the align* environment is NOT surrounded by
+inline math \\[\\] delimiters."
+  (org-test-with-exported-text
+   'latex
+   "* A multi-line equation with the align environment
+We want a simple way for multiline equations:
+
+#+attr_latex: :mode math :environment align*
+| f(x) = | x^3 + 3*x^2 + 3*x + 1   |
+|      = | (x^2 + 2*x + 1) * (x+1) |
+
+This is a simple way to align multi-line equations. =align*= is provided by
+the ~amsmath~ package.
+"
+   ;; (message "latex-align-env: %s" (buffer-string))
+   (goto-char (point-min))
+   (search-forward "equations:
+
+\\begin{align*}")
+   (search-forward "f(x) =& x^3 + 3*x^2 + 3*x + 1 \\")
+   (search-forward " =& (x^2 + 2*x + 1) * (x+1) \\")
+   (search-forward "\\end{align*}
+
+This is a simple")
+   ))
+
 (provide 'test-ox-latex)
 ;;; test-ox-latex.el ends here

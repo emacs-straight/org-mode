@@ -14850,7 +14850,8 @@ include:
   =table=, =math=, =inline-math=, =verbatim= or =tabbing=.
 
   For =math= or =inline-math= mode, LaTeX export backend wraps the
-  table in a math environment, but every cell in it is exported as-is.
+  table in a math environment[fn::Except the ~align~ and ~align*~
+  environments!], but every cell in it is exported as-is.
   For =tabbing= the LaTeX tabbing environment is used and the correct
   tabbing delimiters =\>= are used.
   The LaTeX export backend determines the default mode from

@@ -67,6 +67,17 @@ assume that the outer list has length one, which means ~(car
 (org-babel-tangle-single-block ...))~ is not guaranteed to return
 the correct ~(FILE . ...)~ cons.
 
+*** ~ox-latex~ suppresses math inlining for LaTeX environments align and align*
+
+The multi-line equation environments =align= and =align*= are now usable
+for an equation table, like for example:
+
+#+begin_src org
+,#+attr_latex: :mode math :environment align*
+| f(x) = | x^2 + 2*x + 1 |
+| =      | (x+1)^2       |
+#+end_src
+
 ** New features
 
 # We list the most important features, and the features that may
