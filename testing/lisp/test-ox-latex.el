@@ -609,7 +609,8 @@ make sure that \\defaultfontfeatures{} is NOT included in the preamble.
    (org-test-with-exported-text
    'latex
    "#+TITLE: LuaLaTeX fonts
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES:  es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_CLASS: report
@@ -658,7 +659,8 @@ Emojis are added."
    (org-test-with-exported-text
    'latex
    "#+TITLE: LuaLaTeX fonts with emojis
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES:  es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_CLASS: report
@@ -688,7 +690,8 @@ This anticipates the changes for multi-lang."
    (org-test-with-exported-text
    'latex
    "#+TITLE: LuaLaTeX fonts
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES:  es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_HEADER: \\setsansfont{TeX Gyre Heros}
@@ -714,7 +717,8 @@ Just to see that I get the fonts Iwant...
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: pdflatex
 
@@ -732,7 +736,8 @@ What are you trying to do with pdflatex??
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 
@@ -749,7 +754,8 @@ C'on, what d'you wanna do??
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_HEADER: \\usepackage[spanish]{babel}
@@ -766,7 +772,8 @@ C'on, what d'you wanna do??
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -781,7 +788,8 @@ C'on, what d'you wanna do??
   (org-test-with-exported-text
    'latex
    "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -804,7 +812,8 @@ is appended to the babel configuration."
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -832,7 +841,8 @@ is appended to the polyglossia configuration."
    (org-test-with-exported-text
    'latex
    "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: polyglossia
@@ -856,7 +866,8 @@ OK, so we are in business
   (org-test-with-exported-text
    'latex
    "#+TITLE: Playing with languages
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -887,7 +898,8 @@ Back to British English.
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -910,7 +922,8 @@ OK, so we are in business
     (org-test-with-exported-text
      'latex
      "#+TITLE: The first sanity check
-#+LANGUAGE: en-gb es
+#+LANGUAGE: en-gb
+#+OTHER_LANGUAGES: es
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -940,7 +953,8 @@ OK, so we are in business
     (org-test-with-exported-text
      'latex
      "#+TITLE: pure polyglossia
-#+LANGUAGE: es en-gb
+#+LANGUAGE: es
+#+OTHER_LANGUAGES: en-gb
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: polyglossia
@@ -980,7 +994,8 @@ Polyglossia managing fonts. Document ready for multi-lang
     (org-test-with-exported-text
      'latex
      "#+TITLE: pure Babel
-#+LANGUAGE: es en-gb
+#+LANGUAGE: es
+#+OTHER_LANGUAGES: en-gb
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel
@@ -1015,7 +1030,8 @@ Babel managing fonts. Document ready for spanish text.
     (org-test-with-exported-text
      'latex
      "#+TITLE: pure Babel
-#+LANGUAGE: es en-gb
+#+LANGUAGE: es
+#+OTHER_LANGUAGES: en-gb
 #+OPTIONS: toc:nil H:3 num:nil
 #+LATEX_COMPILER: lualatex
 #+LATEX_MULTI_LANG: babel

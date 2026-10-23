@@ -128,7 +128,6 @@
     (:description "DESCRIPTION" nil nil parse)
     (:keywords "KEYWORDS" nil nil parse)
     (:subtitle "SUBTITLE" nil nil parse)
-    (:languages "LANGUAGE" org-export-default-language nil split)
     ;; Other variables.
     (:latex-active-timestamp-format nil nil org-latex-active-timestamp-format)
     (:latex-caption-above nil nil org-latex-caption-above)
@@ -2096,7 +2095,7 @@ HEADER is the LaTeX prelude and INFO is the information channel."
   ;; (message "jp-zh 4 babel:\n%s" header)
   (let* ((replace "")
          (babel-config (plist-get info :latex-babel-font-config))
-         (langs (plist-get info :languages))
+         (other-langs (plist-get info :other-languages))
          (lang (plist-get info :language))) ;; start by generating the replacing LaTeX code
     (setq replace
           (concat
@@ -2116,7 +2115,7 @@ HEADER is the LaTeX prelude and INFO is the information channel."
            "\\linespread{1.333}
 \\usepackage[bidi=basic]{babel}\n"
            (format "\\babelprovide[main,import]{%s}\n" (org-latex--babel-lang lang))))
-    (dolist (olang (cdr-safe langs))
+    (dolist (olang other-langs)
       (setq replace (concat replace
                             (format "\\babelprovide[import]{%s}\n"
                                     (org-latex--babel-lang olang)))))
@@ -2124,7 +2123,7 @@ HEADER is the LaTeX prelude and INFO is the information channel."
       (let ((this-lang (car fntdef)))
         ;; (message "testing secondary language {%s}" this-lang)
         (when (or (null this-lang)
-                  (member this-lang (cdr langs)))
+                  (member this-lang other-langs))
           (setq header
                 (concat header
                         (org-latex--mk-babel-font fntdef))))))
@@ -2134,6 +2133,7 @@ HEADER is the LaTeX prelude and INFO is the information channel."
   "FIXME: check for multi-lang and lualatex to replace with new babel options.
 Include the jp/zh treatment here."
   (let ((compiler (plist-get info :latex-compiler))
+        (other-langs (plist-get info :other-languages))
         (main-lang (plist-get info :language)))
     (if (equal (plist-get info :latex-multi-lang) "babel")
         (save-match-data
@@ -2141,12 +2141,11 @@ Include the jp/zh treatment here."
                    (equal compiler "lualatex"))
                 (org-latex--jp-zh-babel header info)
             (if-let* ((matched (string-match "\\\\usepackage\\[.+?]{babel}\n" header))
-                        (original-header (match-string 0 header))
-                        (languages (plist-get info :languages))
-                        (new-header (format "\\usepackage[bidi=%s]{babel}\n"
-                                            (if (equal compiler "lualatex") "basic" "default"))))
+                      (original-header (match-string 0 header))
+                      (new-header (format "\\usepackage[bidi=%s]{babel}\n"
+                                          (if (equal compiler "lualatex") "basic" "default"))))
               (progn
-                (dolist (lang languages)
+                (dolist (lang (cons main-lang other-langs)) ;; all languages
                   (setq new-header
                         (concat new-header
                                 (format "\\babelprovide[%s]{%s}\n"
@@ -2156,8 +2155,8 @@ Include the jp/zh treatment here."
                   (dolist (fntdef babel-config)
                     (let* ((lang (car fntdef)))
                       (when (or (null lang)    ;; default language
-                                (and (member lang languages)
-                                     (not (equal lang main-lang))))
+                                (and (not (equal lang main-lang)
+                                          (member lang other-langs))))
                         (setq new-header
                               (concat new-header
                                       (org-latex--mk-babel-font fntdef)))))))
@@ -2250,14 +2249,14 @@ Return the new header."
 Return a string for the LaTeX preamble."
   ;; Fonts for specific languages
   ;; c.f. `org-latex-polyglossia-font-config'
-  (let ((doc-languages (plist-get info :languages))
-        (main-language (plist-get info :language))
-        (latex-fontspec-config (plist-get info :latex-fontspec-config)))
+  (let* ((main-language (plist-get info :language))
+         (languages (cons main-language (plist-get info :other-languages)))
+         (latex-fontspec-config (plist-get info :latex-fontspec-config)))
     (mapconcat
      #'(lambda (script)
          (let ((this-lang (car script)))
            ;; Only check languages declared in doc
-           (when (and (member this-lang doc-languages)
+           (when (and (member this-lang languages)
                       ;; when using fontspec, skip the main language
                       (or (null latex-fontspec-config)
                           (not (equal this-lang main-language))))
@@ -2286,11 +2285,13 @@ Return a string for the LaTeX preamble."
 FIXME: add font configurations for polyglossia."
   (save-match-data
     (let ((multi-lang (plist-get info :latex-multi-lang))
-          (languages  (plist-get info :languages))) ;; don't go this path unless LATEX_MULTI_LANG
+          (main-lang  (plist-get info :language))
+          (languages  (plist-get info :other-languages))) ;; don't go this path unless LATEX_MULTI_LANG
       (if (and (equal multi-lang "polyglossia")
                (string-match "\\\\usepackage\\(\\[.+?]\\)?{polyglossia}\n" header))
           (let ((old-header (match-string 0 header))
                 (new-header "\\usepackage{polyglossia}\n"))
+            (setq languages (cons main-lang languages))
             (setq new-header (concat new-header
                                      (mapconcat #'(lambda (l)
                                                     (org-latex--set-polyglossia-lang l info))
@@ -3557,12 +3558,14 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
      ((string= key "SELECT_LANG")
       (let ((multi-lang (plist-get info :latex-multi-lang))
             (lang-info (alist-get value org-latex-language-alist nil nil #'string=))
-            (languages (plist-get info :languages)))
+            (language (plist-get info :language))
+            (other-languages (plist-get info :other-languages)))
+        (message "%s --> %s" key value)
         (cond ((and (null lang-info) (member multi-lang '("babel" "polyglossia")))
                ;; warn and don't add useless code
                (warn "Unknown language in SELECT_LANG %s" value) "")
-              ((not (member value languages))
-               (warn "Ignoring SELECT_LANG %s: not in LANGUAGE" value) "")
+              ((not (member value (cons language other-languages)))
+               (warn "Ignoring SELECT_LANG %s: neither LANGUAGE nor in OTHER_LANGUAGES" value) "")
               ((string= multi-lang "babel")
                (format "\\selectlanguage{%s}"
                        (org-latex--babel-lang value)))
