@@ -2155,8 +2155,7 @@ Include the jp/zh treatment here."
                   (dolist (fntdef babel-config)
                     (let* ((lang (car fntdef)))
                       (when (or (null lang)    ;; default language
-                                (and (not (equal lang main-lang)
-                                          (member lang other-langs))))
+                                (member lang other-langs)) ;; but one of other-langs
                         (setq new-header
                               (concat new-header
                                       (org-latex--mk-babel-font fntdef)))))))
