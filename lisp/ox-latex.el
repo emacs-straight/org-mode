@@ -670,73 +670,16 @@ to make it usable by screen readers and similar applications.
 They will be inserted as \"\\DocumentMetadata{<metadata>}\"
 at the beginning of the generated LaTeX preamble.
 
-When included, replace the shorthand DOC_LANGS with the document's
-language information: `org-export-language' is inserted as
-\"language = {<lang>},\", and `org-export-other-languages'
-as \"other-languages = {<list of langs>},\"."
+\"%l\" will be replaced with `org-export-language'.
+Include \"lang=%s\" to use it.
 
+Cf. \(URL `https://latex3.github.io/tagging-project/documentation/tutorial/')
+for usage examples."
 
   :package-version '(Org . "10")
   :type '(choice (const :tag "No metadata" nil)
 		 (string :tag "Metadata for the PDF output"))
   :safe #'string-or-null-p)
-
-(defcustom org-latex-build-doclangs-function
-  #'org-latex-doclang-full
-  "Function to build the string to replace DOC_LANGS.
-The function is called when DOC_LANGS is included in the document's metadata.
-It is called with one argument, which is the INFO channel."
-  :package-version '(Org . "10")
-  :type '(choice
-          (const :tag "Long strings (recent babel)" org-latex-doclang-full)
-          (const :tag "Short strings (older babel)" org-latex-doclang-short)
-          (function :tag "User function")))
-
-(defun org-latex-doclang-full (info)
-  "Return DOC_LANGS with long key names (languages, other-languages).
-
-The return value is \"language=<main>[, other-languages={<other>}]\",
-where <main> is defined in #+LANGUAGE and <other> is defined in
-#+OTHER_LANGUAGES. Omit the other-languages if not defined.
-
-Cf. URL `https://latex3.github.io/babel/news/whats-new-in-babel-26.9.html',
-URL `https://texdoc.org/serve/documentmetadata-support-code.pdf/0'."
-  ;; FIXME: We might need a function here to translate from Org to BCP-47 language codes
-  (let* ((main-lang (plist-get info :language))
-         (replace-other (plist-get info :other-languages))
-         (replace-other (and replace-other
-                             (mapconcat #'identity replace-other ","))))
-    ;; Return nil if main language is nil.
-    (and main-lang (concat "language=" main-lang
-                           (and replace-other (concat ", other-languages={ " replace-other " }"))))))
-
-(defun org-latex-doclang-short (info)
-  "Return DOC_LANGS with short key names (languages, other-languages).
-CAVEAT: the only key supported is lan.
-URL `https://texdoc.org/serve/documentmetadata-support-code.pdf/0'."
-  ;; FIXME: We might need a function here to translate from Org to BCP-47 language codes
-  (let ((main-lang (plist-get info :language)))
-    ;; Return nil if main language is nil.
-        (and main-lang (concat "lang=" main-lang))))
-
-
-(defun org-latex--build-metadata-string (info)
-  "Extract the document metadata from INFO and handle language info.
-
-When metadata are defined and contain the keyword DOC_LANGS,
-replace it with the value returned by `org-latex-build-doclangs-function'."
-
-  (let ((doc-metadata (plist-get info :latex-doc-metadata))
-        (main-lang (plist-get info :language)))
-    (when (and doc-metadata
-               (string-match-p "DOC_LANGS" doc-metadata))
-      (unless main-lang
-        (user-error "ox-latex: document metadata contains DOC_LANGS, but #+LANGUAGE: is nil"))
-      (let ((replace-langs (funcall org-latex-build-doclangs-function info)))
-        (unless replace-langs
-          (user-error "ox-latex: the `org-latex-build-doclangs-function' returns nil!"))
-        (setq doc-metadata (string-replace "DOC_LANGS" replace-langs doc-metadata))))
-    doc-metadata))
 
 ;;;; Headline
 
@@ -2774,9 +2717,24 @@ The MULTI-LANG package is either babel or polyglossia."
       (if (and latex-header
                (string-match remove-rx latex-header))
           (let ((remove-str (match-string 0 latex-header)))
-            (message "INFO: Remove `%s' from your LATEX HEADERs!" remove-str)
+            (message "INFO: Remove `%s' from your %s!" remove-str prop)
             (plist-put info prop (string-replace remove-str "" latex-header)))
         info))))
+
+;; This function is currently used to replace \"%l\" with `org-export-language'.
+;; In the future it should handle the other langauges too, as well as the generation
+;; of correct BCP-47 compliant language codes.
+(defun org-latex--make-doc-metadata (info)
+  "Get metadata and export language from INFO channel.
+Replace \"%l\" with export language and return metadata.
+
+Return nil when LANGUAGE or LATEX_DOC_METADATA are not defined."
+
+  (let ((metadata (plist-get info :latex-doc-metadata))
+        (def-lang (plist-get info :language))) ;; This should not be nil, but who knows...
+    (and metadata def-lang
+         (string-replace "%l" def-lang metadata))))
+
 
 ;;;###autoload
 (defun org-latex-make-preamble (info &optional template snippet?)
@@ -2792,7 +2750,7 @@ specified in `org-latex-default-packages-alist' or
   (let* ((class (plist-get info :latex-class))
          (multi-lang (plist-get info :latex-multi-lang))
          (compiler (plist-get info :latex-compiler))
-         (doc-metadata (org-latex--build-metadata-string info))
+         (doc-metadata (org-latex--make-doc-metadata info))
 	 (class-template
 	  (or template
 	      (let* ((class-options (org-latex--mk-options (plist-get info :latex-class-options)))

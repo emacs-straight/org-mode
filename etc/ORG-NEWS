@@ -400,6 +400,14 @@ done before loading theme:
 
 The LaTeX exporter can include PDF metadata with the new variable
 ~org-latex-doc-metadata~ and the new keyword ~#+LATEX_DOC_METADATA:~.
+Use =%l= to include the document's language defined in
+~org-export-language~:
+
+: #+LANGUAGE: es
+: (setq-default org-latex-doc-metadata "tagging = on, lang=%l")
+
+The document's metadata will be changed automatically when you change
+~#+LANGUAGE:~.
 
 *** ~org-agenda-timerange-leaders~ now allows using functions as element values
 

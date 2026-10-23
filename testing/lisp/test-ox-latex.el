@@ -554,6 +554,27 @@ How do you do?
        (should (search-forward "\\usepackage[utf8]{inputenc} \\usepackage[french, english]{babel}")))
      (kill-buffer export-buffer))))
 
+(ert-deftest test-ox-latex/doc-metadata-lang ()
+  "Check replacing %l woth LANGUAGE in DocumentMetadata."
+  (org-test-with-exported-text
+   'latex
+   "#+LATEX_COMPILER: lualatex
+#+LATEX_DOC_METADATA: tagging = on,
+#+LATEX_DOC_METADATA: lang = %l
+
+#+LANGUAGE: es
+
+* Hola, ¿qué tal?
+
+Pues bien.
+"
+   ;; (message "doc-metadata-lang: %s" (buffer-string))
+   (goto-char (point-min))
+   (should (search-forward "\\DocumentMetadata{tagging = on,"))
+   (should (search-forward "lang = es}"))
+   (should (search-forward "\\begin{document}"))
+   ))
+
 (ert-deftest test-ox-latex/pdf-metadata ()
   "Test that DocumentMetadata are inserted *before* LATEX_CLASS_PRE."
   (org-test-with-exported-text
@@ -576,50 +597,6 @@ Just to see that DocumentMetadata comes before PassOptions and documentclass
    (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
    (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
 
-(ert-deftest test-ox-latex/pdf-metadata-langs ()
-  "Test that DocumentMetadata are inserted *before* LATEX_CLASS_PRE."
-  (org-test-with-exported-text
-   'latex
-   "#+TITLE: PDF Metadata DOC_LANGS
-#+LANGUAGE: en-gb
-#+OTHER_LANGUAGES: es
-#+OPTIONS: toc:nil H:3 num:nil
-#+LATEX_COMPILER: pdflatex
-#+LATEX_DOC_METADATA: tagging = on, DOC_LANGS
-#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
-#+LATEX_CLASS: report
-* Testing
-
-Just to see that DocumentMetadata comes before PassOptions and documentclass
-"
-   ;; (message "pdf-metadata-langs: %s" (buffer-string))
-   (goto-char (point-min))
-   (should (search-forward "\\DocumentMetadata{tagging = on, language=en-gb, other-languages={ es }}" nil t))
-   (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
-   (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
-
-(ert-deftest test-ox-latex/pdf-metadata-short-langs ()
-  "Test that DocumentMetadata are inserted *before* LATEX_CLASS_PRE."
-  (let ((org-latex-build-doclangs-function #'org-latex-doclang-short))
-   (org-test-with-exported-text
-   'latex
-   "#+TITLE: PDF Metadata DOC_LANGS
-#+LANGUAGE: en
-#+OTHER_LANGUAGES: es
-#+OPTIONS: toc:nil H:3 num:nil
-#+LATEX_COMPILER: pdflatex
-#+LATEX_DOC_METADATA: tagging=on, DOC_LANGS
-#+LATEX_CLASS_PRE: \\PassOptionsToPackage{dvipsnames}{xcolor}
-#+LATEX_CLASS: report
-* Testing
-
-Just to see that DocumentMetadata comes before PassOptions and documentclass
-"
-   ;; (message "pdf-metadata-short-langs: %s" (buffer-string))
-   (goto-char (point-min))
-   (should (search-forward "\\DocumentMetadata{tagging=on, lang=en}" nil t))
-   (should (search-forward "\\PassOptionsToPackage{dvipsnames}{xcolor}" nil t))
-   (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t)))))
 
 (ert-deftest test-ox-latex/lualatex-fontspec-recognised ()
   "Test that org-latex-fontspec-config is recognised for lualatex.
@@ -1202,28 +1179,6 @@ Let's see what happens with the LaTeX header.
    (should (search-forward "\\setCJKmainfont{Noto Serif CJK SC}" nil t))
    (should (search-forward "\\setCJKsansfont{Noto Sans CJK SC}" nil t))
    (should (search-forward "\\setCJKmonofont{Noto Sans Mono CJK SC}" nil t)))))
-
-(ert-deftest test-ox-latex/metadata-langs ()
-  "Test that DocumentMetadata treat the DOC_LANGS keyword correctly."
-  (org-test-with-exported-text
-   'latex
-   "#+TITLE: PDF Metadata with languages
-#+LANGUAGE: en
-#+OTHER_LANGUAGES: es fr
-#+OPTIONS: toc:nil H:3 num:nil
-#+LATEX_COMPILER: pdflatex
-#+LATEX_DOC_METADATA: tagging = on,
-#+LATEX_DOC_METADATA: DOC_LANGS
-#+LATEX_CLASS: report
-* Testing
-
-Just to see that DocumentMetadata has the right languages
-"
-   ;; (message "metadata-langs: %s" (buffer-string))
-   (goto-char (point-min))
-   (should (search-forward "\\DocumentMetadata{tagging = on," nil t))
-   (should (search-forward "language=en, other-languages={ es,fr }}" nil t))
-   (should (re-search-forward "^\\\\documentclass\\[.+?]{report}" nil t))))
 
 (ert-deftest test-ox-latex/example-env-options ()
   "We can set and override the options in an EXAMPLE block."
