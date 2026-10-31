@@ -2764,7 +2764,8 @@ specified in `org-latex-default-packages-alist' or
 		                (list
                                  (and (not snippet?)
                                       doc-metadata
-                                      (format "\\DocumentMetadata{%s}" doc-metadata))
+                                      (format "\\DocumentMetadata{%s}"
+                                                              doc-metadata))
                                  (and (not snippet?)
                                       (plist-get info :latex-class-pre))
 		                 (if (or (not class-options)
