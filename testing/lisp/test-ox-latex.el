@@ -1297,7 +1297,7 @@ Looks nice, doesn't it?
    (should (search-forward "\\begin{tabular}"))
    (should (search-forward "2.00 & \\num{3.81e+12}"))))
 
-(ert-deftest test-ox-latex/latex-align-env ()
+(ert-deftest test-ox-latex/latex-math-star ()
   "Check that the align* environment is NOT surrounded by
 inline math \\[\\] delimiters because of the math* mode."
   (org-test-with-exported-text
@@ -1318,7 +1318,7 @@ the ~amsmath~ package.
 
 \\begin{align*}")
    (search-forward "f(x) = & x^3 + 3*x^2 + 3*x + 1 \\")
-   (search-forward " = & (x^2 + 2*x + 1) * (x+1) \\")
+   (search-forward " = & (x^2 + 2*x + 1) * (x+1)")
    (search-forward "\\end{align*}
 
 This is a simple")

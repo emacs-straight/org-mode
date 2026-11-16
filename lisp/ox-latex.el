@@ -4131,9 +4131,9 @@ it."
 		       ;; Do not wrap twice the same table.
 		       (not (org-element-type-p
 			     (org-element-parent table) 'latex-matrices)))
-	      (let* ((caption (and (not (string= mode "inline-math"))
+	      (let* ((caption (and (not (member mode '("math*" "inline-math")))
 				   (org-element-property :caption table)))
-		     (name (and (not (string= mode "inline-math"))
+		     (name (and (not (member mode '("math*" "inline-math")))
 			        (org-element-property :name table)))
 		     (matrices
 		      (list 'latex-matrices
@@ -4993,6 +4993,9 @@ This function assumes TABLE has `org' as its `:type' property and
      (cond ((member env '("array" "tabular"))
 	    (format "\\begin{%s}{%s}\n%s\\end{%s}"
 		    env (org-latex--align-string table info t) contents env))
+           ((member env '("align*" "align"))
+	    (format "\\begin{%s}\n%s\\end{%s}"
+		    env (replace-regexp-in-string ".\\\\\n\\'" "\n" contents) env))
 	   ((assoc env org-latex-table-matrix-macros)
 	    (format "\\%s%s{\n%s}"
 		    env
