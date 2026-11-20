@@ -706,7 +706,7 @@ Just to see that I get the fonts Iwant...
 
 What are you trying to do with pdflatex??
 "
-     ;; (message "sanity-check1: %s" (buffer-string)))))
+     (message "sanity-check1: %s" (buffer-string)))))
 
 (ert-deftest test-ox-latex/sanity-check2 ()
   "Test that you can't select babel and polyglossia at the same time."
