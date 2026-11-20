@@ -4184,7 +4184,7 @@ CONTENTS is a string.  INFO is a plist used as a communication
 channel."
   (pcase (org-element-property :markup matrices)
     (`inline (format "\\(%s\\)" contents))
-    (`math-star contents)
+    (`math-star (format "{\n%s}" contents))
     (`equation
      (let ((caption (org-latex--caption/label-string matrices info))
 	   (caption-above? (org-latex--caption-above-p matrices info)))

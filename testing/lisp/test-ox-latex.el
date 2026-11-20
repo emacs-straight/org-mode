@@ -706,7 +706,7 @@ Just to see that I get the fonts Iwant...
 
 What are you trying to do with pdflatex??
 "
-     (message "==> %s" (buffer-string)))))
+     ;; (message "sanity-check1: %s" (buffer-string)))))
 
 (ert-deftest test-ox-latex/sanity-check2 ()
   "Test that you can't select babel and polyglossia at the same time."
@@ -725,7 +725,7 @@ What are you trying to do with pdflatex??
 
 C'on, what d'you wanna do??
 "
-     (message "==> %s" (buffer-string)))))
+     (message "sanity-check2: %s" (buffer-string)))))
 
 (ert-deftest test-ox-latex/sanity-check3 ()
   "Test that you can't select babel and polyglossia at the same time."
@@ -743,7 +743,7 @@ C'on, what d'you wanna do??
 
 C'on, what d'you wanna do??
 "
-     (message "==> %s" (buffer-string)))))
+     (message "sanity-check3: %s" (buffer-string)))))
 
 (ert-deftest test-ox-latex/sanity-check4 ()
   "Test that you can't select babel as multi-lang and polyglossia in the packages."
@@ -761,7 +761,7 @@ C'on, what d'you wanna do??
 
 C'on, what d'you wanna do??
 "
-     (message "==> %s" (buffer-string)))))
+     (message "sanity-check4: %s" (buffer-string)))))
 
 (ert-deftest test-ox-latex/multi-lang1 ()
   "Test that selecting babel as multi-lang, will replace fontspec."
@@ -801,7 +801,7 @@ is appended to the babel configuration."
 
 OK, so we are in business
 "
-     ;; (message "==> %s" (buffer-string))
+     ;; (message "multi-lang2: %s" (buffer-string))
      (goto-char (point-min))
      (save-excursion
        (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
@@ -831,7 +831,7 @@ is appended to the polyglossia configuration."
 
 OK, so we are in business
 "
-   ;; (message "--> %s" (buffer-string))
+   ;; (message "multi-lang3: %s" (buffer-string))
    (goto-char (point-min))
    (save-excursion
      (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
@@ -864,7 +864,7 @@ Y esto va en español.
 
 Back to British English.
 "
-   ;; (message "--> %s" (buffer-string))
+   ;; (message "multi-lang4: %s" (buffer-string))
    (goto-char (point-min))
    (save-excursion
      (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
@@ -887,7 +887,7 @@ Back to British English.
 
 OK, so we are in business
 "
-     ;; (message "==> %s" (buffer-string))
+     ;; (message "multi-lang5: %s" (buffer-string))
      (goto-char (point-min))
      (save-excursion
        (should-not (re-search-forward "\\\\usepackage{fontspec}" nil t)))
@@ -1312,16 +1312,21 @@ We want a simple way for multiline equations:
 This is a simple way to align multi-line equations. =align*= is provided by
 the ~amsmath~ package.
 "
-   (message "latex-align-env: %s" (buffer-string))
+   ;; (message "latex-align-env: %s" (buffer-string))
    (goto-char (point-min))
-   (search-forward "equations:
+   (should (search-forward "equations:
 
-\\begin{align*}")
-   (search-forward "f(x) = & x^3 + 3*x^2 + 3*x + 1 \\")
-   (search-forward " = & (x^2 + 2*x + 1) * (x+1)")
-   (search-forward "\\end{align*}
+{
+\\begin{align*}" nil t))
+   (should (search-forward "f(x) = & x^3 + 3*x^2 + 3*x + 1 \\" nil t))
+   (should (search-forward " = & (x^2 + 2*x + 1) * (x+1)" nil t))
+   (should (search-forward "\\end{align*}
+}
 
-This is a simple")
+This is a simple" nil t))
+   (goto-char (point-min))
+   (should-not
+    (search-forward " = & (x^2 + 2*x + 1) * (x+1) \\" nil t))
    ))
 
 (provide 'test-ox-latex)
